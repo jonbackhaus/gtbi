@@ -909,7 +909,17 @@ modules:
           echo "agents.gemini: checksum metadata unavailable; skipping Gemini patch" >&2
           exit 0
         fi
-        if ! compgen -G "$HOME/.nvm/versions/node/*/bin/node" > /dev/null; then
+        find_nvm_node() {
+          local node_path=""
+          while IFS= read -r node_path; do
+            if [[ -x "$node_path" ]]; then
+              printf '%s\n' "$node_path"
+              return 0
+            fi
+          done < <(compgen -G "$HOME/.nvm/versions/node/*/bin/node" | sort -Vr)
+          return 1
+        }
+        if ! nvm_node="$(find_nvm_node)"; then
           nvm_url="${KNOWN_INSTALLERS[nvm]:-}"
           nvm_sha256="$(get_checksum nvm)"
           if [[ -z "$nvm_url" || -z "$nvm_sha256" ]]; then
@@ -931,14 +941,7 @@ modules:
             exit 0
           fi
         fi
-        nvm_node=""
-        while IFS= read -r node_path; do
-          if [[ -x "$node_path" ]]; then
-            nvm_node="$node_path"
-            break
-          fi
-        done < <(compgen -G "$HOME/.nvm/versions/node/*/bin/node" | sort -Vr)
-        if [[ -z "$nvm_node" ]]; then
+        if ! nvm_node="$(find_nvm_node)"; then
           echo "agents.gemini: nvm Node.js binary not found after install; skipping Gemini patch" >&2
           exit 0
         fi

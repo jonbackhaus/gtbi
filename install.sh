@@ -4881,7 +4881,13 @@ install_cli_tools() {
 # Phase 5: Language runtimes
 # ============================================================
 _target_has_nvm_node() {
-    compgen -G "$TARGET_HOME/.nvm/versions/node/*/bin/node" >/dev/null 2>&1
+    local node_path=""
+
+    while IFS= read -r node_path; do
+        [[ -x "$node_path" ]] && return 0
+    done < <(compgen -G "$TARGET_HOME/.nvm/versions/node/*/bin/node")
+
+    return 1
 }
 
 _target_latest_nvm_node_bin() {

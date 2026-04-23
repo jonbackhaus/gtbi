@@ -298,6 +298,20 @@ EOF
     assert_success
 }
 
+@test "update_has_nvm_node: requires executable node binary" {
+    local node_bin="$HOME/.nvm/versions/node/v99.0.0/bin"
+
+    mkdir -p "$node_bin"
+    touch "$node_bin/node"
+
+    run update_has_nvm_node
+    assert_failure
+
+    chmod +x "$node_bin/node"
+    run update_has_nvm_node
+    assert_success
+}
+
 @test "update_nvm_node_bin_dir: picks newest executable node binary" {
     local older_bin="$HOME/.nvm/versions/node/v20.11.1/bin"
     local newer_bin="$HOME/.nvm/versions/node/v99.0.0/bin"

@@ -545,7 +545,13 @@ _agent_has_nvm_node() {
     local target_user="${TARGET_USER:-ubuntu}"
     local target_home=""
     target_home="$(_agent_target_home "$target_user")"
-    compgen -G "$target_home/.nvm/versions/node/*/bin/node" >/dev/null 2>&1
+    local node_path=""
+
+    while IFS= read -r node_path; do
+        [[ -x "$node_path" ]] && return 0
+    done < <(compgen -G "$target_home/.nvm/versions/node/*/bin/node")
+
+    return 1
 }
 
 _agent_latest_nvm_node_bin() {
