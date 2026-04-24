@@ -171,9 +171,10 @@ else
     fail "support.sh sourcing preserves caller env and shell flags" "$source_output"
 fi
 
-if command -v jq >/dev/null 2>&1; then
+if jq_bin=$(command -v jq 2>/dev/null); then
+    jq_dir="$(dirname "$jq_bin")"
     env_output=""
-    if env_output=$(env -i PATH="/usr/bin:/bin" HOME="$TEST_DIR/no-shell-home" SUPPORT_SH="$SUPPORT_SH" TEST_BUNDLE="$TEST_DIR/no-shell-bundle" bash -lc '
+    if env_output=$(env -i PATH="$jq_dir:/usr/bin:/bin" HOME="$TEST_DIR/no-shell-home" SUPPORT_SH="$SUPPORT_SH" TEST_BUNDLE="$TEST_DIR/no-shell-bundle" JQ_BIN="$jq_bin" bash -lc '
         set -euo pipefail
         unset SHELL
         mkdir -p "$HOME" "$TEST_BUNDLE"
@@ -190,7 +191,7 @@ if command -v jq >/dev/null 2>&1; then
         SUPPORT_TARGET_USER="tester"
         BUNDLE_FILES=()
         capture_env_summary "$TEST_BUNDLE"
-        jq -r ".shell" "$TEST_BUNDLE/environment.json"
+        "$JQ_BIN" -r ".shell" "$TEST_BUNDLE/environment.json"
     ' 2>&1); then
         assert_equals "environment summary tolerates unset SHELL" "$env_output" "unknown"
     else
