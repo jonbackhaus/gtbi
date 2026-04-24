@@ -257,6 +257,14 @@ assert_contains "Bearer token redacted" "$result" "Bearer <REDACTED:bearer>"
 result=$(redact_and_read "jwt.txt" "token=eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dozjgNryP4J3jVmNHl0w5N_XgL0n3I9PlFUP0THsR8U")
 assert_contains "JWT redacted" "$result" "<REDACTED:jwt>"
 
+result=$(redact_and_read "credential_urls.txt" "DATABASE_URL=postgres://acfs:supersecret@db.example.com/app
+REDIS_URL=redis://:redispassword@localhost:6379/0
+PUBLIC_URL=https://example.com:443/path")
+assert_contains "Database URL credentials redacted" "$result" "postgres://<REDACTED:credentials>@db.example.com/app"
+assert_contains "Redis URL credentials redacted" "$result" "redis://<REDACTED:credentials>@localhost:6379/0"
+assert_contains "Non-credential URL preserved" "$result" "https://example.com:443/path"
+assert_not_contains "URL passwords removed" "$result" "supersecret"
+
 # ============================================================
 # Tests: Generic secret patterns (KEY=value)
 # ============================================================
@@ -273,6 +281,34 @@ assert_contains "SECRET_KEY redacted" "$result" "<REDACTED:SECRET_KEY>"
 assert_contains "ACCESS_TOKEN redacted" "$result" "<REDACTED:ACCESS_TOKEN>"
 assert_contains "PASSWORD redacted" "$result" "<REDACTED:password>"
 
+result=$(redact_and_read "prefixed_env_secrets.txt" "GEMINI_API_KEY=AIzaSyExampleValue12345
+VERCEL_TOKEN=vercel-token-value-12345
+AWS_SECRET_ACCESS_KEY=awssecretaccessvalue123
+DB_PASSWORD=hunter2
+my-service-token=plain-secret-token-123")
+assert_contains "Prefixed API key redacted" "$result" "GEMINI_API_KEY=<REDACTED:API_KEY>"
+assert_contains "Prefixed token redacted" "$result" "VERCEL_TOKEN=<REDACTED:generic_secret>"
+assert_contains "Prefixed access key redacted" "$result" "AWS_SECRET_ACCESS_KEY=<REDACTED:generic_secret>"
+assert_contains "Prefixed password redacted" "$result" "DB_PASSWORD=<REDACTED:password>"
+assert_contains "Hyphenated token key redacted" "$result" "my-service-token=<REDACTED:generic_secret>"
+assert_not_contains "Prefixed secret values removed" "$result" "AIzaSyExampleValue12345"
+
+result=$(redact_and_read "prefixed_json_secrets.txt" '{"gemini_api_key":"AIzaSyExampleValue12345","db_password":"hunter2"}')
+assert_contains "Prefixed JSON API key redacted" "$result" '"gemini_api_key": "<REDACTED:generic_secret>"'
+assert_contains "Prefixed JSON password redacted" "$result" '"db_password": "<REDACTED:password>"'
+
+result=$(redact_and_read "camel_secret_keys.txt" "vercelToken=vercel-token-value-12345
+dbPassword=hunter2
+tokenCount=123456789")
+assert_contains "CamelCase token redacted" "$result" "vercelToken=<REDACTED:generic_secret>"
+assert_contains "CamelCase password redacted" "$result" "dbPassword=<REDACTED:password>"
+assert_contains "CamelCase metric preserved" "$result" "tokenCount=123456789"
+
+result=$(redact_and_read "camel_json_secrets.txt" '{"geminiApiKey":"AIzaSyExampleValue12345","dbPassword":"hunter2","tokenCount":"123456789"}')
+assert_contains "CamelCase JSON API key redacted" "$result" '"geminiApiKey": "<REDACTED:generic_secret>"'
+assert_contains "CamelCase JSON password redacted" "$result" '"dbPassword": "<REDACTED:password>"'
+assert_contains "CamelCase JSON metric preserved" "$result" '"tokenCount":"123456789"'
+
 # ============================================================
 # Tests: Safe values NOT redacted (false positive prevention)
 # ============================================================
@@ -285,12 +321,15 @@ PATH=/usr/local/bin:/usr/bin
 TERM=xterm-256color
 status=ok
 name=ubuntu
-HOME=/home/ubuntu')
+HOME=/home/ubuntu
+token_count=123456789
+secret_rotation_count=987654321')
 assert_not_contains "Git SHA not redacted" "$result" "<REDACTED"
 assert_contains "Git SHA preserved" "$result" "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2"
 assert_contains "Version preserved" "$result" "1.23.456"
 assert_contains "PATH preserved" "$result" "/usr/local/bin"
 assert_contains "HOME preserved" "$result" "/home/ubuntu"
+assert_contains "Metric token_count preserved" "$result" "token_count=123456789"
 
 # Short passwords (< 4 chars) should not be redacted
 result=$(redact_and_read "short_pw.txt" "PASSWORD=abc")
