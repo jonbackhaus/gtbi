@@ -3972,8 +3972,13 @@ run_ubuntu_upgrade_phase() {
             fi
 
             # Set stage so we know to continue after reboot
-            if type -t state_update &>/dev/null; then
-                if ! state_update ".ubuntu_upgrade.enabled = true | .ubuntu_upgrade.current_stage = \"pre_upgrade_reboot\" | .ubuntu_upgrade.original_version = \"$current_version_str\" | .ubuntu_upgrade.target_version = \"$TARGET_UBUNTU_VERSION\""; then
+            if type -t state_update_with_args &>/dev/null; then
+                if ! state_update_with_args '
+                    .ubuntu_upgrade.enabled = true |
+                    .ubuntu_upgrade.current_stage = "pre_upgrade_reboot" |
+                    .ubuntu_upgrade.original_version = $current_version |
+                    .ubuntu_upgrade.target_version = $target_version
+                ' --arg current_version "$current_version_str" --arg target_version "$TARGET_UBUNTU_VERSION"; then
                     log_error "Failed to record upgrade stage; cannot safely auto-reboot."
                     log_info "Please reboot manually and re-run the installer."
                     restore_previous_acfs_state_file "$had_state_file" "$previous_state_file"

@@ -109,6 +109,16 @@ teardown() {
     assert_output "exists"
 }
 
+@test "state: update with args escapes dynamic values" {
+    state_init
+
+    run state_update_with_args '.quoted = $value' --arg value '24.04"; halt'
+    assert_success
+
+    run state_get ".quoted"
+    assert_output '24.04"; halt'
+}
+
 @test "state: nested state_save keeps outer lock held" {
     state_init
 

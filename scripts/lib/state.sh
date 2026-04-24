@@ -1701,6 +1701,15 @@ state_update() {
     _state_update_with_jq "$jq_expr"
 }
 
+# Update state with a jq expression plus jq arguments.
+# Usage: state_update_with_args <jq_expression> --arg key value [jq flags...]
+state_update_with_args() {
+    local jq_expr="$1"
+    shift
+
+    _state_update_with_jq "$jq_expr" "$@"
+}
+
 # Persist the current resume hint while preserving the normal atomic write and
 # ownership semantics used for the main state file.
 # Usage: state_set_resume_hint <resume_hint>
