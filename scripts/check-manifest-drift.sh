@@ -334,6 +334,13 @@ if [[ -f "$INTERNAL_CHECKSUMS_FILE" ]]; then
         exit 3
     fi
 
+    if [[ "$INTERNAL_CHECKSUMS_EXPECTED_COUNT" =~ ^[0-9]+$ ]] && [[ ${#INTERNAL_CHECKSUM_PATHS[@]} -ne "$INTERNAL_CHECKSUMS_EXPECTED_COUNT" ]]; then
+        INTERNAL_DRIFT_COUNT=$((INTERNAL_DRIFT_COUNT + 1))
+        INTERNAL_DRIFT_FILES+=("internal checksum index (parsed ${#INTERNAL_CHECKSUM_PATHS[@]} of expected $INTERNAL_CHECKSUMS_EXPECTED_COUNT)")
+        DRIFT_DETECTED=true
+        DRIFT_REASONS+=("Internal checksum index malformed: parsed ${#INTERNAL_CHECKSUM_PATHS[@]} of expected $INTERNAL_CHECKSUMS_EXPECTED_COUNT entries")
+    fi
+
     if [[ ${#INTERNAL_CHECKSUM_PATHS[@]} -gt 0 ]]; then
         for i in "${!INTERNAL_CHECKSUM_PATHS[@]}"; do
             rel_path="${INTERNAL_CHECKSUM_PATHS[$i]}"
@@ -359,11 +366,7 @@ if [[ -f "$INTERNAL_CHECKSUMS_FILE" ]]; then
         done
         log "Internal checksums: $INTERNAL_CHECKED checked, $INTERNAL_DRIFT_COUNT drifted"
     else
-        if [[ "$INTERNAL_CHECKSUMS_EXPECTED_COUNT" =~ ^[0-9]+$ ]] && [[ "$INTERNAL_CHECKSUMS_EXPECTED_COUNT" -gt 0 ]]; then
-            INTERNAL_DRIFT_COUNT=$INTERNAL_CHECKSUMS_EXPECTED_COUNT
-            DRIFT_DETECTED=true
-            DRIFT_REASONS+=("Internal checksum index malformed: parsed 0 of expected $INTERNAL_CHECKSUMS_EXPECTED_COUNT entries")
-        else
+        if ! [[ "$INTERNAL_CHECKSUMS_EXPECTED_COUNT" =~ ^[0-9]+$ ]] || [[ "$INTERNAL_CHECKSUMS_EXPECTED_COUNT" -eq 0 ]]; then
             log "Warning: No internal checksum entries parsed from $INTERNAL_CHECKSUMS_FILE"
         fi
     fi

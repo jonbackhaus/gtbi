@@ -676,6 +676,14 @@ test_manifest_guard_scripts_cover_all_generated_outputs() {
         harness_fail "Manifest drift check still depends on local Agent Mail CLI version"
     fi
 
+    if grep -Fq '${#INTERNAL_CHECKSUM_PATHS[@]} -ne "$INTERNAL_CHECKSUMS_EXPECTED_COUNT"' "$drift_file" \
+        && grep -Fq 'INTERNAL_DRIFT_FILES+=("internal checksum index (parsed ${#INTERNAL_CHECKSUM_PATHS[@]} of expected $INTERNAL_CHECKSUMS_EXPECTED_COUNT)")' "$drift_file" \
+        && grep -Fq 'Internal checksum index malformed: parsed ${#INTERNAL_CHECKSUM_PATHS[@]} of expected $INTERNAL_CHECKSUMS_EXPECTED_COUNT entries' "$drift_file"; then
+        harness_pass "Manifest drift check fails closed on partial internal checksum parsing"
+    else
+        harness_fail "Manifest drift check can silently lose internal checksum coverage"
+    fi
+
     local drift_output=""
     local drift_status=0
     drift_output=$(PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin" \
