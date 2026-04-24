@@ -170,7 +170,7 @@ Agents coordinate via **Agent Mail** (MCP server). Key concepts:
 
 ## Safety Rules
 
-1. **Never force-push to main/master** without explicit user approval
+1. **Never force-push to main** without explicit user approval
 2. **Never commit secrets** (.env, *.key, credentials.json)
 3. **Use `dcg`** — destructive commands are guarded automatically
 4. **Read AGENTS.md** in each project before making changes
