@@ -43,6 +43,7 @@ JSON
 API_KEY=sk-proj-abc123def456ghi789jkl012mno345pqr
 VAULT_TOKEN=hvs.CAESIJRemUxuRxxxxxxxxxxxxxxxYYY
 ghp_ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmn
+gho_ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmn
 PASSWORD=supersecretpassword123
 Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dozjgNryP4J3jVmNHl0w5N_XgL0n3I9PlFUP0THsR8U
 AKIAIOSFODNN7EXAMPLE
@@ -406,6 +407,12 @@ test_redaction_catches_secrets() {
         harness_fail "GitHub token redacted" "Found raw GitHub token in bundle"
     else
         harness_pass "GitHub token redacted"
+    fi
+
+    if echo "$log_content" | grep -q 'gho_ABCDEFGHIJKL'; then
+        harness_fail "GitHub OAuth token redacted" "Found raw GitHub OAuth token in bundle"
+    else
+        harness_pass "GitHub OAuth token redacted"
     fi
 
     if echo "$log_content" | grep -q 'AKIAIOSFODNN7'; then

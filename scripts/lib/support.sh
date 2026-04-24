@@ -1078,8 +1078,7 @@ redact_file() {
     sed -E -i \
         -e 's/sk-[a-zA-Z0-9_-]{20,}/<REDACTED:api_key>/g' \
         -e 's/AKIA[A-Z0-9]{16}/<REDACTED:aws_key>/g' \
-        -e 's/ghp_[a-zA-Z0-9]{36,}/<REDACTED:github_token>/g' \
-        -e 's/ghs_[a-zA-Z0-9]{36,}/<REDACTED:github_token>/g' \
+        -e 's/gh[pousr]_[a-zA-Z0-9]{36,}/<REDACTED:github_token>/g' \
         -e 's/github_pat_[a-zA-Z0-9_]{22,}/<REDACTED:github_pat>/g' \
         -e 's/hvs\.[a-zA-Z0-9]{20,}/<REDACTED:vault_token>/g' \
         -e 's/xox[bpsar]-[a-zA-Z0-9-]{10,}/<REDACTED:slack_token>/g' \

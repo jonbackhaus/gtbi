@@ -227,8 +227,17 @@ echo "=== GitHub Token Redaction ==="
 result=$(redact_and_read "ghp.txt" "GITHUB_TOKEN=ghp_ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmn")
 assert_contains "GitHub PAT (ghp_) redacted" "$result" "<REDACTED:github_token>"
 
+result=$(redact_and_read "gho.txt" "oauth: gho_ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmn")
+assert_contains "GitHub OAuth token (gho_) redacted" "$result" "<REDACTED:github_token>"
+
+result=$(redact_and_read "ghu.txt" "app_user: ghu_ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmn")
+assert_contains "GitHub App user token (ghu_) redacted" "$result" "<REDACTED:github_token>"
+
 result=$(redact_and_read "ghs.txt" "token: ghs_ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmn")
 assert_contains "GitHub server token (ghs_) redacted" "$result" "<REDACTED:github_token>"
+
+result=$(redact_and_read "ghr.txt" "refresh: ghr_ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmn")
+assert_contains "GitHub App refresh token (ghr_) redacted" "$result" "<REDACTED:github_token>"
 
 result=$(redact_and_read "ghpat.txt" "PAT=github_pat_ABCDEFGHIJKLMNOPQRSTUVWXYZab")
 assert_contains "GitHub fine-grained PAT redacted" "$result" "<REDACTED:github_pat>"
