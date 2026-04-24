@@ -294,6 +294,13 @@ calculate_sha256() {
     fi
 }
 
+_acfs_remove_temp_files() {
+    local path
+    for path in "$@"; do
+        [[ -n "$path" ]] && rm -f -- "$path" 2>/dev/null || true
+    done
+}
+
 # Fetch content and calculate checksum (using temp file)
 fetch_checksum() {
     local url="$1"
@@ -308,21 +315,22 @@ fetch_checksum() {
         log_error "Failed to create temp file"
         return 1
     }
-    # Ensure cleanup on return without leaking a RETURN trap into callers.
-    trap 'rm -f "${tmp_file:-}" 2>/dev/null || true; trap - RETURN' RETURN
+
+    local status=0
+    local file_sha256=""
 
     if ! acfs_download_to_file "$url" "$tmp_file" "$url"; then
         log_error "Failed to fetch $url"
-        return 1
-    fi
-
-    local file_sha256
-    if ! file_sha256=$(calculate_file_sha256 "$tmp_file"); then
+        status=1
+    elif ! file_sha256=$(calculate_file_sha256 "$tmp_file"); then
         log_error "Failed to checksum $url"
-        return 1
+        status=1
+    else
+        printf '%s\n' "$file_sha256"
     fi
 
-    printf '%s\n' "$file_sha256"
+    _acfs_remove_temp_files "$tmp_file"
+    return "$status"
 }
 
 # Verify URL content against expected checksum
@@ -351,21 +359,22 @@ verify_checksum() {
         log_error "Failed to create temp file for $name"
         return 1
     }
-    # Ensure cleanup on return without leaking a RETURN trap into callers.
-    trap 'rm -f "${tmp_file:-}" "${fresh_tmp_file:-}" 2>/dev/null || true; trap - RETURN' RETURN
+
+    local status=0
+    local verified_file=""
 
     if ! acfs_download_to_file "$url" "$tmp_file" "$name"; then
         log_error "Security Error: Failed to fetch $name"
-        return 1
+        status=1
     fi
 
-    local actual_sha256
-    actual_sha256=$(calculate_file_sha256 "$tmp_file") || {
+    local actual_sha256=""
+    if [[ "$status" -eq 0 ]] && ! actual_sha256=$(calculate_file_sha256 "$tmp_file"); then
         log_error "Security Error: Failed to checksum $name"
-        return 1
-    }
+        status=1
+    fi
 
-    if [[ "$actual_sha256" != "$expected_sha256" ]]; then
+    if [[ "$status" -eq 0 && "$actual_sha256" != "$expected_sha256" ]]; then
         local refreshed_expected_sha256=""
         local refreshed_url="$url"
         local refreshed_actual_sha256=""
@@ -377,17 +386,17 @@ verify_checksum() {
             if [[ -n "$refreshed_expected_sha256" ]]; then
                 if [[ "$refreshed_url" == "$url" && "$actual_sha256" == "$refreshed_expected_sha256" ]]; then
                     log_success "Verified with refreshed checksums: $name"
-                    cat "$tmp_file"
-                    return $?
+                    verified_file="$tmp_file"
                 fi
 
-                fresh_tmp_file="$(mktemp "${TMPDIR:-/tmp}/acfs-verify.XXXXXX" 2>/dev/null)" || fresh_tmp_file=""
-                if [[ -n "$fresh_tmp_file" ]] && acfs_download_to_file "$refreshed_url" "$fresh_tmp_file" "$name"; then
-                    refreshed_actual_sha256="$(calculate_file_sha256 "$fresh_tmp_file")" || refreshed_actual_sha256=""
-                    if [[ -n "$refreshed_actual_sha256" && "$refreshed_actual_sha256" == "$refreshed_expected_sha256" ]]; then
-                        log_success "Verified with refreshed checksums: $name"
-                        cat "$fresh_tmp_file"
-                        return $?
+                if [[ -z "$verified_file" ]]; then
+                    fresh_tmp_file="$(mktemp "${TMPDIR:-/tmp}/acfs-verify.XXXXXX" 2>/dev/null)" || fresh_tmp_file=""
+                    if [[ -n "$fresh_tmp_file" ]] && acfs_download_to_file "$refreshed_url" "$fresh_tmp_file" "$name"; then
+                        refreshed_actual_sha256="$(calculate_file_sha256 "$fresh_tmp_file")" || refreshed_actual_sha256=""
+                        if [[ -n "$refreshed_actual_sha256" && "$refreshed_actual_sha256" == "$refreshed_expected_sha256" ]]; then
+                            log_success "Verified with refreshed checksums: $name"
+                            verified_file="$fresh_tmp_file"
+                        fi
                     fi
                 fi
 
@@ -401,22 +410,31 @@ verify_checksum() {
         # Consistent bytes across downloads may only prove CDN consistency; the
         # installer still needs a matching checked-in or freshly loaded checksum.
 
-        log_error "Security Error: Checksum mismatch for $name"
-        printf "  Expected: %s\n" "$expected_sha256" >&2
-        printf "  Actual:   %s\n" "$actual_sha256" >&2
-        printf "  URL: %s\n" "$url" >&2
-        printf "  Refusing to execute unverified installer script.\n" >&2
-        printf "  Fix:\n" >&2
-        printf "    - End users: update ACFS to refresh checksums.yaml (re-run install.sh / update scripts)\n" >&2
-        printf "    - Maintainers: regenerate checksums.yaml with:\n" >&2
-        printf "        ./scripts/lib/security.sh --update-checksums > checksums.yaml\n" >&2
-        return 1
+        if [[ -z "$verified_file" ]]; then
+            log_error "Security Error: Checksum mismatch for $name"
+            printf "  Expected: %s\n" "$expected_sha256" >&2
+            printf "  Actual:   %s\n" "$actual_sha256" >&2
+            printf "  URL: %s\n" "$url" >&2
+            printf "  Refusing to execute unverified installer script.\n" >&2
+            printf "  Fix:\n" >&2
+            printf "    - End users: update ACFS to refresh checksums.yaml (re-run install.sh / update scripts)\n" >&2
+            printf "    - Maintainers: regenerate checksums.yaml with:\n" >&2
+            printf "        ./scripts/lib/security.sh --update-checksums > checksums.yaml\n" >&2
+            status=1
+        fi
+    elif [[ "$status" -eq 0 ]]; then
+        log_success "Verified: $name"
+        verified_file="$tmp_file"
     fi
 
-    log_success "Verified: $name"
-    # Return the verified content (verbatim bytes) on stdout.
-    cat "$tmp_file"
-    return $?
+    if [[ "$status" -eq 0 ]]; then
+        # Return the verified content (verbatim bytes) on stdout.
+        cat "$verified_file"
+        status=$?
+    fi
+
+    _acfs_remove_temp_files "$tmp_file" "$fresh_tmp_file"
+    return "$status"
 }
 
 # Fetch and run with optional verification
@@ -503,24 +521,24 @@ fetch_and_run_with_recovery() {
         log_error "Failed to create temp file for $name"
         return 1
     }
-    # Ensure cleanup on return without leaking a RETURN trap into callers.
-    trap 'rm -f "${tmp_file:-}" 2>/dev/null || true; trap - RETURN' RETURN
+
+    local status=0
 
     # Fetch content to file with retries
     if ! acfs_download_to_file "$url" "$tmp_file" "$name"; then
         log_error "Error: Failed to fetch $name"
-        return 1
+        status=1
     fi
 
     # Calculate actual checksum
-    local actual_sha256
-    actual_sha256=$(calculate_file_sha256 "$tmp_file") || {
+    local actual_sha256=""
+    if [[ "$status" -eq 0 ]] && ! actual_sha256=$(calculate_file_sha256 "$tmp_file"); then
         log_error "Error: Failed to calculate checksum for $name"
-        return 1
-    }
+        status=1
+    fi
 
     # Check for mismatch
-    if [[ "$actual_sha256" != "$expected_sha256" ]]; then
+    if [[ "$status" -eq 0 && "$actual_sha256" != "$expected_sha256" ]]; then
         # Call mismatch handler
         handle_checksum_mismatch "$name" "$expected_sha256" "$actual_sha256" "$url"
         local mismatch_result=$?
@@ -529,19 +547,26 @@ fetch_and_run_with_recovery() {
             0)
                 # Skip - tool was skipped, continue installation
                 log_info "Skipped: $name (checksum mismatch)"
-                return 0
+                status=0
                 ;;
             1)
                 # Abort - user or policy chose to abort
-                return 1
+                status=1
+                ;;
+            *)
+                log_error "Error: Unexpected checksum mismatch handler result for $name: $mismatch_result"
+                status=1
                 ;;
         esac
+    elif [[ "$status" -eq 0 ]]; then
+        log_success "Verified: $name"
+        # Run the installer
+        bash "$tmp_file" "${args[@]}"
+        status=$?
     fi
 
-    log_success "Verified: $name"
-    
-    # Run the installer
-    bash "$tmp_file" "${args[@]}"
+    _acfs_remove_temp_files "$tmp_file"
+    return "$status"
 }
 
 # ============================================================

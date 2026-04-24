@@ -38,6 +38,13 @@ GITHUB_RATE_LIMIT_PATTERNS=(
     "abuse detection"
 )
 
+_github_remove_temp_files() {
+    local path
+    for path in "$@"; do
+        [[ -n "$path" ]] && rm -f -- "$path" 2>/dev/null || true
+    done
+}
+
 # ============================================================
 # Rate Limit Detection
 # ============================================================
@@ -436,12 +443,12 @@ github_fetch_with_backoff() {
     fi
 
     # Temp files for response handling
-    local tmp_body tmp_headers
+    local tmp_body="" tmp_headers=""
     tmp_body="$(mktemp "${TMPDIR:-/tmp}/gh-body.XXXXXX")" || return 2
-    tmp_headers="$(mktemp "${TMPDIR:-/tmp}/gh-headers.XXXXXX")" || { rm -f "$tmp_body"; return 2; }
-
-    # Cleanup on function return without leaving a stale RETURN trap in sourced shells.
-    trap 'rm -f -- "${tmp_body:-}" "${tmp_headers:-}" 2>/dev/null || true; trap - RETURN' RETURN
+    tmp_headers="$(mktemp "${TMPDIR:-/tmp}/gh-headers.XXXXXX")" || {
+        _github_remove_temp_files "$tmp_body"
+        return 2
+    }
 
     while (( attempt < max_attempts )); do
         attempt=$((attempt + 1))
@@ -457,12 +464,16 @@ github_fetch_with_backoff() {
 
         # Success
         if [[ "$http_code" == "200" ]]; then
+            local status=0
             if [[ -n "$output_file" ]]; then
                 mv "$tmp_body" "$output_file"
+                status=$?
             else
                 cat "$tmp_body"
+                status=$?
             fi
-            return 0
+            _github_remove_temp_files "$tmp_body" "$tmp_headers"
+            return "$status"
         fi
 
         # Parse rate limit headers.
@@ -510,6 +521,7 @@ github_fetch_with_backoff() {
         else
             echo -e "\033[0;31m$err_msg\033[0m" >&2
         fi
+        _github_remove_temp_files "$tmp_body" "$tmp_headers"
         return 2
     done
 
@@ -520,6 +532,7 @@ github_fetch_with_backoff() {
     else
         echo -e "\033[0;31m$err_msg\033[0m" >&2
     fi
+    _github_remove_temp_files "$tmp_body" "$tmp_headers"
     return 1
 }
 
@@ -548,23 +561,27 @@ github_api_fetch() {
 # Returns: Version tag (e.g., "v1.2.3") on stdout, or empty if failed
 github_get_latest_release() {
     local repo="$1"
-    local tmp_response
+    local tmp_response=""
     tmp_response="$(mktemp "${TMPDIR:-/tmp}/gh-release.XXXXXX")" || return 1
 
-    trap 'rm -f -- "${tmp_response:-}" 2>/dev/null || true; trap - RETURN' RETURN
-
+    local status=0
     if github_api_fetch "/repos/$repo/releases/latest" "$tmp_response"; then
         # Use jq for robust parsing if available, fall back to grep/sed
         if command -v jq &>/dev/null; then
             jq -r '.tag_name // empty' "$tmp_response"
+            status=$?
         else
             grep -o '"tag_name"[[:space:]]*:[[:space:]]*"[^"]*"' "$tmp_response" \
                 | head -1 \
                 | sed 's/.*"\([^"]*\)"$/\1/'
+            status=$?
         fi
     else
-        return 1
+        status=1
     fi
+
+    _github_remove_temp_files "$tmp_response"
+    return "$status"
 }
 
 # Download release asset with rate limit handling

@@ -76,6 +76,71 @@ teardown() {
     assert_output ""
 }
 
+@test "verify_checksum: preserves caller RETURN trap" {
+    local security_lib="$PROJECT_ROOT/scripts/lib/security.sh"
+
+    run bash -c '
+        set -euo pipefail
+        source "$1"
+        acfs_download_to_file() {
+            printf "%s" "verified content" > "$2"
+        }
+        sha="$(printf "%s" "verified content" | sha256sum | cut -d" " -f1)"
+        probe_return_trap() {
+            trap "caller_return_seen=1" RETURN
+            verify_checksum "https://example.com" "$sha" "test" >/dev/null 2>&1
+            trap -p RETURN
+        }
+        probe_return_trap
+    ' _ "$security_lib"
+    assert_success
+    assert_output --partial "caller_return_seen=1"
+}
+
+@test "fetch_checksum: preserves caller RETURN trap" {
+    local security_lib="$PROJECT_ROOT/scripts/lib/security.sh"
+
+    run bash -c '
+        set -euo pipefail
+        source "$1"
+        acfs_download_to_file() {
+            printf "%s" "verified content" > "$2"
+        }
+        probe_return_trap() {
+            trap "caller_return_seen=1" RETURN
+            fetch_checksum "https://example.com" >/dev/null 2>&1
+            trap -p RETURN
+        }
+        probe_return_trap
+    ' _ "$security_lib"
+    assert_success
+    assert_output --partial "caller_return_seen=1"
+}
+
+@test "fetch_and_run_with_recovery: preserves caller RETURN trap" {
+    local security_lib="$PROJECT_ROOT/scripts/lib/security.sh"
+
+    run bash -c '
+        set -euo pipefail
+        source "$1"
+        acfs_download_to_file() {
+            printf "%s" "printf ok" > "$2"
+        }
+        bash() {
+            return 0
+        }
+        sha="$(printf "%s" "printf ok" | sha256sum | cut -d" " -f1)"
+        probe_return_trap() {
+            trap "caller_return_seen=1" RETURN
+            fetch_and_run_with_recovery "https://example.com/install.sh" "$sha" "test" >/dev/null 2>&1
+            trap -p RETURN
+        }
+        probe_return_trap
+    ' _ "$security_lib"
+    assert_success
+    assert_output --partial "caller_return_seen=1"
+}
+
 @test "verify_checksum: fails on mismatch" {
     local content="malicious content"
     local sha="0000000000000000000000000000000000000000000000000000000000000000"

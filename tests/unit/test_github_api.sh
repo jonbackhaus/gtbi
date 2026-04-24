@@ -358,6 +358,118 @@ EOF
     [[ "$status" -eq 0 && -z "$trap_output" ]]
 }
 
+test_fetch_with_backoff_preserves_caller_return_trap() {
+    local temp_dir tmp_file trap_output status=0
+    temp_dir=$(mktemp -d)
+    tmp_file=$(mktemp)
+
+    cat > "$temp_dir/curl" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [[ "${1:-}" == "--help" ]]; then
+    printf '%s\n' '--proto'
+    exit 0
+fi
+
+headers=""
+output=""
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -D)
+            headers="$2"
+            shift 2
+            ;;
+        -o)
+            output="$2"
+            shift 2
+            ;;
+        -w)
+            shift 2
+            ;;
+        *)
+            shift
+            ;;
+    esac
+done
+
+printf 'HTTP/2 200\r\nx-ratelimit-remaining: 1\r\n\r\n' > "$headers"
+printf 'ok\n' > "$output"
+printf '200'
+EOF
+    chmod +x "$temp_dir/curl"
+
+    trap_output="$(
+        PATH="$temp_dir:/usr/bin:/bin" GITHUB_MAX_RETRIES=1 bash -c '
+            set -euo pipefail
+            source "$1"
+            probe_return_trap() {
+                trap "caller_return_seen=1" RETURN
+                github_fetch_with_backoff "https://example.invalid/file" "$2" "trap-test" >/dev/null
+                trap -p RETURN
+            }
+            probe_return_trap
+        ' _ "$LIB_DIR/github_api.sh" "$tmp_file"
+    )" || status=$?
+
+    rm -rf "$temp_dir"
+    rm -f "$tmp_file"
+
+    [[ "$status" -eq 0 && "$trap_output" == *"caller_return_seen=1"* ]]
+}
+
+test_fetch_with_backoff_reports_output_write_failure() {
+    local temp_dir missing_output status=0
+    temp_dir=$(mktemp -d)
+    missing_output="$temp_dir/missing/result.txt"
+
+    cat > "$temp_dir/curl" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [[ "${1:-}" == "--help" ]]; then
+    printf '%s\n' '--proto'
+    exit 0
+fi
+
+headers=""
+output=""
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -D)
+            headers="$2"
+            shift 2
+            ;;
+        -o)
+            output="$2"
+            shift 2
+            ;;
+        -w)
+            shift 2
+            ;;
+        *)
+            shift
+            ;;
+    esac
+done
+
+printf 'HTTP/2 200\r\nx-ratelimit-remaining: 1\r\n\r\n' > "$headers"
+printf 'ok\n' > "$output"
+printf '200'
+EOF
+    chmod +x "$temp_dir/curl"
+
+    PATH="$temp_dir:/usr/bin:/bin" GITHUB_MAX_RETRIES=1 bash -c '
+        set -euo pipefail
+        source "$1"
+        github_fetch_with_backoff "https://example.invalid/file" "$2" "write-failure-test" >/dev/null
+    ' _ "$LIB_DIR/github_api.sh" "$missing_output" || status=$?
+
+    rm -rf "$temp_dir"
+
+    [[ "$status" -ne 0 ]]
+}
+
 test_latest_release_returns_nonzero_on_fetch_failure() {
     (
         github_api_fetch() {
@@ -367,6 +479,24 @@ test_latest_release_returns_nonzero_on_fetch_failure() {
         local output status=0
         output="$(github_get_latest_release "owner/repo")" || status=$?
         [[ "$status" -ne 0 && -z "$output" ]]
+    )
+}
+
+test_latest_release_preserves_caller_return_trap() {
+    (
+        github_api_fetch() {
+            printf '{"tag_name":"v1.2.3"}' > "$2"
+            return 0
+        }
+
+        local trap_output
+        probe_return_trap() {
+            trap "caller_return_seen=1" RETURN
+            github_get_latest_release "owner/repo" >/dev/null
+            trap -p RETURN
+        }
+        trap_output="$(probe_return_trap)"
+        [[ "$trap_output" == *"caller_return_seen=1"* ]]
     )
 }
 
@@ -402,7 +532,10 @@ main() {
     echo ""
     echo "--- Cleanup Discipline ---"
     run_test "Fetch backoff clears RETURN trap" test_fetch_with_backoff_clears_return_trap
+    run_test "Fetch backoff preserves caller RETURN trap" test_fetch_with_backoff_preserves_caller_return_trap
+    run_test "Fetch backoff reports output write failure" test_fetch_with_backoff_reports_output_write_failure
     run_test "Latest release failure returns non-zero" test_latest_release_returns_nonzero_on_fetch_failure
+    run_test "Latest release preserves caller RETURN trap" test_latest_release_preserves_caller_return_trap
 
     # Skip network tests if SKIP_NETWORK_TESTS is set
     if [[ "${SKIP_NETWORK_TESTS:-}" != "true" ]]; then
