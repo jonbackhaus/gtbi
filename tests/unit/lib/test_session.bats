@@ -181,6 +181,70 @@ EOF
     [[ -f "$sentinel" ]]
 }
 
+@test "export_session: preserves caller RETURN trap through sanitization" {
+    local file
+    file=$(create_temp_file "dummy session")
+
+    init_stub_dir
+    cat > "$STUB_DIR/cass" <<EOF
+#!/bin/bash
+if [[ "\$1" == "export" ]]; then
+    echo '{"schema_version": 1, "session_id": "1", "agent": "claude-code", "stats": {"turns":1}, "content": "streaming test"}'
+    exit 0
+fi
+echo "Unknown command: \$@" >&2
+exit 1
+EOF
+    chmod +x "$STUB_DIR/cass"
+
+    caller_wrapper() {
+        trap 'printf "%s\n" export-caller-return-fired' RETURN
+        export_session "$file" >/dev/null || return 1
+        trap -p RETURN
+    }
+
+    run caller_wrapper
+    assert_success
+    assert_output --partial "export-caller-return-fired"
+}
+
+@test "export_session: refuses markdown output when sanitized replacement fails" {
+    local file
+    file=$(create_temp_file "dummy session")
+
+    init_stub_dir
+    cat > "$STUB_DIR/cass" <<EOF
+#!/bin/bash
+if [[ "\$1" == "export" ]]; then
+    echo 'markdown password=secret123'
+    exit 0
+fi
+echo "Unknown command: \$@" >&2
+exit 1
+EOF
+    cat > "$STUB_DIR/mv" <<'EOF'
+#!/bin/bash
+if [[ "${ACFS_FAIL_SANITIZED_MV:-}" == "1" ]]; then
+    for arg in "$@"; do
+        if [[ "$arg" == *.sanitized ]]; then
+            exit 1
+        fi
+    done
+fi
+if [[ -x /usr/bin/mv ]]; then
+    exec /usr/bin/mv "$@"
+fi
+exec /bin/mv "$@"
+EOF
+    chmod +x "$STUB_DIR/cass" "$STUB_DIR/mv"
+
+    export ACFS_FAIL_SANITIZED_MV=1
+    run export_session "$file" --format markdown
+    assert_failure
+    assert_output --partial "Sanitization failed; refusing to output unsanitized export"
+    refute_output --partial "password=secret123"
+}
+
 @test "sanitize_session_export: preserves structure and redacts secrets" {
     local json='{
         "schema_version": 1,
@@ -225,6 +289,30 @@ EOF
     assert_output ""
 }
 
+@test "sanitize_session_export: preserves caller RETURN trap" {
+    local json='{
+        "schema_version": 1,
+        "session_id": "123",
+        "agent": "claude-code",
+        "stats": { "turns": 1 },
+        "sanitized_transcript": [
+            { "content": "no secrets here" }
+        ]
+    }'
+    local file
+    file=$(create_temp_file "$json")
+
+    caller_wrapper() {
+        trap 'printf "%s\n" sanitize-caller-return-fired' RETURN
+        sanitize_session_export "$file" >/dev/null || return 1
+        trap -p RETURN
+    }
+
+    run caller_wrapper
+    assert_success
+    assert_output --partial "sanitize-caller-return-fired"
+}
+
 @test "import_session: rejects malformed ACFS exports" {
     local malformed='{
         "schema_version": 1
@@ -235,6 +323,35 @@ EOF
     run import_session "$file" --dry-run
     assert_failure
     assert_output --partial "missing required fields"
+}
+
+@test "import_session: preserves caller RETURN trap" {
+    local test_home
+    test_home=$(create_temp_dir)
+    export HOME="$test_home"
+    export ACFS_SESSIONS_DIR="$HOME/.acfs/sessions"
+
+    local valid='{
+        "schema_version": 1,
+        "session_id": "import-source",
+        "agent": "claude-code",
+        "stats": { "turns": 1 },
+        "sanitized_transcript": [
+            { "role": "user", "content": "hello", "timestamp": "2026-03-03T01:00:00Z" }
+        ]
+    }'
+    local file
+    file=$(create_temp_file "$valid")
+
+    caller_wrapper() {
+        trap 'printf "%s\n" import-caller-return-fired' RETURN
+        import_session "$file" >/dev/null || return 1
+        trap -p RETURN
+    }
+
+    run caller_wrapper
+    assert_success
+    assert_output --partial "import-caller-return-fired"
 }
 
 @test "convert_session_native: codex -> claude writes native file and sessions-index" {
@@ -273,6 +390,32 @@ EOF
     assert_success
     assert_equal "$output" "$written_path"
     assert_equal "$resume_command" "claude -r $target_session_id"
+}
+
+@test "convert_session_native: preserves caller RETURN trap" {
+    local test_home
+    test_home=$(create_temp_dir)
+    export HOME="$test_home"
+    export CLAUDE_HOME="$HOME/.claude"
+    export CODEX_HOME="$HOME/.codex"
+    export GEMINI_HOME="$HOME/.gemini"
+
+    local codex_src="$test_home/source_codex_return_trap.jsonl"
+    cat > "$codex_src" <<'EOF'
+{"timestamp":"2026-03-03T01:00:00Z","type":"session_meta","payload":{"id":"src-codex-id","cwd":"/data/projects/agentic_coding_flywheel_setup"}}
+{"timestamp":"2026-03-03T01:00:01Z","type":"event_msg","payload":{"type":"user_message","message":"hello from codex"}}
+{"timestamp":"2026-03-03T01:00:02Z","type":"response_item","payload":{"role":"assistant","content":[{"type":"output_text","text":"hello from assistant"}]}}
+EOF
+
+    caller_wrapper() {
+        trap 'printf "%s\n" convert-caller-return-fired' RETURN
+        convert_session_native "$codex_src" --from codex --to claude-code --workspace "/data/projects/agentic_coding_flywheel_setup" --json >/dev/null || return 1
+        trap -p RETURN
+    }
+
+    run caller_wrapper
+    assert_success
+    assert_output --partial "convert-caller-return-fired"
 }
 
 @test "convert_session_native: claude -> codex writes native rollout format" {

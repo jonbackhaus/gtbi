@@ -311,6 +311,15 @@ sanitize_content() {
     fi
 }
 
+acfs_session_remove_temp_files() {
+    local path
+    for path in "$@"; do
+        if [[ -n "$path" ]]; then
+            rm -f -- "$path" 2>/dev/null || true
+        fi
+    done
+}
+
 # Sanitize a session export JSON file in place
 # Usage: sanitize_session_export "/path/to/export.json"
 # Returns: 0 on success, 1 on failure
@@ -341,7 +350,6 @@ sanitize_session_export() {
         log_error "Failed to create temp file for sanitization in: $file_dir"
         return 1
     }
-    trap 'rm -f -- "${tmpfile:-}" 2>/dev/null || true; trap - RETURN' RETURN
 
     # Sanitize all string values in the JSON.
     # This processes transcript content, summary, key_prompts, etc.
@@ -404,14 +412,14 @@ JQ_TAIL
     local jq_filter="${jq_filter_base}${jq_filter_optional}${jq_filter_tail}"
 
     if ! jq "$jq_filter" "$file" > "$tmpfile"; then
-        rm -f -- "$tmpfile" 2>/dev/null || true
+        acfs_session_remove_temp_files "$tmpfile"
         log_error "Failed to sanitize session export"
         return 1
     fi
 
     # Atomic replace
     if ! mv -- "$tmpfile" "$file"; then
-        rm -f -- "$tmpfile" 2>/dev/null || true
+        acfs_session_remove_temp_files "$tmpfile"
         log_error "Failed to write sanitized session export"
         return 1
     fi
@@ -658,7 +666,7 @@ export_session() {
         log_error "Failed to create temp file for session export"
         return 1
     }
-    trap 'if [[ -n "${tmp_export:-}" ]]; then rm -f -- "$tmp_export" "${tmp_export}.sanitized" 2>/dev/null || true; fi; trap - RETURN' RETURN
+    local tmp_sanitized="${tmp_export}.sanitized"
 
     # Export via CASS to temp file
     if ! cass export "$session_path" --format "$format" > "$tmp_export" 2>/dev/null; then
@@ -676,12 +684,14 @@ export_session() {
             fi
         else
             # Text-based sanitization (stream through sed to new temp file)
-            local tmp_sanitized
-            tmp_sanitized="${tmp_export}.sanitized"
             if sanitize_content "$tmp_export" > "$tmp_sanitized"; then
-                mv -- "$tmp_sanitized" "$tmp_export"
+                if ! mv -- "$tmp_sanitized" "$tmp_export"; then
+                    acfs_session_remove_temp_files "$tmp_sanitized"
+                    log_error "Sanitization failed; refusing to output unsanitized export"
+                    status=1
+                fi
             else
-                rm -f -- "$tmp_sanitized"
+                acfs_session_remove_temp_files "$tmp_sanitized"
                 log_error "Sanitization failed; refusing to output unsanitized export"
                 status=1
             fi
@@ -707,7 +717,7 @@ export_session() {
         fi
     fi
 
-    rm -f -- "$tmp_export" 2>/dev/null || true
+    acfs_session_remove_temp_files "$tmp_export" "$tmp_sanitized"
     return "$status"
 }
 
@@ -1259,7 +1269,6 @@ write_native_claude_from_canonical() {
         local index_file="$home_dir/projects/$dir_key/sessions-index.json"
         local index_tmp
         index_tmp=$(mktemp "${TMPDIR:-/tmp}/acfs_claude_index.XXXXXX") || return 1
-        trap 'rm -f -- "${index_tmp:-}" 2>/dev/null || true; trap - RETURN' RETURN
         if [[ ! -f "$index_file" ]]; then
             printf '{"version":1,"entries":[]}\n' > "$index_file"
         fi
@@ -1297,11 +1306,15 @@ write_native_claude_from_canonical() {
                     }]
                 )
             ' "$index_file" > "$index_tmp"; then
-            rm -f -- "$index_tmp" 2>/dev/null || true
+            acfs_session_remove_temp_files "$index_tmp"
             log_error "Failed to update Claude sessions-index: $index_file"
             return 1
         fi
-        mv -- "$index_tmp" "$index_file"
+        if ! mv -- "$index_tmp" "$index_file"; then
+            acfs_session_remove_temp_files "$index_tmp"
+            log_error "Failed to write Claude sessions-index: $index_file"
+            return 1
+        fi
     fi
 
     printf '%s\n' "$target_path"
@@ -1429,7 +1442,6 @@ write_native_gemini_from_canonical() {
 
         local msg_tmp logs_tmp=""
         msg_tmp=$(mktemp "${TMPDIR:-/tmp}/acfs_gemini_msgs.XXXXXX") || return 1
-        trap 'rm -f -- "${msg_tmp:-}" "${logs_tmp:-}" 2>/dev/null || true; trap - RETURN' RETURN
 
         local first_ts=""
         local last_ts="$now_iso"
@@ -1462,9 +1474,13 @@ write_native_gemini_from_canonical() {
         [[ -z "$first_ts" ]] && first_ts="$now_iso"
 
         local messages_json
-        messages_json="$(jq -s '.' "$msg_tmp")"
+        if ! messages_json="$(jq -s '.' "$msg_tmp")"; then
+            acfs_session_remove_temp_files "$msg_tmp" "$logs_tmp"
+            log_error "Failed to assemble Gemini message payload"
+            return 1
+        fi
 
-        jq -cn \
+        if ! jq -cn \
             --arg sid "$target_session_id" \
             --arg hash "$hash" \
             --arg start "$first_ts" \
@@ -1478,7 +1494,11 @@ write_native_gemini_from_canonical() {
                 messages: $messages,
                 summary: ""
             }
-        ' > "$target_path"
+        ' > "$target_path"; then
+            acfs_session_remove_temp_files "$msg_tmp" "$logs_tmp"
+            log_error "Failed to write Gemini chat file: $target_path"
+            return 1
+        fi
 
         # Keep logs.json in sync with user prompts for native discoverability.
         local user_log_entries
@@ -1497,18 +1517,33 @@ write_native_gemini_from_canonical() {
         ' "$canonical_file")"
 
         if [[ -f "$logs_path" ]]; then
-            logs_tmp=$(mktemp "${TMPDIR:-/tmp}/acfs_gemini_logs.XXXXXX") || return 1
+            logs_tmp=$(mktemp "${TMPDIR:-/tmp}/acfs_gemini_logs.XXXXXX") || {
+                acfs_session_remove_temp_files "$msg_tmp"
+                return 1
+            }
             if jq --argjson add "$user_log_entries" '. + $add' "$logs_path" > "$logs_tmp"; then
-                mv -- "$logs_tmp" "$logs_path"
+                if ! mv -- "$logs_tmp" "$logs_path"; then
+                    acfs_session_remove_temp_files "$msg_tmp" "$logs_tmp"
+                    log_error "Failed to update Gemini logs file: $logs_path"
+                    return 1
+                fi
             else
-                rm -f -- "$logs_tmp" 2>/dev/null || true
-                printf '%s\n' "$user_log_entries" > "$logs_path"
+                acfs_session_remove_temp_files "$logs_tmp"
+                if ! printf '%s\n' "$user_log_entries" > "$logs_path"; then
+                    acfs_session_remove_temp_files "$msg_tmp"
+                    log_error "Failed to replace Gemini logs file: $logs_path"
+                    return 1
+                fi
             fi
         else
-            printf '%s\n' "$user_log_entries" > "$logs_path"
+            if ! printf '%s\n' "$user_log_entries" > "$logs_path"; then
+                acfs_session_remove_temp_files "$msg_tmp" "$logs_tmp"
+                log_error "Failed to write Gemini logs file: $logs_path"
+                return 1
+            fi
         fi
 
-        rm -f -- "$msg_tmp" 2>/dev/null || true
+        acfs_session_remove_temp_files "$msg_tmp" "$logs_tmp"
     fi
 
     printf '%s\n' "$target_path"
@@ -1673,10 +1708,9 @@ convert_session_native() {
         log_error "Failed to create temp file for canonical conversion"
         return 1
     }
-    trap 'rm -f -- "${canonical_tmp:-}" 2>/dev/null || true; trap - RETURN' RETURN
 
     if ! parse_native_to_canonical "$input_file" "$from_agent" "$workspace_hint" > "$canonical_tmp"; then
-        rm -f -- "$canonical_tmp" 2>/dev/null || true
+        acfs_session_remove_temp_files "$canonical_tmp"
         log_error "Failed to parse source session into canonical format"
         return 1
     fi
@@ -1690,7 +1724,7 @@ convert_session_native() {
     local msg_count
     msg_count="$(jq -r '.messages | length' "$canonical_tmp")"
     if [[ "${msg_count:-0}" -le 0 ]]; then
-        rm -f -- "$canonical_tmp" 2>/dev/null || true
+        acfs_session_remove_temp_files "$canonical_tmp"
         log_error "Source session has no conversational messages to convert"
         return 1
     fi
@@ -1700,13 +1734,14 @@ convert_session_native() {
 
     local written_path
     if ! written_path="$(write_native_from_canonical "$canonical_tmp" "$to_agent" "$workspace" "$target_session_id" "$dry_run")"; then
-        rm -f -- "$canonical_tmp" 2>/dev/null || true
+        acfs_session_remove_temp_files "$canonical_tmp"
         log_error "Failed to write target-native session"
         return 1
     fi
 
+    local output_status=0
     if [[ "$output_json" == "true" ]]; then
-        jq -cn \
+        if ! jq -cn \
             --arg source_agent "$from_agent" \
             --arg target_agent "$to_agent" \
             --arg source_session_id "$source_session_id" \
@@ -1734,14 +1769,17 @@ convert_session_native() {
                     end
                 )
             }
-        '
+        '; then
+            output_status=1
+        fi
     else
         echo "Source: $from_agent ($source_session_id)"
         echo "Target: $to_agent ($target_session_id)"
         echo "Written: $written_path"
     fi
 
-    rm -f -- "$canonical_tmp" 2>/dev/null || true
+    acfs_session_remove_temp_files "$canonical_tmp"
+    return "$output_status"
 }
 
 # ============================================================
@@ -1917,23 +1955,22 @@ import_session() {
             log_error "Failed to create temp file for import in: $sessions_dir"
             return 1
         }
-        trap 'rm -f -- "${tmp_dest:-}" 2>/dev/null || true; trap - RETURN' RETURN
 
         if ! convert_to_acfs_schema "$file" "$agent" > "$tmp_dest"; then
-            rm -f -- "$tmp_dest" 2>/dev/null || true
+            acfs_session_remove_temp_files "$tmp_dest"
             log_error "Failed to convert CASS export to ACFS schema"
             return 1
         fi
 
         # Always sanitize imported output before persisting.
         if ! sanitize_session_export "$tmp_dest"; then
-            rm -f -- "$tmp_dest" 2>/dev/null || true
+            acfs_session_remove_temp_files "$tmp_dest"
             log_error "Sanitization failed; refusing to import unsanitized session"
             return 1
         fi
 
         if ! mv -- "$tmp_dest" "$dest"; then
-            rm -f -- "$tmp_dest" 2>/dev/null || true
+            acfs_session_remove_temp_files "$tmp_dest"
             log_error "Failed to write imported session: $dest"
             return 1
         fi
@@ -1943,23 +1980,22 @@ import_session() {
             log_error "Failed to create temp file for import in: $sessions_dir"
             return 1
         }
-        trap 'rm -f -- "${tmp_dest:-}" 2>/dev/null || true; trap - RETURN' RETURN
 
         if ! cp -- "$file" "$tmp_dest"; then
-            rm -f -- "$tmp_dest" 2>/dev/null || true
+            acfs_session_remove_temp_files "$tmp_dest"
             log_error "Failed to copy session export into staging file"
             return 1
         fi
 
         # Always sanitize imported output before persisting.
         if ! sanitize_session_export "$tmp_dest"; then
-            rm -f -- "$tmp_dest" 2>/dev/null || true
+            acfs_session_remove_temp_files "$tmp_dest"
             log_error "Sanitization failed; refusing to import unsanitized session"
             return 1
         fi
 
         if ! mv -- "$tmp_dest" "$dest"; then
-            rm -f -- "$tmp_dest" 2>/dev/null || true
+            acfs_session_remove_temp_files "$tmp_dest"
             log_error "Failed to write imported session: $dest"
             return 1
         fi
