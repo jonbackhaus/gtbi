@@ -1812,6 +1812,40 @@ chmod +x "$HOME/.local/bin/codex-target-bin"'
     return 0
 }
 
+test_fix_stack_install_runs_from_target_runtime_home() {
+    setup_test_env
+    export TARGET_HOME="$ACFS_STATE_DIR/target-home"
+    mkdir -p "$TARGET_HOME/.local/bin"
+
+    start_autofix_session >/dev/null || {
+        echo "  Failed to start autofix session"
+        cleanup_test_env
+        return 1
+    }
+
+    local install_cmd='[[ "$PWD" == "$HOME" ]] || exit 42
+cat > "$PWD/.local/bin/codex-pwd-bin" <<'"'"'EOF'"'"'
+#!/usr/bin/env bash
+exit 0
+EOF
+chmod +x "$PWD/.local/bin/codex-pwd-bin"'
+
+    if ! fix_stack_install "agent.codex" "codex-pwd-bin" "$install_cmd" >/dev/null 2>&1; then
+        echo "  fix_stack_install should run installer from the runtime home"
+        cleanup_test_env
+        return 1
+    fi
+
+    if [[ ! -x "$TARGET_HOME/.local/bin/codex-pwd-bin" ]]; then
+        echo "  fix_stack_install did not create the binary under TARGET_HOME"
+        cleanup_test_env
+        return 1
+    fi
+
+    cleanup_test_env
+    return 0
+}
+
 test_fix_stack_install_fails_when_binary_missing_after_successful_command() {
     setup_test_env
     export PATH="$HOME/.local/bin:$PATH"
@@ -3335,6 +3369,7 @@ main() {
     run_test test_fix_acfs_sourcing_removes_new_file_when_record_change_fails
     run_test test_fix_stack_install_applies_and_records_change
     run_test test_fix_stack_install_uses_target_runtime_home
+    run_test test_fix_stack_install_runs_from_target_runtime_home
     run_test test_fix_stack_install_fails_when_binary_missing_after_successful_command
     run_test test_fix_stack_install_removes_binary_when_record_change_fails
 

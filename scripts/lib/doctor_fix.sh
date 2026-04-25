@@ -1359,9 +1359,12 @@ fix_stack_install() {
         return 0
     fi
 
-    # Run installer inside the runtime home so shell expansions and PATH resolution
-    # match the target account instead of the caller shell.
-    if env HOME="$runtime_home" PATH="$runtime_path" bash -c "$install_cmd" 2>/dev/null; then
+    # Run installer inside the runtime home so shell expansions, relative paths,
+    # and PATH resolution match the target account instead of the caller shell.
+    if (
+        cd "$runtime_home" &&
+        env HOME="$runtime_home" PATH="$runtime_path" bash -c "$install_cmd"
+    ) 2>/dev/null; then
         hash -r
         installed_path="$(doctor_fix_binary_path "$binary_name" 2>/dev/null || true)"
         if [[ -z "$installed_path" ]]; then
