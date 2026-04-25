@@ -1861,15 +1861,13 @@ update_run_in_target_context() {
     fi
 
     if [[ "$current_user" == "$target_user" ]]; then
-        if [[ -d "$target_home" ]]; then
-            (
-                cd "$target_home" || exit 1
-                "$env_bin" "${env_args[@]}" "$@"
-            )
-            return $?
-        fi
-
-        "$env_bin" "${env_args[@]}" "$@"
+        (
+            if ! cd "$target_home"; then
+                echo "Unable to enter target home for '$target_user': $target_home" >&2
+                exit 1
+            fi
+            "$env_bin" "${env_args[@]}" "$@"
+        )
         return $?
     fi
 

@@ -2931,7 +2931,10 @@ run_as_target() {
     # Already the target user
     current_user="$(acfs_early_resolve_current_user 2>/dev/null || true)"
     if [[ "${current_user:-}" == "$user" ]]; then
-        cd "$user_home" 2>/dev/null || true
+        if ! cd "$user_home"; then
+            log_error "Unable to enter target home for '$user': $user_home"
+            return 1
+        fi
         "$env_bin" "${env_args[@]}" "${command_argv[@]}"
         return $?
     fi
@@ -2950,7 +2953,7 @@ run_as_target() {
     sudo_bin="$(acfs_early_system_binary_path sudo 2>/dev/null || true)"
     if [[ -n "$sudo_bin" ]]; then
         # shellcheck disable=SC2016  # $HOME/$@ expand inside sh -c
-        "$sudo_bin" -u "$user" "$env_bin" "${env_args[@]}" "$sh_bin" -c 'cd "$HOME" 2>/dev/null; exec "$@"' _ "${command_argv[@]}"
+        "$sudo_bin" -u "$user" "$env_bin" "${env_args[@]}" "$sh_bin" -c 'cd "$HOME" || exit 1; exec "$@"' _ "${command_argv[@]}"
         return $?
     fi
 
@@ -2959,7 +2962,7 @@ run_as_target() {
     runuser_bin="$(acfs_early_system_binary_path runuser 2>/dev/null || true)"
     if [[ -n "$runuser_bin" ]]; then
         # shellcheck disable=SC2016  # $HOME/$@ expand inside sh -c
-        "$runuser_bin" -u "$user" -- "$env_bin" "${env_args[@]}" "$sh_bin" -c 'cd "$HOME" 2>/dev/null; exec "$@"' _ "${command_argv[@]}"
+        "$runuser_bin" -u "$user" -- "$env_bin" "${env_args[@]}" "$sh_bin" -c 'cd "$HOME" || exit 1; exec "$@"' _ "${command_argv[@]}"
         return $?
     fi
 
@@ -2980,7 +2983,7 @@ run_as_target() {
     local env_bin_q
     user_home_q=$(printf '%q' "$user_home")
     env_bin_q=$(printf '%q' "$env_bin")
-    "$su_bin" "$user" -c "cd $user_home_q 2>/dev/null; $env_bin_q $env_assignments $(printf '%q ' "${command_argv[@]}")"
+    "$su_bin" "$user" -c "cd $user_home_q || exit 1; $env_bin_q $env_assignments $(printf '%q ' "${command_argv[@]}")"
 }
 
 # ============================================================
