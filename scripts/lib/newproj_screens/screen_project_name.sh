@@ -86,7 +86,7 @@ handle_project_name_input() {
                 --placeholder "my-project" \
                 --prompt "Project name: " \
                 --prompt.foreground "#89b4fa" \
-                --cursor.foreground "#cba6f7" < /dev/tty 2>/dev/null) || {
+                --cursor.foreground "#cba6f7" < /dev/tty 2>/dev/tty) || {
                 # User cancelled (Ctrl+C in gum)
                 echo ""
                 return 1

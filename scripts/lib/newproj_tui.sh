@@ -456,11 +456,17 @@ read_text_input() {
     while [[ "$valid" != "true" ]]; do
         if [[ "$GUM_AVAILABLE" == "true" && "$TERM_HAS_COLOR" == "true" ]]; then
             # Use gum for pretty input
+            # Redirect gum's TUI stream to /dev/tty (not /dev/null) so
+            # keystrokes render visibly while we still capture the
+            # final value on stdout. Bubble Tea (gum's TUI engine)
+            # draws the live interface to stderr; sending stderr to
+            # /dev/null produces a working-but-invisible input field
+            # — see acfs#269.
             input=$(gum input \
                 --placeholder "${default:-Type here...}" \
                 --prompt "$prompt: " \
                 --prompt.foreground "#89b4fa" \
-                --cursor.foreground "#cba6f7" < /dev/tty 2>/dev/null) || true
+                --cursor.foreground "#cba6f7" < /dev/tty 2>/dev/tty) || true
         else
             # Fallback to read from /dev/tty to avoid stdin conflicts
             # from signal handlers or subshell capture (issue #153)
@@ -545,7 +551,7 @@ read_selection() {
             --cursor.foreground "#cba6f7" \
             --selected.foreground "#a6e3a1" \
             < /dev/tty \
-            "${options[@]}" 2>/dev/null) || true
+            "${options[@]}" 2>/dev/tty) || true
     else
         newproj_tty_printf "%s\n" "$prompt"
         local i=1
@@ -579,7 +585,7 @@ read_checkbox() {
             --cursor.foreground "#cba6f7" \
             --selected.foreground "#a6e3a1" \
             < /dev/tty \
-            "${options[@]}" 2>/dev/null | tr '\n' ' ') || true
+            "${options[@]}" 2>/dev/tty | tr '\n' ' ') || true
     else
         newproj_tty_printf "%s\n" "$prompt (enter numbers separated by spaces, or 'all')"
         local i=1

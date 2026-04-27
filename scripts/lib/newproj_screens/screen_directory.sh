@@ -210,7 +210,7 @@ handle_directory_input() {
                 --prompt "Directory: " \
                 --prompt.foreground "#89b4fa" \
                 --cursor.foreground "#cba6f7" \
-                --width 60 < /dev/tty 2>/dev/null) || {
+                --width 60 < /dev/tty 2>/dev/tty) || {
                 # User cancelled
                 echo ""
                 return 1

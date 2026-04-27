@@ -235,7 +235,7 @@ handle_tech_stack_input() {
                     --selected.foreground "#a6e3a1" \
                     --header "Select technologies (Space to toggle, Enter to confirm)" \
                     --selected="$selected_arg" \
-                    "${options[@]}" < /dev/tty 2>/dev/null) || {
+                    "${options[@]}" < /dev/tty 2>/dev/tty) || {
                     # User cancelled
                     echo ""
                     return 1
@@ -245,7 +245,7 @@ handle_tech_stack_input() {
                     --cursor.foreground "#cba6f7" \
                     --selected.foreground "#a6e3a1" \
                     --header "Select technologies (Space to toggle, Enter to confirm)" \
-                    "${options[@]}" < /dev/tty 2>/dev/null) || {
+                    "${options[@]}" < /dev/tty 2>/dev/tty) || {
                     # User cancelled
                     echo ""
                     return 1
