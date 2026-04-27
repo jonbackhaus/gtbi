@@ -291,11 +291,14 @@ run_wizard_confirm_only() {
     local exit_code=1
 
     while true; do
+        local screen_before_run="$CURRENT_SCREEN"
+
         if ! run_screen "$CURRENT_SCREEN"; then
             exit_code=1
             break
         fi
-        if [[ "$CURRENT_SCREEN" == "success" ]]; then
+
+        if [[ "$screen_before_run" == "success" ]]; then
             exit_code=0
             break
         fi

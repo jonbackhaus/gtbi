@@ -139,6 +139,31 @@ teardown() {
     [[ "$output" == *"success-screen-ran"* ]]
 }
 
+@test "run_wizard_confirm_only executes success screen before exiting" {
+    source_lib "newproj_screens"
+
+    tui_init() { return 0; }
+    tui_cleanup() { :; }
+    load_screens() { return 0; }
+    run_screen() {
+        case "$1" in
+            confirmation)
+                CURRENT_SCREEN="success"
+                return 0
+                ;;
+            success)
+                echo "success-screen-ran"
+                return 0
+                ;;
+        esac
+        return 1
+    }
+
+    run run_wizard_confirm_only "demo" "$TEST_DIR/demo" "nodejs" true true true true
+    assert_success
+    [[ "$output" == *"success-screen-ran"* ]]
+}
+
 # ============================================================
 # Welcome Screen Tests
 # ============================================================
