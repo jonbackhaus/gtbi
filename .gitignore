@@ -116,6 +116,8 @@ tests/vm/*.box
 tests/vm/ubuntu-*
 apps/web/mobile-screenshots/
 apps/web/test-mobile.ts
+apps/web/check-site.mjs
+apps/web/debug-site.mjs
 apps/web/playwright-report/
 apps/web/test-results/
 research_screenshots/
