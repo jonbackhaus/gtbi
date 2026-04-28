@@ -1387,6 +1387,33 @@ EOF
     cleanup_mock_env
 }
 
+test_notify_header_helpers_sanitize_control_characters() {
+    setup_mock_env
+
+    local output=""
+    output=$(cd "$TEST_HOME" && HOME="$TEST_HOME" \
+        bash -c '
+            log_warn() { :; }
+            log_detail() { :; }
+            unset _ACFS_NOTIFY_SH_LOADED
+            source "$1"
+            printf "title=<%s>\n" "$(_acfs_notify_header_value "$2" "")"
+            printf "priority=<%s>\n" "$(_acfs_notify_priority_value "$3")"
+            printf "tags=<%s>\n" "$(_acfs_notify_header_value "$4" "computer,acfs")"
+        ' _ "$NOTIFY_SH" $'Agent\nDone' $'urgent\nTitle: hacked' $'computer\nacfs' 2>&1)
+
+    if [[ "$output" == *"title=<Agent Done>"* ]] \
+        && [[ "$output" == *"priority=<default>"* ]] \
+        && [[ "$output" == *"tags=<computer acfs>"* ]] \
+        && [[ "$output" != *"Title: hacked"* ]]; then
+        harness_pass "notify header helpers sanitize control characters"
+    else
+        harness_fail "notify header helpers sanitize control characters" "$output"
+    fi
+
+    cleanup_mock_env
+}
+
 test_webhook_reads_config_from_target_home_when_home_is_relative() {
     setup_mock_env
 
@@ -1496,6 +1523,61 @@ EOF
         harness_pass "notifications CLI uses target_home when HOME is relative"
     else
         harness_fail "notifications CLI uses target_home when HOME is relative" "$output"
+    fi
+
+    cleanup_mock_env
+}
+
+test_notifications_cli_sanitizes_headers_before_curl() {
+    setup_mock_env
+
+    local target_home="$TEST_HOME/notifications-target"
+    local fake_bin="$TEST_HOME/fake-bin"
+    local capture="$TEST_HOME/curl-args"
+    local output=""
+    local invalid_output=""
+    local invalid_status=0
+    local headers=""
+
+    mkdir -p "$target_home/.config/acfs" "$fake_bin"
+
+    cat > "$target_home/.config/acfs/config.yaml" <<'EOF'
+ntfy_enabled: true
+ntfy_topic: cli-topic
+ntfy_server: https://ntfy.example
+EOF
+
+    cat > "$fake_bin/curl" <<'EOF'
+#!/usr/bin/env bash
+: > "$ACFS_CURL_CAPTURE"
+while [[ $# -gt 0 ]]; do
+    printf '<%s>\n' "$1" >> "$ACFS_CURL_CAPTURE"
+    shift
+done
+printf '200'
+EOF
+    chmod +x "$fake_bin/curl"
+
+    output=$(cd "$TEST_HOME" && HOME="relative-home" TARGET_HOME="$target_home" \
+        PATH="$fake_bin:/usr/bin:/bin" ACFS_CURL_CAPTURE="$capture" \
+        bash "$NOTIFICATIONS_SH" send $'Build\nDone' "" default 2>&1)
+    headers="$(cat "$capture" 2>/dev/null || true)"
+    : > "$capture"
+
+    invalid_output=$(cd "$TEST_HOME" && HOME="relative-home" TARGET_HOME="$target_home" \
+        PATH="$fake_bin:/usr/bin:/bin" ACFS_CURL_CAPTURE="$capture" \
+        bash "$NOTIFICATIONS_SH" send "Build" "" $'urgent\nTitle: hacked' 2>&1) || invalid_status=$?
+
+    if [[ "$output" == *"Notification sent (HTTP 200)."* ]] \
+        && [[ "$headers" == *"<Title: Build Done>"* ]] \
+        && [[ "$headers" != *"<Title: hacked>"* ]] \
+        && [[ $invalid_status -eq 1 ]] \
+        && [[ "$invalid_output" == *"Error: Invalid priority 'urgent Title: hacked'"* ]] \
+        && [[ ! -s "$capture" ]]; then
+        harness_pass "notifications CLI sanitizes headers before curl"
+    else
+        harness_fail "notifications CLI sanitizes headers before curl" \
+            "output=$output headers=$headers invalid_status=$invalid_status invalid_output=$invalid_output capture=$(cat "$capture" 2>/dev/null || true)"
     fi
 
     cleanup_mock_env
@@ -11046,10 +11128,12 @@ main() {
 
     harness_section "Notification Helpers"
     test_notify_uses_target_home_for_config_and_state_when_home_is_relative || true
+    test_notify_header_helpers_sanitize_control_characters || true
     test_webhook_reads_config_from_target_home_when_home_is_relative || true
     test_webhook_payload_rejects_non_ip_public_ip_response || true
     test_webhook_public_ip_accepts_valid_ips_only || true
     test_notifications_cli_uses_target_home_when_home_is_relative || true
+    test_notifications_cli_sanitizes_headers_before_curl || true
 
     harness_section "Autofix"
     test_autofix_uses_target_home_for_state_dir_when_home_is_relative || true

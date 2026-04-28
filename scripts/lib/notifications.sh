@@ -259,6 +259,32 @@ _notif_config_write() {
     fi
 }
 
+notifications_header_value() {
+    local value="${1:-}"
+    local fallback="${2:-}"
+
+    value="${value//$'\r'/ }"
+    value="${value//$'\n'/ }"
+    value="$(printf '%s' "$value" | tr -d '\000-\010\013\014\016-\037\177')" || value=""
+
+    if [[ -n "$value" ]]; then
+        printf '%s\n' "$value"
+    else
+        printf '%s\n' "$fallback"
+    fi
+}
+
+notifications_priority_is_valid() {
+    case "${1:-}" in
+        min|low|default|high|urgent|1|2|3|4|5)
+            return 0
+            ;;
+        *)
+            return 1
+            ;;
+    esac
+}
+
 # Generate a random topic string: acfs-HOSTNAME-RANDOM8
 _notif_generate_topic() {
     local hostname
@@ -446,16 +472,11 @@ cmd_set_priority() {
         return 1
     fi
 
-    # Validate priority
-    case "$new_priority" in
-        min|low|default|high|urgent|1|2|3|4|5)
-            ;;
-        *)
-            echo "Error: Invalid priority '$new_priority'"
-            echo "Options: min, low, default, high, urgent (or 1-5)"
-            return 1
-            ;;
-    esac
+    if ! notifications_priority_is_valid "$new_priority"; then
+        echo "Error: Invalid priority '$(notifications_header_value "$new_priority" "<empty>")'"
+        echo "Options: min, low, default, high, urgent (or 1-5)"
+        return 1
+    fi
 
     _notif_config_write "ntfy_priority" "$new_priority"
     echo "Default notification priority set to: ${new_priority}"
@@ -517,6 +538,18 @@ cmd_send() {
         priority=$(_notif_config_read "ntfy_priority")
     fi
     priority="${priority:-default}"
+    title="$(notifications_header_value "$title" "")"
+
+    if [[ -z "$title" ]]; then
+        echo "Error: Notification title contains no printable characters."
+        return 1
+    fi
+
+    if ! notifications_priority_is_valid "$priority"; then
+        echo "Error: Invalid priority '$(notifications_header_value "$priority" "<empty>")'"
+        echo "Options: min, low, default, high, urgent (or 1-5)"
+        return 1
+    fi
 
     echo "Sending notification to ${server}/${topic} ..."
 

@@ -251,6 +251,32 @@ _acfs_notify_config_read() {
     printf '%s' "$val"
 }
 
+_acfs_notify_header_value() {
+    local value="${1:-}"
+    local fallback="${2:-}"
+
+    value="${value//$'\r'/ }"
+    value="${value//$'\n'/ }"
+    value="$(printf '%s' "$value" | tr -d '\000-\010\013\014\016-\037\177')" || value=""
+
+    if [[ -n "$value" ]]; then
+        printf '%s\n' "$value"
+    else
+        printf '%s\n' "$fallback"
+    fi
+}
+
+_acfs_notify_priority_value() {
+    case "${1:-}" in
+        min|low|default|high|urgent|1|2|3|4|5)
+            printf '%s\n' "$1"
+            ;;
+        *)
+            printf 'default\n'
+            ;;
+    esac
+}
+
 # ============================================================
 # Rate Limiting / Debounce
 # ============================================================
@@ -370,6 +396,11 @@ acfs_notify() {
     if [[ -z "$priority" ]]; then
         priority="default"
     fi
+
+    title="$(_acfs_notify_header_value "$title" "")"
+    [[ -n "$title" ]] || return 0
+    priority="$(_acfs_notify_priority_value "$priority")"
+    tags="$(_acfs_notify_header_value "$tags" "computer,acfs")"
 
     # Require curl
     if ! command -v curl &>/dev/null; then
