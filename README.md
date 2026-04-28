@@ -3623,7 +3623,7 @@ To debug:
 ║  To resume installation from this point:                     ║
 ╚══════════════════════════════════════════════════════════════╝
 
-  curl -sSL https://raw.githubusercontent.com/Dicklesworthstone/.../install.sh | bash -s -- --resume --yes
+  curl -fsSL https://raw.githubusercontent.com/Dicklesworthstone/.../install.sh | bash -s -- --resume --yes
 
   Failed phase: phase_9
   Failed step: install_stack
@@ -3662,7 +3662,7 @@ To debug:
    ```bash
    # Use the exact command from the failure output
    # Or use the generic resume command:
-   curl -sSL https://acfs.sh | bash -s -- --resume --yes --mode vibe
+   curl -fsSL https://acfs.sh | bash -s -- --resume --yes --mode vibe
    ```
 
 4. **Check state file** (advanced):
@@ -3754,7 +3754,7 @@ The log file captures all stderr output from the installer, with:
   //   "phase": "phase_9",
   //   "step": "install_stack",
   //   "error": "curl failed with exit code 7",
-  //   "resume_hint": "curl -sSL ... | bash -s -- --resume --yes"
+  //   "resume_hint": "curl -fsSL ... | bash -s -- --resume --yes"
   // }
   "log_file": "/home/ubuntu/.acfs/logs/install-20260127_120000.log"
 }
