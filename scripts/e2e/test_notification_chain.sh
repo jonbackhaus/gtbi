@@ -366,9 +366,12 @@ test_pr_installer_added() {
     # Use zoxide's installer URL as a test fixture
     local test_url="https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh"
 
-    # Compute checksum of the test installer
+    # Compute checksum of the test installer. Fail closed: without -f, HTTP
+    # error bodies can be hashed as if they were installer content.
     local test_sha
-    test_sha=$(curl -sL "$test_url" 2>/dev/null | sha256sum | cut -d' ' -f1 || echo "")
+    if ! test_sha=$(curl -fsSL --connect-timeout 15 --max-time 60 "$test_url" 2>/dev/null | sha256sum | cut -d' ' -f1); then
+        test_sha=""
+    fi
 
     if [[ -z "$test_sha" ]]; then
         log "WARN" "Could not fetch test installer, using placeholder"
