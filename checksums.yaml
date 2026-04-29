@@ -1,4 +1,4 @@
-# checksums.yaml - Auto-generated 2026-04-29T08:04:50-04:00
+# checksums.yaml - Auto-generated 2026-04-29T08:21:39-04:00
 # Run: ./scripts/lib/security.sh --update-checksums
 
 installers:
@@ -60,7 +60,7 @@ installers:
 
   dsr:
     url: "https://raw.githubusercontent.com/Dicklesworthstone/doodlestein_self_releaser/main/install.sh"
-    sha256: "7621398daca0b043d0e3b6e0d9a505eb5cbdf0b4b578d221d911461db49b517b"
+    sha256: "c72f1984a9e12f029120ad8e30cf8f566a4bba17f1e39bb0e85b380ecaaeaef5"
 
   fsfs:
     url: "https://raw.githubusercontent.com/Dicklesworthstone/frankensearch/main/install.sh"
