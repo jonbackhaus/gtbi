@@ -1,4 +1,4 @@
-# checksums.yaml - Auto-generated 2026-04-28T21:57:49-04:00
+# checksums.yaml - Auto-generated 2026-04-29T03:56:12-04:00
 # Run: ./scripts/lib/security.sh --update-checksums
 
 installers:
@@ -108,7 +108,7 @@ installers:
 
   pcr:
     url: "https://raw.githubusercontent.com/Dicklesworthstone/post_compact_reminder/main/install-post-compact-reminder.sh"
-    sha256: "9f045e39818db6ae32819d9e497eb1f3f3626be94165701a1b8c3cc6ec1d69ad"
+    sha256: "70c28ae1bebc8e6ab6123b81829e52f4a1349acccd140637482e9b7c8fe94763"
 
   pt:
     url: "https://raw.githubusercontent.com/Dicklesworthstone/process_triage/main/install.sh"
