@@ -378,6 +378,130 @@ else
 fi
 
 # ============================================================
+section "Test 3g: ACFS self-update repairs upstream-derived dirty checkout"
+# ============================================================
+self_update_repair_output=$(
+    bash -c '
+        set -euo pipefail
+        source "'"$UPDATE_SH"'"
+
+        temp_root="${TMPDIR:-/tmp}/acfs-update-dirty-repair.$$"
+        seed_repo="$temp_root/seed"
+        origin_repo="$temp_root/origin.git"
+        work_repo="$temp_root/work"
+
+        mkdir -p "$seed_repo/scripts/lib" "$seed_repo/scripts/generated"
+        git -C "$seed_repo" init -b main >/dev/null
+        git -C "$seed_repo" config user.email test@example.invalid
+        git -C "$seed_repo" config user.name "ACFS Test"
+        printf "base-update\n" > "$seed_repo/scripts/lib/update.sh"
+        printf "base-generated\n" > "$seed_repo/scripts/generated/install_all.sh"
+        git -C "$seed_repo" add .
+        git -C "$seed_repo" commit -m base >/dev/null
+        git clone --bare "$seed_repo" "$origin_repo" >/dev/null 2>&1
+        git clone "$origin_repo" "$work_repo" >/dev/null 2>&1
+
+        git -C "$seed_repo" remote add origin "$origin_repo"
+        printf "intermediate-update\n" > "$seed_repo/scripts/lib/update.sh"
+        printf "intermediate-generated\n" > "$seed_repo/scripts/generated/install_all.sh"
+        git -C "$seed_repo" add .
+        git -C "$seed_repo" commit -m intermediate >/dev/null
+        intermediate_commit="$(git -C "$seed_repo" rev-parse HEAD)"
+        git -C "$seed_repo" push origin main >/dev/null 2>&1
+
+        printf "final-update\n" > "$seed_repo/scripts/lib/update.sh"
+        printf "final-generated\n" > "$seed_repo/scripts/generated/install_all.sh"
+        git -C "$seed_repo" add .
+        git -C "$seed_repo" commit -m final >/dev/null
+        git -C "$seed_repo" push origin main >/dev/null 2>&1
+
+        git -C "$work_repo" fetch origin main >/dev/null 2>&1
+        git -C "$work_repo" show "$intermediate_commit:scripts/lib/update.sh" > "$work_repo/scripts/lib/update.sh"
+        git -C "$work_repo" show "$intermediate_commit:scripts/generated/install_all.sh" > "$work_repo/scripts/generated/install_all.sh"
+
+        ACFS_REPO_ROOT="$work_repo"
+        ACFS_HOME="$work_repo"
+        DRY_RUN=false
+        QUIET=true
+        UPDATE_SELF=true
+        ACFS_SELF_UPDATE_DONE=false
+        UPDATE_LOG_FILE="/dev/null"
+        ACFS_VERSION_DISPLAY="vtest"
+        NO_COLOR=1
+        RED="" GREEN="" YELLOW="" CYAN="" BOLD="" DIM="" NC=""
+
+        log_item() { printf "%s|%s|%s\n" "$1" "$2" "${3:-}"; }
+        is_expected_acfs_origin_url() { return 0; }
+        sync_acfs_global_wrapper() { return 0; }
+        update_runtime_acfs_home() { printf "%s\n" "$work_repo"; }
+
+        update_acfs_self
+        printf "HEAD=%s\n" "$(git -C "$work_repo" rev-parse HEAD)"
+        printf "REMOTE=%s\n" "$(git -C "$work_repo" rev-parse origin/main)"
+        if [[ -z "$(git -C "$work_repo" status --porcelain --untracked-files=no)" ]]; then
+            printf "STATUS_CLEAN=yes\n"
+        else
+            printf "STATUS_CLEAN=no\n"
+            git -C "$work_repo" status --porcelain --untracked-files=no
+        fi
+    ' 2>&1
+) || true
+
+if echo "$self_update_repair_output" | grep -q '^fix|ACFS self-update|tracked changes match upstream history; completing fast-forward$' \
+    && echo "$self_update_repair_output" | grep -q '^STATUS_CLEAN=yes$' \
+    && [[ "$(echo "$self_update_repair_output" | sed -n 's/^HEAD=//p' | tail -1)" == "$(echo "$self_update_repair_output" | sed -n 's/^REMOTE=//p' | tail -1)" ]]; then
+    pass "ACFS self-update fast-forwards dirty checkouts when changes are upstream-derived"
+else
+    fail "ACFS self-update did not repair upstream-derived dirty checkout: $self_update_repair_output"
+fi
+
+# ============================================================
+section "Test 3h: deployed sync skips git-tracked files in ACFS home"
+# ============================================================
+sync_git_tracked_output=$(
+    bash -c '
+        set -euo pipefail
+        source "'"$UPDATE_SH"'"
+
+        temp_root="${TMPDIR:-/tmp}/acfs-sync-git-managed.$$"
+        source_repo="$temp_root/source"
+        deployed_repo="$temp_root/deployed"
+
+        mkdir -p "$source_repo/scripts/lib" "$deployed_repo/scripts/lib"
+        printf "source-update\n" > "$source_repo/scripts/lib/update.sh"
+        printf "deployed-update\n" > "$deployed_repo/scripts/lib/update.sh"
+        git -C "$deployed_repo" init -b main >/dev/null
+        git -C "$deployed_repo" config user.email test@example.invalid
+        git -C "$deployed_repo" config user.name "ACFS Test"
+        git -C "$deployed_repo" add scripts/lib/update.sh
+        git -C "$deployed_repo" commit -m deployed >/dev/null
+
+        ACFS_REPO_ROOT="$source_repo"
+        ACFS_HOME="$deployed_repo"
+        DRY_RUN=false
+        UPDATE_LOG_FILE="/dev/null"
+        update_runtime_acfs_home() { printf "%s\n" "$ACFS_HOME"; }
+        log_to_file() { :; }
+
+        sync_acfs_deployed
+        printf "DEPLOYED_CONTENT=%s\n" "$(cat "$deployed_repo/scripts/lib/update.sh")"
+        if [[ -z "$(git -C "$deployed_repo" status --porcelain --untracked-files=no)" ]]; then
+            printf "STATUS_CLEAN=yes\n"
+        else
+            printf "STATUS_CLEAN=no\n"
+            git -C "$deployed_repo" status --porcelain --untracked-files=no
+        fi
+    ' 2>&1
+) || true
+
+if echo "$sync_git_tracked_output" | grep -q '^DEPLOYED_CONTENT=deployed-update$' \
+    && echo "$sync_git_tracked_output" | grep -q '^STATUS_CLEAN=yes$'; then
+    pass "sync_acfs_deployed leaves git-tracked ACFS home files untouched"
+else
+    fail "sync_acfs_deployed still dirtied a git-managed ACFS home: $sync_git_tracked_output"
+fi
+
+# ============================================================
 section "Test 4: Function instrumentation (mock)"
 # ============================================================
 # Source update.sh, override update_run_verified_installer with a mock,

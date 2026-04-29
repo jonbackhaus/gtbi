@@ -2361,6 +2361,14 @@ sync_acfs_deployed() {
     resolved_home="$(realpath "$acfs_home" 2>/dev/null || printf '%s\n' "$acfs_home")"
     [[ "$resolved_repo" != "$resolved_home" ]] || return 0
 
+    _acfs_deployed_path_is_git_tracked() {
+        local deployed_root="$1"
+        local deployed_rel="$2"
+
+        [[ -d "$deployed_root/.git" ]] || return 1
+        git -C "$deployed_root" ls-files --error-unmatch -- "$deployed_rel" >/dev/null 2>&1
+    }
+
     local -a file_pairs=(
         # repo-relative-path : deployed-relative-path
         "scripts/lib/doctor.sh:scripts/lib/doctor.sh"
@@ -2397,6 +2405,10 @@ sync_acfs_deployed() {
         local deployed_file="$acfs_home/$deployed_rel"
 
         [[ -f "$repo_file" ]] || continue
+        if _acfs_deployed_path_is_git_tracked "$acfs_home" "$deployed_rel"; then
+            log_to_file "Skipped syncing $repo_rel -> $deployed_file (target is git-managed)"
+            continue
+        fi
 
         # Skip if identical
         if [[ -f "$deployed_file" ]] && cmp -s "$repo_file" "$deployed_file"; then
@@ -2422,6 +2434,11 @@ sync_acfs_deployed() {
         [[ -f "$generated_script" ]] || continue
         generated_name="$(basename "$generated_script")"
         local deployed_generated="$acfs_home/scripts/generated/$generated_name"
+
+        if _acfs_deployed_path_is_git_tracked "$acfs_home" "scripts/generated/$generated_name"; then
+            log_to_file "Skipped syncing scripts/generated/$generated_name -> $deployed_generated (target is git-managed)"
+            continue
+        fi
 
         if [[ -f "$deployed_generated" ]] && cmp -s "$generated_script" "$deployed_generated"; then
             continue
@@ -2984,6 +3001,106 @@ _acfs_remote_main_head() {
     git -C "$ACFS_REPO_ROOT" ls-remote --heads origin main 2>/dev/null | awk 'NR==1 { print $1 }'
 }
 
+_acfs_repo_root_is_runtime_acfs_home() {
+    local runtime_acfs_home=""
+    local resolved_repo=""
+    local resolved_runtime=""
+
+    runtime_acfs_home="$(update_runtime_acfs_home 2>/dev/null || true)"
+    [[ -n "$runtime_acfs_home" ]] || return 1
+
+    resolved_repo="$(realpath "$ACFS_REPO_ROOT" 2>/dev/null || printf '%s\n' "$ACFS_REPO_ROOT")"
+    resolved_runtime="$(realpath "$runtime_acfs_home" 2>/dev/null || printf '%s\n' "$runtime_acfs_home")"
+    [[ "$resolved_repo" == "$resolved_runtime" ]]
+}
+
+_acfs_append_unique_path() {
+    local -n _acfs_paths_ref="$1"
+    local _acfs_candidate="$2"
+    local _acfs_existing=""
+
+    for _acfs_existing in "${_acfs_paths_ref[@]}"; do
+        [[ "$_acfs_existing" == "$_acfs_candidate" ]] && return 0
+    done
+
+    _acfs_paths_ref+=("$_acfs_candidate")
+}
+
+_acfs_collect_tracked_dirty_paths() {
+    local -n _acfs_dirty_paths_ref="$1"
+    local _acfs_dirty_path=""
+
+    _acfs_dirty_paths_ref=()
+    while IFS= read -r -d '' _acfs_dirty_path; do
+        _acfs_append_unique_path _acfs_dirty_paths_ref "$_acfs_dirty_path"
+    done < <(git -C "$ACFS_REPO_ROOT" diff --name-only -z -- 2>/dev/null || true)
+
+    while IFS= read -r -d '' _acfs_dirty_path; do
+        _acfs_append_unique_path _acfs_dirty_paths_ref "$_acfs_dirty_path"
+    done < <(git -C "$ACFS_REPO_ROOT" diff --cached --name-only -z -- 2>/dev/null || true)
+}
+
+_acfs_worktree_path_matches_upstream_history() {
+    local _acfs_path="$1"
+    local _acfs_work_hash=""
+    local _acfs_ref=""
+    local _acfs_blob=""
+    local _acfs_commit=""
+
+    [[ -f "$ACFS_REPO_ROOT/$_acfs_path" ]] || return 1
+    _acfs_work_hash="$(git -C "$ACFS_REPO_ROOT" hash-object -- "$_acfs_path" 2>/dev/null)" || return 1
+    [[ -n "$_acfs_work_hash" ]] || return 1
+
+    for _acfs_ref in HEAD origin/main; do
+        _acfs_blob="$(git -C "$ACFS_REPO_ROOT" rev-parse "$_acfs_ref:$_acfs_path" 2>/dev/null || true)"
+        [[ "$_acfs_blob" == "$_acfs_work_hash" ]] && return 0
+    done
+
+    while IFS= read -r _acfs_commit; do
+        [[ -n "$_acfs_commit" ]] || continue
+        _acfs_blob="$(git -C "$ACFS_REPO_ROOT" rev-parse "$_acfs_commit:$_acfs_path" 2>/dev/null || true)"
+        [[ "$_acfs_blob" == "$_acfs_work_hash" ]] && return 0
+    done < <(git -C "$ACFS_REPO_ROOT" rev-list --ancestry-path HEAD..origin/main -- "$_acfs_path" 2>/dev/null || true)
+
+    return 1
+}
+
+_acfs_dirty_paths_are_upstream_derived() {
+    local _acfs_dirty_path=""
+
+    (($# > 0)) || return 1
+    git -C "$ACFS_REPO_ROOT" merge-base --is-ancestor HEAD origin/main >/dev/null 2>&1 || return 1
+
+    for _acfs_dirty_path in "$@"; do
+        _acfs_worktree_path_matches_upstream_history "$_acfs_dirty_path" || return 1
+    done
+}
+
+_acfs_try_upstream_derived_dirty_fast_forward() {
+    local current_branch="$1"
+    local local_head="$2"
+    local remote_head="$3"
+    local -a dirty_paths=()
+
+    _acfs_repo_root_is_runtime_acfs_home || return 1
+
+    _acfs_collect_tracked_dirty_paths dirty_paths
+    ((${#dirty_paths[@]} > 0)) || return 1
+    _acfs_dirty_paths_are_upstream_derived "${dirty_paths[@]}" || return 1
+
+    log_item "fix" "ACFS self-update" "tracked changes match upstream history; completing fast-forward"
+    log_to_file "Repairing upstream-derived dirty checkout with ${#dirty_paths[@]} tracked path(s)"
+
+    if git -C "$ACFS_REPO_ROOT" checkout -f -B "$current_branch" "$remote_head" >/dev/null 2>&1; then
+        git -C "$ACFS_REPO_ROOT" branch --set-upstream-to=origin/main "$current_branch" >/dev/null 2>&1 || true
+        log_to_file "Completed managed dirty fast-forward from $local_head to $remote_head"
+        return 0
+    fi
+
+    log_to_file "Managed dirty fast-forward failed; leaving checkout untouched"
+    return 1
+}
+
 # ------------------------------------------------------------
 # Self-Update: Update ACFS itself before anything else
 # ------------------------------------------------------------
@@ -3202,20 +3319,27 @@ update_acfs_self() {
     # verified-installer checks use fresh checksums and URLs. Without this,
     # machines with local modifications run with stale checksums indefinitely,
     # causing constant checksum-mismatch failures for Dicklesworthstone tools.
+    local self_update_completed=false
     if [[ -n "$(git -C "$ACFS_REPO_ROOT" status --porcelain --untracked-files=no 2>/dev/null)" ]]; then
-        log_item "warn" "ACFS self-update" "tracked files have local modifications; skipping full pull"
-        log_to_file "Self-update skipped: working tree has tracked modifications — refreshing security files only"
-        _acfs_refresh_security_from_fetched_remote
-        return 0
+        if _acfs_try_upstream_derived_dirty_fast_forward "$current_branch" "$local_head" "$remote_head"; then
+            self_update_completed=true
+        else
+            log_item "warn" "ACFS self-update" "tracked files have local modifications; skipping full pull"
+            log_to_file "Self-update skipped: working tree has tracked modifications — refreshing security files only"
+            _acfs_refresh_security_from_fetched_remote
+            return 0
+        fi
     fi
 
-    # Pull updates
-    log_to_file "Pulling updates..."
-    if ! git -C "$ACFS_REPO_ROOT" pull --ff-only origin main 2>/dev/null; then
-        log_item "warn" "ACFS self-update" "ff-only pull failed (branch divergence?); refreshing security files"
-        log_to_file "Self-update skipped: git pull --ff-only failed — refreshing security files only"
-        _acfs_refresh_security_from_fetched_remote
-        return 0
+    if [[ "$self_update_completed" != "true" ]]; then
+        # Pull updates
+        log_to_file "Pulling updates..."
+        if ! git -C "$ACFS_REPO_ROOT" pull --ff-only origin main 2>/dev/null; then
+            log_item "warn" "ACFS self-update" "ff-only pull failed (branch divergence?); refreshing security files"
+            log_to_file "Self-update skipped: git pull --ff-only failed — refreshing security files only"
+            _acfs_refresh_security_from_fetched_remote
+            return 0
+        fi
     fi
 
     # Refresh version display with new commit hash after pull
