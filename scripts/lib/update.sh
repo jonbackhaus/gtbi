@@ -1027,6 +1027,35 @@ update_finish_cmd_fail() {
     fi
 }
 
+update_run_logged_passthrough() {
+    local cmd_display=""
+    cmd_display=$(printf '%q ' "$@")
+    log_to_file "Running: $cmd_display"
+
+    if [[ -n "${UPDATE_LOG_FILE:-}" ]]; then
+        {
+            echo ""
+            echo "----- COMMAND: $cmd_display"
+        } >> "$UPDATE_LOG_FILE"
+    fi
+
+    if [[ "$QUIET" != "true" && -n "${UPDATE_LOG_FILE:-}" ]]; then
+        "$@" 2>&1 | tee -a "$UPDATE_LOG_FILE"
+        return "${PIPESTATUS[0]}"
+    fi
+
+    if [[ -n "${UPDATE_LOG_FILE:-}" ]]; then
+        "$@" >> "$UPDATE_LOG_FILE" 2>&1
+        return $?
+    fi
+
+    if [[ "$QUIET" != "true" ]]; then
+        "$@"
+    else
+        "$@" >/dev/null 2>&1
+    fi
+}
+
 update_run_command_capture_with_retry() {
     local desc="$1"
     shift
@@ -4527,7 +4556,7 @@ update_stack() {
                 target_user="$(update_target_user)"
                 target_home="$(update_target_home "$target_user")"
 
-                if update_run_in_target_context "" bash "$tmp_install" --dest "$target_home/mcp_agent_mail" --yes; then
+                if update_run_logged_passthrough update_run_in_target_context "" bash "$tmp_install" --dest "$target_home/mcp_agent_mail" --yes; then
                     if update_source_stack_lib; then
                         ACFS_STACK_TRUST_TARGET_HOME=true TARGET_USER="$target_user" TARGET_HOME="$target_home" _stack_repair_agent_mail_cli_symlink >/dev/null 2>&1 || true
                     fi

@@ -1002,6 +1002,48 @@ EOF
     refute_output --partial "    - /scripts/lib/security.sh"
 }
 
+@test "update_run_logged_passthrough streams command output and writes update log" {
+    QUIET=false
+    UPDATE_LOG_FILE="$HOME/update.log"
+
+    run update_run_logged_passthrough bash -c 'echo installer detail; echo installer warning >&2'
+    assert_success
+    assert_output --partial "installer detail"
+    assert_output --partial "installer warning"
+
+    run grep -F -- "----- COMMAND:" "$UPDATE_LOG_FILE"
+    assert_success
+    run grep -F "installer detail" "$UPDATE_LOG_FILE"
+    assert_success
+    run grep -F "installer warning" "$UPDATE_LOG_FILE"
+    assert_success
+}
+
+@test "update_run_logged_passthrough keeps quiet console quiet but logs output" {
+    QUIET=true
+    UPDATE_LOG_FILE="$HOME/update.log"
+
+    run update_run_logged_passthrough bash -c 'echo quiet detail; echo quiet warning >&2'
+    assert_success
+    refute_output --partial "quiet detail"
+    refute_output --partial "quiet warning"
+
+    run grep -F "quiet detail" "$UPDATE_LOG_FILE"
+    assert_success
+    run grep -F "quiet warning" "$UPDATE_LOG_FILE"
+    assert_success
+}
+
+@test "update_run_logged_passthrough preserves command failure status" {
+    QUIET=true
+    UPDATE_LOG_FILE="$HOME/update.log"
+
+    run update_run_logged_passthrough bash -c 'echo failing detail; exit 7'
+    [[ "$status" -eq 7 ]]
+    run grep -F "failing detail" "$UPDATE_LOG_FILE"
+    assert_success
+}
+
 @test "update_atuin: falls back to reinstall after failed self-update" {
     init_stub_dir
     export PATH="$STUB_DIR:$PATH"
