@@ -1,4 +1,4 @@
-# checksums.yaml - Auto-generated 2026-04-29T10:50:21-04:00
+# checksums.yaml - Auto-generated 2026-04-29T15:40:23-04:00
 # Run: ./scripts/lib/security.sh --update-checksums
 
 installers:
@@ -36,7 +36,7 @@ installers:
 
   casr:
     url: "https://raw.githubusercontent.com/Dicklesworthstone/cross_agent_session_resumer/main/install.sh"
-    sha256: "68b2fe7985bf64ada039db370fcf19b29e6dc63d4d8f563755de6b404d5a6323"
+    sha256: "ab84887f9d621cb628067a7c7ff1ed8b9e035fe7bf498fd3c80b6d639a37d1e5"
 
   cass:
     url: "https://raw.githubusercontent.com/Dicklesworthstone/coding_agent_session_search/main/install.sh"
