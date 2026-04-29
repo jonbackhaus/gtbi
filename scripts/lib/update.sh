@@ -2742,11 +2742,66 @@ update_fetch_fsfs_artifact_checksum() {
     printf '%s\n' "${checksum,,}"
 }
 
-update_run_fsfs_installer() {
-    local -a fsfs_args=("$@")
-    local fsfs_target=""
+update_resolve_fsfs_artifact_contract() {
+    local fsfs_target="$1"
+    local -a candidates=()
+    local candidate=""
     local fsfs_version=""
     local fsfs_version_bare=""
+    local fsfs_artifact_url=""
+    local fsfs_checksum=""
+
+    if [[ -z "$fsfs_target" ]]; then
+        return 1
+    fi
+
+    if [[ -n "${ACFS_FSFS_VERSION:-}" ]]; then
+        update_is_valid_fsfs_version "$ACFS_FSFS_VERSION" || return 1
+        candidates+=("$ACFS_FSFS_VERSION")
+    else
+        while IFS= read -r candidate; do
+            [[ -n "$candidate" ]] || continue
+            case " ${candidates[*]} " in
+                *" $candidate "*) ;;
+                *) candidates+=("$candidate") ;;
+            esac
+        done < <(
+            curl -fsSL --connect-timeout 30 --max-time 60 \
+                -H "Accept: application/vnd.github.v3+json" \
+                "https://api.github.com/repos/Dicklesworthstone/frankensearch/releases?per_page=10" 2>/dev/null \
+                | sed -n 's/.*"tag_name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' || true
+        )
+
+        candidate="$(curl -fsSL --connect-timeout 30 --max-time 60 -o /dev/null -w '%{url_effective}' \
+            "https://github.com/Dicklesworthstone/frankensearch/releases/latest" 2>/dev/null \
+            | sed -E 's|.*/tag/||' || true)"
+        if update_is_valid_fsfs_version "$candidate"; then
+            case " ${candidates[*]} " in
+                *" $candidate "*) ;;
+                *) candidates+=("$candidate") ;;
+            esac
+        fi
+    fi
+
+    for fsfs_version in "${candidates[@]}"; do
+        update_is_valid_fsfs_version "$fsfs_version" || continue
+        fsfs_version_bare="${fsfs_version#v}"
+        fsfs_artifact_url="https://github.com/Dicklesworthstone/frankensearch/releases/download/${fsfs_version}/fsfs-lite-${fsfs_version_bare}-${fsfs_target}.tar.xz"
+        if fsfs_checksum="$(update_fetch_fsfs_artifact_checksum "${fsfs_artifact_url}.sha256" 2>/dev/null)"; then
+            printf '%s\n%s\n%s\n' "$fsfs_version" "$fsfs_artifact_url" "$fsfs_checksum"
+            return 0
+        fi
+        log_to_file "FrankenSearch lite artifact checksum unavailable for ${fsfs_version}"
+    done
+
+    return 1
+}
+
+update_run_fsfs_installer() {
+    local -a fsfs_args=("$@")
+    local -a fsfs_contract=()
+    local fsfs_target=""
+    local fsfs_version=""
     local fsfs_artifact_url=""
     local fsfs_checksum=""
 
@@ -2757,17 +2812,13 @@ update_run_fsfs_installer() {
             return 1
         fi
 
-        if ! fsfs_version="$(update_resolve_fsfs_latest_version 2>/dev/null)"; then
-            log_to_file "FrankenSearch release resolution failed; skipping source-build fallback"
-            echo "Unable to resolve FrankenSearch release; skipping source-build fallback" >&2
-            return 1
-        fi
-
-        fsfs_version_bare="${fsfs_version#v}"
-        fsfs_artifact_url="https://github.com/Dicklesworthstone/frankensearch/releases/download/${fsfs_version}/fsfs-lite-${fsfs_version_bare}-${fsfs_target}.tar.xz"
-        if ! fsfs_checksum="$(update_fetch_fsfs_artifact_checksum "${fsfs_artifact_url}.sha256" 2>/dev/null)"; then
-            log_to_file "FrankenSearch lite artifact checksum unavailable; skipping source-build fallback"
-            echo "Unable to verify FrankenSearch lite artifact checksum; skipping source-build fallback" >&2
+        mapfile -t fsfs_contract < <(update_resolve_fsfs_artifact_contract "$fsfs_target")
+        fsfs_version="${fsfs_contract[0]:-}"
+        fsfs_artifact_url="${fsfs_contract[1]:-}"
+        fsfs_checksum="${fsfs_contract[2]:-}"
+        if [[ -z "$fsfs_version" || -z "$fsfs_artifact_url" || -z "$fsfs_checksum" ]]; then
+            log_to_file "FrankenSearch release artifact contract unavailable; skipping source-build fallback"
+            echo "Unable to resolve a FrankenSearch lite artifact with a checksum; skipping source-build fallback" >&2
             return 1
         fi
 

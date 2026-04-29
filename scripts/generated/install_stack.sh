@@ -2170,6 +2170,8 @@ install_stack_frankensearch() {
                         local fsfs_version_bare=""
                         local fsfs_artifact_url=""
                         local fsfs_checksum=""
+                        local fsfs_candidate=""
+                        local -a fsfs_candidates=()
                         local fsfs_can_run=true
 
                         if [[ "$(uname -s 2>/dev/null)" == "Linux" ]]; then
@@ -2185,31 +2187,48 @@ install_stack_frankensearch() {
                                 log_warn "stack.frankensearch: FrankenSearch Linux binary artifact unavailable for this architecture; skipping source-build fallback"
                             else
                                 if [[ -n "${ACFS_FSFS_VERSION:-}" ]]; then
-                                    fsfs_version="$ACFS_FSFS_VERSION"
+                                    fsfs_candidates+=("$ACFS_FSFS_VERSION")
                                 else
-                                    fsfs_version="$(curl -fsSL --connect-timeout 30 --max-time 60 -H "Accept: application/vnd.github.v3+json" "https://api.github.com/repos/Dicklesworthstone/frankensearch/releases/latest" 2>/dev/null | sed -n 's/.*"tag_name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -n 1 || true)"
-                                    if [[ ! "$fsfs_version" =~ ^v[0-9][A-Za-z0-9._-]*$ ]]; then
-                                        fsfs_version="$(curl -fsSL --connect-timeout 30 --max-time 60 -o /dev/null -w '%{url_effective}' "https://github.com/Dicklesworthstone/frankensearch/releases/latest" 2>/dev/null | sed -E 's|.*/tag/||' || true)"
+                                    while IFS= read -r fsfs_candidate; do
+                                        [[ -n "$fsfs_candidate" ]] || continue
+                                        case " ${fsfs_candidates[*]} " in
+                                            *" $fsfs_candidate "*) ;;
+                                            *) fsfs_candidates+=("$fsfs_candidate") ;;
+                                        esac
+                                    done < <(curl -fsSL --connect-timeout 30 --max-time 60 -H "Accept: application/vnd.github.v3+json" "https://api.github.com/repos/Dicklesworthstone/frankensearch/releases?per_page=10" 2>/dev/null | sed -n 's/.*"tag_name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' || true)
+
+                                    fsfs_candidate="$(curl -fsSL --connect-timeout 30 --max-time 60 -o /dev/null -w '%{url_effective}' "https://github.com/Dicklesworthstone/frankensearch/releases/latest" 2>/dev/null | sed -E 's|.*/tag/||' || true)"
+                                    if [[ "$fsfs_candidate" =~ ^v[0-9][A-Za-z0-9._-]*$ ]]; then
+                                        case " ${fsfs_candidates[*]} " in
+                                            *" $fsfs_candidate "*) ;;
+                                            *) fsfs_candidates+=("$fsfs_candidate") ;;
+                                        esac
                                     fi
                                 fi
 
-                                if [[ ! "$fsfs_version" =~ ^v[0-9][A-Za-z0-9._-]*$ ]]; then
+                                if [[ ${#fsfs_candidates[@]} -eq 0 ]]; then
                                     fsfs_can_run=false
                                     log_warn "stack.frankensearch: unable to resolve FrankenSearch release; skipping source-build fallback"
                                 else
-                                    fsfs_version_bare="${fsfs_version#v}"
-                                    fsfs_artifact_url="https://github.com/Dicklesworthstone/frankensearch/releases/download/${fsfs_version}/fsfs-lite-${fsfs_version_bare}-${fsfs_target}.tar.xz"
-                                    fsfs_checksum="$(curl -fsSL --connect-timeout 30 --max-time 60 "${fsfs_artifact_url}.sha256" 2>/dev/null | awk 'NR == 1 { print $1 }' || true)"
-                                    if [[ "$fsfs_checksum" =~ ^[0-9A-Fa-f]{64}$ ]]; then
-                                        fsfs_installer_args+=(
-                                            --version "$fsfs_version"
-                                            --artifact-url "$fsfs_artifact_url"
-                                            --checksum "${fsfs_checksum,,}"
-                                        )
-                                        log_info "stack.frankensearch: using FrankenSearch Linux lite artifact $fsfs_artifact_url"
-                                    else
+                                    for fsfs_version in "${fsfs_candidates[@]}"; do
+                                        [[ "$fsfs_version" =~ ^v[0-9][A-Za-z0-9._-]*$ ]] || continue
+                                        fsfs_version_bare="${fsfs_version#v}"
+                                        fsfs_artifact_url="https://github.com/Dicklesworthstone/frankensearch/releases/download/${fsfs_version}/fsfs-lite-${fsfs_version_bare}-${fsfs_target}.tar.xz"
+                                        fsfs_checksum="$(curl -fsSL --connect-timeout 30 --max-time 60 "${fsfs_artifact_url}.sha256" 2>/dev/null | awk 'NR == 1 { print $1 }' || true)"
+                                        if [[ "$fsfs_checksum" =~ ^[0-9A-Fa-f]{64}$ ]]; then
+                                            fsfs_installer_args+=(
+                                                --version "$fsfs_version"
+                                                --artifact-url "$fsfs_artifact_url"
+                                                --checksum "${fsfs_checksum,,}"
+                                            )
+                                            log_info "stack.frankensearch: using FrankenSearch Linux lite artifact $fsfs_artifact_url"
+                                            break
+                                        fi
+                                        log_warn "stack.frankensearch: FrankenSearch lite artifact checksum unavailable for $fsfs_version"
+                                    done
+                                    if [[ ! "$fsfs_checksum" =~ ^[0-9A-Fa-f]{64}$ ]]; then
                                         fsfs_can_run=false
-                                        log_warn "stack.frankensearch: unable to verify FrankenSearch lite artifact checksum; skipping source-build fallback"
+                                        log_warn "stack.frankensearch: unable to resolve a FrankenSearch lite artifact with a checksum; skipping source-build fallback"
                                     fi
                                 fi
                             fi

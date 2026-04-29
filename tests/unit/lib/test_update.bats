@@ -7884,8 +7884,12 @@ SECURITY
 
 @test "update fsfs installer uses Linux lite release artifact args" {
     update_fsfs_linux_target_triple() { printf '%s\n' "x86_64-unknown-linux-musl"; }
-    update_resolve_fsfs_latest_version() { printf '%s\n' "v1.2.5"; }
-    update_fetch_fsfs_artifact_checksum() { printf '%s\n' "e82922dc1e3fad90e4b4fc145853f9c30b821c51ef4496a16b4f93d39da6b01a"; }
+    update_resolve_fsfs_artifact_contract() {
+        printf '%s\n%s\n%s\n' \
+            "v1.2.5" \
+            "https://github.com/Dicklesworthstone/frankensearch/releases/download/v1.2.5/fsfs-lite-1.2.5-x86_64-unknown-linux-musl.tar.xz" \
+            "e82922dc1e3fad90e4b4fc145853f9c30b821c51ef4496a16b4f93d39da6b01a"
+    }
     log_to_file() { :; }
     update_run_verified_installer() {
         printf 'arg=%s\n' "$@"
@@ -7902,6 +7906,41 @@ SECURITY
     assert_output --partial "arg=https://github.com/Dicklesworthstone/frankensearch/releases/download/v1.2.5/fsfs-lite-1.2.5-x86_64-unknown-linux-musl.tar.xz"
     assert_output --partial "arg=--checksum"
     assert_output --partial "arg=e82922dc1e3fad90e4b4fc145853f9c30b821c51ef4496a16b4f93d39da6b01a"
+}
+
+@test "update fsfs artifact contract falls back when latest checksum is not ready" {
+    unset ACFS_FSFS_VERSION
+    log_to_file() { :; }
+    curl() {
+        case "$*" in
+            *"releases?per_page=10"*)
+                printf '%s\n' \
+                    '    "tag_name": "v1.2.5",' \
+                    '    "tag_name": "v1.2.4",'
+                ;;
+            *"v1.2.5"*.sha256*)
+                return 22
+                ;;
+            *"v1.2.4"*.sha256*)
+                printf '%s  %s\n' \
+                    "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef" \
+                    "fsfs-lite-1.2.4-x86_64-unknown-linux-musl.tar.xz"
+                ;;
+            *"releases/latest"*)
+                printf '%s\n' "https://github.com/Dicklesworthstone/frankensearch/releases/tag/v1.2.5"
+                ;;
+            *)
+                return 1
+                ;;
+        esac
+    }
+
+    run update_resolve_fsfs_artifact_contract "x86_64-unknown-linux-musl"
+
+    assert_success
+    assert_output --partial "v1.2.4"
+    assert_output --partial "https://github.com/Dicklesworthstone/frankensearch/releases/download/v1.2.4/fsfs-lite-1.2.4-x86_64-unknown-linux-musl.tar.xz"
+    assert_output --partial "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
 }
 
 @test "update fsfs version resolver falls back to release redirect" {

@@ -337,10 +337,12 @@ describe('Generated verified installer args', () => {
     expect(stackContent).toContain('fsfs_target="x86_64-unknown-linux-musl"');
     expect(stackContent).toContain('fsfs_target="aarch64-unknown-linux-musl"');
     expect(stackContent).toContain("https://github.com/Dicklesworthstone/frankensearch/releases/latest");
-    expect(stackContent).toContain('[[ ! "$fsfs_version" =~ ^v[0-9][A-Za-z0-9._-]*$ ]]');
+    expect(stackContent).toContain("https://api.github.com/repos/Dicklesworthstone/frankensearch/releases?per_page=10");
+    expect(stackContent).toContain('for fsfs_version in "${fsfs_candidates[@]}"; do');
     expect(stackContent).toContain('fsfs-lite-${fsfs_version_bare}-${fsfs_target}.tar.xz');
     expect(stackContent).toContain('awk \'NR == 1 { print $1 }\'');
     expect(stackContent).toContain('--checksum "${fsfs_checksum,,}"');
+    expect(stackContent).toContain('unable to resolve a FrankenSearch lite artifact with a checksum');
     expect(stackContent).toContain('run_as_target_runner \'bash\' \'-s\' \'--\' "${fsfs_installer_args[@]}"');
   });
 
