@@ -7748,6 +7748,11 @@ EOF
     assert_failure
 }
 
+@test "legacy stack RCH installer keeps daemon and fleet setup active" {
+    run grep -F '_stack_run_installer "$tool" --easy-mode' "$PROJECT_ROOT/scripts/lib/stack.sh"
+    assert_success
+}
+
 @test "stack verified installer command quotes inline env assignment values" {
     local stack_lib="$PROJECT_ROOT/scripts/lib/stack.sh"
 
