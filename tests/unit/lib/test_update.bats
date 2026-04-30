@@ -7946,6 +7946,37 @@ SECURITY
     assert_success
 }
 
+@test "install.sh Agent Mail unit escapes dynamic systemd values" {
+    local installer="$PROJECT_ROOT/install.sh"
+
+    run grep -F 'systemd_unit_path_escape() {' "$installer"
+    assert_success
+
+    run grep -F 'value="${value//%/%%}"' "$installer"
+    assert_success
+
+    run grep -F 'value="${value//\$/\$\$}"' "$installer"
+    assert_success
+
+    run grep -Fx 'WorkingDirectory=$storage_root' "$installer"
+    assert_failure
+
+    run grep -Fx 'WorkingDirectory=$storage_root_unit' "$installer"
+    assert_success
+
+    run grep -Fx 'Environment=STORAGE_ROOT=$storage_root' "$installer"
+    assert_failure
+
+    run grep -Fx 'Environment=$storage_root_env' "$installer"
+    assert_success
+
+    run grep -F 'ExecStart=$am_bin serve-http' "$installer"
+    assert_failure
+
+    run grep -F 'ExecStart=${am_bin_exec} serve-http' "$installer"
+    assert_success
+}
+
 @test "stack Agent Mail service accepts a healthy existing runtime" {
     local stack_lib="$PROJECT_ROOT/scripts/lib/stack.sh"
 
