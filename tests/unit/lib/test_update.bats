@@ -1172,6 +1172,138 @@ EOF
     assert_output --partial "-n $STUB_DIR/fuser $lockfile"
 }
 
+@test "fix_apt_issues: fails when interrupted dpkg repair fails" {
+    init_stub_dir
+    export PATH="$STUB_DIR:$PATH"
+    QUIET=true
+    VERBOSE=false
+    DRY_RUN=false
+    ABORT_ON_FAILURE=false
+    UPDATE_LOG_FILE="$HOME/update.log"
+    SUCCESS_COUNT=0
+    FAIL_COUNT=0
+
+    cat > "$STUB_DIR/ls" <<'EOF'
+#!/usr/bin/env bash
+case "$*" in
+  /var/lib/dpkg/updates/*) exit 0 ;;
+  *) exit 1 ;;
+esac
+EOF
+    chmod +x "$STUB_DIR/ls"
+
+    cat > "$STUB_DIR/dpkg" <<'EOF'
+#!/usr/bin/env bash
+case "${1:-}" in
+  --configure)
+    echo "dpkg repair failed" >&2
+    exit 27
+    ;;
+  -l)
+    exit 0
+    ;;
+esac
+exit 0
+EOF
+    chmod +x "$STUB_DIR/dpkg"
+
+    get_sudo() { printf '%s\n' ""; }
+
+    run fix_apt_issues
+
+    assert_failure
+    assert_output --partial "[fail] dpkg repair"
+    assert_output --partial "dpkg --configure -a failed (exit 27)"
+    run grep -F "dpkg output: dpkg repair failed" "$UPDATE_LOG_FILE"
+    assert_success
+}
+
+@test "fix_apt_issues: fails when broken dependency repair fails" {
+    init_stub_dir
+    export PATH="$STUB_DIR:$PATH"
+    QUIET=true
+    VERBOSE=false
+    DRY_RUN=false
+    ABORT_ON_FAILURE=false
+    UPDATE_LOG_FILE="$HOME/update.log"
+    SUCCESS_COUNT=0
+    FAIL_COUNT=0
+
+    cat > "$STUB_DIR/dpkg" <<'EOF'
+#!/usr/bin/env bash
+case "${1:-}" in
+  -l)
+    exit 0
+    ;;
+esac
+exit 0
+EOF
+    chmod +x "$STUB_DIR/dpkg"
+
+    cat > "$STUB_DIR/apt-get" <<'EOF'
+#!/usr/bin/env bash
+case "${1:-}" in
+  check)
+    echo "broken dependencies" >&2
+    exit 1
+    ;;
+  -f)
+    echo "fix install failed" >&2
+    exit 42
+    ;;
+esac
+exit 0
+EOF
+    chmod +x "$STUB_DIR/apt-get"
+
+    get_sudo() { printf '%s\n' ""; }
+
+    run fix_apt_issues
+
+    assert_failure
+    assert_output --partial "[fail] apt repair"
+    assert_output --partial "apt-get -f install failed (exit 42)"
+    run grep -F "apt-get -f output: fix install failed" "$UPDATE_LOG_FILE"
+    assert_success
+}
+
+@test "update_apt: skips apt update and upgrade when repair fails" {
+    init_stub_dir
+    export PATH="$STUB_DIR:$PATH"
+    QUIET=true
+    VERBOSE=false
+    DRY_RUN=false
+    UPDATE_APT=true
+    ABORT_ON_FAILURE=false
+    UPDATE_LOG_FILE="$HOME/update.log"
+    SUCCESS_COUNT=0
+    FAIL_COUNT=0
+
+    cat > "$STUB_DIR/apt-get" <<EOF
+#!/usr/bin/env bash
+echo "\$*" >> "$HOME/apt-get-called"
+exit 0
+EOF
+    chmod +x "$STUB_DIR/apt-get"
+
+    update_disable_needrestart_apt_hook() { :; }
+    check_apt_lock() { return 0; }
+    fix_apt_issues() {
+        update_finish_cmd_fail "apt repair" "synthetic repair failure"
+        return 1
+    }
+    check_reboot_required() {
+        : > "$HOME/reboot-check-called"
+    }
+
+    run update_apt
+
+    assert_success
+    assert_output --partial "[fail] apt repair"
+    [[ ! -f "$HOME/apt-get-called" ]]
+    [[ ! -f "$HOME/reboot-check-called" ]]
+}
+
 @test "update_require_security: sources repo-local scripts/lib/security.sh" {
     local repo_root
     local marker_file

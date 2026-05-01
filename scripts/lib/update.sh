@@ -3824,8 +3824,13 @@ update_apt() {
         return 0
     fi
 
-    # Fix any broken packages first
-    fix_apt_issues
+    # Fix any broken packages first. If repair itself fails, skip the rest of
+    # apt for this run so the real failure is not buried under a cascading
+    # upgrade/autoremove failure.
+    if ! fix_apt_issues; then
+        log_to_file "Skipping apt update/upgrade because apt repair failed"
+        return 0
+    fi
 
     # Run apt update
     run_cmd_sudo_with_retry_status "apt update" env DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a NEEDRESTART_SUSPEND=1 apt-get update -y || true
@@ -3962,11 +3967,21 @@ fix_apt_issues() {
     if ls /var/lib/dpkg/updates/* &>/dev/null; then
         local sudo_cmd
         sudo_cmd=$(get_sudo)
-        log_item "fix" "dpkg" "configuring interrupted packages"
+        log_item "run" "dpkg repair"
         log_to_file "Running: $sudo_cmd dpkg --configure -a"
         local dpkg_output
-        dpkg_output=$($sudo_cmd env DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a NEEDRESTART_SUSPEND=1 dpkg --configure -a 2>&1) || true
+        local dpkg_exit=0
+        if dpkg_output=$($sudo_cmd env DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a NEEDRESTART_SUSPEND=1 dpkg --configure -a 2>&1); then
+            :
+        else
+            dpkg_exit=$?
+        fi
         [[ -n "$dpkg_output" ]] && log_to_file "dpkg output: $dpkg_output"
+        if [[ $dpkg_exit -ne 0 ]]; then
+            update_finish_cmd_fail "dpkg repair" "dpkg --configure -a failed (exit $dpkg_exit)"
+            return 1
+        fi
+        update_finish_cmd_ok "dpkg repair" "configured interrupted packages"
     fi
 
     # Check for broken dependencies or packages needing reinstall
@@ -3986,13 +4001,23 @@ fix_apt_issues() {
     fi
 
     if [[ "$needs_fix" == "true" ]]; then
-        log_item "fix" "apt" "fixing broken dependencies"
+        log_item "run" "apt repair"
         local sudo_cmd
         sudo_cmd=$(get_sudo)
         log_to_file "Running: $sudo_cmd apt-get -f install -y"
         local apt_output
-        apt_output=$($sudo_cmd env DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a NEEDRESTART_SUSPEND=1 apt-get -f install -y 2>&1) || true
+        local apt_exit=0
+        if apt_output=$($sudo_cmd env DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a NEEDRESTART_SUSPEND=1 apt-get -f install -y 2>&1); then
+            :
+        else
+            apt_exit=$?
+        fi
         [[ -n "$apt_output" ]] && log_to_file "apt-get -f output: $apt_output"
+        if [[ $apt_exit -ne 0 ]]; then
+            update_finish_cmd_fail "apt repair" "apt-get -f install failed (exit $apt_exit)"
+            return 1
+        fi
+        update_finish_cmd_ok "apt repair" "fixed broken dependencies"
     fi
 }
 
