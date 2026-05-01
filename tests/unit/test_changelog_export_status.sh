@@ -3974,6 +3974,39 @@ test_dashboard_rejects_invalid_ports_before_serving() {
     cleanup_mock_env
 }
 
+test_dashboard_help_does_not_require_target_context() {
+    setup_installed_layout_env
+
+    local mode=""
+    local output=""
+    local exit_code=0
+    local failures=""
+    local -a dashboard_args=()
+
+    for mode in generate serve; do
+        dashboard_args=("$mode" "--help")
+        exit_code=0
+        output=$(HOME="$TEST_ROOT_HOME" \
+            TARGET_USER="ghost" \
+            TARGET_HOME="$TEST_HOME/missing-target-home" \
+            ACFS_SYSTEM_STATE_FILE="$TEST_HOME/missing-system-state.json" \
+            PATH="$TEST_FAKE_BIN:/usr/bin:/bin" \
+            bash "$DASHBOARD_SH" "${dashboard_args[@]}" 2>&1) || exit_code=$?
+
+        if [[ "$exit_code" -ne 0 ]] || [[ "$output" != *"Usage:"* ]] || [[ "$output" == *"refusing to fall back to current HOME"* ]]; then
+            printf -v failures '%s%s: exit=%s output=%s\n' "$failures" "$mode" "$exit_code" "$output"
+        fi
+    done
+
+    if [[ -z "$failures" ]]; then
+        harness_pass "dashboard help does not require target context"
+    else
+        harness_fail "dashboard help does not require target context" "$failures"
+    fi
+
+    cleanup_mock_env
+}
+
 test_dashboard_prefers_repo_local_info_script() {
     setup_installed_layout_env
 
@@ -11249,6 +11282,7 @@ main() {
     harness_section "Dashboard"
     test_dashboard_generation_is_atomic_on_failure || true
     test_dashboard_rejects_invalid_ports_before_serving || true
+    test_dashboard_help_does_not_require_target_context || true
     test_dashboard_prefers_repo_local_info_script || true
     test_dashboard_uses_installed_layout_under_root_home || true
     test_dashboard_serve_uses_target_user_in_ssh_hint || true

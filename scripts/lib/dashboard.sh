@@ -710,8 +710,6 @@ validate_port() {
 dashboard_generate() {
     local force=false
 
-    dashboard_prepare_context
-
     while [[ $# -gt 0 ]]; do
         case "$1" in
             --force)
@@ -728,6 +726,8 @@ dashboard_generate() {
         esac
         shift
     done
+
+    dashboard_prepare_context
 
     if [[ -z "$_DASHBOARD_ACFS_HOME" ]]; then
         echo "Error: ACFS home not found" >&2
@@ -796,8 +796,6 @@ dashboard_serve() {
     local port=8080
     local host="127.0.0.1"
 
-    dashboard_prepare_context
-
     while [[ $# -gt 0 ]]; do
         case "$1" in
             --port)
@@ -858,6 +856,8 @@ dashboard_serve() {
         echo "Error: port must be an integer between 1 and 65535" >&2
         return 1
     fi
+
+    dashboard_prepare_context
 
     if [[ -z "$_DASHBOARD_ACFS_HOME" ]]; then
         echo "Error: ACFS home not found" >&2
