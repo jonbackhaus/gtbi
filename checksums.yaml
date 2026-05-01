@@ -1,4 +1,4 @@
-# checksums.yaml - Auto-generated 2026-05-01T00:07:13-04:00
+# checksums.yaml - Auto-generated 2026-05-01T01:08:14-04:00
 # Run: ./scripts/lib/security.sh --update-checksums
 
 installers:
@@ -88,11 +88,11 @@ installers:
 
   ms:
     url: "https://raw.githubusercontent.com/Dicklesworthstone/meta_skill/main/scripts/install.sh"
-    sha256: "0096284813b1da7a2dc7c036fbe67f3af4f0a1c64839cc55d03a9b6c596aa665"
+    sha256: "f55a00d85af82c9949d83f28ff888d21d209547d4d95effcec233f845fadc6d9"
 
   ntm:
     url: "https://raw.githubusercontent.com/Dicklesworthstone/ntm/main/install.sh"
-    sha256: "04a321a18bd923c104ffdcbfe302bcb2d645d47c082be759ac9ffe9583ad9109"
+    sha256: "0834900ab7c216105711b6bb32371dde6d09af869883fd32adab35b45d10cd52"
 
   nvm:
     url: "https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh"
@@ -165,4 +165,3 @@ installers:
   zoxide:
     url: "https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh"
     sha256: "0c25aed6cce9d56ee0596c9a5df8cbe99ffd0f7a7054de0262234dd268b61404"
-
