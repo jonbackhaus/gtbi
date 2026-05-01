@@ -1075,6 +1075,17 @@ main() {
   fi
   if [[ -n "$repo_update_script" ]]; then
     update_script="$repo_update_script"
+    if [[ "$current_home_from_valid_env" != true ]]; then
+      system_state_home="$(resolve_target_home_from_state_hint "${ACFS_SYSTEM_STATE_FILE:-}" 2>/dev/null || true)"
+      if [[ -n "$system_state_home" ]] && { [[ -z "${TARGET_HOME:-}" ]] || { [[ "$TARGET_HOME" != "$system_state_home" ]] && ! find_update_script_for_home "$TARGET_HOME" >/dev/null 2>&1; }; }; then
+        TARGET_HOME="$system_state_home"
+        ACFS_HOME="$system_state_home/.acfs"
+        if [[ -f "$ACFS_HOME/state.json" ]]; then
+          ACFS_STATE_FILE="$ACFS_HOME/state.json"
+        fi
+        export TARGET_HOME ACFS_HOME ACFS_STATE_FILE
+      fi
+    fi
   elif [[ -n "$wrapper_home" ]]; then
     ACFS_HOME="${ACFS_HOME:-$wrapper_home/.acfs}"
     ACFS_STATE_FILE="${ACFS_STATE_FILE:-$ACFS_HOME/state.json}"

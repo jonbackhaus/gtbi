@@ -396,6 +396,14 @@ _stack_target_home() {
         printf '%s\n' "$explicit_home"
         return 0
     fi
+    if [[ -n "$explicit_home" ]] && [[ "$target_user" == "$current_user" ]] && {
+        [[ -f "$explicit_home/.acfs/state.json" ]] \
+            || [[ -f "$explicit_home/.acfs/VERSION" ]] \
+            || [[ -d "$explicit_home/.acfs/scripts/lib" ]]
+    }; then
+        printf '%s\n' "$explicit_home"
+        return 0
+    fi
 
     if [[ -n "$explicit_home" && -n "$explicit_bin_dir" && -z "${TARGET_USER:-}" && "$explicit_home" != "$initial_env_home" ]]; then
         printf '%s\n' "$explicit_home"
@@ -407,6 +415,15 @@ _stack_target_home() {
         if [[ -n "$passwd_entry" ]]; then
             passwd_entry="$(_stack_passwd_home_from_entry "$passwd_entry" 2>/dev/null || true)"
             if [[ -n "$passwd_entry" ]]; then
+                current_home="$(_stack_existing_abs_home "${HOME:-}" 2>/dev/null || true)"
+                if [[ -n "$explicit_home" ]] \
+                    && [[ -n "$explicit_bin_dir" ]] \
+                    && [[ "$target_user" == "$current_user" ]] \
+                    && [[ "$current_home" == "$passwd_entry" ]] \
+                    && [[ "$explicit_home" != "$initial_env_home" ]]; then
+                    printf '%s\n' "$explicit_home"
+                    return 0
+                fi
                 printf '%s\n' "${passwd_entry%/}"
                 return 0
             fi
