@@ -9176,6 +9176,88 @@ EOF
     [[ ! -f "$HOME/global-am-used" ]]
 }
 
+@test "update_retry_max_attempts: defaults malformed values and clamps zero" {
+    unset ACFS_UPDATE_RETRY_MAX_ATTEMPTS
+    run update_retry_max_attempts
+    assert_success
+    assert_output "3"
+
+    export ACFS_UPDATE_RETRY_MAX_ATTEMPTS=bogus
+    run update_retry_max_attempts
+    assert_success
+    assert_output "3"
+
+    export ACFS_UPDATE_RETRY_MAX_ATTEMPTS=0
+    run update_retry_max_attempts
+    assert_success
+    assert_output "1"
+
+    export ACFS_UPDATE_RETRY_MAX_ATTEMPTS=2
+    run update_retry_max_attempts
+    assert_success
+    assert_output "2"
+}
+
+@test "update_run_command_capture_with_retry: zero retry max still runs once and fails" {
+    init_stub_dir
+    export PATH="$STUB_DIR:$PATH"
+    export ACFS_UPDATE_RETRY_MAX_ATTEMPTS=0
+    export ACFS_UPDATE_RETRY_SLEEP_SECONDS=0
+    UPDATE_LOG_FILE="$HOME/update.log"
+
+    cat > "$STUB_DIR/fail-capture" <<'EOF'
+#!/usr/bin/env bash
+attempts_file="$HOME/capture-attempts"
+attempts=0
+if [[ -f "$attempts_file" ]]; then
+  attempts="$(cat "$attempts_file")"
+fi
+attempts=$((attempts + 1))
+printf '%s\n' "$attempts" > "$attempts_file"
+echo "ordinary failure" >&2
+exit 7
+EOF
+    chmod +x "$STUB_DIR/fail-capture"
+
+    run update_run_command_capture_with_retry "captured command" fail-capture
+
+    [[ "$status" -eq 7 ]]
+    [[ "$(cat "$HOME/capture-attempts")" == "1" ]]
+}
+
+@test "run_cmd_attempt_with_retry: zero retry max still runs once and fails" {
+    init_stub_dir
+    export PATH="$STUB_DIR:$PATH"
+    export ACFS_UPDATE_RETRY_MAX_ATTEMPTS=0
+    export ACFS_UPDATE_RETRY_SLEEP_SECONDS=0
+    QUIET=true
+    VERBOSE=false
+    DRY_RUN=false
+    ABORT_ON_FAILURE=false
+    UPDATE_LOG_FILE="$HOME/update.log"
+    SUCCESS_COUNT=0
+    FAIL_COUNT=0
+
+    cat > "$STUB_DIR/fail-retry" <<'EOF'
+#!/usr/bin/env bash
+attempts_file="$HOME/retry-attempts"
+attempts=0
+if [[ -f "$attempts_file" ]]; then
+  attempts="$(cat "$attempts_file")"
+fi
+attempts=$((attempts + 1))
+printf '%s\n' "$attempts" > "$attempts_file"
+echo "ordinary failure" >&2
+exit 9
+EOF
+    chmod +x "$STUB_DIR/fail-retry"
+
+    run run_cmd_attempt_with_retry "zero max fallback" fail-retry
+
+    [[ "$status" -eq 9 ]]
+    [[ "$(cat "$HOME/retry-attempts")" == "1" ]]
+}
+
 @test "update_zoxide: retries transient reinstall failures before succeeding" {
     init_stub_dir
     export PATH="$STUB_DIR:$PATH"

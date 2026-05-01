@@ -1091,7 +1091,8 @@ update_run_command_capture_with_retry() {
     local desc="$1"
     shift
 
-    local max_attempts="${ACFS_UPDATE_RETRY_MAX_ATTEMPTS:-3}"
+    local max_attempts
+    max_attempts="$(update_retry_max_attempts)"
     local attempt=1
     local exit_code=0
     local output=""
@@ -1465,6 +1466,22 @@ update_is_transient_failure_output() {
         'failed to map segment|ENOENT|EACCES|EAGAIN|Connection reset|timed out|rate limit|API rate limit exceeded|too many requests|429|503|502|500|TLS|temporary failure|connection refused|reset by peer|network is unreachable|could not resolve host|curl:|wget:|failed to download|download.*failed|unable to fetch some archives|could not fetch release info|version [^[:space:]]+ was not found'
 }
 
+update_retry_max_attempts() {
+    local raw="${ACFS_UPDATE_RETRY_MAX_ATTEMPTS:-3}"
+
+    if [[ -z "$raw" || ! "$raw" =~ ^[0-9]+$ ]]; then
+        printf '3\n'
+        return 0
+    fi
+
+    if [[ "$raw" =~ ^0+$ ]]; then
+        printf '1\n'
+        return 0
+    fi
+
+    printf '%s\n' "$raw"
+}
+
 update_retry_sleep_seconds() {
     local attempt="${1:-1}"
 
@@ -1481,7 +1498,8 @@ _run_cmd_with_retry_internal() {
     local failure_mode="$2"
     shift 2
 
-    local max_attempts="${ACFS_UPDATE_RETRY_MAX_ATTEMPTS:-3}"
+    local max_attempts
+    max_attempts="$(update_retry_max_attempts)"
     local attempt=1
     local exit_code=0
     local output=""
