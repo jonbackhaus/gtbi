@@ -1007,6 +1007,11 @@ log_item() {
             printf "  ${RED}[fail]${NC} %s\n" "$msg"
             [[ -n "$details" ]] && printf "       ${DIM}%s${NC}\n" "$details"
             ((FAIL_COUNT += 1))
+            if [[ "${ABORT_ON_FAILURE:-false}" == "true" ]]; then
+                echo -e "${RED}Aborting due to failure (--abort-on-failure)${NC}"
+                log_to_file "ABORT: Stopping due to --abort-on-failure"
+                exit 1
+            fi
             ;;
         run)
             [[ "$QUIET" != "true" ]] && printf "  ${YELLOW}[...]${NC} %s\n" "$msg"
