@@ -290,6 +290,16 @@ assert_contains "SECRET_KEY redacted" "$result" "<REDACTED:SECRET_KEY>"
 assert_contains "ACCESS_TOKEN redacted" "$result" "<REDACTED:ACCESS_TOKEN>"
 assert_contains "PASSWORD redacted" "$result" "<REDACTED:password>"
 
+result=$(redact_and_read "spaced_env_secrets.txt" "API_KEY = mysupersecretvalue123
+DB_PASSWORD = hunter2
+VERCEL_TOKEN : vercel-token-value-12345")
+assert_contains "Spaced API_KEY redacted" "$result" "API_KEY = <REDACTED:API_KEY>"
+assert_contains "Spaced password redacted" "$result" "DB_PASSWORD = <REDACTED:password>"
+assert_contains "Spaced colon token redacted" "$result" "VERCEL_TOKEN : <REDACTED:generic_secret>"
+assert_not_contains "Spaced secret values removed" "$result" "mysupersecretvalue123"
+assert_not_contains "Spaced password value removed" "$result" "hunter2"
+assert_not_contains "Spaced token value removed" "$result" "vercel-token-value-12345"
+
 result=$(redact_and_read "prefixed_env_secrets.txt" "GEMINI_API_KEY=AIzaSyExampleValue12345
 VERCEL_TOKEN=vercel-token-value-12345
 AWS_SECRET_ACCESS_KEY=awssecretaccessvalue123
