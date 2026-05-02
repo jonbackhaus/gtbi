@@ -1672,6 +1672,39 @@ EOF
     cleanup_mock_env
 }
 
+test_notifications_cli_source_preserves_shell_options() {
+    setup_mock_env
+
+    local output=""
+    output=$(cd "$TEST_HOME" && HOME="$TEST_HOME" \
+        bash -c '
+            set +e +u +o pipefail
+            source "$1"
+            case "$-" in
+                *e*) errexit=on ;;
+                *) errexit=off ;;
+            esac
+            case "$-" in
+                *u*) nounset=on ;;
+                *) nounset=off ;;
+            esac
+            if [[ -o pipefail ]]; then
+                pipefail=on
+            else
+                pipefail=off
+            fi
+            printf "errexit=%s nounset=%s pipefail=%s\n" "$errexit" "$nounset" "$pipefail"
+        ' _ "$NOTIFICATIONS_SH" 2>&1)
+
+    if [[ "$output" == "errexit=off nounset=off pipefail=off" ]]; then
+        harness_pass "notifications CLI source preserves shell options"
+    else
+        harness_fail "notifications CLI source preserves shell options" "$output"
+    fi
+
+    cleanup_mock_env
+}
+
 test_notifications_cli_sanitizes_headers_before_curl() {
     setup_mock_env
 
@@ -11335,6 +11368,7 @@ main() {
     test_webhook_payload_defaults_missing_summary_timestamp || true
     test_acfs_notify_uses_resolved_curl_path || true
     test_notifications_cli_uses_target_home_when_home_is_relative || true
+    test_notifications_cli_source_preserves_shell_options || true
     test_notifications_cli_sanitizes_headers_before_curl || true
 
     harness_section "Autofix"

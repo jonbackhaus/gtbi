@@ -9,6 +9,24 @@
 # Related bead: bd-2igt6
 # ============================================================
 
+_ACFS_NOTIFICATIONS_SOURCED=false
+_ACFS_NOTIFICATIONS_HAD_ERREXIT=false
+_ACFS_NOTIFICATIONS_HAD_NOUNSET=false
+_ACFS_NOTIFICATIONS_HAD_PIPEFAIL=false
+
+if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
+    _ACFS_NOTIFICATIONS_SOURCED=true
+    case "$-" in
+        *e*) _ACFS_NOTIFICATIONS_HAD_ERREXIT=true ;;
+    esac
+    case "$-" in
+        *u*) _ACFS_NOTIFICATIONS_HAD_NOUNSET=true ;;
+    esac
+    if [[ -o pipefail ]]; then
+        _ACFS_NOTIFICATIONS_HAD_PIPEFAIL=true
+    fi
+fi
+
 set -euo pipefail
 
 # ============================================================
@@ -683,4 +701,14 @@ main() {
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
     main "$@"
+elif [[ "$_ACFS_NOTIFICATIONS_SOURCED" == true ]]; then
+    if [[ "$_ACFS_NOTIFICATIONS_HAD_ERREXIT" != true ]]; then
+        set +e
+    fi
+    if [[ "$_ACFS_NOTIFICATIONS_HAD_NOUNSET" != true ]]; then
+        set +u
+    fi
+    if [[ "$_ACFS_NOTIFICATIONS_HAD_PIPEFAIL" != true ]]; then
+        set +o pipefail
+    fi
 fi
