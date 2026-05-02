@@ -15,6 +15,32 @@ teardown() {
     common_teardown
 }
 
+stub_acfs_curl_response() {
+    STUB_ACFS_CURL_CONTENT="$1"
+    STUB_ACFS_CURL_EXIT_CODE="${2:-0}"
+
+    acfs_curl() {
+        local output_file=""
+        local args=("$@")
+        local i
+
+        for ((i=0; i<${#args[@]}; i++)); do
+            if [[ "${args[$i]}" == "-o" ]]; then
+                output_file="${args[$((i+1))]}"
+                break
+            fi
+        done
+
+        if [[ -n "$output_file" ]]; then
+            printf '%s' "$STUB_ACFS_CURL_CONTENT" > "$output_file"
+        else
+            printf '%s' "$STUB_ACFS_CURL_CONTENT"
+        fi
+
+        return "$STUB_ACFS_CURL_EXIT_CODE"
+    }
+}
+
 @test "enforce_https: allows https" {
     run enforce_https "https://example.com"
     assert_success
@@ -34,8 +60,7 @@ teardown() {
         sha=$(echo -n "$content" | shasum -a 256 | cut -d' ' -f1)
     fi
 
-    # Stub curl to return content (handles -o flag)
-    stub_curl "$content" 0
+    stub_acfs_curl_response "$content" 0
 
     run verify_checksum "https://example.com" "$sha" "test"
     assert_success
@@ -145,7 +170,7 @@ teardown() {
     local content="malicious content"
     local sha="0000000000000000000000000000000000000000000000000000000000000000"
 
-    stub_curl "$content" 0
+    stub_acfs_curl_response "$content" 0
     
     run verify_checksum "https://example.com" "$sha" "test"
     assert_failure
@@ -172,6 +197,53 @@ teardown() {
     assert_failure
     assert_output --partial "Checksum mismatch"
     refute_output --partial "Trusted-tool auto-accept"
+}
+
+@test "acfs_curl: ignores shell function curl" {
+    local security_lib="$PROJECT_ROOT/scripts/lib/security.sh"
+    local marker="${BATS_TEST_TMPDIR:-/tmp}/acfs-curl-poison-marker"
+
+    run bash -c '
+        set -euo pipefail
+        marker="$1"
+        security_lib="$2"
+        curl() {
+            printf "poisoned\n" > "$marker"
+            return 42
+        }
+        source "$security_lib"
+        set +e
+        acfs_curl "https://127.0.0.1:9/" >/dev/null 2>&1
+        status=$?
+        set -e
+        [[ ! -e "$marker" ]]
+        exit "$status"
+    ' _ "$marker" "$security_lib"
+
+    assert_failure
+    [[ ! -e "$marker" ]]
+}
+
+@test "calculate_file_sha256: ignores shell function sha256sum" {
+    local security_lib="$PROJECT_ROOT/scripts/lib/security.sh"
+    local probe_file="${BATS_TEST_TMPDIR:-/tmp}/acfs-sha-poison-probe"
+
+    run bash -c '
+        set -euo pipefail
+        probe_file="$1"
+        security_lib="$2"
+        printf "%s" "real-content" > "$probe_file"
+        source "$security_lib"
+        expected="$(calculate_file_sha256 "$probe_file")"
+        sha256sum() {
+            printf "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff  %s\n" "$1"
+        }
+        actual="$(calculate_file_sha256 "$probe_file")"
+        [[ "$actual" == "$expected" ]]
+        [[ "$actual" != "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff" ]]
+    ' _ "$probe_file" "$security_lib"
+
+    assert_success
 }
 
 @test "load_checksums: parses yaml" {

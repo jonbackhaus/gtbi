@@ -47,6 +47,57 @@ ACFS_REPO_OWNER="${ACFS_REPO_OWNER:-Dicklesworthstone}"
 ACFS_REPO_NAME="${ACFS_REPO_NAME:-agentic_coding_flywheel_setup}"
 ACFS_CHECKSUMS_REF="${ACFS_CHECKSUMS_REF:-main}"
 
+acfs_security_system_binary_path() {
+    local name="${1:-}"
+    local candidate=""
+
+    [[ -n "$name" ]] || return 1
+    case "$name" in
+        *[!A-Za-z0-9._+-]*)
+            return 1
+            ;;
+    esac
+
+    for candidate in \
+        "/usr/bin/$name" \
+        "/bin/$name" \
+        "/usr/local/bin/$name" \
+        "/usr/local/sbin/$name" \
+        "/usr/sbin/$name" \
+        "/sbin/$name"
+    do
+        if [[ -x "$candidate" ]]; then
+            printf '%s\n' "$candidate"
+            return 0
+        fi
+    done
+
+    return 1
+}
+
+acfs_security_curl_binary_path() {
+    acfs_security_system_binary_path curl
+}
+
+acfs_security_hash_tool() {
+    local sha256sum_bin=""
+    local shasum_bin=""
+
+    sha256sum_bin="$(acfs_security_system_binary_path sha256sum 2>/dev/null || true)"
+    if [[ -n "$sha256sum_bin" ]]; then
+        printf 'sha256sum:%s\n' "$sha256sum_bin"
+        return 0
+    fi
+
+    shasum_bin="$(acfs_security_system_binary_path shasum 2>/dev/null || true)"
+    if [[ -n "$shasum_bin" ]]; then
+        printf 'shasum:%s\n' "$shasum_bin"
+        return 0
+    fi
+
+    return 1
+}
+
 # Check if running in interactive mode
 # Returns 0 if interactive, 1 if non-interactive
 _acfs_is_interactive() {
@@ -61,13 +112,21 @@ _acfs_is_interactive() {
 }
 
 # curl defaults: enforce HTTPS (including redirects) when supported
+ACFS_CURL_BIN="$(acfs_security_curl_binary_path 2>/dev/null || true)"
 ACFS_CURL_BASE_ARGS=(--connect-timeout 30 --max-time 300 -fsSL)
-if command -v curl &>/dev/null && curl --help all 2>/dev/null | grep -q -- '--proto'; then
+ACFS_CURL_HELP=""
+if [[ -n "$ACFS_CURL_BIN" ]] && ACFS_CURL_HELP="$("$ACFS_CURL_BIN" --help all 2>/dev/null)" && [[ "$ACFS_CURL_HELP" == *"--proto"* ]]; then
     ACFS_CURL_BASE_ARGS=(--proto '=https' --proto-redir '=https' --connect-timeout 30 --max-time 300 -fsSL)
 fi
+unset ACFS_CURL_HELP
 
 acfs_curl() {
-    curl "${ACFS_CURL_BASE_ARGS[@]}" "$@"
+    if [[ -z "$ACFS_CURL_BIN" || ! -x "$ACFS_CURL_BIN" ]]; then
+        log_error "No trusted curl binary available"
+        return 127
+    fi
+
+    "$ACFS_CURL_BIN" "${ACFS_CURL_BASE_ARGS[@]}" "$@"
 }
 
 # Automatic retries for transient network errors (fast total budget).
@@ -266,32 +325,76 @@ enforce_https() {
 #   $1 - File path
 calculate_file_sha256() {
     local filepath="$1"
+    local hash_tool=""
+    local tool_name=""
+    local tool_path=""
+    local output=""
+    local hash=""
+
     if [[ ! -r "$filepath" ]]; then
         log_error "Cannot read file for checksum: $filepath"
         return 1
     fi
 
-    if command -v sha256sum &>/dev/null; then
-        sha256sum "$filepath" | cut -d' ' -f1
-    elif command -v shasum &>/dev/null; then
-        shasum -a 256 "$filepath" | cut -d' ' -f1
-    else
+    if ! hash_tool="$(acfs_security_hash_tool)"; then
         log_error "No SHA256 tool available"
         return 1
     fi
+
+    tool_name="${hash_tool%%:*}"
+    tool_path="${hash_tool#*:}"
+
+    case "$tool_name" in
+        sha256sum)
+            output="$("$tool_path" "$filepath")" || return 1
+            ;;
+        shasum)
+            output="$("$tool_path" -a 256 "$filepath")" || return 1
+            ;;
+        *)
+            log_error "Unsupported SHA256 tool: $tool_name"
+            return 1
+            ;;
+    esac
+
+    read -r hash _ <<< "$output"
+    [[ -n "$hash" ]] || return 1
+    printf '%s\n' "$hash"
 }
 
 # Calculate SHA256 from stdin
 # Usage: printf 'content' | calculate_sha256
 calculate_sha256() {
-    if command -v sha256sum &>/dev/null; then
-        sha256sum | cut -d' ' -f1
-    elif command -v shasum &>/dev/null; then
-        shasum -a 256 | cut -d' ' -f1
-    else
+    local hash_tool=""
+    local tool_name=""
+    local tool_path=""
+    local output=""
+    local hash=""
+
+    if ! hash_tool="$(acfs_security_hash_tool)"; then
         log_error "No SHA256 tool available"
         return 1
     fi
+
+    tool_name="${hash_tool%%:*}"
+    tool_path="${hash_tool#*:}"
+
+    case "$tool_name" in
+        sha256sum)
+            output="$("$tool_path")" || return 1
+            ;;
+        shasum)
+            output="$("$tool_path" -a 256)" || return 1
+            ;;
+        *)
+            log_error "Unsupported SHA256 tool: $tool_name"
+            return 1
+            ;;
+    esac
+
+    read -r hash _ <<< "$output"
+    [[ -n "$hash" ]] || return 1
+    printf '%s\n' "$hash"
 }
 
 _acfs_remove_temp_files() {
