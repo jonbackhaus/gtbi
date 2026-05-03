@@ -8555,6 +8555,25 @@ EOF
     assert_failure
 }
 
+@test "status update check uses system curl helper" {
+    local status_lib="$PROJECT_ROOT/scripts/lib/status.sh"
+
+    run grep -F '_status_system_curl() {' "$status_lib"
+    assert_success
+
+    run grep -F '_status_system_binary_path curl' "$status_lib"
+    assert_success
+
+    run grep -F '_status_system_curl -fsSL --connect-timeout 2 --max-time 5' "$status_lib"
+    assert_success
+
+    run rg -n '(^|[[:space:]])timeout 5 curl -fsSL' "$status_lib"
+    assert_failure
+
+    run rg -n '(^|[[:space:]])curl[[:space:]]+-fsSL' "$status_lib"
+    assert_failure
+}
+
 @test "stack verified installer command quotes inline env assignment values" {
     local stack_lib="$PROJECT_ROOT/scripts/lib/stack.sh"
 
