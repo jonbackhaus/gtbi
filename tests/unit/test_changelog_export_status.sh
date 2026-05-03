@@ -8246,6 +8246,9 @@ install-helpers|$REPO_ROOT/scripts/lib/install_helpers.sh|_acfs_system_binary_pa
 update-early-lib|$REPO_ROOT/scripts/lib/update.sh|_update_early_system_binary_path
 update-system-lib|$REPO_ROOT/scripts/lib/update.sh|update_system_binary_path
 stack-lib|$REPO_ROOT/scripts/lib/stack.sh|_stack_system_binary_path
+notify-lib|$REPO_ROOT/scripts/lib/notify.sh|_acfs_notify_system_binary_path
+notifications-lib|$REPO_ROOT/scripts/lib/notifications.sh|notifications_system_binary_path
+webhook-lib|$REPO_ROOT/scripts/lib/webhook.sh|webhook_system_binary_path
 EOF
 
     if [[ -z "$failures" ]]; then
