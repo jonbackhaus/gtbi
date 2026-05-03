@@ -1593,6 +1593,27 @@ EOF
     [[ "$(get_checksum mcp_agent_mail)" == "$expected_sha" ]]
 }
 
+@test "update_sync_known_installer_urls_from_checksums: ignores non-associative installer maps" {
+    local checksums_file
+    checksums_file="$HOME/checksums.yaml"
+
+    cat > "$checksums_file" <<'EOF'
+installers:
+  mcp_agent_mail:
+    url: "https://raw.githubusercontent.com/Dicklesworthstone/mcp_agent_mail_rust/main/install.sh"
+    sha256: "2222222222222222222222222222222222222222222222222222222222222222"
+EOF
+
+    declare -ga KNOWN_INSTALLERS=()
+
+    run update_sync_known_installer_urls_from_checksums "$checksums_file"
+    assert_success
+
+    run declare -p KNOWN_INSTALLERS
+    assert_success
+    assert_output --partial "declare -a"
+}
+
 @test "update_require_security: does not probe bogus repo path when ACFS_REPO_ROOT is unset" {
     export ACFS_BIN_DIR="$HOME/missing-bin"
     export ACFS_HOME="$HOME/missing-home"

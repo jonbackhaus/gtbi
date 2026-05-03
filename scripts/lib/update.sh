@@ -2816,9 +2816,11 @@ update_sync_known_installer_urls_from_checksums() {
     local installers_indent=0
     local tool_indent=""
     local line=""
+    local installers_decl=""
 
     [[ -n "$file" && -r "$file" ]] || return 0
-    declare -p KNOWN_INSTALLERS >/dev/null 2>&1 || return 0
+    installers_decl="$(declare -p KNOWN_INSTALLERS 2>/dev/null)" || return 0
+    [[ "$installers_decl" =~ ^declare[[:space:]]+-[^[:space:]]*A[^[:space:]]*[[:space:]]+KNOWN_INSTALLERS= ]] || return 0
 
     while IFS= read -r line || [[ -n "$line" ]]; do
         line="${line%$'\r'}"
