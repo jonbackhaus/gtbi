@@ -598,6 +598,16 @@ EOF
     [[ ! -e "$curl_marker" ]]
 }
 
+@test "refresh_checksums: uses trusted update_curl helper" {
+    local update="$PROJECT_ROOT/scripts/lib/update.sh"
+
+    run grep -F 'if update_curl --connect-timeout 5 --max-time 30 -o "$tmp_checksums" "$CHECKSUMS_URL" 2>/dev/null; then' "$update"
+    assert_success
+
+    run grep -F 'curl "${_refresh_curl_args[@]}" -o "$tmp_checksums" "$CHECKSUMS_URL"' "$update"
+    assert_failure
+}
+
 @test "update_binary_path: ignores relative ACFS_BIN_DIR shim when target bin exists" {
     local current_home
     local target_home
