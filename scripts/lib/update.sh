@@ -2788,23 +2788,48 @@ sync_acfs_deployed() {
 }
 
 sync_acfs_global_wrapper() {
-    local repo_file="$ACFS_REPO_ROOT/scripts/acfs-global"
-    local deployed_file="/usr/local/bin/acfs"
-    local install_cmd=(install -m 0755 "$repo_file" "$deployed_file")
+    local source_ref="${1:-}"
+    local deployed_file="${2:-/usr/local/bin/acfs}"
+    local repo_rel="scripts/acfs-global"
+    local source_file="$ACFS_REPO_ROOT/$repo_rel"
+    local source_tmp=""
+    local source_label="$repo_rel"
+    local install_cmd=()
 
-    [[ -f "$repo_file" ]] || return 0
-    if [[ -f "$deployed_file" ]] && cmp -s "$repo_file" "$deployed_file"; then
+    if [[ -n "$source_ref" ]]; then
+        source_tmp="$(mktemp "${TMPDIR:-/tmp}/acfs-global-sync.XXXXXX" 2>/dev/null)" || return 0
+        if ! git -C "$ACFS_REPO_ROOT" show "${source_ref}:$repo_rel" > "$source_tmp" 2>/dev/null; then
+            rm -f "$source_tmp" 2>/dev/null || true
+            return 0
+        fi
+        source_file="$source_tmp"
+        source_label="${source_ref}:$repo_rel"
+    else
+        [[ -f "$source_file" ]] || return 0
+    fi
+
+    install_cmd=(install -m 0755 "$source_file" "$deployed_file")
+
+    if [[ -f "$deployed_file" ]] && cmp -s "$source_file" "$deployed_file"; then
+        if [[ -n "$source_tmp" ]]; then
+            rm -f "$source_tmp" 2>/dev/null || true
+        fi
         return 0
     fi
 
     if [[ "${DRY_RUN:-false}" == "true" ]]; then
-        log_to_file "Would sync scripts/acfs-global -> $deployed_file"
+        log_to_file "Would sync $source_label -> $deployed_file"
+        if [[ -n "$source_tmp" ]]; then
+            rm -f "$source_tmp" 2>/dev/null || true
+        fi
         return 0
     fi
 
-    if [[ $EUID -eq 0 ]]; then
-        "${install_cmd[@]}"
-        log_to_file "Synced scripts/acfs-global -> $deployed_file"
+    if "${install_cmd[@]}" 2>/dev/null; then
+        log_to_file "Synced $source_label -> $deployed_file"
+        if [[ -n "$source_tmp" ]]; then
+            rm -f "$source_tmp" 2>/dev/null || true
+        fi
         return 0
     fi
 
@@ -2812,11 +2837,17 @@ sync_acfs_global_wrapper() {
     sudo_bin="$(update_system_binary_path sudo 2>/dev/null || true)"
     if [[ -n "$sudo_bin" ]] && "$sudo_bin" -n true >/dev/null 2>&1; then
         "$sudo_bin" -n "${install_cmd[@]}"
-        log_to_file "Synced scripts/acfs-global -> $deployed_file"
+        log_to_file "Synced $source_label -> $deployed_file"
+        if [[ -n "$source_tmp" ]]; then
+            rm -f "$source_tmp" 2>/dev/null || true
+        fi
         return 0
     fi
 
-    log_to_file "Skipped syncing scripts/acfs-global -> $deployed_file (needs root)"
+    log_to_file "Skipped syncing $source_label -> $deployed_file (needs root)"
+    if [[ -n "$source_tmp" ]]; then
+        rm -f "$source_tmp" 2>/dev/null || true
+    fi
     return 0
 }
 
@@ -3539,12 +3570,13 @@ _acfs_refresh_security_from_fetched_remote() {
     if [[ "$_sec_files_refreshed" == "true" ]]; then
         log_item "ok" "ACFS checksums" "refreshed from remote"
         update_refresh_installed_security
-        sync_acfs_global_wrapper
     fi
     if [[ "$_sec_sync_deployed_from_remote" == "true" ]]; then
         sync_acfs_deployed "origin/${_sec_remote_branch}"
+        sync_acfs_global_wrapper "origin/${_sec_remote_branch}"
     elif [[ "$_sec_files_refreshed" == "true" ]]; then
         sync_acfs_deployed
+        sync_acfs_global_wrapper
     fi
 }
 
