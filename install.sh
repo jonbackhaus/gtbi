@@ -3135,27 +3135,46 @@ acfs_fetch_fresh_checksums_via_api() {
 acfs_parse_checksums_content() {
     local content="$1"
     local in_installers=false
+    local installers_indent=0
     local current_tool=""
+    local tool_indent=""
+    local -A parsed_urls=()
+    local -A parsed_sha256=()
 
-    # Clear existing entries for fresh parse
-    ACFS_UPSTREAM_URLS=()
-    ACFS_UPSTREAM_SHA256=()
-
-    while IFS= read -r line; do
+    while IFS= read -r line || [[ -n "$line" ]]; do
+        line="${line%$'\r'}"
         [[ "$line" =~ ^[[:space:]]*# ]] && continue
-        [[ -z "${line// }" ]] && continue
+        [[ -z "${line//[[:space:]]/}" ]] && continue
 
-        if [[ "$line" =~ ^installers: ]]; then
-            in_installers=true
+        local indent="${line%%[^ ]*}"
+        local indent_len="${#indent}"
+
+        if [[ "$in_installers" == "false" ]]; then
+            if [[ "$line" =~ ^[[:space:]]*installers:[[:space:]]*$ ]]; then
+                in_installers=true
+                installers_indent="$indent_len"
+                current_tool=""
+                tool_indent=""
+            fi
             continue
         fi
-        if [[ "$in_installers" != "true" ]]; then
+
+        if (( indent_len <= installers_indent )); then
+            in_installers=false
+            current_tool=""
+            tool_indent=""
             continue
         fi
 
-        if [[ "$line" =~ ^[[:space:]]{2}([[:alnum:]_-]+):[[:space:]]*$ ]]; then
-            current_tool="${BASH_REMATCH[1]}"
-            continue
+        if [[ "$line" =~ ^[[:space:]]*([[:alnum:]_-]+):[[:space:]]*$ ]]; then
+            if [[ -z "$tool_indent" ]]; then
+                tool_indent="$indent_len"
+            fi
+
+            if (( indent_len == tool_indent )); then
+                current_tool="${BASH_REMATCH[1]}"
+                continue
+            fi
         fi
 
         [[ -n "$current_tool" ]] || continue
@@ -3168,9 +3187,9 @@ acfs_parse_checksums_content() {
             val="${val#"${val%%[![:space:]]*}"}" # Trim leading space
             val="${val%\"}" val="${val#\"}"      # Strip double quotes
             val="${val%\'}" val="${val#\'}"      # Strip single quotes
-            
-            if [[ -n "$val" ]]; then
-                ACFS_UPSTREAM_URLS["$current_tool"]="$val"
+
+            if [[ "$val" =~ ^https://[^[:space:]]+$ ]]; then
+                parsed_urls["$current_tool"]="$val"
             fi
             continue
         fi
@@ -3184,11 +3203,29 @@ acfs_parse_checksums_content() {
             val="${val%\'}" val="${val#\'}"
 
             if [[ "$val" =~ ^[0-9A-Fa-f]{64}$ ]]; then
-                ACFS_UPSTREAM_SHA256["$current_tool"]="${val,,}"
+                parsed_sha256["$current_tool"]="${val,,}"
             fi
             continue
         fi
     done <<< "$content"
+
+    if [[ ${#parsed_sha256[@]} -eq 0 ]]; then
+        return 1
+    fi
+
+    # Commit parsed data only after the new content has at least one usable
+    # checksum, so a malformed refresh cannot erase a previously loaded table.
+    ACFS_UPSTREAM_URLS=()
+    ACFS_UPSTREAM_SHA256=()
+    local tool
+    for tool in "${!parsed_sha256[@]}"; do
+        ACFS_UPSTREAM_SHA256["$tool"]="${parsed_sha256[$tool]}"
+        if [[ -n "${parsed_urls[$tool]:-}" ]]; then
+            ACFS_UPSTREAM_URLS["$tool"]="${parsed_urls[$tool]}"
+        fi
+    done
+
+    return 0
 }
 
 acfs_load_upstream_checksums() {
@@ -3237,7 +3274,10 @@ acfs_load_upstream_checksums() {
         [[ "$checksums_source" == "unknown" ]] && checksums_source="github-api"
     fi
 
-    acfs_parse_checksums_content "$content"
+    if ! acfs_parse_checksums_content "$content"; then
+        log_error "checksums.yaml contains no valid installer checksums"
+        return 1
+    fi
 
     local required_tools=(
         atuin bun bv caam cass claude cm dcg gemini_patch mcp_agent_mail ntm ohmyzsh ru rust slb ubs uv zoxide
@@ -3278,7 +3318,7 @@ acfs_run_verified_upstream_script_as_target_with_env() {
         set --
     fi
 
-    acfs_load_upstream_checksums
+    acfs_load_upstream_checksums || return $?
 
     local url="${ACFS_UPSTREAM_URLS[$tool]:-}"
     local expected_sha256="${ACFS_UPSTREAM_SHA256[$tool]:-}"
@@ -3332,7 +3372,10 @@ acfs_run_verified_upstream_script_as_target_with_env() {
         # URL can change during migrations, such as mcp_agent_mail ->
         # mcp_agent_mail_rust, so re-fetch before comparing against the fresh
         # hash when the contract moved.
-        acfs_parse_checksums_content "$fresh_content"
+        if ! acfs_parse_checksums_content "$fresh_content"; then
+            log_error "Fresh checksums.yaml contains no valid installer checksums"
+            return 1
+        fi
         local fresh_url="${ACFS_UPSTREAM_URLS[$tool]:-$url}"
         local fresh_expected_sha256="${ACFS_UPSTREAM_SHA256[$tool]:-}"
 

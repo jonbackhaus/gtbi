@@ -1927,6 +1927,59 @@ EOF
     assert_equal "${ACFS_UPSTREAM_SHA256[example]}" "$lower_sha"
 }
 
+@test "install.sh checksum parser preserves state on malformed reload" {
+    local installer="$PROJECT_ROOT/install.sh"
+    local original_sha="2222222222222222222222222222222222222222222222222222222222222222"
+
+    eval "$(sed -n '/^acfs_parse_checksums_content()/,/^}$/p' "$installer")"
+
+    declare -gA ACFS_UPSTREAM_URLS=()
+    declare -gA ACFS_UPSTREAM_SHA256=()
+
+    acfs_parse_checksums_content "$(cat <<EOF
+installers:
+  example:
+    url: https://example.com/install.sh
+    sha256: "$original_sha"
+EOF
+)"
+
+    assert_equal "${ACFS_UPSTREAM_URLS[example]}" "https://example.com/install.sh"
+    assert_equal "${ACFS_UPSTREAM_SHA256[example]}" "$original_sha"
+
+    run acfs_parse_checksums_content "$(cat <<'EOF'
+# Looks superficially like checksums.yaml but has no valid hashes.
+installers:
+  example:
+    url: https://malformed.example.com/install.sh
+    sha256: "not-a-sha"
+EOF
+)"
+    assert_failure
+
+    assert_equal "${ACFS_UPSTREAM_URLS[example]}" "https://example.com/install.sh"
+    assert_equal "${ACFS_UPSTREAM_SHA256[example]}" "$original_sha"
+}
+
+@test "install.sh verifier stops when checksum metadata fails to load" {
+    local installer="$PROJECT_ROOT/install.sh"
+
+    eval "$(sed -n '/^acfs_run_verified_upstream_script_as_target_with_env()/,/^}$/p' "$installer")"
+
+    declare -gA ACFS_UPSTREAM_URLS=()
+    declare -gA ACFS_UPSTREAM_SHA256=()
+
+    acfs_load_upstream_checksums() {
+        return 42
+    }
+
+    log_error() { :; }
+
+    run acfs_run_verified_upstream_script_as_target_with_env example bash ""
+    assert_equal "$status" "42"
+    assert_output ""
+}
+
 @test "install.sh verifier refetches installer when fresh checksums change URL" {
     local installer="$PROJECT_ROOT/install.sh"
     local old_url="https://raw.githubusercontent.com/Dicklesworthstone/mcp_agent_mail/main/install.sh"
