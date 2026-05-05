@@ -60,7 +60,15 @@ _cloud_validate_target_user() {
 
 # Check if a command exists
 _cloud_command_exists() {
-    command -v "$1" &>/dev/null
+    local cmd="${1:-}"
+
+    [[ -n "$cmd" ]] || return 1
+    case "$cmd" in
+        .|..) return 1 ;;
+        *[!A-Za-z0-9._+-]*) return 1 ;;
+    esac
+
+    command -v "$cmd" &>/dev/null
 }
 
 # Get the sudo command if needed

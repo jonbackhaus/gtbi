@@ -5281,6 +5281,39 @@ status|$PROJECT_ROOT/scripts/lib/status.sh|_status_binary_path
 EOF
 }
 
+@test "command existence helpers reject pathlike names" {
+    local label
+    local script
+    local func
+
+    while IFS='|' read -r label script func; do
+        run bash -s -- "$script" "$func" <<'EOF_COMMAND_EXISTS_REJECTS_PATHS'
+script="$1"
+func="$2"
+eval "$(sed -n "/^${func}()/,/^}$/p" "$script")"
+set -euo pipefail
+! "$func"
+! "$func" "."
+! "$func" ".."
+! "$func" "../bin/sh"
+! "$func" "/bin/sh"
+! "$func" "sh name"
+EOF_COMMAND_EXISTS_REJECTS_PATHS
+        assert_success "$label command-exists helper accepted a pathlike name"
+    done <<EOF
+install|$PROJECT_ROOT/install.sh|command_exists
+install-helpers|$PROJECT_ROOT/scripts/lib/install_helpers.sh|command_exists
+install-helpers-target|$PROJECT_ROOT/scripts/lib/install_helpers.sh|command_exists_as_target
+services-setup-target|$PROJECT_ROOT/scripts/services-setup.sh|user_command_exists
+agents|$PROJECT_ROOT/scripts/lib/agents.sh|_agent_command_exists
+cloud-db|$PROJECT_ROOT/scripts/lib/cloud_db.sh|_cloud_command_exists
+cli-tools|$PROJECT_ROOT/scripts/lib/cli_tools.sh|_cli_command_exists
+languages|$PROJECT_ROOT/scripts/lib/languages.sh|_lang_command_exists
+stack|$PROJECT_ROOT/scripts/lib/stack.sh|_stack_command_exists
+update|$PROJECT_ROOT/scripts/lib/update.sh|cmd_exists
+EOF
+}
+
 @test "dashboard serve uses trusted resolver for subprocesses" {
     local dashboard="$PROJECT_ROOT/scripts/lib/dashboard.sh"
 

@@ -9,12 +9,12 @@
 
 declare -gA ACFS_INTERNAL_CHECKSUMS=(
   [scripts/lib/security.sh]="af50a0061f4cb3a1bb0a4ab429f1a586f64a7958945e6db9ace94b7fea37a315"
-  [scripts/lib/agents.sh]="0d4e7666b7a7267203445c364ad2d4997775826175700627abe83c70afce2269"
-  [scripts/lib/update.sh]="e6d56203ececec5860de08bfd9f217f074b862a96591e636532e6a530a298a0e"
+  [scripts/lib/agents.sh]="66fac24c48c9ce7d17ae213ff2f8669a1902e77f01266f4eeaccdcef09e02856"
+  [scripts/lib/update.sh]="eff7e661153a1671b16878099ed4ac2fe8578039c5f058a336c55c325cf58ce2"
   [scripts/lib/doctor.sh]="8b055f242330f1e9571bb25d006ff09cf1f8bcbe81ba07260959e37c1b0f9e2b"
   [scripts/lib/doctor_fix.sh]="074e8512b1b5cc6a6d27513d5463b585b0e5c35540180e58747793a7c67d3a6f"
   [scripts/lib/autofix.sh]="7d7bcc4a5695cee73f63826cef85fd436ba0eca682db0cb9264eacb1092a70a8"
-  [scripts/lib/install_helpers.sh]="ee49bcf50aed0333d960ba87f85bfd1f4667cff7d47a3008a74e4d20ecff549e"
+  [scripts/lib/install_helpers.sh]="c94356fe4f58ea516a0e257e475694281b14f874593028ca39bc18e1a423d0c5"
   [scripts/lib/logging.sh]="c0e719928a7e355806fb20c01b488df7e661f7eaa4a061aba6d1d4b059180cb5"
   [scripts/lib/state.sh]="5639f4ff56cd9050826339624c1b9538afe9776eefe60ab164de48e3b6ba28ac"
   [scripts/lib/session.sh]="d2d2b26109a6eb0fad6620c68fdc0bd5d1a75ae453a6c35112bd5665484c94f1"

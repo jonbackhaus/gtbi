@@ -66,7 +66,15 @@ CARGO_CLI_TOOLS=(
 
 # Check if a command exists
 _cli_command_exists() {
-    command -v "$1" &>/dev/null
+    local cmd="${1:-}"
+
+    [[ -n "$cmd" ]] || return 1
+    case "$cmd" in
+        .|..) return 1 ;;
+        *[!A-Za-z0-9._+-]*) return 1 ;;
+    esac
+
+    command -v "$cmd" &>/dev/null
 }
 
 _cli_remove_temp_dir() {

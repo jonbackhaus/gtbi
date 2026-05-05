@@ -1302,14 +1302,29 @@ acfs_should_skip_module() {
 # ------------------------------------------------------------
 
 command_exists() {
-    command -v "$1" >/dev/null 2>&1
+    local cmd="${1:-}"
+
+    [[ -n "$cmd" ]] || return 1
+    case "$cmd" in
+        .|..) return 1 ;;
+        *[!A-Za-z0-9._+-]*) return 1 ;;
+    esac
+
+    command -v "$cmd" >/dev/null 2>&1
 }
 
 command_exists_as_target() {
-    local cmd="$1"
+    local cmd="${1:-}"
     local path_export_source
     local env_bin=""
     local bash_bin=""
+
+    [[ -n "$cmd" ]] || return 1
+    case "$cmd" in
+        .|..) return 1 ;;
+        *[!A-Za-z0-9._+-]*) return 1 ;;
+    esac
+
     if ! declare -f run_as_target >/dev/null 2>&1; then
         return 1
     fi

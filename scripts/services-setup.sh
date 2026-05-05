@@ -604,8 +604,16 @@ run_as_user_shell() {
 # Check if a command exists in target user's PATH
 # More robust than checking binary paths directly - respects user's PATH
 user_command_exists() {
-    local cmd="$1"
-    local primary_bin_dir="${ACFS_BIN_DIR:-$TARGET_HOME/.local/bin}"
+    local cmd="${1:-}"
+    local primary_bin_dir=""
+
+    [[ -n "$cmd" ]] || return 1
+    case "$cmd" in
+        .|..) return 1 ;;
+        *[!A-Za-z0-9._+-]*) return 1 ;;
+    esac
+
+    primary_bin_dir="${ACFS_BIN_DIR:-$TARGET_HOME/.local/bin}"
     primary_bin_dir="$(services_setup_validate_bin_dir_for_home "$primary_bin_dir" "$TARGET_HOME" 2>/dev/null || true)"
     [[ -n "$primary_bin_dir" ]] || primary_bin_dir="$TARGET_HOME/.local/bin"
     local target_path_prefix="$primary_bin_dir:$TARGET_HOME/.local/bin:$TARGET_HOME/.acfs/bin:$TARGET_HOME/.cargo/bin:$TARGET_HOME/.bun/bin:$TARGET_HOME/.atuin/bin:$TARGET_HOME/go/bin"
