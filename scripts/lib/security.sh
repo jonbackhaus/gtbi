@@ -879,6 +879,9 @@ load_checksums() {
     local in_installers=false
     local installers_indent=0
     local tool_indent=""
+    local tool=""
+    local -A parsed_checksums=()
+    local -A parsed_installers=()
     # Use ACFS colors if available, preserving empty-string NO_COLOR behavior.
     local warn_color="${ACFS_YELLOW-\033[0;33m}"
     local nc_color="${ACFS_NC-\033[0m}"
@@ -887,9 +890,6 @@ load_checksums() {
         printf "${warn_color}Warning:${nc_color} Checksums file not found: %s\n" "$file" >&2
         return 1
     fi
-
-    # Clear any previously loaded checksums (avoid stale entries if reloaded).
-    LOADED_CHECKSUMS=()
 
     # Lightweight YAML parsing for our specific format:
     #
@@ -957,20 +957,30 @@ load_checksums() {
             url_value="${url_value#\'}"
 
             if [[ "$url_value" =~ ^https://[^[:space:]]+$ ]]; then
-                KNOWN_INSTALLERS["$current_tool"]="$url_value"
+                parsed_installers["$current_tool"]="$url_value"
             fi
         fi
 
         # Match sha256 value for the current tool.
         if [[ -n "$current_tool" ]] && [[ "$line" =~ sha256:[[:space:]]*['\"]?([0-9A-Fa-f]{64})['\"]? ]]; then
-            LOADED_CHECKSUMS["$current_tool"]="${BASH_REMATCH[1],,}"
+            parsed_checksums["$current_tool"]="${BASH_REMATCH[1],,}"
         fi
     done < "$file"
 
-    if [[ ${#LOADED_CHECKSUMS[@]} -eq 0 ]]; then
+    if [[ ${#parsed_checksums[@]} -eq 0 ]]; then
         printf "${warn_color}Warning:${nc_color} No valid installer checksums found in: %s\n" "$file" >&2
         return 1
     fi
+
+    # Commit parsed data only after validating that the new file has usable
+    # checksum entries, so a malformed refresh cannot erase previous state.
+    LOADED_CHECKSUMS=()
+    for tool in "${!parsed_checksums[@]}"; do
+        LOADED_CHECKSUMS["$tool"]="${parsed_checksums[$tool]}"
+        if [[ -n "${parsed_installers[$tool]:-}" ]]; then
+            KNOWN_INSTALLERS["$tool"]="${parsed_installers[$tool]}"
+        fi
+    done
 
     return 0
 }

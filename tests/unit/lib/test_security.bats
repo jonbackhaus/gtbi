@@ -456,3 +456,37 @@ EOF
     assert_equal "${KNOWN_INSTALLERS[tool2]}" "https://example.com/2"
     assert_equal "${KNOWN_INSTALLERS[tool3]}" "https://example.com/3"
 }
+
+@test "load_checksums: failed reload preserves previous checksum state" {
+    local good_sha="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    local bad_file
+    bad_file="$(create_temp_file)"
+
+    declare -gA LOADED_CHECKSUMS=()
+    KNOWN_INSTALLERS["txn_tool"]="https://example.com/old"
+
+    cat > "$CHECKSUMS_FILE" <<EOF
+installers:
+  txn_tool:
+    url: "https://example.com/good"
+    sha256: "$good_sha"
+EOF
+
+    load_checksums
+    assert_equal "$?" "0"
+    assert_equal "$(get_checksum "txn_tool")" "$good_sha"
+    assert_equal "${KNOWN_INSTALLERS["txn_tool"]}" "https://example.com/good"
+
+    cat > "$bad_file" <<'EOF'
+installers:
+  txn_tool:
+    url: "https://example.com/bad"
+    sha256: "not-a-valid-sha"
+EOF
+
+    if load_checksums "$bad_file"; then
+        fail "malformed checksums reload unexpectedly succeeded"
+    fi
+    assert_equal "$(get_checksum "txn_tool")" "$good_sha"
+    assert_equal "${KNOWN_INSTALLERS["txn_tool"]}" "https://example.com/good"
+}

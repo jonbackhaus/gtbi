@@ -8,7 +8,7 @@
 # Used by check-manifest-drift.sh to detect unauthorized changes.
 
 declare -gA ACFS_INTERNAL_CHECKSUMS=(
-  [scripts/lib/security.sh]="8fa466969cb0ec945266296900bbbc6ea04bf9a41b521458799ad9ac3dec0fd1"
+  [scripts/lib/security.sh]="4f63909711279bc5fafd8f0abd2e608c428312584e6e6a7e72da2447bdabab15"
   [scripts/lib/agents.sh]="66fac24c48c9ce7d17ae213ff2f8669a1902e77f01266f4eeaccdcef09e02856"
   [scripts/lib/update.sh]="70903e24c0a0fc3711d754d19e475be8e9aae59fb5ad0e66c8c5c3535885dffa"
   [scripts/lib/doctor.sh]="8b055f242330f1e9571bb25d006ff09cf1f8bcbe81ba07260959e37c1b0f9e2b"
