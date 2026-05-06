@@ -998,14 +998,94 @@ declare -g ACFS_CHECKSUMS_REMOTE_REFRESHED=false
 acfs_checksums_file_looks_valid() {
     local file="$1"
     local line=""
+    local current_tool=""
+    local in_installers=false
+    local installers_indent=0
+    local tool_indent=""
+    local tool=""
+    local -A parsed_checksums=()
+    local -A parsed_installers=()
 
     [[ -r "$file" ]] || return 1
 
     while IFS= read -r line || [[ -n "$line" ]]; do
-        [[ "$line" =~ ^[[:space:]]*installers:[[:space:]]*$ ]] && return 0
+        line="${line%$'\r'}"
+
+        [[ "$line" =~ ^[[:space:]]*# ]] && continue
+        [[ -z "${line//[[:space:]]/}" ]] && continue
+
+        local indent="${line%%[^ ]*}"
+        local indent_len="${#indent}"
+
+        if [[ "$in_installers" == "false" ]]; then
+            if [[ "$line" =~ ^[[:space:]]*installers:[[:space:]]*$ ]]; then
+                in_installers=true
+                installers_indent="$indent_len"
+                tool_indent=""
+                current_tool=""
+            fi
+            continue
+        fi
+
+        if (( indent_len <= installers_indent )); then
+            in_installers=false
+            tool_indent=""
+            current_tool=""
+            continue
+        fi
+
+        if [[ "$line" =~ ^[[:space:]]*([[:alnum:]_-]+):[[:space:]]*$ ]]; then
+            if [[ -z "$tool_indent" ]]; then
+                tool_indent="$indent_len"
+            fi
+
+            if (( indent_len == tool_indent )); then
+                current_tool="${BASH_REMATCH[1]}"
+                continue
+            fi
+        fi
+
+        [[ -n "$current_tool" ]] || continue
+
+        if [[ "$line" =~ ^[[:space:]]*url:[[:space:]]*(.*)$ ]]; then
+            local url_value="${BASH_REMATCH[1]}"
+            url_value="${url_value%%#*}"
+            url_value="${url_value%"${url_value##*[![:space:]]}"}"
+            url_value="${url_value#"${url_value%%[![:space:]]*}"}"
+            url_value="${url_value%\"}"
+            url_value="${url_value#\"}"
+            url_value="${url_value%\'}"
+            url_value="${url_value#\'}"
+
+            if [[ "$url_value" =~ ^https://[^[:space:]]+$ ]]; then
+                parsed_installers["$current_tool"]="$url_value"
+            fi
+            continue
+        fi
+
+        if [[ "$line" =~ ^[[:space:]]*sha256:[[:space:]]*(.*)$ ]]; then
+            local checksum_value="${BASH_REMATCH[1]}"
+            checksum_value="${checksum_value%%#*}"
+            checksum_value="${checksum_value%"${checksum_value##*[![:space:]]}"}"
+            checksum_value="${checksum_value#"${checksum_value%%[![:space:]]*}"}"
+            checksum_value="${checksum_value%\"}"
+            checksum_value="${checksum_value#\"}"
+            checksum_value="${checksum_value%\'}"
+            checksum_value="${checksum_value#\'}"
+
+            if [[ "$checksum_value" =~ ^[0-9A-Fa-f]{64}$ ]]; then
+                parsed_checksums["$current_tool"]="${checksum_value,,}"
+            fi
+        fi
     done < "$file"
 
-    return 1
+    for tool in "${!KNOWN_INSTALLERS[@]}"; do
+        if [[ -z "${parsed_installers[$tool]:-}" ]] || [[ -z "${parsed_checksums[$tool]:-}" ]]; then
+            return 1
+        fi
+    done
+
+    return 0
 }
 
 acfs_fetch_fresh_checksums_to_file() {

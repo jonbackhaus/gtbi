@@ -15,6 +15,22 @@ teardown() {
     common_teardown
 }
 
+write_security_checksums_fixture() {
+    local output_file="$1"
+    local tool=""
+    local checksum=""
+    local index=1
+
+    printf 'installers:\n' > "$output_file"
+    for tool in "${!KNOWN_INSTALLERS[@]}"; do
+        printf -v checksum '%064d' "$index"
+        printf '  %s:\n' "$tool" >> "$output_file"
+        printf '    url: "%s"\n' "${KNOWN_INSTALLERS[$tool]}" >> "$output_file"
+        printf '    sha256: "%s"\n' "$checksum" >> "$output_file"
+        index=$((index + 1))
+    done
+}
+
 stub_acfs_curl_response() {
     STUB_ACFS_CURL_CONTENT="$1"
     STUB_ACFS_CURL_EXIT_CODE="${2:-0}"
@@ -489,4 +505,70 @@ EOF
     fi
     assert_equal "$(get_checksum "txn_tool")" "$good_sha"
     assert_equal "${KNOWN_INSTALLERS["txn_tool"]}" "https://example.com/good"
+}
+
+@test "acfs_checksums_file_looks_valid: requires complete installer metadata" {
+    local full_file
+    local partial_file
+    full_file="$(create_temp_file)"
+    partial_file="$(create_temp_file)"
+
+    write_security_checksums_fixture "$full_file"
+    cat > "$partial_file" <<'EOF'
+installers:
+  mcp_agent_mail:
+    url: "https://raw.githubusercontent.com/Dicklesworthstone/mcp_agent_mail_rust/refs/heads/main/install.sh"
+    sha256: "1111111111111111111111111111111111111111111111111111111111111111"
+EOF
+
+    run acfs_checksums_file_looks_valid "$full_file"
+    assert_success
+
+    run acfs_checksums_file_looks_valid "$partial_file"
+    assert_failure
+}
+
+@test "acfs_refresh_loaded_checksums_from_remote: partial remote metadata preserves loaded state" {
+    local existing_sha="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+
+    declare -gA LOADED_CHECKSUMS=([sentinel_tool]="$existing_sha")
+    ACFS_CHECKSUMS_REMOTE_REFRESHED=false
+
+    acfs_curl() {
+        local output_file=""
+        local args=("$@")
+        local i
+
+        for ((i=0; i<${#args[@]}; i++)); do
+            if [[ "${args[$i]}" == "-o" ]]; then
+                output_file="${args[$((i+1))]}"
+                break
+            fi
+        done
+
+        cat > "$output_file" <<'EOF'
+installers:
+  mcp_agent_mail:
+    url: "https://raw.githubusercontent.com/Dicklesworthstone/mcp_agent_mail_rust/refs/heads/main/install.sh"
+    sha256: "1111111111111111111111111111111111111111111111111111111111111111"
+EOF
+        return 0
+    }
+
+    acfs_download_to_file() {
+        cat > "$2" <<'EOF'
+installers:
+  dcg:
+    url: "https://raw.githubusercontent.com/Dicklesworthstone/destructive_command_guard/main/install.sh"
+    sha256: "2222222222222222222222222222222222222222222222222222222222222222"
+EOF
+        return 0
+    }
+
+    if acfs_refresh_loaded_checksums_from_remote; then
+        fail "partial remote checksums unexpectedly refreshed loaded state"
+    fi
+
+    assert_equal "$(get_checksum "sentinel_tool")" "$existing_sha"
+    assert_equal "$ACFS_CHECKSUMS_REMOTE_REFRESHED" "false"
 }
