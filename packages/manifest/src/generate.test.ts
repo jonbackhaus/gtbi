@@ -315,16 +315,28 @@ describe('Generated verified installer args', () => {
     expect(existsSync(agentsPath)).toBe(true);
     const agentsContent = readFileSync(agentsPath, 'utf-8');
 
+    const generatedPreludeIndex = agentsContent.indexOf('# Generated helper functions used by this child shell.');
     const preludeIndex = agentsContent.indexOf('# Primary-bin helper functions used by this child shell.');
     const linkIndex = agentsContent.indexOf('acfs_link_primary_bin_command "$claude_candidate" "claude"');
     const installIndex = agentsContent.indexOf('acfs_install_executable_into_primary_bin "$wrapper_tmp" "codex"');
 
+    expect(generatedPreludeIndex).toBeGreaterThanOrEqual(0);
     expect(preludeIndex).toBeGreaterThanOrEqual(0);
+    expect(preludeIndex).toBeGreaterThan(generatedPreludeIndex);
     expect(linkIndex).toBeGreaterThan(preludeIndex);
     expect(installIndex).toBeGreaterThan(preludeIndex);
+    expect(agentsContent).toContain('acfs_generated_system_binary_path() {');
     expect(agentsContent).toContain('acfs_child_primary_bin_dir() {');
+    expect(agentsContent).toContain('acfs_child_primary_bin_tool_path() {');
+    expect(agentsContent).toContain('mkdir_bin="$(acfs_child_primary_bin_tool_path mkdir)" || return 1');
+    expect(agentsContent).toContain('ln_bin="$(acfs_child_primary_bin_tool_path ln)" || return 1');
+    expect(agentsContent).toContain('install_bin="$(acfs_child_primary_bin_tool_path install)" || return 1');
+    expect(agentsContent).toContain('Root primary bin command must be an absolute trusted path');
     expect(agentsContent).toContain('ACFS_BIN_DIR is unset and HOME is not a usable absolute path');
     expect(agentsContent).not.toContain('${ACFS_BIN_DIR:-${HOME:-}/.local/bin}');
+    expect(agentsContent).not.toContain('acfs_child_run_root_bin_command mkdir -p');
+    expect(agentsContent).not.toContain('acfs_child_run_root_bin_command ln -sf');
+    expect(agentsContent).not.toContain('acfs_child_run_root_bin_command install -m 0755');
     expect(agentsContent).toContain('acfs_install_executable_into_primary_bin() {');
     expect(agentsContent).toContain('acfs_link_primary_bin_command() {');
   });

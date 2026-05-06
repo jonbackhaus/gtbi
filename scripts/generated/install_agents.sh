@@ -357,6 +357,37 @@ install_agents_claude() {
         log_info "dry-run: install: for candidate in \"\$HOME/.claude/bin/claude\" \"\$HOME/.claude/local/bin/claude\" \"\$HOME/.bun/bin/claude\"; do (target_user)"
     else
         if ! run_as_target_shell <<'INSTALL_AGENTS_CLAUDE'
+# Generated helper functions used by this child shell.
+acfs_generated_system_binary_path() {
+    local name="${1:-}"
+    local candidate=""
+
+    [[ -n "$name" ]] || return 1
+    case "$name" in
+        .|..)
+            return 1
+            ;;
+        *[!A-Za-z0-9._+-]*)
+            return 1
+            ;;
+    esac
+
+    for candidate in \
+        "/usr/local/bin/$name" \
+        "/usr/local/sbin/$name" \
+        "/usr/bin/$name" \
+        "/bin/$name" \
+        "/usr/sbin/$name" \
+        "/sbin/$name"
+    do
+        [[ -x "$candidate" ]] || continue
+        printf '%s\n' "$candidate"
+        return 0
+    done
+
+    return 1
+}
+
 # Primary-bin helper functions used by this child shell.
 acfs_child_log_error() {
     if declare -f log_error >/dev/null 2>&1; then
@@ -398,6 +429,11 @@ acfs_child_primary_bin_requires_root() {
 }
 
 acfs_child_run_root_bin_command() {
+    if [[ -z "${1:-}" || "${1:-}" != /* ]]; then
+        acfs_child_log_error "Root primary bin command must be an absolute trusted path (got: ${1:-<empty>})"
+        return 1
+    fi
+
     if [[ $EUID -eq 0 ]]; then
         "$@"
         return $?
@@ -414,15 +450,31 @@ acfs_child_run_root_bin_command() {
     return 1
 }
 
+acfs_child_primary_bin_tool_path() {
+    local name="${1:-}"
+    local tool_path=""
+
+    tool_path="$(acfs_generated_system_binary_path "$name" 2>/dev/null || true)"
+    if [[ -z "$tool_path" ]]; then
+        acfs_child_log_error "Unable to locate trusted $name for primary bin operation"
+        return 1
+    fi
+
+    printf '%s\n' "$tool_path"
+}
+
 acfs_child_ensure_primary_bin_dir() {
     local primary_bin_dir="$1"
+    local mkdir_bin=""
+
+    mkdir_bin="$(acfs_child_primary_bin_tool_path mkdir)" || return 1
 
     if acfs_child_primary_bin_requires_root "$primary_bin_dir"; then
-        acfs_child_run_root_bin_command mkdir -p "$primary_bin_dir"
+        acfs_child_run_root_bin_command "$mkdir_bin" -p "$primary_bin_dir"
         return $?
     fi
 
-    mkdir -p "$primary_bin_dir"
+    "$mkdir_bin" -p "$primary_bin_dir"
 }
 
 acfs_link_primary_bin_command() {
@@ -430,17 +482,19 @@ acfs_link_primary_bin_command() {
     local command_name="$2"
     local primary_bin_dir=""
     local dest_path=""
+    local ln_bin=""
 
     primary_bin_dir="$(acfs_child_primary_bin_dir)" || return 1
     dest_path="$primary_bin_dir/$command_name"
     acfs_child_ensure_primary_bin_dir "$primary_bin_dir" || return 1
+    ln_bin="$(acfs_child_primary_bin_tool_path ln)" || return 1
 
     if acfs_child_primary_bin_requires_root "$primary_bin_dir"; then
-        acfs_child_run_root_bin_command ln -sf "$source_path" "$dest_path"
+        acfs_child_run_root_bin_command "$ln_bin" -sf "$source_path" "$dest_path"
         return $?
     fi
 
-    ln -sf "$source_path" "$dest_path"
+    "$ln_bin" -sf "$source_path" "$dest_path"
 }
 
 acfs_install_executable_into_primary_bin() {
@@ -448,17 +502,19 @@ acfs_install_executable_into_primary_bin() {
     local command_name="$2"
     local primary_bin_dir=""
     local dest_path=""
+    local install_bin=""
 
     primary_bin_dir="$(acfs_child_primary_bin_dir)" || return 1
     dest_path="$primary_bin_dir/$command_name"
     acfs_child_ensure_primary_bin_dir "$primary_bin_dir" || return 1
+    install_bin="$(acfs_child_primary_bin_tool_path install)" || return 1
 
     if acfs_child_primary_bin_requires_root "$primary_bin_dir"; then
-        acfs_child_run_root_bin_command install -m 0755 "$src_path" "$dest_path"
+        acfs_child_run_root_bin_command "$install_bin" -m 0755 "$src_path" "$dest_path"
         return $?
     fi
 
-    install -m 0755 "$src_path" "$dest_path"
+    "$install_bin" -m 0755 "$src_path" "$dest_path"
 }
 
 claude_candidate=""
@@ -524,6 +580,37 @@ INSTALL_AGENTS_CODEX
         log_info "dry-run: install: trap 'rm -f \"\$wrapper_tmp\"' EXIT (target_user)"
     else
         if ! run_as_target_shell <<'INSTALL_AGENTS_CODEX'
+# Generated helper functions used by this child shell.
+acfs_generated_system_binary_path() {
+    local name="${1:-}"
+    local candidate=""
+
+    [[ -n "$name" ]] || return 1
+    case "$name" in
+        .|..)
+            return 1
+            ;;
+        *[!A-Za-z0-9._+-]*)
+            return 1
+            ;;
+    esac
+
+    for candidate in \
+        "/usr/local/bin/$name" \
+        "/usr/local/sbin/$name" \
+        "/usr/bin/$name" \
+        "/bin/$name" \
+        "/usr/sbin/$name" \
+        "/sbin/$name"
+    do
+        [[ -x "$candidate" ]] || continue
+        printf '%s\n' "$candidate"
+        return 0
+    done
+
+    return 1
+}
+
 # Primary-bin helper functions used by this child shell.
 acfs_child_log_error() {
     if declare -f log_error >/dev/null 2>&1; then
@@ -565,6 +652,11 @@ acfs_child_primary_bin_requires_root() {
 }
 
 acfs_child_run_root_bin_command() {
+    if [[ -z "${1:-}" || "${1:-}" != /* ]]; then
+        acfs_child_log_error "Root primary bin command must be an absolute trusted path (got: ${1:-<empty>})"
+        return 1
+    fi
+
     if [[ $EUID -eq 0 ]]; then
         "$@"
         return $?
@@ -581,15 +673,31 @@ acfs_child_run_root_bin_command() {
     return 1
 }
 
+acfs_child_primary_bin_tool_path() {
+    local name="${1:-}"
+    local tool_path=""
+
+    tool_path="$(acfs_generated_system_binary_path "$name" 2>/dev/null || true)"
+    if [[ -z "$tool_path" ]]; then
+        acfs_child_log_error "Unable to locate trusted $name for primary bin operation"
+        return 1
+    fi
+
+    printf '%s\n' "$tool_path"
+}
+
 acfs_child_ensure_primary_bin_dir() {
     local primary_bin_dir="$1"
+    local mkdir_bin=""
+
+    mkdir_bin="$(acfs_child_primary_bin_tool_path mkdir)" || return 1
 
     if acfs_child_primary_bin_requires_root "$primary_bin_dir"; then
-        acfs_child_run_root_bin_command mkdir -p "$primary_bin_dir"
+        acfs_child_run_root_bin_command "$mkdir_bin" -p "$primary_bin_dir"
         return $?
     fi
 
-    mkdir -p "$primary_bin_dir"
+    "$mkdir_bin" -p "$primary_bin_dir"
 }
 
 acfs_link_primary_bin_command() {
@@ -597,17 +705,19 @@ acfs_link_primary_bin_command() {
     local command_name="$2"
     local primary_bin_dir=""
     local dest_path=""
+    local ln_bin=""
 
     primary_bin_dir="$(acfs_child_primary_bin_dir)" || return 1
     dest_path="$primary_bin_dir/$command_name"
     acfs_child_ensure_primary_bin_dir "$primary_bin_dir" || return 1
+    ln_bin="$(acfs_child_primary_bin_tool_path ln)" || return 1
 
     if acfs_child_primary_bin_requires_root "$primary_bin_dir"; then
-        acfs_child_run_root_bin_command ln -sf "$source_path" "$dest_path"
+        acfs_child_run_root_bin_command "$ln_bin" -sf "$source_path" "$dest_path"
         return $?
     fi
 
-    ln -sf "$source_path" "$dest_path"
+    "$ln_bin" -sf "$source_path" "$dest_path"
 }
 
 acfs_install_executable_into_primary_bin() {
@@ -615,17 +725,19 @@ acfs_install_executable_into_primary_bin() {
     local command_name="$2"
     local primary_bin_dir=""
     local dest_path=""
+    local install_bin=""
 
     primary_bin_dir="$(acfs_child_primary_bin_dir)" || return 1
     dest_path="$primary_bin_dir/$command_name"
     acfs_child_ensure_primary_bin_dir "$primary_bin_dir" || return 1
+    install_bin="$(acfs_child_primary_bin_tool_path install)" || return 1
 
     if acfs_child_primary_bin_requires_root "$primary_bin_dir"; then
-        acfs_child_run_root_bin_command install -m 0755 "$src_path" "$dest_path"
+        acfs_child_run_root_bin_command "$install_bin" -m 0755 "$src_path" "$dest_path"
         return $?
     fi
 
-    install -m 0755 "$src_path" "$dest_path"
+    "$install_bin" -m 0755 "$src_path" "$dest_path"
 }
 
 wrapper_tmp="$(mktemp "${TMPDIR:-/tmp}/acfs-codex-wrapper.XXXXXX")"
@@ -681,6 +793,37 @@ INSTALL_AGENTS_GEMINI
         log_info "dry-run: install: trap 'rm -f \"\$wrapper_tmp\"' EXIT (target_user)"
     else
         if ! run_as_target_shell <<'INSTALL_AGENTS_GEMINI'
+# Generated helper functions used by this child shell.
+acfs_generated_system_binary_path() {
+    local name="${1:-}"
+    local candidate=""
+
+    [[ -n "$name" ]] || return 1
+    case "$name" in
+        .|..)
+            return 1
+            ;;
+        *[!A-Za-z0-9._+-]*)
+            return 1
+            ;;
+    esac
+
+    for candidate in \
+        "/usr/local/bin/$name" \
+        "/usr/local/sbin/$name" \
+        "/usr/bin/$name" \
+        "/bin/$name" \
+        "/usr/sbin/$name" \
+        "/sbin/$name"
+    do
+        [[ -x "$candidate" ]] || continue
+        printf '%s\n' "$candidate"
+        return 0
+    done
+
+    return 1
+}
+
 # Primary-bin helper functions used by this child shell.
 acfs_child_log_error() {
     if declare -f log_error >/dev/null 2>&1; then
@@ -722,6 +865,11 @@ acfs_child_primary_bin_requires_root() {
 }
 
 acfs_child_run_root_bin_command() {
+    if [[ -z "${1:-}" || "${1:-}" != /* ]]; then
+        acfs_child_log_error "Root primary bin command must be an absolute trusted path (got: ${1:-<empty>})"
+        return 1
+    fi
+
     if [[ $EUID -eq 0 ]]; then
         "$@"
         return $?
@@ -738,15 +886,31 @@ acfs_child_run_root_bin_command() {
     return 1
 }
 
+acfs_child_primary_bin_tool_path() {
+    local name="${1:-}"
+    local tool_path=""
+
+    tool_path="$(acfs_generated_system_binary_path "$name" 2>/dev/null || true)"
+    if [[ -z "$tool_path" ]]; then
+        acfs_child_log_error "Unable to locate trusted $name for primary bin operation"
+        return 1
+    fi
+
+    printf '%s\n' "$tool_path"
+}
+
 acfs_child_ensure_primary_bin_dir() {
     local primary_bin_dir="$1"
+    local mkdir_bin=""
+
+    mkdir_bin="$(acfs_child_primary_bin_tool_path mkdir)" || return 1
 
     if acfs_child_primary_bin_requires_root "$primary_bin_dir"; then
-        acfs_child_run_root_bin_command mkdir -p "$primary_bin_dir"
+        acfs_child_run_root_bin_command "$mkdir_bin" -p "$primary_bin_dir"
         return $?
     fi
 
-    mkdir -p "$primary_bin_dir"
+    "$mkdir_bin" -p "$primary_bin_dir"
 }
 
 acfs_link_primary_bin_command() {
@@ -754,17 +918,19 @@ acfs_link_primary_bin_command() {
     local command_name="$2"
     local primary_bin_dir=""
     local dest_path=""
+    local ln_bin=""
 
     primary_bin_dir="$(acfs_child_primary_bin_dir)" || return 1
     dest_path="$primary_bin_dir/$command_name"
     acfs_child_ensure_primary_bin_dir "$primary_bin_dir" || return 1
+    ln_bin="$(acfs_child_primary_bin_tool_path ln)" || return 1
 
     if acfs_child_primary_bin_requires_root "$primary_bin_dir"; then
-        acfs_child_run_root_bin_command ln -sf "$source_path" "$dest_path"
+        acfs_child_run_root_bin_command "$ln_bin" -sf "$source_path" "$dest_path"
         return $?
     fi
 
-    ln -sf "$source_path" "$dest_path"
+    "$ln_bin" -sf "$source_path" "$dest_path"
 }
 
 acfs_install_executable_into_primary_bin() {
@@ -772,17 +938,19 @@ acfs_install_executable_into_primary_bin() {
     local command_name="$2"
     local primary_bin_dir=""
     local dest_path=""
+    local install_bin=""
 
     primary_bin_dir="$(acfs_child_primary_bin_dir)" || return 1
     dest_path="$primary_bin_dir/$command_name"
     acfs_child_ensure_primary_bin_dir "$primary_bin_dir" || return 1
+    install_bin="$(acfs_child_primary_bin_tool_path install)" || return 1
 
     if acfs_child_primary_bin_requires_root "$primary_bin_dir"; then
-        acfs_child_run_root_bin_command install -m 0755 "$src_path" "$dest_path"
+        acfs_child_run_root_bin_command "$install_bin" -m 0755 "$src_path" "$dest_path"
         return $?
     fi
 
-    install -m 0755 "$src_path" "$dest_path"
+    "$install_bin" -m 0755 "$src_path" "$dest_path"
 }
 
 wrapper_tmp="$(mktemp "${TMPDIR:-/tmp}/acfs-gemini-wrapper.XXXXXX")"

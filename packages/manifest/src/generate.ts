@@ -641,6 +641,19 @@ function generatedHelperPreludeLines(): string[] {
   return HEADER.slice(start, end).trimEnd().split('\n');
 }
 
+function generatedSystemBinaryPreludeLines(): string[] {
+  const startMarker = 'acfs_generated_system_binary_path() {';
+  const endMarker = '\n\nacfs_generated_resolve_current_user() {';
+  const start = HEADER.indexOf(startMarker);
+  const end = HEADER.indexOf(endMarker, start);
+
+  if (start < 0 || end < 0) {
+    throw new Error('Generated system-binary helper prelude markers not found in header');
+  }
+
+  return HEADER.slice(start, end).trimEnd().split('\n');
+}
+
 function commandLinesNeedGeneratedHelpers(commandLines: string[]): boolean {
   return commandLines.some((line) => line.includes('acfs_generated_'));
 }
@@ -695,6 +708,11 @@ function primaryBinHelperPreludeLines(): string[] {
     '}',
     '',
     'acfs_child_run_root_bin_command() {',
+    '    if [[ -z "${1:-}" || "${1:-}" != /* ]]; then',
+    '        acfs_child_log_error "Root primary bin command must be an absolute trusted path (got: ${1:-<empty>})"',
+    '        return 1',
+    '    fi',
+    '',
     '    if [[ $EUID -eq 0 ]]; then',
     '        "$@"',
     '        return $?',
@@ -711,15 +729,31 @@ function primaryBinHelperPreludeLines(): string[] {
     '    return 1',
     '}',
     '',
+    'acfs_child_primary_bin_tool_path() {',
+    '    local name="${1:-}"',
+    '    local tool_path=""',
+    '',
+    '    tool_path="$(acfs_generated_system_binary_path "$name" 2>/dev/null || true)"',
+    '    if [[ -z "$tool_path" ]]; then',
+    '        acfs_child_log_error "Unable to locate trusted $name for primary bin operation"',
+    '        return 1',
+    '    fi',
+    '',
+    '    printf \'%s\\n\' "$tool_path"',
+    '}',
+    '',
     'acfs_child_ensure_primary_bin_dir() {',
     '    local primary_bin_dir="$1"',
+    '    local mkdir_bin=""',
+    '',
+    '    mkdir_bin="$(acfs_child_primary_bin_tool_path mkdir)" || return 1',
     '',
     '    if acfs_child_primary_bin_requires_root "$primary_bin_dir"; then',
-    '        acfs_child_run_root_bin_command mkdir -p "$primary_bin_dir"',
+    '        acfs_child_run_root_bin_command "$mkdir_bin" -p "$primary_bin_dir"',
     '        return $?',
     '    fi',
     '',
-    '    mkdir -p "$primary_bin_dir"',
+    '    "$mkdir_bin" -p "$primary_bin_dir"',
     '}',
     '',
     'acfs_link_primary_bin_command() {',
@@ -727,17 +761,19 @@ function primaryBinHelperPreludeLines(): string[] {
     '    local command_name="$2"',
     '    local primary_bin_dir=""',
     '    local dest_path=""',
+    '    local ln_bin=""',
     '',
     '    primary_bin_dir="$(acfs_child_primary_bin_dir)" || return 1',
     '    dest_path="$primary_bin_dir/$command_name"',
     '    acfs_child_ensure_primary_bin_dir "$primary_bin_dir" || return 1',
+    '    ln_bin="$(acfs_child_primary_bin_tool_path ln)" || return 1',
     '',
     '    if acfs_child_primary_bin_requires_root "$primary_bin_dir"; then',
-    '        acfs_child_run_root_bin_command ln -sf "$source_path" "$dest_path"',
+    '        acfs_child_run_root_bin_command "$ln_bin" -sf "$source_path" "$dest_path"',
     '        return $?',
     '    fi',
     '',
-    '    ln -sf "$source_path" "$dest_path"',
+    '    "$ln_bin" -sf "$source_path" "$dest_path"',
     '}',
     '',
     'acfs_install_executable_into_primary_bin() {',
@@ -745,33 +781,43 @@ function primaryBinHelperPreludeLines(): string[] {
     '    local command_name="$2"',
     '    local primary_bin_dir=""',
     '    local dest_path=""',
+    '    local install_bin=""',
     '',
     '    primary_bin_dir="$(acfs_child_primary_bin_dir)" || return 1',
     '    dest_path="$primary_bin_dir/$command_name"',
     '    acfs_child_ensure_primary_bin_dir "$primary_bin_dir" || return 1',
+    '    install_bin="$(acfs_child_primary_bin_tool_path install)" || return 1',
     '',
     '    if acfs_child_primary_bin_requires_root "$primary_bin_dir"; then',
-    '        acfs_child_run_root_bin_command install -m 0755 "$src_path" "$dest_path"',
+    '        acfs_child_run_root_bin_command "$install_bin" -m 0755 "$src_path" "$dest_path"',
     '        return $?',
     '    fi',
     '',
-    '    install -m 0755 "$src_path" "$dest_path"',
+    '    "$install_bin" -m 0755 "$src_path" "$dest_path"',
     '}',
   ];
 }
 
 function commandLinesWithChildHelperPreludes(commandLines: string[]): string[] {
   const preludeLines: string[] = [];
+  const needsGeneratedHelpers = commandLinesNeedGeneratedHelpers(commandLines);
+  const needsPrimaryBinHelpers = commandLinesNeedPrimaryBinHelpers(commandLines);
 
-  if (commandLinesNeedGeneratedHelpers(commandLines)) {
+  if (needsGeneratedHelpers) {
     preludeLines.push(
       '# Generated helper functions used by this child shell.',
       ...generatedHelperPreludeLines(),
       ''
     );
+  } else if (needsPrimaryBinHelpers) {
+    preludeLines.push(
+      '# Generated helper functions used by this child shell.',
+      ...generatedSystemBinaryPreludeLines(),
+      ''
+    );
   }
 
-  if (commandLinesNeedPrimaryBinHelpers(commandLines)) {
+  if (needsPrimaryBinHelpers) {
     preludeLines.push(
       '# Primary-bin helper functions used by this child shell.',
       ...primaryBinHelperPreludeLines(),

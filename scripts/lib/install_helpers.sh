@@ -1000,6 +1000,11 @@ acfs_primary_bin_dir_uses_root() {
 _acfs_run_root_bin_command() {
     local sudo_bin=""
 
+    if [[ -z "${1:-}" || "${1:-}" != /* ]]; then
+        log_error "Root primary bin command must be an absolute trusted path (got: ${1:-<empty>})"
+        return 1
+    fi
+
     if [[ $EUID -eq 0 ]]; then
         "$@"
         return $?
@@ -1015,47 +1020,67 @@ _acfs_run_root_bin_command() {
     return 1
 }
 
+_acfs_primary_bin_tool_path() {
+    local name="${1:-}"
+    local tool_path=""
+
+    tool_path="$(_acfs_system_binary_path "$name" 2>/dev/null || true)"
+    if [[ -z "$tool_path" ]]; then
+        log_error "Unable to locate trusted $name for primary bin operation"
+        return 1
+    fi
+
+    printf '%s\n' "$tool_path"
+}
+
 acfs_ensure_primary_bin_dir() {
+    local mkdir_bin=""
+
     acfs_validate_primary_bin_dir || return 1
+    mkdir_bin="$(_acfs_primary_bin_tool_path mkdir)" || return 1
 
     if acfs_primary_bin_dir_uses_root; then
-        _acfs_run_root_bin_command mkdir -p "$ACFS_BIN_DIR"
+        _acfs_run_root_bin_command "$mkdir_bin" -p "$ACFS_BIN_DIR"
         return $?
     fi
 
-    run_as_target mkdir -p "$ACFS_BIN_DIR"
+    run_as_target "$mkdir_bin" -p "$ACFS_BIN_DIR"
 }
 
 acfs_link_primary_bin_command() {
     local source_path="$1"
     local command_name="$2"
     local dest_path=""
+    local ln_bin=""
 
     acfs_ensure_primary_bin_dir || return 1
+    ln_bin="$(_acfs_primary_bin_tool_path ln)" || return 1
     dest_path="$ACFS_BIN_DIR/$command_name"
 
     if acfs_primary_bin_dir_uses_root; then
-        _acfs_run_root_bin_command ln -sf "$source_path" "$dest_path"
+        _acfs_run_root_bin_command "$ln_bin" -sf "$source_path" "$dest_path"
         return $?
     fi
 
-    run_as_target ln -sf "$source_path" "$dest_path"
+    run_as_target "$ln_bin" -sf "$source_path" "$dest_path"
 }
 
 acfs_install_executable_into_primary_bin() {
     local src_path="$1"
     local command_name="$2"
     local dest_path=""
+    local install_bin=""
 
     acfs_ensure_primary_bin_dir || return 1
+    install_bin="$(_acfs_primary_bin_tool_path install)" || return 1
     dest_path="$ACFS_BIN_DIR/$command_name"
 
     if acfs_primary_bin_dir_uses_root; then
-        _acfs_run_root_bin_command install -m 0755 "$src_path" "$dest_path"
+        _acfs_run_root_bin_command "$install_bin" -m 0755 "$src_path" "$dest_path"
         return $?
     fi
 
-    run_as_target install -m 0755 "$src_path" "$dest_path"
+    run_as_target "$install_bin" -m 0755 "$src_path" "$dest_path"
 }
 
 # Run a shell string (or stdin) as TARGET_USER

@@ -649,6 +649,51 @@ EOF
     fi
 }
 
+@test "_acfs_run_root_bin_command: rejects bare command names" {
+    run _acfs_run_root_bin_command mkdir -p "$BATS_TEST_TMPDIR/root-bin"
+
+    assert_failure
+    assert_output --partial "Root primary bin command must be an absolute trusted path"
+}
+
+@test "primary bin helpers resolve trusted coreutils before root-owned writes" {
+    local calls_file="$BATS_TEST_TMPDIR/primary-bin-root-calls.log"
+
+    export TARGET_USER="testuser"
+    export TARGET_HOME="/home/testuser"
+    export ACFS_BIN_DIR="/usr/local/bin"
+
+    _acfs_system_binary_path() {
+        case "${1:-}" in
+            mkdir|ln|install)
+                printf '/trusted/%s\n' "$1"
+                return 0
+                ;;
+        esac
+        return 1
+    }
+
+    _acfs_run_root_bin_command() {
+        printf '%s\n' "$*" >> "$calls_file"
+        return 0
+    }
+
+    run acfs_link_primary_bin_command /tmp/source-tool tool
+    assert_success
+
+    run acfs_install_executable_into_primary_bin /tmp/source-tool installed-tool
+    assert_success
+
+    local calls
+    calls="$(cat "$calls_file")"
+    [[ "$calls" == *"/trusted/mkdir -p /usr/local/bin"* ]] || fail "mkdir was not trusted: $calls"
+    [[ "$calls" == *"/trusted/ln -sf /tmp/source-tool /usr/local/bin/tool"* ]] || fail "ln was not trusted: $calls"
+    [[ "$calls" == *"/trusted/install -m 0755 /tmp/source-tool /usr/local/bin/installed-tool"* ]] || fail "install was not trusted: $calls"
+    [[ "$calls" != *$'\n'"mkdir "* ]] || fail "bare mkdir leaked into root helper: $calls"
+    [[ "$calls" != *$'\n'"ln "* ]] || fail "bare ln leaked into root helper: $calls"
+    [[ "$calls" != *$'\n'"install "* ]] || fail "bare install leaked into root helper: $calls"
+}
+
 @test "_acfs_force_reinstall_enabled: returns 0 when true" {
     export ACFS_FORCE_REINSTALL="true"
     run _acfs_force_reinstall_enabled
