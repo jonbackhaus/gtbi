@@ -148,6 +148,7 @@ research_screenshots/
 /docs/assets/gh_og_share_image.png
 /apps/web/public/og-home.jpg
 /apps/web/public/og-flywheel.jpg
+/acfs/onboard/assets/diagrams/.gitkeep
 
 # ----- Installer test outputs -----
 *.log
