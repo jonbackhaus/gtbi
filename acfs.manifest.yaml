@@ -1319,6 +1319,7 @@ modules:
     verified_installer:
       tool: mcp_agent_mail
       runner: bash
+      env: ["AM_INSTALL_SKIP_MCP_SETUP=1"]
       args: ["--dest", "$TARGET_HOME/mcp_agent_mail", "--yes"]
     install:
       - |

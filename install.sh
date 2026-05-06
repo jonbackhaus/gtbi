@@ -6106,16 +6106,21 @@ NTM_CONFIG_EOF
     fi
 
     # MCP Agent Mail
-    local am_cli_path="$TARGET_HOME/.local/bin/am"
-    if binary_installed "mcp-agent-mail" || [[ -x "$am_cli_path" ]] || [[ -d "$TARGET_HOME/mcp_agent_mail" ]]; then
-        log_detail "MCP Agent Mail already installed; ensuring managed service"
+    if [[ -f "${ACFS_LIB_DIR:-}/stack.sh" ]]; then
+        # shellcheck source=scripts/lib/stack.sh
+        source "$ACFS_LIB_DIR/stack.sh"
+        install_mcp_agent_mail || return 1
     else
-        log_detail "Installing MCP Agent Mail"
-    fi
-    local tool="mcp_agent_mail"
-    local target_dir="$TARGET_HOME/mcp_agent_mail"
-    local am_service_ready=false
-    if run_as_target bash -c 'set -euo pipefail
+        local am_cli_path="$TARGET_HOME/.local/bin/am"
+        if binary_installed "mcp-agent-mail" || [[ -x "$am_cli_path" ]] || [[ -d "$TARGET_HOME/mcp_agent_mail" ]]; then
+            log_detail "MCP Agent Mail already installed; ensuring managed service"
+        else
+            log_detail "Installing MCP Agent Mail"
+        fi
+        local tool="mcp_agent_mail"
+        local target_dir="$TARGET_HOME/mcp_agent_mail"
+        local am_service_ready=false
+        if run_as_target bash -c 'set -euo pipefail
         export PATH="${ACFS_BIN_DIR:-$HOME/.local/bin}:$HOME/.local/bin:$HOME/.acfs/bin:$HOME/.cargo/bin:$HOME/.bun/bin:$HOME/.atuin/bin:$HOME/go/bin:/usr/local/bin:/usr/bin:/bin:/snap/bin"
         agent_mail_service_curl() {
             local curl_bin=""
@@ -6166,24 +6171,24 @@ NTM_CONFIG_EOF
         agent_mail_service_curl -fsS --max-time 10 http://127.0.0.1:8765/health/liveness >/dev/null 2>&1
         readiness_body="$(agent_mail_service_curl -fsS --max-time 10 http://127.0.0.1:8765/health 2>/dev/null)"
         printf "%s\n" "$readiness_body" | grep -Eq "\"status\"[[:space:]]*:[[:space:]]*\"ready\""
-    '; then
-        log_success "MCP Agent Mail service already running on http://127.0.0.1:8765"
-        am_service_ready=true
-    fi
+        '; then
+            log_success "MCP Agent Mail service already running on http://127.0.0.1:8765"
+            am_service_ready=true
+        fi
 
-    if [[ "$am_service_ready" != "true" ]] && acfs_load_upstream_checksums; then
-        local url="${ACFS_UPSTREAM_URLS[$tool]:-}"
-        local expected_sha256="${ACFS_UPSTREAM_SHA256[$tool]:-}"
+        if [[ "$am_service_ready" != "true" ]] && acfs_load_upstream_checksums; then
+            local url="${ACFS_UPSTREAM_URLS[$tool]:-}"
+            local expected_sha256="${ACFS_UPSTREAM_SHA256[$tool]:-}"
 
-        if [[ -z "$url" ]] || [[ -z "$expected_sha256" ]]; then
-            log_error "MCP Agent Mail: missing installer URL/checksum"
-        else
-            ACFS_TMP_INSTALL="$(mktemp "${TMPDIR:-/tmp}/acfs-install-${tool}.XXXXXX" 2>/dev/null)" || ACFS_TMP_INSTALL=""
+            if [[ -z "$url" ]] || [[ -z "$expected_sha256" ]]; then
+                log_error "MCP Agent Mail: missing installer URL/checksum"
+            else
+                ACFS_TMP_INSTALL="$(mktemp "${TMPDIR:-/tmp}/acfs-install-${tool}.XXXXXX" 2>/dev/null)" || ACFS_TMP_INSTALL=""
 
-            if [[ -n "$ACFS_TMP_INSTALL" ]] && verify_checksum "$url" "$expected_sha256" "$tool" > "$ACFS_TMP_INSTALL"; then
-                chmod 755 "$ACFS_TMP_INSTALL" 2>/dev/null || true
+                if [[ -n "$ACFS_TMP_INSTALL" ]] && verify_checksum "$url" "$expected_sha256" "$tool" > "$ACFS_TMP_INSTALL"; then
+                    chmod 755 "$ACFS_TMP_INSTALL" 2>/dev/null || true
 
-                if try_step "Installing MCP Agent Mail" run_as_target bash "$ACFS_TMP_INSTALL" --dest "$target_dir" --yes; then
+                    if try_step "Installing MCP Agent Mail" run_as_target env "AM_INSTALL_SKIP_MCP_SETUP=1" bash "$ACFS_TMP_INSTALL" --dest "$target_dir" --yes; then
                     # Symlink repair/normalization: prefer the freshly installed
                     # Rust CLI even if an older am is already on PATH.
                     run_as_target env "ACFS_AGENT_MAIL_TARGET_DIR=$target_dir" bash -c '
@@ -6480,18 +6485,19 @@ UNIT_EOF
                 fi
                 rm -f "$ACFS_TMP_INSTALL" 2>/dev/null || true
                 ACFS_TMP_INSTALL=""
-            else
-                rm -f "$ACFS_TMP_INSTALL" 2>/dev/null || true
-                ACFS_TMP_INSTALL=""
-                log_error "MCP Agent Mail: installer verification failed"
+                else
+                    rm -f "$ACFS_TMP_INSTALL" 2>/dev/null || true
+                    ACFS_TMP_INSTALL=""
+                    log_error "MCP Agent Mail: installer verification failed"
+                fi
             fi
+        elif [[ "$am_service_ready" != "true" ]]; then
+            log_error "MCP Agent Mail: unable to load upstream checksums; refusing to run unverified installer"
         fi
-    elif [[ "$am_service_ready" != "true" ]]; then
-        log_error "MCP Agent Mail: unable to load upstream checksums; refusing to run unverified installer"
-    fi
 
-    if [[ "$am_service_ready" != "true" ]]; then
-        return 1
+        if [[ "$am_service_ready" != "true" ]]; then
+            return 1
+        fi
     fi
 
     # Ultimate Bug Scanner

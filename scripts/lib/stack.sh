@@ -1608,7 +1608,11 @@ install_mcp_agent_mail() {
         log_detail "${STACK_NAMES[$tool]} already installed; ensuring managed service"
     else
         log_detail "Installing ${STACK_NAMES[$tool]}..."
-        if ! _stack_run_installer "$tool" --dest "$target_dir" --yes; then
+        # ACFS owns the managed service and readiness checks below.  The Rust
+        # installer also tries to configure MCP clients and start its own user
+        # service when Codex/Claude configs exist, which can fail on fresh VPS
+        # images before ACFS has normalized the service environment.
+        if ! _stack_run_verified_installer_with_env "$tool" "AM_INSTALL_SKIP_MCP_SETUP=1" --dest "$target_dir" --yes; then
             log_warn "${STACK_NAMES[$tool]} installation may have failed"
             return 1
         fi

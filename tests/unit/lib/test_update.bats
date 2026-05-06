@@ -1410,6 +1410,49 @@ EOF
     [[ -f "$HOME/apr-ran" ]]
 }
 
+@test "update_stack skips upstream MCP Agent Mail setup and owns service readiness" {
+    QUIET=true
+    VERBOSE=false
+    DRY_RUN=false
+    UPDATE_STACK=true
+    ABORT_ON_FAILURE=false
+    ACFS_UPDATE_RETRY_MAX_ATTEMPTS=1
+    UPDATE_LOG_FILE="$HOME/update.log"
+    SUCCESS_COUNT=0
+    FAIL_COUNT=0
+    SKIP_COUNT=0
+
+    declare -gA KNOWN_INSTALLERS=([mcp_agent_mail]="https://example.test/install-am.sh")
+
+    update_require_security() { return 0; }
+    get_checksum() { printf '%s\n' "abc123"; }
+    verify_checksum() {
+        printf '%s\n' '#!/usr/bin/env bash'
+        printf '%s\n' 'exit 0'
+    }
+    update_target_user() { id -un; }
+    update_target_home() { printf '%s\n' "$HOME"; }
+    update_run_logged_passthrough() {
+        printf '%s\n' "$*" > "$HOME/mcp-agent-mail-passthrough.args"
+        return 0
+    }
+    update_source_stack_lib() { return 0; }
+    _stack_repair_agent_mail_cli_symlink() { return 0; }
+    _stack_configure_agent_mail_service() { return 0; }
+    _stack_wait_for_agent_mail_health() { return 0; }
+    capture_version_before() { :; }
+    capture_version_after() { return 1; }
+    update_binary_exists() { return 1; }
+    update_run_verified_installer() { return 0; }
+    update_run_verified_installer_with_env() { return 0; }
+    update_run_slb_source_install() { return 0; }
+    update_run_fsfs_installer() { return 0; }
+
+    run update_stack
+    assert_success
+    [[ "$(cat "$HOME/mcp-agent-mail-passthrough.args")" == "update_run_in_target_context AM_INSTALL_SKIP_MCP_SETUP=1 bash "* ]]
+}
+
 @test "update_stack honors abort-on-failure for MCP Agent Mail target-home failure" {
     QUIET=true
     VERBOSE=false
@@ -6136,6 +6179,43 @@ EOF
     run _stack_agent_mail_cli_path
     assert_success
     assert_output "$target_am"
+}
+
+@test "stack MCP Agent Mail installer skips upstream setup and waits on ACFS service" {
+    source_lib "stack"
+
+    local args_file="$BATS_TEST_TMPDIR/mcp-agent-mail-installer.args"
+    local target_home="$BATS_TEST_TMPDIR/target-home"
+    mkdir -p "$target_home"
+
+    export TARGET_USER="$(id -un)"
+    export TARGET_HOME="$target_home"
+    export ACFS_STACK_TRUST_TARGET_HOME=true
+
+    _stack_tool_ready() { return 1; }
+    _stack_is_installed() {
+        [[ -f "$target_home/.installed-am" ]]
+    }
+    _stack_run_verified_installer_with_env() {
+        printf '%s\n' "$*" > "$args_file"
+        : > "$target_home/.installed-am"
+        return 0
+    }
+    _stack_repair_agent_mail_cli_symlink() { return 0; }
+    _stack_configure_agent_mail_service() {
+        : > "$target_home/.configured-agent-mail-service"
+        return 0
+    }
+    _stack_wait_for_agent_mail_health() {
+        : > "$target_home/.waited-agent-mail-health"
+        return 0
+    }
+
+    run install_mcp_agent_mail
+    assert_success
+    [[ "$(cat "$args_file")" == "mcp_agent_mail AM_INSTALL_SKIP_MCP_SETUP=1 --dest $target_home/mcp_agent_mail --yes" ]]
+    [[ -f "$target_home/.configured-agent-mail-service" ]]
+    [[ -f "$target_home/.waited-agent-mail-health" ]]
 }
 
 @test "stack SLB installer checks active Go PATH lines only" {

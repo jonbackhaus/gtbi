@@ -5335,7 +5335,7 @@ update_stack() {
                     rm -f "$tmp_install" 2>/dev/null || true
                     tmp_install=""
                     update_finish_cmd_fail "MCP Agent Mail" "$target_context_error"
-                elif update_run_logged_passthrough update_run_in_target_context "" bash "$tmp_install" --dest "$target_home/mcp_agent_mail" --yes; then
+                elif update_run_logged_passthrough update_run_in_target_context "AM_INSTALL_SKIP_MCP_SETUP=1" bash "$tmp_install" --dest "$target_home/mcp_agent_mail" --yes; then
                     if update_source_stack_lib; then
                         ACFS_STACK_TRUST_TARGET_HOME=true TARGET_USER="$target_user" TARGET_HOME="$target_home" _stack_repair_agent_mail_cli_symlink >/dev/null 2>&1 || true
                     fi
