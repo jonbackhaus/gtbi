@@ -162,12 +162,11 @@ jobs:
           esac
 
           echo "backend=$backend" >> "$GITHUB_OUTPUT"
+          echo "enabled=true" >> "$GITHUB_OUTPUT"
 
           if [[ "$backend" == "real-host" && ( -z "${effective_ssh_target:-}" || -z "${SSH_PRIVATE_KEY:-}" ) ]]; then
-            echo "enabled=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::Skipping real-host factory E2E because neither client_payload.ssh_target nor ACFS_FACTORY_SSH_TARGET is configured, or ACFS_FACTORY_SSH_PRIVATE_KEY is missing."
-          else
-            echo "enabled=true" >> "$GITHUB_OUTPUT"
+            echo "::error::real-host factory E2E requires client_payload.ssh_target or ACFS_FACTORY_SSH_TARGET, plus ACFS_FACTORY_SSH_PRIVATE_KEY."
+            exit 1
           fi
 
       - name: Prepare SSH material

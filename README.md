@@ -2426,6 +2426,8 @@ Standard GitHub-hosted runners do not provide a contractual nested-virtualizatio
 
 Reusable workflow callers may use the QEMU backend without passing SSH secrets. The real-host backend still needs a private key plus either `client_payload.ssh_target` for dispatch runs or `ACFS_FACTORY_SSH_TARGET` as a fallback.
 
+If `backend=real-host` is requested without those SSH credentials, the workflow fails during configuration resolution. It must never report a green canary when no disposable host was tested.
+
 The target host must be freshly provisioned. By default the harness fails if the `ubuntu` user already exists before install, because the real beginner path must prove ACFS creates that user automatically. The harness also requires `acfs doctor --json` to report zero failures and zero warnings, then separately verifies Agent Mail liveness/systemd service state and the ACFS nightly user timer.
 
 For the slower upgrade/resume gate, provision a fresh Ubuntu 24.04 host and run the same workflow or script with `--expect-ubuntu 24.04 --expect-final-ubuntu 25.10 --allow-install-reboot`.

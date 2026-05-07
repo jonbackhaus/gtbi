@@ -5625,6 +5625,10 @@ EOF
     run grep -A1 -F 'ACFS_FACTORY_SSH_PRIVATE_KEY:' "$workflow"
     assert_success
     assert_output --partial 'required: false'
+    run grep -F 'real-host factory E2E requires client_payload.ssh_target or ACFS_FACTORY_SSH_TARGET' "$workflow"
+    assert_success
+    run grep -F 'Skipping real-host factory E2E' "$workflow"
+    assert_failure
 }
 
 @test "remaining direct system binary resolvers reject pathlike names" {
