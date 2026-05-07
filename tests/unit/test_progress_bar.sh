@@ -73,6 +73,25 @@ test_progress_update() {
     fi
 }
 
+test_progress_update_without_init() {
+    run_test "progress_update before init is a no-op"
+
+    local output
+    local status=0
+    output=$(/usr/bin/bash -c '
+        set -euo pipefail
+        source "$1"
+        progress_update "before-init" >/dev/null 2>&1
+        printf "after\n"
+    ' _ "$REPO_ROOT/scripts/lib/progress.sh" 2>&1) || status=$?
+
+    if [[ "$status" -eq 0 && "$output" == "after" ]]; then
+        pass "progress_update survived without initialized total"
+    else
+        fail "progress_update before init status/output was '$status/$output', expected '0/after'"
+    fi
+}
+
 # Test 3: _progress_bar generates correct bar
 test_progress_bar() {
     run_test "_progress_bar generates ASCII bar"
@@ -146,6 +165,7 @@ main() {
 
     test_progress_init
     test_progress_update
+    test_progress_update_without_init
     test_progress_bar
     test_progress_finish
     test_no_color

@@ -17,6 +17,17 @@ ACFS_PROGRESS_ENABLED=true
 ACFS_PROGRESS_IS_TTY=false
 ACFS_PROGRESS_LAST_LINE_LEN=0
 
+_progress_is_nonnegative_integer() {
+    local value="${1:-}"
+    [[ "$value" =~ ^[0-9]+$ ]]
+}
+
+_progress_is_positive_integer() {
+    local value="${1:-}"
+    _progress_is_nonnegative_integer "$value" || return 1
+    (( 10#$value > 0 ))
+}
+
 # Check if we should use color/formatting
 _progress_check_tty() {
     # Disable progress bar if NO_COLOR is set or output is not a TTY
@@ -40,30 +51,41 @@ progress_init() {
 
     _progress_check_tty
 
+    if ! _progress_is_positive_integer "$total"; then
+        ACFS_PROGRESS_TOTAL=0
+        ACFS_PROGRESS_CURRENT=0
+        ACFS_PROGRESS_START_TIME=0
+        ACFS_PROGRESS_LAST_LINE_LEN=0
+        ACFS_PROGRESS_ENABLED=false
+        return
+    fi
+
     ACFS_PROGRESS_TOTAL="$total"
     ACFS_PROGRESS_CURRENT=0
     ACFS_PROGRESS_START_TIME=$(date +%s)
     ACFS_PROGRESS_LAST_LINE_LEN=0
-
-    if [[ "$ACFS_PROGRESS_TOTAL" -le 0 ]]; then
-        ACFS_PROGRESS_ENABLED=false
-        return
-    fi
 }
 
 # Build ASCII progress bar
 # Usage: _progress_bar <current> <total> <width>
 _progress_bar() {
-    local current="$1"
-    local total="$2"
+    local current="${1:-0}"
+    local total="${2:-0}"
     local width="${3:-20}"
 
-    if [[ "$total" -le 0 ]]; then
+    if ! _progress_is_positive_integer "$width"; then
+        width=20
+    fi
+
+    if ! _progress_is_positive_integer "$total" || ! _progress_is_nonnegative_integer "$current"; then
         printf '%*s' "$width" ""
         return
     fi
 
-    local percent=$((current * 100 / total))
+    local percent=$((10#$current * 100 / 10#$total))
+    if [[ "$percent" -gt 100 ]]; then
+        percent=100
+    fi
     local filled=$((percent * width / 100))
     local empty=$((width - filled))
 
@@ -84,12 +106,22 @@ progress_update() {
     if [[ "$ACFS_PROGRESS_ENABLED" != "true" ]]; then
         return
     fi
+    if ! _progress_is_positive_integer "${ACFS_PROGRESS_TOTAL:-0}"; then
+        ACFS_PROGRESS_ENABLED=false
+        return
+    fi
+    if ! _progress_is_nonnegative_integer "${ACFS_PROGRESS_CURRENT:-0}"; then
+        ACFS_PROGRESS_CURRENT=0
+    fi
 
     ((ACFS_PROGRESS_CURRENT++)) || true
 
     local current="$ACFS_PROGRESS_CURRENT"
     local total="$ACFS_PROGRESS_TOTAL"
-    local percent=$((current * 100 / total))
+    local percent=$((10#$current * 100 / 10#$total))
+    if [[ "$percent" -gt 100 ]]; then
+        percent=100
+    fi
 
     # Truncate item name if too long
     local display_name="$item_name"
@@ -119,15 +151,20 @@ progress_update() {
 
 # Mark progress as complete (add newline for TTY mode)
 progress_finish() {
+    local total="${ACFS_PROGRESS_TOTAL:-0}"
+
     if [[ "$ACFS_PROGRESS_ENABLED" != "true" ]]; then
         return
+    fi
+    if ! _progress_is_nonnegative_integer "$total"; then
+        total=0
     fi
 
     if [[ "$ACFS_PROGRESS_IS_TTY" == "true" ]] && [[ "$ACFS_PROGRESS_LAST_LINE_LEN" -gt 0 ]]; then
         # Print completion message and newline
         local bar
-        bar="$(_progress_bar "$ACFS_PROGRESS_TOTAL" "$ACFS_PROGRESS_TOTAL" 20)"
-        printf '\r\033[K[%s] %d/%d (100%%) Complete\n' "$bar" "$ACFS_PROGRESS_TOTAL" "$ACFS_PROGRESS_TOTAL" >&2
+        bar="$(_progress_bar "$total" "$total" 20)"
+        printf '\r\033[K[%s] %d/%d (100%%) Complete\n' "$bar" "$total" "$total" >&2
     fi
 
     # Reset state
