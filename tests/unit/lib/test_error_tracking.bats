@@ -121,6 +121,11 @@ EOF
     local count
     count="$(grep -c "Check internet connectivity" <<< "$output" || true)"
     assert_equal "$count" "1"
+
+    run jq -r '.failure.suggested_fix' "$report_log"
+    assert_success
+    count="$(grep -c "Check internet connectivity" <<< "$output" || true)"
+    assert_equal "$count" "1"
 }
 
 @test "report_failure fills missing context from state file" {
@@ -152,4 +157,12 @@ EOF_STATE
     assert_output --partial "MCP Agent Mail"
     assert_output --partial "checksum mismatch: expected old actual new"
     refute_output --partial "unknown step"
+
+    run jq -e '
+        .phase.name == "Dicklesworthstone Stack"
+        and .failure.step == "MCP Agent Mail"
+        and .failure.error == "checksum mismatch: expected old actual new"
+        and (.failure.suggested_fix | contains("Upstream installer script has changed"))
+    ' "$report_log"
+    assert_success
 }
