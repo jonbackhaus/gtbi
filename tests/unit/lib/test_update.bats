@@ -11722,6 +11722,92 @@ EOF
     [[ ! -f "$HOME/global-am-used" ]]
 }
 
+@test "doctor.sh: default Agent Mail stack check ignores mailbox doctor failures after service proof" {
+    local doctor_lib="$PROJECT_ROOT/scripts/lib/doctor.sh"
+    local checks="$BATS_TEST_TMPDIR/checks.out"
+    local doctor_called="$BATS_TEST_TMPDIR/agent-mail-doctor-called"
+
+    init_stub_dir
+
+    cat > "$STUB_DIR/curl" <<'EOF'
+#!/usr/bin/env bash
+exit 0
+EOF
+    cat > "$STUB_DIR/id" <<'EOF'
+#!/usr/bin/env bash
+if [[ "${1:-}" == "-u" ]]; then
+  printf '1000\n'
+  exit 0
+fi
+exit 1
+EOF
+    cat > "$STUB_DIR/systemctl" <<'EOF'
+#!/usr/bin/env bash
+if [[ "${1:-}" == "--user" && "${2:-}" == "show-environment" ]]; then
+  exit 0
+fi
+if [[ "${1:-}" == "--user" && "${2:-}" == "is-active" && "${3:-}" == "--quiet" && "${4:-}" == "agent-mail.service" ]]; then
+  exit 0
+fi
+exit 1
+EOF
+    chmod +x "$STUB_DIR/curl" "$STUB_DIR/id" "$STUB_DIR/systemctl"
+
+    # shellcheck disable=SC1090
+    eval "$(sed -n '/^check_stack()/,/^}$/p' "$doctor_lib")"
+
+    section() { :; }
+    check_command() { :; }
+    blank_line() { :; }
+    check_dcg_hook_status() {
+        check "stack.dcg" "DCG" "pass" "installed"
+    }
+    check() {
+        printf '%s|%s|%s|%s|%s\n' "${1:-}" "${2:-}" "${3:-}" "${4:-}" "${5:-}" >> "$checks"
+    }
+    doctor_binary_path() {
+        case "${1:-}" in
+            am|ubs|bv|cass|ru) printf '%s/%s\n' "$STUB_DIR" "$1" ;;
+            *) return 1 ;;
+        esac
+    }
+    doctor_binary_exists() {
+        [[ "${1:-}" == "cass" ]]
+    }
+    doctor_agent_mail_cli_path() {
+        printf '%s/am\n' "$STUB_DIR"
+    }
+    get_version_line() {
+        printf 'am 0.2.51\n'
+    }
+    fix_for_module() {
+        printf 'fix %s\n' "${1:-}"
+    }
+    _acfs_doctor_system_binary_path() {
+        case "${1:-}" in
+            curl|id|systemctl) printf '%s/%s\n' "$STUB_DIR" "$1" ;;
+            *) return 1 ;;
+        esac
+    }
+    doctor_runtime_home() {
+        printf '%s\n' "$TARGET_HOME"
+    }
+    agent_mail_doctor_check_json() {
+        : > "$doctor_called"
+        printf '{"healthy":false}\n'
+    }
+
+    export TARGET_HOME="$HOME/target-home"
+    export DEEP_MODE=false
+
+    run check_stack
+    assert_success
+
+    run grep -F 'stack.mcp_agent_mail|MCP Agent Mail (am 0.2.51)|pass|service healthy|' "$checks"
+    assert_success
+    [[ ! -f "$doctor_called" ]]
+}
+
 @test "update_retry_max_attempts: defaults malformed values and clamps zero" {
     unset ACFS_UPDATE_RETRY_MAX_ATTEMPTS
     run update_retry_max_attempts

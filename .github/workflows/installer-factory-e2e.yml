@@ -1,8 +1,18 @@
-name: Factory Installer E2E (Real Host)
+name: Factory Installer E2E (Fresh Host/QEMU)
 
 on:
+  schedule:
+    - cron: "0 8 * * 0" # weekly QEMU/KVM factory canary
   workflow_dispatch:
     inputs:
+      backend:
+        description: "Factory backend"
+        default: "qemu"
+        required: true
+        type: choice
+        options:
+          - qemu
+          - real-host
       ref:
         description: "ACFS ref to install"
         default: "main"
@@ -41,8 +51,16 @@ on:
         description: "Timeout for post-reboot resume/assertions"
         default: "14400"
         required: true
+  repository_dispatch:
+    types:
+      - acfs-factory-host-ready
   workflow_call:
     inputs:
+      backend:
+        description: "Factory backend. workflow_call is intended for externally provisioned real hosts."
+        default: "real-host"
+        required: false
+        type: string
       ref:
         description: "ACFS ref to install"
         default: "main"
@@ -95,28 +113,54 @@ on:
 
 jobs:
   factory-e2e:
-    name: Fresh Ubuntu ${{ inputs.expect_ubuntu || '25.10' }} factory install
+    name: Fresh Ubuntu ${{ inputs.expect_ubuntu || github.event.client_payload.expect_ubuntu || '25.10' }} factory install
     runs-on: ubuntu-latest
     timeout-minutes: 360
+    permissions:
+      contents: read
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Check factory host secrets
+      - name: Resolve factory backend
         id: config
         env:
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_BACKEND: ${{ inputs.backend || '' }}
+          DISPATCH_BACKEND: ${{ github.event.client_payload.backend || '' }}
           SSH_TARGET: ${{ secrets.ACFS_FACTORY_SSH_TARGET }}
           SSH_PRIVATE_KEY: ${{ secrets.ACFS_FACTORY_SSH_PRIVATE_KEY }}
         run: |
-          if [[ -z "${SSH_TARGET:-}" || -z "${SSH_PRIVATE_KEY:-}" ]]; then
+          backend="${INPUT_BACKEND:-}"
+          if [[ -z "$backend" && -n "${DISPATCH_BACKEND:-}" ]]; then
+            backend="$DISPATCH_BACKEND"
+          fi
+          if [[ -z "$backend" && "$EVENT_NAME" == "schedule" ]]; then
+            backend="qemu"
+          fi
+          if [[ -z "$backend" ]]; then
+            backend="real-host"
+          fi
+
+          case "$backend" in
+            qemu|real-host) ;;
+            *)
+              echo "::error::Unsupported backend: $backend"
+              exit 1
+              ;;
+          esac
+
+          echo "backend=$backend" >> "$GITHUB_OUTPUT"
+
+          if [[ "$backend" == "real-host" && ( -z "${SSH_TARGET:-}" || -z "${SSH_PRIVATE_KEY:-}" ) ]]; then
             echo "enabled=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::Skipping factory E2E because ACFS_FACTORY_SSH_TARGET or ACFS_FACTORY_SSH_PRIVATE_KEY is not configured."
+            echo "::notice::Skipping real-host factory E2E because ACFS_FACTORY_SSH_TARGET or ACFS_FACTORY_SSH_PRIVATE_KEY is not configured."
           else
             echo "enabled=true" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Prepare SSH material
-        if: steps.config.outputs.enabled == 'true'
+        if: steps.config.outputs.enabled == 'true' && steps.config.outputs.backend == 'real-host'
         env:
           SSH_PRIVATE_KEY: ${{ secrets.ACFS_FACTORY_SSH_PRIVATE_KEY }}
           PUBLIC_KEY: ${{ secrets.ACFS_FACTORY_PUBLIC_KEY }}
@@ -128,19 +172,50 @@ jobs:
             printf '%s\n' "$PUBLIC_KEY" > "$RUNNER_TEMP/acfs-factory-e2e/id.pub"
           fi
 
-      - name: Run factory installer E2E
-        if: steps.config.outputs.enabled == 'true'
+      - name: Install QEMU dependencies
+        if: steps.config.outputs.enabled == 'true' && steps.config.outputs.backend == 'qemu'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y qemu-system-x86 qemu-utils cloud-image-utils openssh-client
+
+      - name: Run QEMU factory installer E2E
+        if: steps.config.outputs.enabled == 'true' && steps.config.outputs.backend == 'qemu'
         env:
-          SSH_TARGET: ${{ secrets.ACFS_FACTORY_SSH_TARGET }}
-          SSH_PORT: ${{ secrets.ACFS_FACTORY_SSH_PORT }}
-          INPUT_REF: ${{ inputs.ref || 'main' }}
-          INPUT_MODE: ${{ inputs.mode || 'vibe' }}
-          INPUT_EXPECT_UBUNTU: ${{ inputs.expect_ubuntu || '25.10' }}
-          INPUT_EXPECT_FINAL_UBUNTU: ${{ inputs.expect_final_ubuntu || '25.10' }}
-          INPUT_ALLOW_EXISTING_UBUNTU: ${{ inputs.allow_existing_ubuntu || false }}
-          INPUT_ALLOW_INSTALL_REBOOT: ${{ inputs.allow_install_reboot || false }}
-          INPUT_TIMEOUT: ${{ inputs.install_timeout_seconds || '14400' }}
-          INPUT_POST_REBOOT_TIMEOUT: ${{ inputs.post_reboot_timeout_seconds || '14400' }}
+          INPUT_REF: ${{ inputs.ref || github.event.client_payload.ref || 'main' }}
+          INPUT_MODE: ${{ inputs.mode || github.event.client_payload.mode || 'vibe' }}
+          INPUT_EXPECT_UBUNTU: ${{ inputs.expect_ubuntu || github.event.client_payload.expect_ubuntu || '25.10' }}
+          INPUT_EXPECT_FINAL_UBUNTU: ${{ inputs.expect_final_ubuntu || github.event.client_payload.expect_final_ubuntu || '25.10' }}
+          INPUT_ALLOW_INSTALL_REBOOT: ${{ inputs.allow_install_reboot || github.event.client_payload.allow_install_reboot || false }}
+          INPUT_TIMEOUT: ${{ inputs.install_timeout_seconds || github.event.client_payload.install_timeout_seconds || '14400' }}
+          INPUT_POST_REBOOT_TIMEOUT: ${{ inputs.post_reboot_timeout_seconds || github.event.client_payload.post_reboot_timeout_seconds || '14400' }}
+        run: |
+          args=(
+            --ref "$INPUT_REF"
+            --mode "$INPUT_MODE"
+            --ubuntu "$INPUT_EXPECT_UBUNTU"
+            --expect-final-ubuntu "$INPUT_EXPECT_FINAL_UBUNTU"
+            --install-timeout "$INPUT_TIMEOUT"
+            --post-reboot-timeout "$INPUT_POST_REBOOT_TIMEOUT"
+            --artifacts-dir "$GITHUB_WORKSPACE/tests/artifacts/qemu-factory-e2e"
+          )
+          if [[ "$INPUT_ALLOW_INSTALL_REBOOT" == "true" ]]; then
+            args+=(--allow-install-reboot)
+          fi
+          bash tests/vm/test_factory_install_qemu.sh "${args[@]}"
+
+      - name: Run real-host factory installer E2E
+        if: steps.config.outputs.enabled == 'true' && steps.config.outputs.backend == 'real-host'
+        env:
+          SSH_TARGET: ${{ github.event.client_payload.ssh_target || secrets.ACFS_FACTORY_SSH_TARGET }}
+          SSH_PORT: ${{ github.event.client_payload.ssh_port || secrets.ACFS_FACTORY_SSH_PORT }}
+          INPUT_REF: ${{ inputs.ref || github.event.client_payload.ref || 'main' }}
+          INPUT_MODE: ${{ inputs.mode || github.event.client_payload.mode || 'vibe' }}
+          INPUT_EXPECT_UBUNTU: ${{ inputs.expect_ubuntu || github.event.client_payload.expect_ubuntu || '25.10' }}
+          INPUT_EXPECT_FINAL_UBUNTU: ${{ inputs.expect_final_ubuntu || github.event.client_payload.expect_final_ubuntu || '25.10' }}
+          INPUT_ALLOW_EXISTING_UBUNTU: ${{ inputs.allow_existing_ubuntu || github.event.client_payload.allow_existing_ubuntu || false }}
+          INPUT_ALLOW_INSTALL_REBOOT: ${{ inputs.allow_install_reboot || github.event.client_payload.allow_install_reboot || false }}
+          INPUT_TIMEOUT: ${{ inputs.install_timeout_seconds || github.event.client_payload.install_timeout_seconds || '14400' }}
+          INPUT_POST_REBOOT_TIMEOUT: ${{ inputs.post_reboot_timeout_seconds || github.event.client_payload.post_reboot_timeout_seconds || '14400' }}
         run: |
           args=(
             --ssh-target "$SSH_TARGET"
@@ -172,4 +247,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: factory-installer-e2e
-          path: tests/artifacts/factory-e2e
+          path: tests/artifacts

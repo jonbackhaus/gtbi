@@ -2321,13 +2321,11 @@ check_stack() {
         "Re-run: curl -fsSL https://raw.githubusercontent.com/Dicklesworthstone/coding_agent_account_manager/main/install.sh | bash"
 
     # Check MCP Agent Mail
-    local am_install_fix am_repair_fix am_version am_label
+    local am_install_fix am_version am_label
     am_install_fix="Re-run: $(fix_for_module "stack.mcp_agent_mail")"
-    am_repair_fix='Run: am doctor repair --yes && am doctor fix --yes'
     am_label="MCP Agent Mail"
 
     if am_bin="$(doctor_agent_mail_cli_path 2>/dev/null || true)" && [[ -n "$am_bin" ]]; then
-        local am_global_doctor_json am_project_doctor_json am_project_path am_details
         local curl_bin=""
         local id_bin=""
         local systemctl_bin=""
@@ -2359,7 +2357,13 @@ check_stack() {
             check "stack.mcp_agent_mail" "$am_label" "warn" \
                 "HTTP endpoint is healthy but agent-mail.service is inactive; rerun install/update to migrate off the fallback launcher" \
                 "$am_install_fix"
-        else
+        elif [[ "$DEEP_MODE" == "true" ]]; then
+            local am_global_doctor_json am_project_doctor_json am_project_path am_details
+            local am_repair_fix='Run: am doctor repair --yes && am doctor fix --yes'
+
+            # `am doctor check` validates live mailbox/archive state, not just the
+            # ACFS install surface. Keep it in --deep so normal installer canaries
+            # do not warn on unrelated mailbox hygiene after proving the service.
             am_global_doctor_json="$(agent_mail_doctor_check_json || true)"
             if [[ -z "$am_global_doctor_json" ]]; then
                 check "stack.mcp_agent_mail" "$am_label" "warn" \
@@ -2390,6 +2394,8 @@ check_stack() {
                     check "stack.mcp_agent_mail" "$am_label" "pass" "service healthy; doctor check OK"
                 fi
             fi
+        else
+            check "stack.mcp_agent_mail" "$am_label" "pass" "service healthy"
         fi
     elif [[ -d "$(doctor_runtime_home)/mcp_agent_mail" ]]; then
         local runtime_home=""

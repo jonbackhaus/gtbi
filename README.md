@@ -2308,12 +2308,12 @@ jobs:
     - Runs acfs doctor to confirm health
 
   factory-e2e:
-    - Runs the literal public curl|bash installer on a fresh real Ubuntu host
-    - Requires systemd, SSH, and a disposable factory VM/VPS
+    - Runs the literal public curl|bash installer on QEMU/KVM or a fresh real Ubuntu host
+    - Requires systemd, SSH, and a disposable factory VM/VPS semantics
     - Verifies ubuntu user creation, SSH key merge, user services, tool health, and idempotency
 ```
 
-Docker catches shell and package regressions early. The factory-host E2E is the authoritative release gate for the real beginner VPS path because it exercises systemd, SSH, login/user-service behavior, and provider image defaults that containers cannot model.
+Docker catches shell and package regressions early. The factory E2E is the authoritative release gate for the real beginner VPS path because it exercises systemd, SSH, login/user-service behavior, and provider image defaults that containers cannot model. A Docker pass is not sufficient release proof by itself.
 
 ### Website Deployment (`website.yml`)
 
@@ -2403,23 +2403,43 @@ jobs:
 
 ### Factory Installer E2E (`installer-factory-e2e.yml`)
 
-Runs the literal public installer on a real, disposable Ubuntu host over SSH. Use this as the authoritative release gate for the first-run VPS experience.
+Runs the literal public installer through the authoritative factory harness. The scheduled backend is QEMU/KVM with the official Ubuntu cloud image. The real-host backend runs against a disposable Ubuntu VPS over SSH and is intended for provider-specific sentinel runs.
 
 ```yaml
+schedule: "0 8 * * 0" # weekly QEMU/KVM factory canary
 workflow_dispatch:
   inputs:
+    backend: qemu|real-host
     ref: main
     mode: vibe
     expect_ubuntu: "25.10"
     expect_final_ubuntu: "25.10"
+repository_dispatch:
+  types: [acfs-factory-host-ready]
 required secrets:
-  ACFS_FACTORY_SSH_TARGET: root@fresh-host
-  ACFS_FACTORY_SSH_PRIVATE_KEY: private key for that host
+  ACFS_FACTORY_SSH_PRIVATE_KEY: private key for real-host backend
+  ACFS_FACTORY_SSH_TARGET: optional fallback root@fresh-host for real-host backend
 ```
 
-The target host must be freshly provisioned. By default the harness fails if the `ubuntu` user already exists before install, because the real beginner path must prove ACFS creates that user automatically.
+The target host must be freshly provisioned. By default the harness fails if the `ubuntu` user already exists before install, because the real beginner path must prove ACFS creates that user automatically. The harness also requires `acfs doctor --json` to report zero failures and zero warnings, then separately verifies Agent Mail liveness/systemd service state and the ACFS nightly user timer.
 
 For the slower upgrade/resume gate, provision a fresh Ubuntu 24.04 host and run the same workflow or script with `--expect-ubuntu 24.04 --expect-final-ubuntu 25.10 --allow-install-reboot`.
+
+For provider-specific real VPS sentinels, use an external provisioning job to create a disposable server, wait for root SSH, dispatch `acfs-factory-host-ready`, and destroy the server after artifact collection. The dispatch payload should include the fresh host address so the repository does not store a stale long-lived VPS as `ACFS_FACTORY_SSH_TARGET`:
+
+```json
+{
+  "event_type": "acfs-factory-host-ready",
+  "client_payload": {
+    "backend": "real-host",
+    "ssh_target": "root@203.0.113.10",
+    "ref": "main",
+    "mode": "vibe",
+    "expect_ubuntu": "25.10",
+    "expect_final_ubuntu": "25.10"
+  }
+}
+```
 
 ### Local QEMU Factory E2E (`test_factory_install_qemu.sh`)
 

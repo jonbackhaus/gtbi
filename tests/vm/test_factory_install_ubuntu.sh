@@ -9,7 +9,7 @@
 #
 # This is intentionally not a Docker test. It expects SSH access to a freshly
 # provisioned host and verifies user creation, SSH key merge, systemd user
-# services, tool availability, doctor health, and idempotency.
+# services, tool availability, warning-free doctor health, and idempotency.
 # ============================================================
 
 set -euo pipefail
@@ -485,7 +485,13 @@ assert_acfs_surface() {
     fi
     run_target_step "post.path_core" 'for cmd in acfs acfs-update onboard; do command -v "$cmd" >/dev/null; done'
     run_target_step "post.shell_startup" 'zsh -ic "command -v acfs >/dev/null && command -v onboard >/dev/null"'
-    run_target_step "post.doctor" 'zsh -ic "acfs doctor"'
+    run_target_step "post.doctor" '
+doctor_json="$(acfs doctor --json)"
+printf "%s\n" "$doctor_json" | jq -e ".summary.fail == 0 and .summary.warn == 0" >/dev/null || {
+    printf "%s\n" "$doctor_json"
+    exit 1
+}
+'
     run_target_step "post.stack_bins" 'for cmd in am ntm dcg ru cass cm caam slb ubs bv br; do command -v "$cmd" >/dev/null; done'
     run_target_step "post.dcg_guard" 'dcg test "git reset --hard" 2>&1 | grep -Eqi "deny|block"'
     assert_agent_mail_systemd
