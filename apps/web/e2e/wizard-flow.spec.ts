@@ -1,4 +1,5 @@
 import { test, expect, Page } from "@playwright/test";
+import { readFile } from "node:fs/promises";
 
 /**
  * Standard timeouts for different scenarios.
@@ -906,6 +907,49 @@ test.describe("Step 9: Run Installer Page", () => {
 
     // The curl command should be visible
     await expect(page.locator('text=curl -fsSL').first()).toBeVisible();
+  });
+
+  test("should download redacted handoff runbook artifacts", async ({ page }) => {
+    await page.goto("/wizard/run-installer");
+    await page.waitForLoadState("domcontentloaded");
+
+    const [jsonDownload] = await Promise.all([
+      page.waitForEvent("download"),
+      page.getByRole("button", { name: /download json handoff runbook/i }).click(),
+    ]);
+    const jsonPath = await jsonDownload.path();
+    expect(jsonPath).toBeTruthy();
+    const jsonText = await readFile(jsonPath!, "utf8");
+    let runbook: {
+      schema?: string;
+      install?: { command?: string };
+      support?: { bundleCommand?: string };
+      targetHost?: { value?: string };
+    };
+    try {
+      runbook = JSON.parse(jsonText);
+    } catch (error) {
+      throw new Error(`Downloaded handoff runbook was not valid JSON: ${String(error)}`);
+    }
+
+    expect(runbook.schema).toBe("acfs.handoff-runbook.v1");
+    expect(runbook.install?.command).toContain("curl -fsSL");
+    expect(runbook.support?.bundleCommand).toBe("acfs support-bundle");
+    expect(runbook.targetHost?.value).toBe("<ipv4-target-host>");
+    expect(jsonText).not.toContain("192.168.1.100");
+
+    const [markdownDownload] = await Promise.all([
+      page.waitForEvent("download"),
+      page.getByRole("button", { name: /download markdown handoff runbook/i }).click(),
+    ]);
+    const markdownPath = await markdownDownload.path();
+    expect(markdownPath).toBeTruthy();
+    const markdownText = await readFile(markdownPath!, "utf8");
+
+    expect(markdownText).toContain("# ACFS Wizard Handoff Runbook");
+    expect(markdownText).toContain("acfs support-bundle");
+    expect(markdownText).toContain("ssh root@<ipv4-target-host>");
+    expect(markdownText).not.toContain("192.168.1.100");
   });
 
   test("should have copy button for install command", async ({ page }) => {

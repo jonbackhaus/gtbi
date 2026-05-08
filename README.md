@@ -1522,9 +1522,28 @@ The wizard guides beginners through a **13-step journey** from "I have a laptop"
 
 - **OS Detection:** Auto-detects Mac vs Windows for tailored instructions
 - **Copy-to-Clipboard:** One-click copy for all commands
+- **Handoff Runbook:** Downloadable JSON/Markdown artifact for the installer command and recovery steps
 - **Progress Tracking:** localStorage persistence across browser sessions
 - **Confirmation Checkboxes:** "I ran this command" acknowledgments
 - **Troubleshooting:** Expandable help for common issues
+
+### Wizard Handoff Runbook
+
+Step 9 can download a local handoff runbook in JSON or Markdown. The runbook is meant for the user and support loop when an SSH session drops, an install is interrupted, or the user needs to remember the exact command they ran.
+
+**Schema:** `acfs.handoff-runbook.v1`
+
+| Field | Purpose |
+|-------|---------|
+| `wizardSelections` | Local OS, install mode, source ref, and normalized target user |
+| `targetHost` | Redacted host kind and target-host assumptions |
+| `ssh` | Expected SSH key paths and redacted reconnect command templates |
+| `install` | Exact installer command generated from the shared command builder |
+| `recoveryCommands` | Copy/paste-safe reconnect, retry, doctor, and support-bundle commands |
+| `support` | Deterministic `acfs support-bundle` reference and review artifacts |
+| `privacy` | Explicit redaction policy for host data and exact-command inclusion |
+
+Host addresses are not written into the runbook. The installer command stays exact so a user can paste it back into the VPS session, and the artifact points to `support-report.md` and `manifest.json` for support-bundle review.
 
 ### Technology Stack
 

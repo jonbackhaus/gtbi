@@ -1,5 +1,12 @@
 import { describe, expect, test } from "bun:test";
-import { buildCommands, buildInstallCommand, buildShareURL } from "./commandBuilder";
+import {
+  buildCommands,
+  buildHandoffRunbook,
+  buildInstallCommand,
+  buildShareURL,
+  formatHandoffRunbookMarkdown,
+  serializeHandoffRunbookJson,
+} from "./commandBuilder";
 
 describe("buildInstallCommand", () => {
   test("omits TARGET_USER for the default ubuntu user", () => {
@@ -76,6 +83,66 @@ describe("buildCommands", () => {
     expect(installer?.command).toContain('TARGET_USER="dev-user.1"');
     expect(sshUser?.label).toBe("SSH as dev-user.1");
     expect(sshUser?.command).toContain("dev-user.1@10.20.30.40");
+  });
+});
+
+describe("buildHandoffRunbook", () => {
+  test("records the exact installer command while redacting the target host", () => {
+    const runbook = buildHandoffRunbook({
+      ip: "203.0.113.42",
+      os: "mac",
+      username: "dev-user",
+      mode: "safe",
+      ref: "v1.2.3",
+    });
+
+    const json = serializeHandoffRunbookJson(runbook);
+
+    expect(runbook.schema).toBe("acfs.handoff-runbook.v1");
+    expect(runbook.install.command).toContain('TARGET_USER="dev-user"');
+    expect(runbook.install.command).toContain('--ref "v1.2.3"');
+    expect(runbook.install.command).toContain("/v1.2.3/install.sh");
+    expect(runbook.targetHost.kind).toBe("ipv4");
+    expect(runbook.targetHost.value).toBe("<ipv4-target-host>");
+    expect(runbook.privacy.rawTargetHostIncluded).toBe(false);
+    expect(json).not.toContain("203.0.113.42");
+    expect(json).toContain("<ipv4-target-host>");
+  });
+
+  test("uses a missing host placeholder when wizard state has no valid target", () => {
+    const runbook = buildHandoffRunbook({
+      ip: "",
+      os: "windows",
+      username: "bad user",
+      mode: "vibe",
+      ref: "bad ref",
+    });
+
+    expect(runbook.targetHost.kind).toBe("invalid_or_missing");
+    expect(runbook.targetHost.value).toBe("<target-host>");
+    expect(runbook.wizardSelections.targetUsername).toBe("ubuntu");
+    expect(runbook.wizardSelections.sourceRef).toBe("main");
+    expect(runbook.install.command).not.toContain("TARGET_USER=");
+    expect(runbook.install.command).not.toContain("--ref");
+  });
+
+  test("renders a deterministic markdown handoff with support bundle references", () => {
+    const runbook = buildHandoffRunbook({
+      ip: "2001:db8::42",
+      os: "linux",
+      username: "ubuntu",
+      mode: "vibe",
+      ref: null,
+    });
+
+    const markdown = formatHandoffRunbookMarkdown(runbook);
+
+    expect(markdown).toContain("# ACFS Wizard Handoff Runbook");
+    expect(markdown).toContain("Schema: `acfs.handoff-runbook.v1`");
+    expect(markdown).toContain("Host kind: ipv6");
+    expect(markdown).toContain("ssh root@<ipv6-target-host>");
+    expect(markdown).toContain("acfs support-bundle");
+    expect(markdown).not.toContain("2001:db8::42");
   });
 });
 

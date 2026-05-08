@@ -13,6 +13,9 @@ import {
   Wifi,
   Pin,
   Info,
+  Download,
+  FileJson,
+  FileText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -27,8 +30,21 @@ import {
 } from "@/lib/wizardSteps";
 import { useWizardAnalytics } from "@/lib/hooks/useWizardAnalytics";
 import { withCurrentSearch } from "@/lib/utils";
-import { buildInstallCommand, formatSshTarget } from "@/lib/commandBuilder";
-import { normalizeGitRef, useACFSRef, useInstallMode, useSSHUsername, useVPSIP } from "@/lib/userPreferences";
+import {
+  buildHandoffRunbook,
+  buildInstallCommand,
+  formatHandoffRunbookMarkdown,
+  formatSshTarget,
+  serializeHandoffRunbookJson,
+} from "@/lib/commandBuilder";
+import {
+  normalizeGitRef,
+  useACFSRef,
+  useInstallMode,
+  useSSHUsername,
+  useUserOS,
+  useVPSIP,
+} from "@/lib/userPreferences";
 import {
   SimplerGuide,
   GuideSection,
@@ -66,9 +82,22 @@ const WHAT_IT_INSTALLS = [
   },
 ];
 
+function downloadTextFile(filename: string, contents: string, mimeType: string) {
+  const blob = new Blob([contents], { type: mimeType });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
 export default function RunInstallerPage() {
   const router = useRouter();
   const [isNavigating, setIsNavigating] = useState(false);
+  const [userOS, , userOSLoaded] = useUserOS();
   const [installMode, , installModeLoaded] = useInstallMode();
   const [pinnedRef, setPinnedRef, acfsRefLoaded] = useACFSRef();
   const [vpsIP, , vpsIPLoaded] = useVPSIP();
@@ -81,9 +110,10 @@ export default function RunInstallerPage() {
     : (pinnedRef ?? "main");
   const safePinnedRef = useMemo(() => normalizeGitRef(refDraft), [refDraft]);
   const ready =
-    installModeLoaded && acfsRefLoaded && vpsIPLoaded && sshUsernameLoaded;
+    userOSLoaded && installModeLoaded && acfsRefLoaded && vpsIPLoaded && sshUsernameLoaded;
   const effectiveInstallMode = installMode;
   const effectiveRef = usePinnedRef ? safePinnedRef : null;
+  const effectiveUserOS = userOS ?? "mac";
   const effectiveVpsIP = vpsIP ?? "";
   const effectiveSSHUsername = sshUsername.trim() || "ubuntu";
   const reconnectCommand = useMemo(
@@ -131,6 +161,16 @@ export default function RunInstallerPage() {
     () => buildInstallCommand(effectiveInstallMode, effectiveRef, effectiveSSHUsername),
     [effectiveInstallMode, effectiveRef, effectiveSSHUsername],
   );
+  const handoffRunbook = useMemo(
+    () => buildHandoffRunbook({
+      ip: effectiveVpsIP,
+      os: effectiveUserOS,
+      username: effectiveSSHUsername,
+      mode: effectiveInstallMode,
+      ref: effectiveRef,
+    }),
+    [effectiveVpsIP, effectiveUserOS, effectiveSSHUsername, effectiveInstallMode, effectiveRef],
+  );
 
   // Analytics tracking for this wizard step
   const { markComplete } = useWizardAnalytics({
@@ -160,6 +200,22 @@ export default function RunInstallerPage() {
     setIsNavigating(true);
     router.push(withCurrentSearch("/wizard/reconnect-ubuntu"));
   }, [router, markComplete]);
+  const handleRunbookDownload = useCallback((format: "json" | "markdown") => {
+    if (format === "json") {
+      downloadTextFile(
+        "acfs-handoff-runbook.json",
+        serializeHandoffRunbookJson(handoffRunbook),
+        "application/json",
+      );
+      return;
+    }
+
+    downloadTextFile(
+      "acfs-handoff-runbook.md",
+      formatHandoffRunbookMarkdown(handoffRunbook),
+      "text/markdown",
+    );
+  }, [handoffRunbook]);
 
   if (!ready || vpsIP === null) {
     return (
@@ -315,6 +371,40 @@ export default function RunInstallerPage() {
           </div>
         )}
       </div>
+
+      <AlertCard variant="info" icon={Download} title="Save a handoff runbook">
+        <div className="space-y-3">
+          <p className="text-sm">
+            Download a local artifact with the exact installer command, redacted SSH recovery commands,
+            key-path expectations, and support-bundle reference.
+          </p>
+          <div className="grid gap-2 sm:grid-cols-2">
+            <Button
+              type="button"
+              variant="outline"
+              className="justify-start gap-2"
+              onClick={() => handleRunbookDownload("json")}
+              aria-label="Download JSON handoff runbook"
+            >
+              <FileJson className="h-4 w-4" />
+              Download JSON
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className="justify-start gap-2"
+              onClick={() => handleRunbookDownload("markdown")}
+              aria-label="Download Markdown handoff runbook"
+            >
+              <FileText className="h-4 w-4" />
+              Download Markdown
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Host addresses are redacted in the artifact; keep the real VPS address in your provider console or password manager.
+          </p>
+        </div>
+      </AlertCard>
 
       {/* Connection drop reassurance */}
       <AlertCard variant="info" icon={Wifi} title="What if my connection drops?">

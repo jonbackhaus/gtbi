@@ -8,7 +8,7 @@
  */
 
 import type { OperatingSystem, InstallMode } from "./userPreferences";
-import { normalizeGitRef, normalizeSSHUsername } from "./userPreferences";
+import { isValidIP, normalizeGitRef, normalizeSSHUsername } from "./userPreferences";
 
 const INSTALL_SCRIPT_BASE_URL =
   "https://raw.githubusercontent.com/Dicklesworthstone/agentic_coding_flywheel_setup";
@@ -31,6 +31,57 @@ export interface GeneratedCommand {
   command: string;
   windowsCommand?: string;
   runLocation: "local" | "vps";
+}
+
+export const HANDOFF_RUNBOOK_SCHEMA = "acfs.handoff-runbook.v1";
+
+export interface HandoffRunbookCommand {
+  id: string;
+  label: string;
+  command: string;
+  runLocation: "local" | "vps";
+}
+
+export interface HandoffRunbook {
+  schema: typeof HANDOFF_RUNBOOK_SCHEMA;
+  schemaVersion: 1;
+  generatedBy: "acfs-web-wizard";
+  privacy: {
+    rawTargetHostIncluded: false;
+    exactInstallCommandIncluded: true;
+    targetUsernameMayAppear: true;
+    redactedFields: string[];
+  };
+  wizardSelections: {
+    localOS: OperatingSystem;
+    installMode: InstallMode;
+    sourceRef: string;
+    targetUsername: string;
+  };
+  targetHost: {
+    kind: "ipv4" | "ipv6" | "invalid_or_missing";
+    value: string;
+    assumptions: string[];
+  };
+  ssh: {
+    keyPathUnix: string;
+    keyPathWindows: string;
+    rootLoginCommand: string;
+    postInstallLoginCommand: string;
+    postInstallLoginCommandWindows: string;
+  };
+  install: {
+    command: string;
+    runLocation: "vps";
+    sourceRef: string;
+    mode: InstallMode;
+  };
+  recoveryCommands: HandoffRunbookCommand[];
+  support: {
+    bundleCommand: string;
+    bundlePathPattern: string;
+    reviewArtifacts: string[];
+  };
 }
 
 function sshKeyPath(): string {
@@ -143,6 +194,183 @@ export function buildCommands(inputs: CommandBuilderInputs): GeneratedCommand[] 
   });
 
   return commands;
+}
+
+function classifyTargetHost(host: string): HandoffRunbook["targetHost"]["kind"] {
+  const value = host.trim();
+  if (!value || !isValidIP(value)) {
+    return "invalid_or_missing";
+  }
+  return value.includes(":") ? "ipv6" : "ipv4";
+}
+
+function redactedTargetHost(host: string): string {
+  const kind = classifyTargetHost(host);
+  if (kind === "ipv4") return "<ipv4-target-host>";
+  if (kind === "ipv6") return "<ipv6-target-host>";
+  return "<target-host>";
+}
+
+export function buildHandoffRunbook(inputs: CommandBuilderInputs): HandoffRunbook {
+  const safeRef = normalizeGitRef(inputs.ref);
+  const sourceRef = safeRef ?? DEFAULT_INSTALL_REF;
+  const targetUsername = normalizeCommandUsername(inputs.username);
+  const redactedHost = redactedTargetHost(inputs.ip);
+  const targetHostKind = classifyTargetHost(inputs.ip);
+  const installCommand = buildInstallCommand(inputs.mode, safeRef, targetUsername);
+  const rootLoginCommand = `ssh root@${redactedHost}`;
+  const postInstallLoginCommand = `ssh -i ${SSH_KEY_PATH_UNIX} ${targetUsername}@${redactedHost}`;
+  const postInstallLoginCommandWindows = `ssh -i ${SSH_KEY_PATH_WINDOWS} ${targetUsername}@${redactedHost}`;
+
+  return {
+    schema: HANDOFF_RUNBOOK_SCHEMA,
+    schemaVersion: 1,
+    generatedBy: "acfs-web-wizard",
+    privacy: {
+      rawTargetHostIncluded: false,
+      exactInstallCommandIncluded: true,
+      targetUsernameMayAppear: true,
+      redactedFields: [
+        "targetHost.address",
+        "ssh.rootLoginCommand.host",
+        "ssh.postInstallLoginCommand.host",
+        "recoveryCommands.sshHosts",
+      ],
+    },
+    wizardSelections: {
+      localOS: inputs.os,
+      installMode: inputs.mode,
+      sourceRef,
+      targetUsername,
+    },
+    targetHost: {
+      kind: targetHostKind,
+      value: redactedHost,
+      assumptions: [
+        "Run the installer from a root SSH session on the VPS unless an existing installer log explicitly tells you to resume as the target user.",
+        "ACFS creates or updates the target Linux user during installation.",
+        "The host address is intentionally redacted from this artifact; keep it in your password manager or VPS provider console.",
+      ],
+    },
+    ssh: {
+      keyPathUnix: SSH_KEY_PATH_UNIX,
+      keyPathWindows: SSH_KEY_PATH_WINDOWS,
+      rootLoginCommand,
+      postInstallLoginCommand,
+      postInstallLoginCommandWindows,
+    },
+    install: {
+      command: installCommand,
+      runLocation: "vps",
+      sourceRef,
+      mode: inputs.mode,
+    },
+    recoveryCommands: [
+      {
+        id: "reconnect-root",
+        label: "Reconnect to the root SSH session",
+        command: rootLoginCommand,
+        runLocation: "local",
+      },
+      {
+        id: "rerun-installer",
+        label: "Resume or retry the installer",
+        command: installCommand,
+        runLocation: "vps",
+      },
+      {
+        id: "reconnect-user",
+        label: "Reconnect as the configured user after install",
+        command: postInstallLoginCommand,
+        runLocation: "local",
+      },
+      {
+        id: "doctor",
+        label: "Run the ACFS health check",
+        command: "acfs doctor",
+        runLocation: "vps",
+      },
+      {
+        id: "support-bundle",
+        label: "Create a redacted support bundle",
+        command: "acfs support-bundle",
+        runLocation: "vps",
+      },
+    ],
+    support: {
+      bundleCommand: "acfs support-bundle",
+      bundlePathPattern: "~/.acfs/support/<timestamp>/",
+      reviewArtifacts: ["support-report.md", "manifest.json"],
+    },
+  };
+}
+
+export function serializeHandoffRunbookJson(runbook: HandoffRunbook): string {
+  return `${JSON.stringify(runbook, null, 2)}\n`;
+}
+
+export function formatHandoffRunbookMarkdown(runbook: HandoffRunbook): string {
+  const recoveryCommands = runbook.recoveryCommands
+    .map((command) => [
+      `### ${command.label}`,
+      "",
+      `Run on: ${command.runLocation === "vps" ? "VPS" : "local computer"}`,
+      "",
+      "```bash",
+      command.command,
+      "```",
+    ].join("\n"))
+    .join("\n\n");
+
+  return [
+    "# ACFS Wizard Handoff Runbook",
+    "",
+    `Schema: \`${runbook.schema}\``,
+    "",
+    "## Wizard Selections",
+    "",
+    `- Local OS: ${runbook.wizardSelections.localOS}`,
+    `- Install mode: ${runbook.wizardSelections.installMode}`,
+    `- Source ref: ${runbook.wizardSelections.sourceRef}`,
+    `- Target user: ${runbook.wizardSelections.targetUsername}`,
+    "",
+    "## Target Host",
+    "",
+    `- Host kind: ${runbook.targetHost.kind}`,
+    `- Host value: ${runbook.targetHost.value}`,
+    "",
+    ...runbook.targetHost.assumptions.map((assumption) => `- ${assumption}`),
+    "",
+    "## Installer Command",
+    "",
+    "Run on: VPS",
+    "",
+    "```bash",
+    runbook.install.command,
+    "```",
+    "",
+    "## SSH Expectations",
+    "",
+    `- Unix key path: \`${runbook.ssh.keyPathUnix}\``,
+    `- Windows key path: \`${runbook.ssh.keyPathWindows}\``,
+    "",
+    "## Recovery Commands",
+    "",
+    recoveryCommands,
+    "",
+    "## Support Bundle",
+    "",
+    `- Command: \`${runbook.support.bundleCommand}\``,
+    `- Output pattern: \`${runbook.support.bundlePathPattern}\``,
+    `- Review before sharing: ${runbook.support.reviewArtifacts.join(", ")}`,
+    "",
+    "## Privacy",
+    "",
+    "- The target host address is redacted from SSH and recovery commands.",
+    "- The installer command is exact so it can be copied back into the VPS session.",
+    "- The configured target username may appear because it affects installer behavior.",
+    "",
+  ].join("\n");
 }
 
 /**
