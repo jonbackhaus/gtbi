@@ -8,9 +8,19 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useState } from "react";
 import { safeGetItem, safeGetJSON, safeSetItem, safeSetJSON } from "./utils";
+import type { WorkloadId } from "./vpsProviders";
 
 export type OperatingSystem = "mac" | "windows" | "linux";
 export type InstallMode = "vibe" | "safe";
+
+export interface VPSReadinessSelection {
+  providerId: string;
+  planName: string;
+  ubuntuVersion: string;
+  region: string;
+  targetAgents: number;
+  workloadId: WorkloadId;
+}
 
 const OS_KEY = "agent-flywheel-user-os";
 const VPS_IP_KEY = "agent-flywheel-vps-ip";
@@ -18,6 +28,7 @@ const INSTALL_MODE_KEY = "agent-flywheel-install-mode";
 const SSH_USERNAME_KEY = "agent-flywheel-ssh-username";
 export const ACFS_REF_KEY = "agent-flywheel-acfs-ref";
 export const CREATE_VPS_CHECKLIST_KEY = "agent-flywheel-create-vps-checklist";
+export const VPS_READINESS_SELECTION_KEY = "agent-flywheel-vps-readiness-selection";
 const CHECKED_SERVICES_KEY = "agent-flywheel-checked-services";
 
 const OS_QUERY_KEY = "os";
@@ -29,6 +40,7 @@ const MAX_GIT_REF_LENGTH = 120;
 const GIT_REF_SAFE_PATTERN = /^[A-Za-z0-9._/-]+$/;
 const SSH_USERNAME_PATTERN = /^[a-z_][a-z0-9._-]*$/;
 const USER_PREFERENCES_EVENT = "acfs:user-preferences-updated";
+const WORKLOAD_IDS: readonly WorkloadId[] = ["light", "standard", "heavy"];
 
 function normalizeStringList(values: unknown): string[] {
   if (!Array.isArray(values)) {
@@ -37,6 +49,36 @@ function normalizeStringList(values: unknown): string[] {
 
   const validValues = values.filter((value): value is string => typeof value === "string");
   return Array.from(new Set(validValues));
+}
+
+function normalizePreferenceString(value: unknown, fallback: string): string {
+  return typeof value === "string" && value.trim() ? value.trim() : fallback;
+}
+
+function normalizeTargetAgents(value: unknown): number {
+  const parsedValue = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(parsedValue)) return 10;
+  return Math.max(1, Math.floor(parsedValue));
+}
+
+function normalizeWorkloadId(value: unknown): WorkloadId {
+  return WORKLOAD_IDS.includes(value as WorkloadId) ? (value as WorkloadId) : "standard";
+}
+
+function normalizeVPSReadinessSelection(value: unknown): VPSReadinessSelection | null {
+  if (value === null || typeof value !== "object" || Array.isArray(value)) {
+    return null;
+  }
+
+  const record = value as Partial<Record<keyof VPSReadinessSelection, unknown>>;
+  return {
+    providerId: normalizePreferenceString(record.providerId, "other"),
+    planName: normalizePreferenceString(record.planName, "custom plan"),
+    ubuntuVersion: normalizePreferenceString(record.ubuntuVersion, "25.10"),
+    region: normalizePreferenceString(record.region, "not-listed"),
+    targetAgents: normalizeTargetAgents(record.targetAgents),
+    workloadId: normalizeWorkloadId(record.workloadId),
+  };
 }
 
 function getQueryParam(key: string): string | null {
@@ -130,6 +172,7 @@ export const userPreferencesKeys = {
   sshUsername: ["userPreferences", "sshUsername"] as const,
   acfsRef: ["userPreferences", "acfsRef"] as const,
   createVPSChecklist: ["userPreferences", "createVPSChecklist"] as const,
+  vpsReadinessSelection: ["userPreferences", "vpsReadinessSelection"] as const,
   checkedServices: ["userPreferences", "checkedServices"] as const,
 };
 
@@ -219,6 +262,21 @@ export function setVPSIP(ip: string): boolean {
   return storedOk || urlOk;
 }
 
+export function getVPSReadinessSelection(): VPSReadinessSelection | null {
+  return normalizeVPSReadinessSelection(safeGetJSON<unknown>(VPS_READINESS_SELECTION_KEY));
+}
+
+export function setVPSReadinessSelection(selection: VPSReadinessSelection): boolean {
+  const normalized = normalizeVPSReadinessSelection(selection);
+  if (!normalized) return false;
+
+  const didPersist = safeSetJSON(VPS_READINESS_SELECTION_KEY, normalized);
+  if (didPersist) {
+    emitUserPreferencesUpdate();
+  }
+  return didPersist;
+}
+
 /**
  * Validate an IP address (IPv4 or IPv6).
  *
@@ -301,6 +359,31 @@ export function useVPSIP(): [string | null, (ip: string) => void, boolean] {
   }, [queryClient]);
 
   return [data ?? null, setIP, status === "success"];
+}
+
+export function useVPSReadinessSelection(): [
+  VPSReadinessSelection | null,
+  (selection: VPSReadinessSelection) => void,
+  boolean,
+] {
+  const queryClient = useQueryClient();
+  usePreferenceSync(userPreferencesKeys.vpsReadinessSelection);
+
+  const { data, status } = useQuery({
+    queryKey: userPreferencesKeys.vpsReadinessSelection,
+    queryFn: getVPSReadinessSelection,
+    staleTime: 0,
+    gcTime: Infinity,
+  });
+
+  const setReadinessSelection = useCallback((selection: VPSReadinessSelection) => {
+    const normalized = normalizeVPSReadinessSelection(selection);
+    if (normalized && setVPSReadinessSelection(normalized)) {
+      queryClient.setQueryData(userPreferencesKeys.vpsReadinessSelection, normalized);
+    }
+  }, [queryClient]);
+
+  return [data ?? null, setReadinessSelection, status === "success"];
 }
 
 export function getCreateVPSChecklist(): string[] {

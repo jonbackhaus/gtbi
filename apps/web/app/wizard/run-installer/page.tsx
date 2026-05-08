@@ -38,12 +38,18 @@ import {
   serializeHandoffRunbookJson,
 } from "@/lib/commandBuilder";
 import {
+  buildProviderProvisioningPacket,
+  serializeProviderProvisioningPacketJson,
+} from "@/lib/providerProvisioningPacket";
+import {
   normalizeGitRef,
   useACFSRef,
   useInstallMode,
   useSSHUsername,
   useUserOS,
+  useVPSReadinessSelection,
   useVPSIP,
+  type VPSReadinessSelection,
 } from "@/lib/userPreferences";
 import {
   SimplerGuide,
@@ -82,6 +88,15 @@ const WHAT_IT_INSTALLS = [
   },
 ];
 
+const DEFAULT_VPS_READINESS_SELECTION: VPSReadinessSelection = {
+  providerId: "other",
+  planName: "custom plan",
+  ubuntuVersion: "25.10",
+  region: "not-listed",
+  targetAgents: 10,
+  workloadId: "standard",
+};
+
 function downloadTextFile(filename: string, contents: string, mimeType: string) {
   const blob = new Blob([contents], { type: mimeType });
   const url = URL.createObjectURL(blob);
@@ -102,6 +117,7 @@ export default function RunInstallerPage() {
   const [pinnedRef, setPinnedRef, acfsRefLoaded] = useACFSRef();
   const [vpsIP, , vpsIPLoaded] = useVPSIP();
   const [sshUsername, , sshUsernameLoaded] = useSSHUsername();
+  const [vpsReadinessSelection, , vpsReadinessSelectionLoaded] = useVPSReadinessSelection();
   const [pinEditorOpen, setPinEditorOpen] = useState(false);
   const [refDraftOverride, setRefDraftOverride] = useState<string | null>(null);
   const usePinnedRef = pinEditorOpen || pinnedRef !== null;
@@ -110,7 +126,12 @@ export default function RunInstallerPage() {
     : (pinnedRef ?? "main");
   const safePinnedRef = useMemo(() => normalizeGitRef(refDraft), [refDraft]);
   const ready =
-    userOSLoaded && installModeLoaded && acfsRefLoaded && vpsIPLoaded && sshUsernameLoaded;
+    userOSLoaded &&
+    installModeLoaded &&
+    acfsRefLoaded &&
+    vpsIPLoaded &&
+    sshUsernameLoaded &&
+    vpsReadinessSelectionLoaded;
   const effectiveInstallMode = installMode;
   const effectiveRef = usePinnedRef ? safePinnedRef : null;
   const effectiveUserOS = userOS ?? "mac";
@@ -171,6 +192,22 @@ export default function RunInstallerPage() {
     }),
     [effectiveVpsIP, effectiveUserOS, effectiveSSHUsername, effectiveInstallMode, effectiveRef],
   );
+  const providerProvisioningPacket = useMemo(
+    () => buildProviderProvisioningPacket({
+      ...(vpsReadinessSelection ?? DEFAULT_VPS_READINESS_SELECTION),
+      installMode: effectiveInstallMode,
+      sourceRef: effectiveSourceRef,
+      username: effectiveSSHUsername,
+      targetHost: effectiveVpsIP,
+    }),
+    [
+      effectiveInstallMode,
+      effectiveSourceRef,
+      effectiveSSHUsername,
+      effectiveVpsIP,
+      vpsReadinessSelection,
+    ],
+  );
 
   // Analytics tracking for this wizard step
   const { markComplete } = useWizardAnalytics({
@@ -216,6 +253,13 @@ export default function RunInstallerPage() {
       "text/markdown",
     );
   }, [handoffRunbook]);
+  const handleProviderPacketDownload = useCallback(() => {
+    downloadTextFile(
+      "acfs-provider-provisioning-packet.json",
+      serializeProviderProvisioningPacketJson(providerProvisioningPacket),
+      "application/json",
+    );
+  }, [providerProvisioningPacket]);
 
   if (!ready || vpsIP === null) {
     return (
@@ -372,13 +416,13 @@ export default function RunInstallerPage() {
         )}
       </div>
 
-      <AlertCard variant="info" icon={Download} title="Save a handoff runbook">
+      <AlertCard variant="info" icon={Download} title="Save handoff artifacts">
         <div className="space-y-3">
           <p className="text-sm">
-            Download a local artifact with the exact installer command, redacted SSH recovery commands,
-            key-path expectations, and support-bundle reference.
+            Download local artifacts with the exact installer command, redacted SSH recovery commands,
+            provider readiness choices, and support-bundle reference.
           </p>
-          <div className="grid gap-2 sm:grid-cols-2">
+          <div className="grid gap-2 sm:grid-cols-3">
             <Button
               type="button"
               variant="outline"
@@ -387,7 +431,7 @@ export default function RunInstallerPage() {
               aria-label="Download JSON handoff runbook"
             >
               <FileJson className="h-4 w-4" />
-              Download JSON
+              Runbook JSON
             </Button>
             <Button
               type="button"
@@ -397,7 +441,17 @@ export default function RunInstallerPage() {
               aria-label="Download Markdown handoff runbook"
             >
               <FileText className="h-4 w-4" />
-              Download Markdown
+              Runbook Markdown
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className="justify-start gap-2"
+              onClick={handleProviderPacketDownload}
+              aria-label="Download provider provisioning packet"
+            >
+              <FileJson className="h-4 w-4" />
+              Provider Packet
             </Button>
           </div>
           <p className="text-xs text-muted-foreground">

@@ -21,10 +21,13 @@ import {
   CREATE_VPS_CHECKLIST_KEY,
   getACFSRef,
   getCreateVPSChecklist,
+  getVPSReadinessSelection,
   getVPSIP,
   setACFSRef,
   setCreateVPSChecklist,
+  setVPSReadinessSelection,
   setVPSIP,
+  VPS_READINESS_SELECTION_KEY,
 } from "./userPreferences";
 
 type StorageController = {
@@ -220,6 +223,54 @@ describe("progress persistence guards", () => {
     expect(setCreateVPSChecklist(["ubuntu"])).toBe(false);
     expect(failingBrowser.getStoredValue(CREATE_VPS_CHECKLIST_KEY)).toBeNull();
     expect(failingBrowser.dispatchCalls).toHaveLength(0);
+  });
+
+  test("VPS readiness selection persistence normalizes wizard inputs", () => {
+    const browser = installMockBrowser({
+      initialValues: {
+        [VPS_READINESS_SELECTION_KEY]: JSON.stringify({
+          providerId: " contabo ",
+          planName: "Cloud VPS 50",
+          ubuntuVersion: "25.10",
+          region: " us ",
+          targetAgents: 10.8,
+          workloadId: "standard",
+        }),
+      },
+    });
+
+    expect(getVPSReadinessSelection()).toEqual({
+      providerId: "contabo",
+      planName: "Cloud VPS 50",
+      ubuntuVersion: "25.10",
+      region: "us",
+      targetAgents: 10,
+      workloadId: "standard",
+    });
+
+    expect(
+      setVPSReadinessSelection({
+        providerId: "",
+        planName: "",
+        ubuntuVersion: "",
+        region: "",
+        targetAgents: Number.NaN,
+        workloadId: "heavy",
+      }),
+    ).toBe(true);
+    const expectedSelection = {
+      providerId: "other",
+      planName: "custom plan",
+      ubuntuVersion: "25.10",
+      region: "not-listed",
+      targetAgents: 10,
+      workloadId: "heavy",
+    };
+    expect(browser.getStoredValue(VPS_READINESS_SELECTION_KEY)).toBe(
+      JSON.stringify(expectedSelection)
+    );
+    expect(getVPSReadinessSelection()).toEqual(expectedSelection);
+    expect(browser.dispatchCalls).toHaveLength(1);
   });
 
   test("VPS IP stays out of the URL when localStorage works", () => {

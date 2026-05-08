@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import {
@@ -35,6 +35,7 @@ import {
 import { markStepComplete } from "@/lib/wizardSteps";
 import { useWizardAnalytics } from "@/lib/hooks/useWizardAnalytics";
 import { withCurrentSearch } from "@/lib/utils";
+import { useVPSReadinessSelection } from "@/lib/userPreferences";
 import {
   SimplerGuide,
   GuideSection,
@@ -265,6 +266,7 @@ function readinessCopy(status: VPSReadinessStatus): { label: string; className: 
 }
 
 function CapacityPlanner() {
+  const [, setVPSReadinessSelection, vpsReadinessSelectionLoaded] = useVPSReadinessSelection();
   const [agentCount, setAgentCount] = useState(10);
   const [workloadId, setWorkloadId] = useState<WorkloadId>("standard");
   const [readinessProviderId, setReadinessProviderId] = useState(VPS_PROVIDERS[0].id);
@@ -293,6 +295,27 @@ function CapacityPlanner() {
     workloadId,
   });
   const readinessStatusCopy = readinessCopy(readiness.status);
+
+  useEffect(() => {
+    if (!vpsReadinessSelectionLoaded) return;
+    setVPSReadinessSelection({
+      providerId: readinessProviderId,
+      planName: readinessPlanName,
+      ubuntuVersion,
+      region: readinessRegion,
+      targetAgents: agentCount,
+      workloadId,
+    });
+  }, [
+    agentCount,
+    readinessPlanName,
+    readinessProviderId,
+    readinessRegion,
+    setVPSReadinessSelection,
+    ubuntuVersion,
+    vpsReadinessSelectionLoaded,
+    workloadId,
+  ]);
 
   const handleReadinessProviderChange = (providerId: string) => {
     setReadinessProviderId(providerId);

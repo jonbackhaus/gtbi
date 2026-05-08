@@ -1,10 +1,21 @@
 import type { ModuleSelectionInput } from "./moduleSelection";
-import type { InstallMode } from "./userPreferences";
+import { normalizeGitRef, normalizeSSHUsername, type InstallMode } from "./userPreferences";
+import { buildInstallCommand } from "./commandBuilder";
+import {
+  calculateRequiredSpecs,
+  evaluatePlan,
+  getWorkloadProfile,
+  validateVPSReadiness,
+  VPS_PROVIDERS,
+  PRICING_LAST_UPDATED,
+} from "./vpsProviders";
 import type {
+  EvaluatedProviderPlan,
   PlanStatus,
   RequiredSpecs,
   VPSPlan,
   VPSReadinessCheck,
+  VPSReadinessInput,
   VPSReadinessStatus,
   WorkloadId,
 } from "./vpsProviders";
@@ -156,6 +167,27 @@ export interface ProviderProvisioningPacket {
   compatibility: ProviderProvisioningPacketCompatibility;
   verificationCommands: ProviderProvisioningPacketVerificationCommand[];
   expectedArtifacts: ProviderProvisioningPacketExpectedArtifact[];
+}
+
+export interface ProviderProvisioningPacketInput extends VPSReadinessInput {
+  installMode: InstallMode;
+  sourceRef: string | null;
+  username: string;
+  moduleSelection?: ModuleSelectionInput;
+  targetHost?: string;
+  sshPublicKeyLabel?: string;
+  sshPublicKeyFingerprint?: string;
+  sshPublicKeyMaterial?: string;
+  generatedAt?: string;
+}
+
+interface ProviderPacketPreset {
+  id: string;
+  name: string;
+  productUrl: string;
+  automationLevel: ProviderProvisioningPacketProvider["automationLevel"];
+  cloudInitMode: ProviderProvisioningPacketCloudInit["mode"];
+  cloudInitTemplateRef?: string;
 }
 
 export const PROVIDER_PACKET_REQUIRED_FIELD_PATHS = [
@@ -346,6 +378,14 @@ export const PROVIDER_PACKET_MANUAL_STEPS_BY_PROVIDER: Record<string, string[]> 
     "Complete checkout and payment manually.",
     "Copy the assigned host address into the wizard; do not store it in a support-safe packet projection.",
   ],
+  hetzner: [
+    "Create or choose a Hetzner Cloud project manually.",
+    "Select an Ubuntu image and a server type that meets the packet capacity warning.",
+    "Attach the public SSH key in the provider console.",
+    "Paste the ACFS cloud-init template when using cloud-init mode.",
+    "Complete checkout and payment manually.",
+    "Copy the assigned host address into the wizard; do not store it in a support-safe packet projection.",
+  ],
   other: [
     "Verify the provider offers SSH access, Ubuntu 24.04 or newer, and enough RAM, CPU, and NVMe storage.",
     "Complete account, checkout, and payment steps manually.",
@@ -355,4 +395,212 @@ export const PROVIDER_PACKET_MANUAL_STEPS_BY_PROVIDER: Record<string, string[]> 
 
 export function manualStepsForProvider(providerId: string): string[] {
   return PROVIDER_PACKET_MANUAL_STEPS_BY_PROVIDER[providerId] ?? PROVIDER_PACKET_MANUAL_STEPS_BY_PROVIDER.other;
+}
+
+const PROVIDER_PACKET_PRESETS: Record<string, ProviderPacketPreset> = {
+  hetzner: {
+    id: "hetzner",
+    name: "Hetzner",
+    productUrl: "https://www.hetzner.com/cloud/",
+    automationLevel: "cloud_init_only",
+    cloudInitMode: "manual_paste",
+    cloudInitTemplateRef: "scripts/providers/hetzner-cloud-init.yml",
+  },
+};
+
+function readinessCheckStatus(
+  checks: VPSReadinessCheck[],
+  id: VPSReadinessCheck["id"],
+): VPSReadinessStatus {
+  return checks.find((check) => check.id === id)?.status ?? "unknown";
+}
+
+function providerPresetFor(providerId: string): ProviderPacketPreset {
+  const normalizedProviderId = providerId.trim().toLowerCase();
+  const provider = VPS_PROVIDERS.find((entry) => entry.id === normalizedProviderId);
+  if (provider) {
+    return {
+      id: provider.id,
+      name: provider.name,
+      productUrl: provider.url,
+      automationLevel: "manual",
+      cloudInitMode: "none",
+    };
+  }
+
+  return PROVIDER_PACKET_PRESETS[normalizedProviderId] ?? {
+    id: normalizedProviderId || "other",
+    name: normalizedProviderId === "other" || !normalizedProviderId ? "Other provider" : providerId,
+    productUrl: "",
+    automationLevel: "manual",
+    cloudInitMode: "none",
+  };
+}
+
+function stageForPacket(
+  readinessStatus: VPSReadinessStatus,
+  automationLevel: ProviderProvisioningPacketProvider["automationLevel"],
+): ProviderProvisioningPacketStage {
+  if (readinessStatus === "unsupported") return "blocked";
+  if (readinessStatus === "unknown") return "draft";
+  if (automationLevel === "api_supported") return "ready_for_api_provisioning";
+  return "ready_for_manual_provider_checkout";
+}
+
+function evaluatedSelectedPlan(
+  plan: VPSPlan | null,
+  workloadId: WorkloadId,
+  targetAgents: number,
+): Pick<EvaluatedProviderPlan, "recommendedAgents" | "safeAgents" | "status"> | null {
+  if (!plan) return null;
+  return evaluatePlan(plan, getWorkloadProfile(workloadId), targetAgents);
+}
+
+function buildVerificationCommands(
+  installCommand: string,
+): ProviderProvisioningPacketVerificationCommand[] {
+  return PROVIDER_PACKET_BASE_VERIFICATION_COMMANDS.map((command) => ({
+    ...command,
+    command: command.id === "installer" ? installCommand : command.command,
+  }));
+}
+
+function buildCloudInit(
+  preset: ProviderPacketPreset,
+): ProviderProvisioningPacketCloudInit {
+  const userDataIncluded = preset.cloudInitMode !== "none";
+  return {
+    mode: preset.cloudInitMode,
+    userDataIncluded,
+    templateRef: preset.cloudInitTemplateRef,
+    redactedPreview: userDataIncluded
+      ? "ACFS cloud-init user-data available as a template reference; raw rendered user-data is excluded from support-safe packets."
+      : undefined,
+    notes: userDataIncluded
+      ? ["Paste or submit only after reviewing the generated user-data in the provider console."]
+      : ["Run the exact installer command manually from the VPS root SSH session."],
+  };
+}
+
+export function buildProviderProvisioningPacket(
+  input: ProviderProvisioningPacketInput,
+): ProviderProvisioningPacket {
+  const rawProviderId = input.providerId.trim();
+  const providerId = rawProviderId.toLowerCase() || "other";
+  const preset = providerPresetFor(rawProviderId || providerId);
+  const requestedAgents = Number.isFinite(input.targetAgents) ? input.targetAgents : 10;
+  const targetAgents = Math.max(1, Math.floor(requestedAgents));
+  const targetUsername = normalizeSSHUsername(input.username) ?? "ubuntu";
+  const readiness = validateVPSReadiness({
+    providerId,
+    planName: input.planName,
+    ubuntuVersion: input.ubuntuVersion,
+    region: input.region,
+    targetAgents,
+    workloadId: input.workloadId,
+  });
+  const workload = getWorkloadProfile(input.workloadId);
+  const requiredSpecs = calculateRequiredSpecs(targetAgents, workload, true);
+  const selectedPlan = evaluatedSelectedPlan(readiness.plan, input.workloadId, targetAgents);
+  const sourceRef = normalizeGitRef(input.sourceRef) ?? "main";
+  const installCommand = buildInstallCommand(
+    input.installMode,
+    sourceRef === "main" ? null : sourceRef,
+    targetUsername,
+    input.moduleSelection,
+  );
+  const regionReadiness = readinessCheckStatus(readiness.checks, "region");
+  const osReadiness = readinessCheckStatus(readiness.checks, "os");
+
+  return {
+    schema: PROVIDER_PROVISIONING_PACKET_SCHEMA,
+    schemaVersion: PROVIDER_PROVISIONING_PACKET_SCHEMA_VERSION,
+    stage: stageForPacket(readiness.status, preset.automationLevel),
+    privacy: {
+      supportBundleSafe: true,
+      rawProviderCredentialsIncluded: false,
+      rawTargetHostIncluded: false,
+      rawPrivateKeyIncluded: false,
+      rawPrivateKeyPathIncluded: false,
+      rawCloudInitIncludedInSupportBundle: false,
+      exactInstallCommandIncluded: true,
+      targetUsernameMayAppear: true,
+      publicSshKeyMaterialMayAppear: true,
+      redactedFieldPaths: [...PROVIDER_PACKET_REDACTED_FIELD_PATHS],
+      forbiddenFieldNames: [...PROVIDER_PACKET_FORBIDDEN_FIELD_NAMES],
+    },
+    provenance: {
+      generatedBy: "acfs-web-wizard",
+      generatedAt: input.generatedAt ?? new Date().toISOString(),
+      sourceRef,
+      wizardStep: "run-installer",
+      readinessSource: "validateVPSReadiness",
+      capacitySource: "calculateRequiredSpecs/evaluatePlan",
+      pricingLastUpdated: PRICING_LAST_UPDATED,
+    },
+    provider: {
+      id: preset.id,
+      name: preset.name,
+      productUrl: preset.productUrl,
+      automationLevel: preset.automationLevel,
+      manualCheckoutRequired: true,
+      manualStepsRemaining: manualStepsForProvider(preset.id),
+    },
+    region: {
+      id: input.region || "not-listed",
+      label: input.region || "Not listed",
+      readinessStatus: regionReadiness === "unsupported" ? "unknown" : regionReadiness,
+      providerSpecificCode: input.region || undefined,
+    },
+    size: {
+      planName: input.planName || "custom plan",
+      ramGB: readiness.plan?.ramGB ?? requiredSpecs.ramGB,
+      vCPU: readiness.plan?.vCPU ?? requiredSpecs.vCPU,
+      storageGB: readiness.plan?.storageGB ?? requiredSpecs.storageGB,
+      priceUSD: readiness.plan?.priceUSD,
+      sourcePlan: readiness.plan,
+    },
+    osImage: {
+      distribution: "ubuntu",
+      version: input.ubuntuVersion,
+      minimumVersion: readiness.provider?.readiness.minimumUbuntu ?? "22.04",
+      preferredVersions: readiness.provider?.readiness.preferredUbuntuVersions ?? ["25.10", "24.04"],
+      readinessStatus: osReadiness,
+    },
+    access: {
+      username: targetUsername,
+      rootLoginExpected: true,
+      sshPublicKeyLabel: input.sshPublicKeyLabel ?? "acfs_ed25519.pub",
+      sshPublicKeyFingerprint: input.sshPublicKeyFingerprint,
+      sshPublicKeyMaterial: input.sshPublicKeyMaterial,
+      sshPrivateKeyIncluded: false,
+      sshPrivateKeyPathIncluded: false,
+    },
+    cloudInit: buildCloudInit(preset),
+    install: {
+      mode: input.installMode,
+      sourceRef,
+      command: installCommand,
+      commandRunLocation: preset.cloudInitMode === "none" ? "vps-root-shell" : "cloud-init",
+      moduleSelection: input.moduleSelection,
+    },
+    compatibility: {
+      workloadId: input.workloadId,
+      targetAgents,
+      requiredSpecs,
+      selectedPlanStatus: selectedPlan?.status ?? "unknown",
+      selectedPlanSafeAgents: selectedPlan?.safeAgents ?? null,
+      selectedPlanRecommendedAgents: selectedPlan?.recommendedAgents ?? null,
+      readinessStatus: readiness.status,
+      readinessChecks: readiness.checks,
+    },
+    verificationCommands: buildVerificationCommands(installCommand),
+    expectedArtifacts: [...PROVIDER_PACKET_EXPECTED_ARTIFACTS],
+  };
+}
+
+export function serializeProviderProvisioningPacketJson(
+  packet: ProviderProvisioningPacket,
+): string {
+  return `${JSON.stringify(packet, null, 2)}\n`;
 }
