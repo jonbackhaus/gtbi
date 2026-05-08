@@ -7082,6 +7082,7 @@ finalize() {
     try_step "Installing swarm_status.sh" install_asset "scripts/lib/swarm_status.sh" "$ACFS_HOME/scripts/lib/swarm_status.sh" || return 1
     try_step "Installing swarm_doctor.sh" install_asset "scripts/lib/swarm_doctor.sh" "$ACFS_HOME/scripts/lib/swarm_doctor.sh" || return 1
     try_step "Installing swarm_simulation.sh" install_asset "scripts/lib/swarm_simulation.sh" "$ACFS_HOME/scripts/lib/swarm_simulation.sh" || return 1
+    try_step "Installing landing_plane.sh" install_asset "scripts/lib/landing_plane.sh" "$ACFS_HOME/scripts/lib/landing_plane.sh" || return 1
     try_step "Installing changelog.sh" install_asset "scripts/lib/changelog.sh" "$ACFS_HOME/scripts/lib/changelog.sh" || return 1
     try_step "Installing export-config.sh" install_asset "scripts/lib/export-config.sh" "$ACFS_HOME/scripts/lib/export-config.sh" || return 1
     try_step "Installing cheatsheet.sh" install_asset "scripts/lib/cheatsheet.sh" "$ACFS_HOME/scripts/lib/cheatsheet.sh" || return 1
