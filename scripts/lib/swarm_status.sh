@@ -46,6 +46,7 @@ BEADS_AVAILABLE=false
 BEADS_READY_COUNT="null"
 BEADS_IN_PROGRESS_COUNT="null"
 BEADS_OPEN_COUNT="null"
+BEADS_IN_PROGRESS_ITEMS_JSON="[]"
 
 BV_STATUS="warn"
 BV_WARNINGS=()
@@ -177,6 +178,29 @@ swarm_status_count_json_items() {
     count="$(printf '%s' "$json" | "$jq_bin" -r 'if type == "array" then length else (.total // (.issues | length) // 0) end' 2>/dev/null || true)"
     [[ "$count" =~ ^[0-9]+$ ]] || count="0"
     printf '%s\n' "$count"
+}
+
+swarm_status_beads_in_progress_items_json() {
+    local json="$1"
+    local jq_bin="$2"
+
+    printf '%s' "$json" | "$jq_bin" -c '
+        def items:
+            if type == "array" then .
+            elif (.issues | type) == "array" then .issues
+            elif (.items | type) == "array" then .items
+            else []
+            end;
+        [
+            items[]? | {
+                id: (.id // .issue_id // null),
+                title: (.title // null),
+                assignee: (.assignee // .owner // null),
+                created_at: (.created_at // null),
+                updated_at: (.updated_at // null)
+            }
+        ][0:20]
+    ' 2>/dev/null || printf '[]\n'
 }
 
 swarm_status_parse_rch_status_metrics() {
@@ -421,6 +445,7 @@ swarm_status_collect_beads() {
     output="$(swarm_status_run_with_timeout "$SWARM_STATUS_TIMEOUT" "$br_bin" list --status in_progress --json)" || exit_status=$?
     if [[ $exit_status -eq 0 ]]; then
         BEADS_IN_PROGRESS_COUNT="$(swarm_status_count_json_items "$output" "$jq_bin")"
+        BEADS_IN_PROGRESS_ITEMS_JSON="$(swarm_status_beads_in_progress_items_json "$output" "$jq_bin")"
     else
         BEADS_WARNINGS+=("br list --status in_progress --json failed or timed out")
     fi
@@ -594,6 +619,7 @@ swarm_status_emit_json() {
         --argjson beads_ready_count "$BEADS_READY_COUNT" \
         --argjson beads_in_progress_count "$BEADS_IN_PROGRESS_COUNT" \
         --argjson beads_open_count "$BEADS_OPEN_COUNT" \
+        --argjson beads_in_progress_items "$BEADS_IN_PROGRESS_ITEMS_JSON" \
         --arg bv_status "$BV_STATUS" \
         --argjson bv_warnings "$bv_warnings_json" \
         --argjson bv_duration_ms "$(swarm_status_json_number "$BV_DURATION_MS")" \
@@ -654,6 +680,7 @@ swarm_status_emit_json() {
                     ready_count: $beads_ready_count,
                     in_progress_count: $beads_in_progress_count,
                     open_count: $beads_open_count,
+                    in_progress_items: $beads_in_progress_items,
                     duration_ms: $beads_duration_ms,
                     warnings: $beads_warnings
                 },

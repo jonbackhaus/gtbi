@@ -68,7 +68,13 @@ JSON
     status="$(cat "$ARTIFACT_DIR/pass_fixture.exit")"
 
     [[ "$status" -eq 0 ]] || return 1
-    jq -e '.status == "pass" and .summary.failed == 0 and (.checks | length) == 7' <<<"$output" >/dev/null || return 1
+    jq -e '
+      .status == "pass" and
+      .summary.failed == 0 and
+      (.checks | length) == 8 and
+      .stale_work.status == "pass" and
+      .stale_work.summary.total_candidates == 0
+    ' <<<"$output" >/dev/null || return 1
 
     pass "pass_fixture_exits_zero"
 }
@@ -135,6 +141,173 @@ JSON
     pass "partial_state_warns"
 }
 
+test_stale_beads_warn_with_manual_commands() {
+    local fixture output status
+    fixture="$(write_fixture stale_beads <<'JSON'
+{
+  "schema_version": 1,
+  "status": "pass",
+  "host": {"status": "pass", "cpu_count": 32, "load_1m": 2, "mem_available_kb": 67108864, "disk_available_kb": 157286400, "warnings": []},
+  "probes": {
+    "agent_mail": {"status": "pass", "available": true, "healthy": true, "warnings": []},
+    "beads": {
+      "status": "pass",
+      "available": true,
+      "ready_count": 4,
+      "in_progress_count": 1,
+      "open_count": 11,
+      "warnings": [],
+      "in_progress_items": [
+        {"id": "bd-old1", "title": "Old in-progress work", "assignee": "BlueLake", "updated_at": "2026-01-01T00:00:00Z"}
+      ]
+    },
+    "bv": {"status": "pass", "available": true, "robot_ok": true, "warnings": []},
+    "rch": {"status": "pass", "available": true, "status_json_ok": true, "warnings": []},
+    "ntm": {"status": "pass", "available": true, "robot_status_ok": true, "tmux_available": true, "tmux_session_count": 1, "tmux_window_count": 3, "warnings": []}
+  }
+}
+JSON
+)"
+    output="$(run_doctor_json stale_beads "$fixture")"
+    status="$(cat "$ARTIFACT_DIR/stale_beads.exit")"
+
+    [[ "$status" -eq 1 ]] || return 1
+    jq -e '
+      .status == "warn" and
+      .stale_work.summary.beads == 1 and
+      .stale_work.beads[0].id == "bd-old1" and
+      .stale_work.beads[0].verify_command == "br show bd-old1 --json" and
+      .stale_work.beads[0].if_abandoned_command == "br update bd-old1 --status open" and
+      (.checks[] | select(.id == "stale_work" and .status == "warn"))
+    ' <<<"$output" >/dev/null || return 1
+
+    pass "stale_beads_warn_with_manual_commands"
+}
+
+test_stale_reservations_warn_without_releasing() {
+    local fixture output status
+    fixture="$(write_fixture stale_reservations <<'JSON'
+{
+  "schema_version": 1,
+  "status": "pass",
+  "host": {"status": "pass", "cpu_count": 32, "load_1m": 2, "mem_available_kb": 67108864, "disk_available_kb": 157286400, "warnings": []},
+  "probes": {
+    "agent_mail": {
+      "status": "pass",
+      "available": true,
+      "healthy": true,
+      "warnings": [],
+      "file_reservations": [
+        {"id": 101, "path_pattern": "scripts/lib/*.sh", "agent_name": "RedStone", "created_ts": "2026-01-01T00:00:00Z", "last_activity_ts": "2026-01-01T00:00:00Z", "expires_ts": "2026-01-01T02:00:00Z"}
+      ]
+    },
+    "beads": {"status": "pass", "available": true, "ready_count": 4, "in_progress_count": 0, "open_count": 11, "warnings": [], "in_progress_items": []},
+    "bv": {"status": "pass", "available": true, "robot_ok": true, "warnings": []},
+    "rch": {"status": "pass", "available": true, "status_json_ok": true, "warnings": []},
+    "ntm": {"status": "pass", "available": true, "robot_status_ok": true, "tmux_available": true, "tmux_session_count": 1, "tmux_window_count": 3, "warnings": []}
+  }
+}
+JSON
+)"
+    output="$(run_doctor_json stale_reservations "$fixture")"
+    status="$(cat "$ARTIFACT_DIR/stale_reservations.exit")"
+
+    [[ "$status" -eq 1 ]] || return 1
+    jq -e '
+      .status == "warn" and
+      .stale_work.summary.reservations == 1 and
+      .stale_work.reservations[0].id == "101" and
+      .stale_work.reservations[0].holder == "RedStone" and
+      .stale_work.reservations[0].expired == true and
+      (.stale_work.reservations[0].if_abandoned_command | contains("release_file_reservations")) and
+      (.checks[] | select(.id == "stale_work" and .status == "warn"))
+    ' <<<"$output" >/dev/null || return 1
+
+    pass "stale_reservations_warn_without_releasing"
+}
+
+test_malformed_reservation_timestamp_warns() {
+    local fixture output status
+    fixture="$(write_fixture malformed_reservation <<'JSON'
+{
+  "schema_version": 1,
+  "status": "pass",
+  "host": {"status": "pass", "cpu_count": 32, "load_1m": 2, "mem_available_kb": 67108864, "disk_available_kb": 157286400, "warnings": []},
+  "probes": {
+    "agent_mail": {
+      "status": "pass",
+      "available": true,
+      "healthy": true,
+      "warnings": [],
+      "file_reservations": [
+        {"id": 202, "path_pattern": "README.md", "agent_name": "GreenField", "created_ts": "not-a-date"}
+      ]
+    },
+    "beads": {"status": "pass", "available": true, "ready_count": 4, "in_progress_count": 0, "open_count": 11, "warnings": [], "in_progress_items": []},
+    "bv": {"status": "pass", "available": true, "robot_ok": true, "warnings": []},
+    "rch": {"status": "pass", "available": true, "status_json_ok": true, "warnings": []},
+    "ntm": {"status": "pass", "available": true, "robot_status_ok": true, "tmux_available": true, "tmux_session_count": 1, "tmux_window_count": 3, "warnings": []}
+  }
+}
+JSON
+)"
+    output="$(run_doctor_json malformed_reservation "$fixture")"
+    status="$(cat "$ARTIFACT_DIR/malformed_reservation.exit")"
+
+    [[ "$status" -eq 1 ]] || return 1
+    jq -e '
+      .status == "warn" and
+      .stale_work.summary.total_candidates == 0 and
+      .stale_work.summary.malformed_inputs == 1 and
+      .stale_work.malformed_inputs[0].type == "reservation" and
+      (.checks[] | select(.id == "stale_work" and .status == "warn"))
+    ' <<<"$output" >/dev/null || return 1
+
+    pass "malformed_reservation_timestamp_warns"
+}
+
+test_human_output_marks_stale_candidates_advisory() {
+    local fixture output status
+    fixture="$(write_fixture human_stale <<'JSON'
+{
+  "schema_version": 1,
+  "status": "pass",
+  "host": {"status": "pass", "cpu_count": 32, "load_1m": 2, "mem_available_kb": 67108864, "disk_available_kb": 157286400, "warnings": []},
+  "probes": {
+    "agent_mail": {"status": "pass", "available": true, "healthy": true, "warnings": []},
+    "beads": {
+      "status": "pass",
+      "available": true,
+      "ready_count": 4,
+      "in_progress_count": 1,
+      "open_count": 11,
+      "warnings": [],
+      "in_progress_items": [
+        {"id": "bd-old2", "title": "Old in-progress work", "assignee": "BlueLake", "updated_at": "2026-01-01T00:00:00Z"}
+      ]
+    },
+    "bv": {"status": "pass", "available": true, "robot_ok": true, "warnings": []},
+    "rch": {"status": "pass", "available": true, "status_json_ok": true, "warnings": []},
+    "ntm": {"status": "pass", "available": true, "robot_status_ok": true, "tmux_available": true, "tmux_session_count": 1, "tmux_window_count": 3, "warnings": []}
+  }
+}
+JSON
+)"
+
+    set +e
+    output="$(bash "$SWARM_DOCTOR_SH" --status-file "$fixture" 2>&1)"
+    status=$?
+    set -e
+    printf '%s\n' "$output" > "$ARTIFACT_DIR/human_stale.output.txt"
+
+    [[ "$status" -eq 1 ]] || return 1
+    grep -Fq "Stale candidates (advisory only; verify before changing anything):" <<<"$output" || return 1
+    grep -Fq "verify: br show bd-old2 --json" <<<"$output" || return 1
+    grep -Fq "if abandoned: br update bd-old2 --status open" <<<"$output" || return 1
+
+    pass "human_output_marks_stale_candidates_advisory"
+}
+
 test_human_output_lists_next_commands() {
     local fixture output status
     fixture="$(write_fixture human_fail <<'JSON'
@@ -184,6 +357,10 @@ main() {
     run_test test_pass_fixture_exits_zero
     run_test test_missing_required_tools_fail
     run_test test_partial_state_warns
+    run_test test_stale_beads_warn_with_manual_commands
+    run_test test_stale_reservations_warn_without_releasing
+    run_test test_malformed_reservation_timestamp_warns
+    run_test test_human_output_marks_stale_candidates_advisory
     run_test test_human_output_lists_next_commands
 
     echo "Results: $TESTS_PASSED passed, $TESTS_FAILED failed"

@@ -113,7 +113,7 @@ echo "{\"healthy\":true}"'
     write_executable "$stub_dir/br" '#!/usr/bin/env bash
 case "$*" in
   "ready --json") echo "{\"issues\":[{\"id\":\"bd-a\"}],\"total\":1}" ;;
-  "list --status in_progress --json") echo "{\"issues\":[],\"total\":0}" ;;
+  "list --status in_progress --json") echo "{\"issues\":[{\"id\":\"bd-live\",\"title\":\"Live work\",\"assignee\":\"BlueLake\",\"created_at\":\"2026-05-08T00:00:00Z\",\"updated_at\":\"2026-05-08T01:00:00Z\"}],\"total\":1}" ;;
   "list --status open --json") echo "{\"issues\":[{\"id\":\"bd-a\"},{\"id\":\"bd-b\"},{\"id\":\"bd-c\"}],\"total\":3}" ;;
   *) exit 2 ;;
 esac'
@@ -142,7 +142,9 @@ esac'
       .probes.agent_mail.status == "pass" and
       .probes.agent_mail.healthy == true and
       .probes.beads.ready_count == 1 and
-      .probes.beads.in_progress_count == 0 and
+      .probes.beads.in_progress_count == 1 and
+      .probes.beads.in_progress_items[0].id == "bd-live" and
+      .probes.beads.in_progress_items[0].assignee == "BlueLake" and
       .probes.beads.open_count == 3 and
       .probes.bv.robot_ok == true and
       .probes.rch.status_json_ok == true and

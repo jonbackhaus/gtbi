@@ -226,6 +226,40 @@ The JSON `examples` array should include the same scenarios:
 ]
 ```
 
+## Stale Work Verification
+
+`acfs swarm doctor` includes a read-only stale work check. When detailed Beads
+or Agent Mail reservation records are present in the swarm status JSON, the
+doctor flags in-progress Beads or active reservations whose latest activity is
+older than the stale threshold. The default threshold is 12 hours and can be
+changed with:
+
+```bash
+acfs swarm doctor --stale-hours 24
+```
+
+The detector is advisory only. It never reopens Beads, releases reservations,
+force-releases another agent's lease, or sends Agent Mail. Treat every reported
+candidate as a prompt for human verification:
+
+```bash
+br show bd-example --json
+br list --status in_progress --json
+mcp-agent-mail doctor check --json
+```
+
+Only after verifying the assignee or reservation holder is inactive should an
+operator run an explicit status change or reservation release, for example:
+
+```bash
+br update bd-example --status open
+```
+
+For Agent Mail reservations, inspect the holder's recent mailbox/activity first,
+then use the MCP `release_file_reservations` tool only with the exact
+reservation ID that was verified as abandoned. Do not use force-release as a
+shortcut for normal coordination.
+
 ## Non-Goals
 
 - No automatic agent spawning.
