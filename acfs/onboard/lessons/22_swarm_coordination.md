@@ -9,14 +9,15 @@
 A good swarm session is boring in the best way:
 
 1. Pick ready work from Beads.
-2. Register with Agent Mail.
-3. Reserve the exact files you will edit.
-4. Announce the start in the Beads thread.
-5. Work in a narrow slice.
-6. Run quality gates with the right offload wrapper.
-7. Scan changed files with UBS.
-8. Close and sync the Bead.
-9. Release reservations and hand off the result.
+2. Pull bounded history with CASS and CM.
+3. Register with Agent Mail.
+4. Reserve the exact files you will edit.
+5. Announce the start in the Beads thread.
+6. Work in a narrow slice.
+7. Run quality gates with the right offload wrapper.
+8. Scan changed files with UBS.
+9. Close and sync the Bead.
+10. Release reservations and hand off the result.
 
 The commands below use `br` for issue state and `bv --robot-*` for graph-aware recommendations. Agents should not launch the interactive Beads viewer during automated work.
 
@@ -43,7 +44,30 @@ Use the Bead ID everywhere else in the session: Agent Mail thread ID, reservatio
 
 ---
 
-## 2. Register With Agent Mail
+## 2. Pull Bounded CASS and CM Context
+
+Before editing, recover only the history that can change the plan:
+
+```bash
+cm context "bd-1234 checkout validation in /data/projects/my-app" --workspace /data/projects/my-app --limit 5 --history 3 --json
+cass search "checkout validation command shape" --workspace /data/projects/my-app --limit 5 --fields summary --json --max-tokens 1200
+cass search "bd-1234 checkout validation" --workspace /data/projects/my-app --limit 3 --fields summary --json --max-tokens 900
+```
+
+Use the results as hints, not law. Durable memories can tell you which command shapes and prior traps matter, but current `AGENTS.md`, README files, Beads output, and the live code still win when anything disagrees.
+
+A good memory preflight ends with a short note:
+
+```text
+Context preflight:
+- Current source of truth: AGENTS.md, README.md, br show bd-1234.
+- Useful memory: prior checkout work used server-side validation plus focused tests.
+- Drift-prone fact to recheck: current route names in src/checkout/session.ts.
+```
+
+---
+
+## 3. Register With Agent Mail
 
 Agent Mail is exposed to agents as MCP tools. Register a unique identity in the project before reserving files or sending messages:
 
@@ -62,7 +86,7 @@ Agent names are generated adjective+noun identifiers such as `BlueLake` or `Gree
 
 ---
 
-## 3. Reserve the Edit Surface
+## 4. Reserve the Edit Surface
 
 Reserve only the files or tight globs you expect to touch:
 
@@ -84,7 +108,7 @@ If the reservation conflicts, choose a different ready Bead or narrow the path s
 
 ---
 
-## 4. Announce the Start
+## 5. Announce the Start
 
 Use the Bead ID as the Agent Mail thread ID:
 
@@ -103,7 +127,7 @@ For solo work, a self-addressed start note is still useful because it leaves an 
 
 ---
 
-## 5. Work in One Narrow Slice
+## 6. Work in One Narrow Slice
 
 Keep the slice small enough that another agent can understand it from the Bead, the reservation, and the final diff.
 
@@ -121,7 +145,7 @@ Risky swarm slices:
 
 ---
 
-## 6. Run Quality Gates Without Local Build Storms
+## 7. Run Quality Gates Without Local Build Storms
 
 For Rust-heavy checks, use RCH so swarms do not overload the local machine:
 
@@ -145,7 +169,7 @@ Run the smallest useful gate first, then widen when the change touches shared be
 
 ---
 
-## 7. Scan Changed Files With UBS
+## 8. Scan Changed Files With UBS
 
 UBS is the last bug-focused check before commit:
 
@@ -157,7 +181,7 @@ If UBS reports a real issue, fix the cause and rerun it on the changed files.
 
 ---
 
-## 8. Close and Sync the Bead
+## 9. Close and Sync the Bead
 
 Close the Bead only after the change is implemented and verified:
 
@@ -170,7 +194,7 @@ br sync --flush-only
 
 ---
 
-## 9. Commit, Push, Release, and Handoff
+## 10. Commit, Push, Release, and Handoff
 
 Keep the commit focused and include the Bead ID:
 
@@ -209,6 +233,8 @@ Your final handoff should say what changed, which gates ran, what was not run, a
 |------|-----------------|
 | Find work | `bv --robot-next`, `bv --robot-triage`, `br ready --json` |
 | Claim | `br update bd-1234 --status in_progress` |
+| Context | `cm context ... --workspace ... --limit 5 --history 3 --json` |
+| Search history | `cass search ... --workspace ... --limit 5 --fields summary --json` |
 | Reserve | `file_reservation_paths(...)` |
 | Announce | `send_message(..., thread_id="bd-1234")` |
 | Rust gates | `rch exec -- cargo test` |

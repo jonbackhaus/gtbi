@@ -91,9 +91,9 @@ export function SwarmCoordinationLesson() {
       {/* Section 2: Coordination Preflight */}
       <Section title="Coordination Preflight" icon={<Terminal className="h-5 w-5" />} delay={0.15}>
         <Paragraph>
-          Start with machine-readable task state, then register your agent
-          identity before any edits. This makes the session auditable and keeps
-          every later command tied to one Bead.
+          Start with machine-readable task state, then pull only the prior
+          context that can change the plan. Memory is a preflight hint; current
+          repo files and Beads state remain the source of truth.
         </Paragraph>
 
         <CodeBlock
@@ -105,6 +105,12 @@ br ready --json
 # Inspect and claim exactly one Bead
 br show bd-1234 --json
 br update bd-1234 --status in_progress
+
+# Pull bounded memory and session history
+cm context "bd-1234 checkout validation in /data/projects/my-app" \\
+  --workspace /data/projects/my-app --limit 5 --history 3 --json
+cass search "checkout validation command shape" \\
+  --workspace /data/projects/my-app --limit 5 --fields summary --json --max-tokens 1200
 
 # Register Agent Mail identity through MCP tools
 ensure_project(human_key="/data/projects/my-app")
@@ -118,9 +124,9 @@ register_agent(
         />
 
         <TipBox variant="tip">
-          Use the same Bead ID in the Agent Mail thread, reservation reason,
-          commit message, and final closeout. That is what makes the session
-          traceable.
+          Keep the memory preflight small: extract command shapes, prior traps,
+          and drift-prone facts to recheck. Verify anything stale against
+          `AGENTS.md`, README files, Beads output, and the live code.
         </TipBox>
       </Section>
 
@@ -371,9 +377,9 @@ interface SwarmScenario {
 
 const SCENARIOS: SwarmScenario[] = [
   {
-    title: '1. Ready Work Selected',
-    subtitle: 'Robot triage surfaces unblocked Beads before agents start editing',
-    command: 'bv --robot-next && br ready --json',
+    title: '1. Ready Work and Context',
+    subtitle: 'Robot triage selects work, then CASS and CM recover bounded prior context',
+    command: 'cm context "bd-001 API routes" --workspace . --json',
     agentStatuses: { 'claude-1': 'spawning', 'claude-2': 'spawning', 'codex-1': 'spawning', 'gemini-1': 'spawning', 'claude-3': 'spawning', 'codex-2': 'spawning' },
     connections: [],
     messages: [],

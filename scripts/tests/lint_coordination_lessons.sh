@@ -25,6 +25,7 @@ Scans the swarm coordination lesson surfaces for stale or unsafe command forms:
   - bare interactive bv commands instead of bv --robot-*
   - old bd commands instead of br
   - old am CLI examples instead of Agent Mail MCP tool calls
+  - stale branch names other than the explicit main:master mirror push
   - destructive cleanup/reset examples
   - local CPU-heavy cargo commands instead of rch exec -- cargo ...
 
@@ -139,6 +140,10 @@ scan_file() {
 
         if [[ "$line" == *"am mail"* || "$line" == *"am file_reservations"* ]]; then
             report_violation "$display_path" "$lineno" "use Agent Mail MCP tool calls instead of old am CLI examples" "$line"
+        fi
+
+        if [[ "$line" == *"master"* && "$line" != *"main:master"* ]]; then
+            report_violation "$display_path" "$lineno" "use main as the branch name; only the explicit main:master mirror push is allowed" "$line"
         fi
 
         if [[ "$line" == *"rm -rf"* || "$line" == *"git reset --hard"* || "$line" == *"git clean -fd"* ]]; then
