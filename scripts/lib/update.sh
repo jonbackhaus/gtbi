@@ -2773,6 +2773,7 @@ sync_acfs_deployed() {
         "scripts/lib/swarm_doctor.sh:scripts/lib/swarm_doctor.sh"
         "scripts/lib/swarm_simulation.sh:scripts/lib/swarm_simulation.sh"
         "scripts/lib/swarm_packet.sh:scripts/lib/swarm_packet.sh"
+        "scripts/lib/swarm_assign.sh:scripts/lib/swarm_assign.sh"
         "scripts/lib/landing_plane.sh:scripts/lib/landing_plane.sh"
         "scripts/lib/provenance.sh:scripts/lib/provenance.sh"
         "scripts/lib/update.sh:scripts/lib/update.sh"

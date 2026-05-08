@@ -998,6 +998,7 @@ print_acfs_help() {
     echo "  swarm status        Local swarm/coordination JSON snapshot"
     echo "  swarm doctor        Pre-swarm coordination preflight"
     echo "  swarm simulate      Dry-run 10/25/50 logical-agent harness"
+    echo "  swarm assign        Role-aware Beads assignment planner"
     echo "  coordinate doctor   Alias for swarm doctor"
     echo "  cheatsheet          Command reference (aliases, shortcuts)"
     echo "  changelog [options] Show recent project changes"
@@ -4320,8 +4321,20 @@ main() {
                     echo "Error: swarm_packet.sh not found" >&2
                     return 1
                     ;;
+                assign|assignment|allocate|allocations)
+                    [[ $# -gt 0 ]] && shift
+                    local swarm_assign_script=""
+                    swarm_assign_script="$(_acfs_doctor_find_lib_script "swarm_assign.sh" 2>/dev/null || true)"
+
+                    if [[ -n "$swarm_assign_script" ]]; then
+                        _acfs_doctor_exec_bash_script "$swarm_assign_script" "$@"
+                    fi
+
+                    echo "Error: swarm_assign.sh not found" >&2
+                    return 1
+                    ;;
                 help|-h|--help)
-                    echo "Usage: acfs swarm <plan|status|doctor|simulate|packet> [--json]"
+                    echo "Usage: acfs swarm <plan|status|doctor|simulate|packet|assign> [--json]"
                     return 0
                     ;;
                 *)
@@ -4377,6 +4390,18 @@ main() {
             fi
 
             echo "Error: swarm_packet.sh not found" >&2
+            return 1
+            ;;
+        swarm-assign|swarm_assign)
+            shift
+            local swarm_assign_script=""
+            swarm_assign_script="$(_acfs_doctor_find_lib_script "swarm_assign.sh" 2>/dev/null || true)"
+
+            if [[ -n "$swarm_assign_script" ]]; then
+                _acfs_doctor_exec_bash_script "$swarm_assign_script" "$@"
+            fi
+
+            echo "Error: swarm_assign.sh not found" >&2
             return 1
             ;;
         coordinate|coord)

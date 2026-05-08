@@ -119,6 +119,18 @@ _acfs() {
                                         '-h[Show help message]' \
                                         '--help[Show help message]'
                                     ;;
+                                assign)
+                                    _arguments \
+                                        '--json[JSON output]' \
+                                        '--markdown[Markdown output]' \
+                                        '--agents[Requested agent count]:agents:' \
+                                        '--roles[Role mix, e.g. implementation:2,review:1]:roles:' \
+                                        '--profile[Role profile]:profile:(balanced codex-heavy review-heavy docs-heavy)' \
+                                        '--ready-file[Read br ready JSON from file]:file:_files' \
+                                        '--triage-file[Read bv robot triage JSON from file]:file:_files' \
+                                        '-h[Show help message]' \
+                                        '--help[Show help message]'
+                                    ;;
                             esac
                             ;;
                     esac
@@ -165,6 +177,18 @@ _acfs() {
                         '--cm-file[CM context fixture]:file:_files' \
                         '--cass-file[CASS context fixture]:file:_files' \
                         '--no-live-context[Skip live cm and cass commands]' \
+                        '-h[Show help message]' \
+                        '--help[Show help message]'
+                    ;;
+                swarm-assign|swarm_assign)
+                    _arguments \
+                        '--json[JSON output]' \
+                        '--markdown[Markdown output]' \
+                        '--agents[Requested agent count]:agents:' \
+                        '--roles[Role mix, e.g. implementation:2,review:1]:roles:' \
+                        '--profile[Role profile]:profile:(balanced codex-heavy review-heavy docs-heavy)' \
+                        '--ready-file[Read br ready JSON from file]:file:_files' \
+                        '--triage-file[Read bv robot triage JSON from file]:file:_files' \
                         '-h[Show help message]' \
                         '--help[Show help message]'
                     ;;
@@ -306,6 +330,8 @@ _acfs_commands() {
         'swarm_simulate:Dry-run fleet-scale simulation harness'
         'swarm-packet:Per-agent startup packet generator'
         'swarm_packet:Per-agent startup packet generator'
+        'swarm-assign:Role-aware Beads assignment planner'
+        'swarm_assign:Role-aware Beads assignment planner'
         'coordinate:Coordination preflight helpers'
         'coord:Coordination helpers (alias for coordinate)'
         'cheatsheet:Command reference (aliases, shortcuts)'
@@ -359,6 +385,7 @@ _acfs_swarm_commands() {
         'preflight:Pre-swarm coordination preflight'
         'simulate:Dry-run fleet-scale simulation harness'
         'packet:Per-agent startup packet generator'
+        'assign:Role-aware Beads assignment planner'
         'help:Show swarm help'
     )
     _describe -t commands 'swarm command' commands

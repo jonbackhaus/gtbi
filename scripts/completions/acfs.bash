@@ -8,7 +8,7 @@ _acfs_completions() {
     local cur prev words cword
     _init_completion || return
 
-    local commands="newproj new services svc services-setup setup doctor check session sessions update status continue progress info i capacity cap swarm swarm-plan swarm_plan swarm-status swarm_status swarm-simulate swarm_simulate swarm-packet swarm_packet coordinate coord cheatsheet cs changelog changes log export-config export dashboard dash support-bundle bundle version help"
+    local commands="newproj new services svc services-setup setup doctor check session sessions update status continue progress info i capacity cap swarm swarm-plan swarm_plan swarm-status swarm_status swarm-simulate swarm_simulate swarm-packet swarm_packet swarm-assign swarm_assign coordinate coord cheatsheet cs changelog changes log export-config export dashboard dash support-bundle bundle version help"
 
     # Subcommand-specific flags
     local newproj_flags="-i --interactive --no-br --no-claude --no-agents -h --help"
@@ -16,12 +16,13 @@ _acfs_completions() {
     local status_flags="--json --short --check-updates -h --help"
     local info_flags="--json --html --minimal"
     local capacity_flags="--json --workload --profile --recommend-ntm -h --help"
-    local swarm_subcommands="plan advisor status snapshot doctor preflight simulate packet help"
+    local swarm_subcommands="plan advisor status snapshot doctor preflight simulate packet assign help"
     local swarm_plan_flags="--json --agents --profile --workload --status-file -h --help"
     local swarm_status_flags="--json -h --help"
     local swarm_doctor_flags="--json --status-file -h --help"
     local swarm_simulate_flags="--json --counts --workload --artifact-dir --status-file -h --help"
     local swarm_packet_flags="--json --markdown --bead --bead-id --bead-file --repo --agent-name --role --max-chars --agents-file --readme-file --cm-file --cass-file --no-live-context -h --help"
+    local swarm_assign_flags="--json --markdown --agents --roles --profile --ready-file --triage-file -h --help"
     local coordinate_subcommands="doctor preflight help"
     local cheatsheet_flags="--json"
     local changelog_flags="--all --since --json -h --help"
@@ -42,7 +43,7 @@ _acfs_completions() {
     local cmd=""
     for ((i=1; i < cword; i++)); do
         case "${words[i]}" in
-            newproj|new|services|svc|services-setup|setup|doctor|check|session|sessions|update|status|continue|progress|info|i|capacity|cap|swarm|swarm-plan|swarm_plan|swarm-status|swarm_status|swarm-simulate|swarm_simulate|swarm-packet|swarm_packet|coordinate|coord|cheatsheet|cs|changelog|changes|log|export-config|export|dashboard|dash|support-bundle|bundle|version|help)
+            newproj|new|services|svc|services-setup|setup|doctor|check|session|sessions|update|status|continue|progress|info|i|capacity|cap|swarm|swarm-plan|swarm_plan|swarm-status|swarm_status|swarm-simulate|swarm_simulate|swarm-packet|swarm_packet|swarm-assign|swarm_assign|coordinate|coord|cheatsheet|cs|changelog|changes|log|export-config|export|dashboard|dash|support-bundle|bundle|version|help)
                 cmd="${words[i]}"
                 break
                 ;;
@@ -74,7 +75,7 @@ _acfs_completions() {
             local swarm_cmd=""
             for ((j=i+1; j < cword; j++)); do
                 case "${words[j]}" in
-                    plan|advisor|status|snapshot|doctor|preflight|simulate|packet|help)
+                    plan|advisor|status|snapshot|doctor|preflight|simulate|packet|assign|help)
                         swarm_cmd="${words[j]}"
                         break
                         ;;
@@ -96,6 +97,9 @@ _acfs_completions() {
                     ;;
                 packet)
                     mapfile -t COMPREPLY < <(compgen -W "$swarm_packet_flags" -- "$cur")
+                    ;;
+                assign)
+                    mapfile -t COMPREPLY < <(compgen -W "$swarm_assign_flags" -- "$cur")
                     ;;
                 help)
                     COMPREPLY=()
@@ -120,6 +124,10 @@ _acfs_completions() {
             ;;
         swarm-packet|swarm_packet)
             mapfile -t COMPREPLY < <(compgen -W "$swarm_packet_flags" -- "$cur")
+            return
+            ;;
+        swarm-assign|swarm_assign)
+            mapfile -t COMPREPLY < <(compgen -W "$swarm_assign_flags" -- "$cur")
             return
             ;;
         coordinate|coord)
