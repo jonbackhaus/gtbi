@@ -237,6 +237,7 @@ $status as $s
 | (
     if (b($rch.available) | not) then "fail"
     elif (b($rch.status_json_ok) | not) then "fail"
+    elif ($rch_workers_total < 1) then "fail"
     elif ($rch_workers_total > 0 and $rch_workers_healthy < 1) then "fail"
     elif ($rch_queue_depth > 0 or $rch_active_builds > 0 or $rch_workers_busy > 0 or $rch_pressure_warning_count > 0 or $rch_stale_worker_count > 0) then "warn"
     else "pass" end
@@ -286,6 +287,7 @@ $status as $s
       $rch_check_status;
       (if (b($rch.available) | not) then "RCH is unavailable for CPU-heavy build/test offload"
        elif (b($rch.status_json_ok) | not) then "RCH status JSON failed or timed out"
+       elif ($rch_workers_total < 1) then "RCH reports no workers"
        elif ($rch_workers_total > 0 and $rch_workers_healthy < 1) then "RCH reports no healthy workers"
        elif $rch_queue_depth > 0 then "RCH queue already has pending work"
        elif $rch_active_builds > 0 then "RCH has active builds"
