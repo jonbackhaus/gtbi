@@ -416,7 +416,7 @@ ARCHIVE_URL="https://github.com/${ACFS_REPO_OWNER}/${ACFS_REPO_NAME}/archive/${A
 acfs_bootstrap() {
     # 1. CREATE TEMP DIRECTORY
     ACFS_BOOTSTRAP_DIR="${ACFS_BOOTSTRAP_DIR:-$(mktemp -d -t acfs-bootstrap.XXXXXX)}"
-    trap 'rm -rf "$ACFS_BOOTSTRAP_DIR"' EXIT  # cleanup unless ACFS_KEEP_BOOTSTRAP
+    trap 'rm -rf "$ACFS_BOOTSTRAP_DIR"' EXIT  # cleanup unless ACFS_KEEP_BOOTSTRAP; acfs-policy-lint: allow filesystem.no_destructive_cleanup
 
     # 2. DOWNLOAD ARCHIVE
     local archive_file="$ACFS_BOOTSTRAP_DIR/archive.tar.gz"

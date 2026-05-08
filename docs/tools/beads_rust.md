@@ -93,7 +93,7 @@ Use `bv` (beads viewer) for intelligent triage:
 bv --robot-triage
 
 # Interactive TUI
-bv
+bv  # human-only interactive TUI; agents avoid bare bv
 ```
 
 ### Sync with Git

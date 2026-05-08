@@ -1344,10 +1344,10 @@ DCG mechanically blocks dangerous commands that could destroy other agents' work
 | Blocked Command | Safe Alternative | Why |
 |----------------|------------------|-----|
 | `git reset --hard` | `git stash` | Recoverable |
-| `git checkout -- file` | `git stash push file` | Preserves changes |
+| `git checkout -- file` | `git stash push file` | Preserves changes <!-- acfs-policy-lint: allow filesystem.no_destructive_cleanup --> |
 | `git push --force` | `git push --force-with-lease` | Checks remote unchanged |
-| `git clean -fd` | `git clean -fdn` (preview first) | Shows what would delete |
-| `rm -rf /path` | `rm -ri /path` | Interactive confirmation |
+| `git clean -fd` | `git clean -fdn` (preview first) | Shows what would delete <!-- acfs-policy-lint: allow filesystem.no_destructive_cleanup --> |
+| `rm -rf /path` | Ask the user before deleting files | Preserves explicit human control <!-- acfs-policy-lint: allow filesystem.no_destructive_cleanup --> |
 
 **Origin:** On December 17, 2025, an agent ran `git checkout --` on uncommitted work. Files were recovered via `git fsck --lost-found`, but the incident proved that instructions don't prevent execution -- **mechanical enforcement does**.
 
@@ -1356,7 +1356,7 @@ DCG mechanically blocks dangerous commands that could destroy other agents' work
 ```
 1. Pull latest          git pull --rebase
 2. Reserve files        file_reservation_paths(...)
-3. Edit and test        cargo test / bun test / go test
+3. Edit and test        rch exec -- cargo test / bun test / go test
 4. Commit immediately   git add <files> && git commit
 5. Push                 git push
 6. Release reservation  release_file_reservations(...)
@@ -1484,8 +1484,8 @@ After any substantive code changes, always verify:
 
 ```bash
 # Rust
-cargo check --all-targets
-cargo clippy --all-targets -- -D warnings
+rch exec -- cargo check --all-targets
+rch exec -- cargo clippy --all-targets -- -D warnings
 cargo fmt --check
 
 # Go

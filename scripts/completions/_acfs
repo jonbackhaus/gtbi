@@ -59,6 +59,15 @@ _acfs() {
                         '-h[Show help message]' \
                         '--help[Show help message]'
                     ;;
+                policy-lint|policy_lint)
+                    _arguments \
+                        '--json[JSON output]' \
+                        '--human[Human-readable output]' \
+                        '--root[Repository/root directory to scan]:directory:_files -/' \
+                        '--file[Scan one file]:file:_files' \
+                        '-h[Show help message]' \
+                        '--help[Show help message]'
+                    ;;
                 swarm)
                     _arguments -C \
                         '1: :_acfs_swarm_commands' \
@@ -387,6 +396,8 @@ _acfs_commands() {
         'i:System overview (alias for info)'
         'capacity:Estimate safe/recommended agent counts'
         'cap:Capacity report (alias for capacity)'
+        'policy-lint:Lint AGENTS/templates/docs for policy drift'
+        'policy_lint:Lint AGENTS/templates/docs for policy drift'
         'swarm:Swarm plan, status, doctor, simulation, packets, and inventory'
         'swarm-plan:Queue-aware launch advisor'
         'swarm_plan:Queue-aware launch advisor'

@@ -994,6 +994,7 @@ print_acfs_help() {
     echo "  info [options]      Quick system overview (terminal/json/html)"
     echo "  status [options]    Quick one-line health summary"
     echo "  capacity [options]  Estimate safe/recommended agent counts"
+    echo "  policy-lint         Lint AGENTS/templates/docs for policy drift"
     echo "  swarm plan          Queue-aware launch advisor"
     echo "  swarm status        Local swarm/coordination JSON snapshot"
     echo "  swarm doctor        Pre-swarm coordination preflight"
@@ -4258,6 +4259,18 @@ main() {
             fi
 
             echo "Error: capacity.sh not found" >&2
+            return 1
+            ;;
+        policy-lint|policy_lint)
+            shift
+            local policy_lint_script=""
+            policy_lint_script="$(_acfs_doctor_find_lib_script "policy_lint.sh" 2>/dev/null || true)"
+
+            if [[ -n "$policy_lint_script" ]]; then
+                _acfs_doctor_exec_bash_script "$policy_lint_script" "$@"
+            fi
+
+            echo "Error: policy_lint.sh not found" >&2
             return 1
             ;;
         swarm)

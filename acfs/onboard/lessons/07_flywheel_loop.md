@@ -127,8 +127,8 @@ Here's how a real session might look:
 
 ```bash
 # 1. Plan your work
-bv                              # Check tasks
-br ready                        # See what's ready to work on
+bv --robot-triage               # Check tasks
+br ready --json                 # See what's ready to work on
 
 # 2. Start your agents
 ntm spawn myproject --cc=2 --cod=1

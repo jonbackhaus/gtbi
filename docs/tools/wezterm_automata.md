@@ -82,7 +82,7 @@ wa new --name logs --cwd /var/log
 
 ```bash
 # Start build in one pane
-wa send --name build "cargo build --release"
+wa send --name build "rch exec -- cargo build --release"
 
 # Monitor in another
 wa send --name logs "tail -f build.log"

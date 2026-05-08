@@ -2071,13 +2071,13 @@ On December 17, 2025, an AI agent ran `git checkout --` on files containing hour
 
 | Category | Commands |
 |----------|----------|
-| **Git Reset** | `git reset --hard`, `git reset --merge` |
-| **File Discard** | `git checkout -- <files>`, `git restore <files>` |
+| **Git Reset** | `git reset --hard`, `git reset --merge` <!-- acfs-policy-lint: allow filesystem.no_destructive_cleanup --> |
+| **File Discard** | `git checkout -- <files>`, `git restore <files>` <!-- acfs-policy-lint: allow filesystem.no_destructive_cleanup --> |
 | **Force Push** | `git push --force` / `-f` (allows `--force-with-lease`) |
 | **Clean** | `git clean -f` (allows `-n` dry-run) |
 | **Branch Delete** | `git branch -D` (allows `-d`) |
 | **Stash Loss** | `git stash drop`, `git stash clear` |
-| **Filesystem** | `rm -rf` (except temp directories) |
+| **Filesystem** | `rm -rf` <!-- acfs-policy-lint: allow filesystem.no_destructive_cleanup --> |
 
 ### What Gets Allowed
 
@@ -2085,7 +2085,7 @@ Safe variants are allowlisted:
 - `git checkout -b <branch>` — Creates branch, doesn't touch files
 - `git restore --staged` — Only unstages, doesn't discard
 - `git clean -n` — Dry-run preview
-- `rm -rf /tmp/...` — Temp directories are ephemeral
+- Temp directory cleanup still requires explicit human approval when an agent would delete files
 
 ### Installation
 
