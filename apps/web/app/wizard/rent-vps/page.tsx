@@ -22,7 +22,16 @@ import { AlertCard } from "@/components/alert-card";
 import { TrackedLink } from "@/components/tracked-link";
 import { VPSComparison } from "@/components/wizard/VPSComparison";
 import { cn } from "@/lib/utils";
-import { VPS_PROVIDERS, type VPSPlan } from "@/lib/vpsProviders";
+import {
+  VPS_PROVIDERS,
+  VPS_WORKLOAD_PROFILES,
+  calculateRequiredSpecs,
+  evaluateProviderPlans,
+  validateVPSReadiness,
+  type PlanStatus,
+  type VPSReadinessStatus,
+  type WorkloadId,
+} from "@/lib/vpsProviders";
 import { markStepComplete } from "@/lib/wizardSteps";
 import { useWizardAnalytics } from "@/lib/hooks/useWizardAnalytics";
 import { withCurrentSearch } from "@/lib/utils";
@@ -203,59 +212,8 @@ const SPEC_CHECKLIST = [
   { label: "Price", value: "~$40-56/month for 64GB (month-to-month)" },
 ];
 
-type WorkloadId = "light" | "standard" | "heavy";
-type PlanStatus = "pass" | "warn" | "fail";
-
-interface WorkloadProfile {
-  id: WorkloadId;
-  label: string;
-  summary: string;
-  ramPerAgentGB: number;
-  cpuPerAgent: number;
-}
-
-interface RequiredSpecs {
-  ramGB: number;
-  vCPU: number;
-  storageGB: number;
-}
-
-interface EvaluatedProviderPlan {
-  providerName: string;
-  plan: VPSPlan;
-  recommendedAgents: number;
-  safeAgents: number;
-  status: PlanStatus;
-}
-
-const WORKLOAD_PROFILES: WorkloadProfile[] = [
-  {
-    id: "light",
-    label: "Light",
-    summary: "reviews, docs, small edits",
-    ramPerAgentGB: 2,
-    cpuPerAgent: 0.5,
-  },
-  {
-    id: "standard",
-    label: "Standard",
-    summary: "mixed coding and tests",
-    ramPerAgentGB: 3,
-    cpuPerAgent: 1,
-  },
-  {
-    id: "heavy",
-    label: "Heavy",
-    summary: "Rust builds, browsers, large repos",
-    ramPerAgentGB: 4,
-    cpuPerAgent: 2,
-  },
-];
-
 const AGENT_COUNT_PRESETS = [5, 10, 15, 25, 50];
-const RAM_TIERS = [32, 48, 64, 96, 128, 192, 256, 384];
-const CPU_TIERS = [8, 12, 16, 24, 32, 48, 64, 96, 128, 160];
-const STORAGE_TIERS = [250, 400, 640, 800, 1000];
+const UBUNTU_IMAGE_OPTIONS = ["25.10", "24.04", "22.04", "20.04"];
 const COMFORTABLE_STATUSES = new Set<PlanStatus>(["pass"]);
 const PLAN_STATUS_COPY: Record<PlanStatus, { label: string; className: string }> = {
   pass: {
@@ -272,60 +230,27 @@ const PLAN_STATUS_COPY: Record<PlanStatus, { label: string; className: string }>
   },
 };
 
-function roundUpToTier(value: number, tiers: number[]): number {
-  return tiers.find((tier) => tier >= value) ?? tiers[tiers.length - 1];
-}
-
-function calculateRequiredSpecs(
-  agentCount: number,
-  workload: WorkloadProfile,
-  comfortable: boolean
-): RequiredSpecs {
-  const targetSafeAgents = comfortable ? Math.ceil(agentCount / 0.7) : agentCount;
-  const rawRamGB = (targetSafeAgents * workload.ramPerAgentGB + 4) / 0.9;
-  const rawVcpu = targetSafeAgents * workload.cpuPerAgent;
-  const rawStorageGB = 10 + targetSafeAgents * 2;
-
-  return {
-    ramGB: roundUpToTier(rawRamGB, RAM_TIERS),
-    vCPU: roundUpToTier(rawVcpu, CPU_TIERS),
-    storageGB: roundUpToTier(rawStorageGB, STORAGE_TIERS),
-  };
-}
-
-function evaluatePlan(
-  plan: VPSPlan,
-  workload: WorkloadProfile,
-  agentCount: number
-): Pick<EvaluatedProviderPlan, "recommendedAgents" | "safeAgents" | "status"> {
-  const usableRamGB = Math.max(0, plan.ramGB - Math.max(4, plan.ramGB * 0.1));
-  const usableStorageGB = Math.max(0, plan.storageGB - 10);
-  const memoryLimitedAgents = Math.floor(usableRamGB / workload.ramPerAgentGB);
-  const cpuLimitedAgents = Math.floor(plan.vCPU / workload.cpuPerAgent);
-  const diskLimitedAgents = Math.floor(usableStorageGB / 2);
-  const safeAgents = Math.min(memoryLimitedAgents, cpuLimitedAgents, diskLimitedAgents);
-  const recommendedAgents = safeAgents > 0 ? Math.max(1, Math.floor(safeAgents * 0.7)) : 0;
-  const status =
-    agentCount <= recommendedAgents ? "pass" : agentCount <= safeAgents ? "warn" : "fail";
-
-  return { recommendedAgents, safeAgents, status };
-}
-
-function evaluateProviderPlans(
-  workload: WorkloadProfile,
-  agentCount: number
-): EvaluatedProviderPlan[] {
-  return VPS_PROVIDERS.flatMap((provider) =>
-    (["budget", "recommended"] as const).map((tier) => {
-      const plan = provider[tier];
-      return {
-        providerName: provider.name,
-        plan,
-        ...evaluatePlan(plan, workload, agentCount),
-      };
-    })
-  ).sort((a, b) => a.plan.priceUSD - b.plan.priceUSD);
-}
+const READINESS_STATUS_COPY: Record<
+  VPSReadinessStatus,
+  { label: string; className: string }
+> = {
+  supported: {
+    label: "Supported",
+    className: "border-[oklch(0.72_0.19_145/0.35)] bg-[oklch(0.72_0.19_145/0.08)] text-[oklch(0.72_0.19_145)]",
+  },
+  borderline: {
+    label: "Borderline",
+    className: "border-[oklch(0.78_0.16_75/0.35)] bg-[oklch(0.78_0.16_75/0.08)] text-[oklch(0.78_0.16_75)]",
+  },
+  unsupported: {
+    label: "Unsupported",
+    className: "border-destructive/35 bg-destructive/10 text-destructive",
+  },
+  unknown: {
+    label: "Unknown",
+    className: "border-border/50 bg-muted/30 text-muted-foreground",
+  },
+};
 
 function statusCopy(status: PlanStatus): { label: string; className: string } {
   return PLAN_STATUS_COPY[status];
@@ -335,17 +260,46 @@ function isComfortableStatus(status: PlanStatus | undefined): boolean {
   return status !== undefined && COMFORTABLE_STATUSES.has(status);
 }
 
+function readinessCopy(status: VPSReadinessStatus): { label: string; className: string } {
+  return READINESS_STATUS_COPY[status];
+}
+
 function CapacityPlanner() {
   const [agentCount, setAgentCount] = useState(10);
   const [workloadId, setWorkloadId] = useState<WorkloadId>("standard");
+  const [readinessProviderId, setReadinessProviderId] = useState(VPS_PROVIDERS[0].id);
+  const [readinessPlanName, setReadinessPlanName] = useState(VPS_PROVIDERS[0].recommended.name);
+  const [ubuntuVersion, setUbuntuVersion] = useState("25.10");
+  const [readinessRegion, setReadinessRegion] = useState(VPS_PROVIDERS[0].regionOptions[0].id);
   const workload =
-    WORKLOAD_PROFILES.find((profile) => profile.id === workloadId) ?? WORKLOAD_PROFILES[1];
+    VPS_WORKLOAD_PROFILES.find((profile) => profile.id === workloadId) ?? VPS_WORKLOAD_PROFILES[1];
   const minimumSpecs = calculateRequiredSpecs(agentCount, workload, false);
   const recommendedSpecs = calculateRequiredSpecs(agentCount, workload, true);
   const evaluatedPlans = evaluateProviderPlans(workload, agentCount);
   const comfortablePlan = evaluatedPlans.find((entry) => entry.status === "pass");
   const safePlan = evaluatedPlans.find((entry) => entry.status === "warn");
   const bestListedPlan = comfortablePlan ?? safePlan;
+  const readinessProvider = VPS_PROVIDERS.find((provider) => provider.id === readinessProviderId);
+  const readinessPlans = readinessProvider
+    ? [readinessProvider.recommended, readinessProvider.budget]
+    : [];
+  const readinessRegions = readinessProvider?.regionOptions ?? [];
+  const readiness = validateVPSReadiness({
+    providerId: readinessProviderId,
+    planName: readinessPlanName,
+    ubuntuVersion,
+    region: readinessRegion,
+    targetAgents: agentCount,
+    workloadId,
+  });
+  const readinessStatusCopy = readinessCopy(readiness.status);
+
+  const handleReadinessProviderChange = (providerId: string) => {
+    setReadinessProviderId(providerId);
+    const provider = VPS_PROVIDERS.find((entry) => entry.id === providerId);
+    setReadinessPlanName(provider?.recommended.name ?? "custom plan");
+    setReadinessRegion(provider?.regionOptions[0]?.id ?? "not-listed");
+  };
 
   return (
     <section
@@ -415,7 +369,7 @@ function CapacityPlanner() {
           <div className="space-y-3">
             <p className="text-sm font-medium text-foreground">Workload intensity</p>
             <div className="grid gap-2" role="group" aria-label="Workload intensity">
-              {WORKLOAD_PROFILES.map((profile) => (
+              {VPS_WORKLOAD_PROFILES.map((profile) => (
                 <button
                   key={profile.id}
                   type="button"
@@ -536,6 +490,119 @@ function CapacityPlanner() {
               );
             })}
           </div>
+        </div>
+      </div>
+
+      <div data-testid="provider-readiness-check" className="space-y-4 rounded-lg border border-border/50 bg-background/35 p-3">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h3 className="font-medium text-foreground">Provider readiness check</h3>
+            <p className="text-sm text-muted-foreground">
+              Advisory guardrails for the plan, Ubuntu image, region, and target agent count before you pay.
+            </p>
+          </div>
+          <span className={cn("w-fit rounded-full border px-2 py-0.5 text-xs font-medium", readinessStatusCopy.className)}>
+            {readinessStatusCopy.label}
+          </span>
+        </div>
+
+        <div className="grid gap-3 md:grid-cols-4">
+          <label className="space-y-1 text-sm">
+            <span className="font-medium text-foreground">Provider</span>
+            <select
+              aria-label="Provider"
+              value={readinessProviderId}
+              onChange={(event) => handleReadinessProviderChange(event.target.value)}
+              className="w-full rounded-md border border-border/50 bg-background px-3 py-2 text-foreground"
+            >
+              {VPS_PROVIDERS.map((provider) => (
+                <option key={provider.id} value={provider.id}>
+                  {provider.name}
+                </option>
+              ))}
+              <option value="other">Other provider</option>
+            </select>
+          </label>
+
+          <label className="space-y-1 text-sm">
+            <span className="font-medium text-foreground">Plan</span>
+            <select
+              aria-label="Plan"
+              value={readinessPlanName}
+              onChange={(event) => setReadinessPlanName(event.target.value)}
+              className="w-full rounded-md border border-border/50 bg-background px-3 py-2 text-foreground"
+            >
+              {readinessPlans.length > 0 ? (
+                readinessPlans.map((plan) => (
+                  <option key={plan.name} value={plan.name}>
+                    {plan.name}
+                  </option>
+                ))
+              ) : (
+                <option value="custom plan">Plan not listed</option>
+              )}
+            </select>
+          </label>
+
+          <label className="space-y-1 text-sm">
+            <span className="font-medium text-foreground">Ubuntu image</span>
+            <select
+              aria-label="Ubuntu image"
+              value={ubuntuVersion}
+              onChange={(event) => setUbuntuVersion(event.target.value)}
+              className="w-full rounded-md border border-border/50 bg-background px-3 py-2 text-foreground"
+            >
+              {UBUNTU_IMAGE_OPTIONS.map((version) => (
+                <option key={version} value={version}>
+                  Ubuntu {version}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="space-y-1 text-sm">
+            <span className="font-medium text-foreground">Region</span>
+            <select
+              aria-label="Region"
+              value={readinessRegion}
+              onChange={(event) => setReadinessRegion(event.target.value)}
+              className="w-full rounded-md border border-border/50 bg-background px-3 py-2 text-foreground"
+            >
+              {readinessRegions.length > 0 ? (
+                readinessRegions.map((region) => (
+                  <option key={region.id} value={region.id}>
+                    {region.label}
+                  </option>
+                ))
+              ) : (
+                <option value="not-listed">Not listed</option>
+              )}
+            </select>
+          </label>
+        </div>
+
+        <div className={cn("rounded-lg border p-3", readinessStatusCopy.className)}>
+          <p className="font-medium">{readiness.summary}</p>
+          <p className="mt-1 text-sm opacity-90">
+            Warnings are advisory. Advanced users can still proceed, but beginners should fix unsupported choices before checkout.
+          </p>
+        </div>
+
+        <div className="grid gap-2 sm:grid-cols-2">
+          {readiness.checks.map((check) => {
+            const copy = readinessCopy(check.status);
+            return (
+              <div key={check.id} className="rounded-lg border border-border/50 bg-card/40 p-3">
+                <div className="flex items-start justify-between gap-2">
+                  <p className="text-sm font-medium text-foreground">{check.label}</p>
+                  <span className={cn("shrink-0 rounded-full border px-2 py-0.5 text-xs font-medium", copy.className)}>
+                    {copy.label}
+                  </span>
+                </div>
+                <p className="mt-1 text-xs text-muted-foreground">{check.message}</p>
+              </div>
+            );
+          })}
         </div>
       </div>
     </section>
