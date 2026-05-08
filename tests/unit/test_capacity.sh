@@ -109,6 +109,27 @@ EOF
     printf '%s\n' "$fake_bin"
 }
 
+make_resource_profile_failing_systemd_bin() {
+    local name="$1"
+    local fake_bin="$ARTIFACT_DIR/$name-bin"
+    mkdir -p "$fake_bin"
+
+    cat > "$fake_bin/systemctl" <<'EOF'
+#!/usr/bin/env bash
+exit 1
+EOF
+    chmod +x "$fake_bin/systemctl"
+
+    cat > "$fake_bin/systemd-run" <<'EOF'
+#!/usr/bin/env bash
+printf '%s\n' "$*" >> "${ACFS_FAKE_SYSTEMD_RUN_LOG:?}"
+exit 99
+EOF
+    chmod +x "$fake_bin/systemd-run"
+
+    printf '%s\n' "$fake_bin"
+}
+
 test_high_capacity_json() {
     local output
     output="$(run_capacity_json_fixture high_capacity_json 64 268435456 314572800 true true --profile 25-agents --recommend-ntm)"
@@ -275,6 +296,7 @@ test_resource_profile_apply_writes_opt_in_wrappers() {
     grep -Fq "export PATH=\"$root/bin:" "$root/acfs-resource-profile.sh" || return 1
     jq -e '.mode == "applied"' "$root/profile.json" >/dev/null || return 1
     ! grep -R "MemoryMax=" "$root" >/dev/null 2>&1 || return 1
+    ! grep -R -E "pkill|killall|loginctl[[:space:]]+kill|systemctl[[:space:]]+--user[[:space:]]+stop" "$root/bin" >/dev/null 2>&1 || return 1
 
     ACFS_FAKE_SYSTEMD_RUN_LOG="$log_file" \
     PATH="$fake_bin:$root/bin:/usr/bin:/bin" \
@@ -282,6 +304,103 @@ test_resource_profile_apply_writes_opt_in_wrappers() {
     grep -Fq -- "--slice=acfs-agent.slice" "$log_file" || return 1
 
     pass "resource_profile_apply_writes_opt_in_wrappers"
+}
+
+test_resource_profile_apply_is_idempotent() {
+    local root fake_bin first_output second_output first_hash second_hash line_count
+    root="$ARTIFACT_DIR/resource-idempotent-home"
+    fake_bin="$(make_resource_profile_fake_bin resource-idempotent)"
+
+    first_output="$(
+        ACFS_RESOURCE_PROFILE_HOME="$root" \
+        ACFS_CAPACITY_BIN_DIR="$fake_bin" \
+        bash "$CAPACITY_SH" --json --resource-profile --apply-resource-profile
+    )"
+    first_hash="$(sha256sum "$root/bin/acfs-scope" | awk '{print $1}')"
+    second_output="$(
+        ACFS_RESOURCE_PROFILE_HOME="$root" \
+        ACFS_CAPACITY_BIN_DIR="$fake_bin" \
+        bash "$CAPACITY_SH" --json --resource-profile --apply-resource-profile
+    )"
+    second_hash="$(sha256sum "$root/bin/acfs-scope" | awk '{print $1}')"
+    write_output_artifact "resource_profile_idempotent_first" "json" "$first_output"
+    write_output_artifact "resource_profile_idempotent_second" "json" "$second_output"
+
+    line_count="$(grep -Fc "export PATH=\"$root/bin:" "$root/acfs-resource-profile.sh")"
+
+    [[ "$first_hash" == "$second_hash" ]] || return 1
+    [[ "$line_count" -eq 1 ]] || return 1
+    jq -e '.mode == "applied" and .status == "pass"' <<<"$first_output" >/dev/null || return 1
+    jq -e '.mode == "applied" and .status == "pass"' <<<"$second_output" >/dev/null || return 1
+    jq -e '.mode == "applied" and .status == "pass"' "$root/profile.json" >/dev/null || return 1
+
+    pass "resource_profile_apply_is_idempotent"
+}
+
+test_resource_profile_partial_failure_reports_error() {
+    local root fake_bin output status stderr_file
+    root="$ARTIFACT_DIR/resource-partial-failure-home"
+    fake_bin="$(make_resource_profile_fake_bin resource-partial-failure)"
+    stderr_file="$ARTIFACT_DIR/resource_profile_partial_failure.stderr"
+    mkdir -p "$root/bin" "$root/acfs-resource-profile.sh"
+
+    set +e
+    output="$(
+        ACFS_RESOURCE_PROFILE_HOME="$root" \
+        ACFS_CAPACITY_BIN_DIR="$fake_bin" \
+        bash "$CAPACITY_SH" --json --resource-profile --apply-resource-profile 2>"$stderr_file"
+    )"
+    status=$?
+    set -e
+    write_output_artifact "resource_profile_partial_failure" "json" "$output"
+
+    [[ "$status" -ne 0 ]] || return 1
+    jq -e '
+      .mode == "error" and
+      .status == "fail" and
+      .partial_apply_possible == true and
+      (.remediation | length) >= 3 and
+      (.actions[] | select(contains("failed")))
+    ' <<<"$output" >/dev/null || return 1
+    [[ -x "$root/bin/acfs-scope" ]] || return 1
+    jq -e '.mode != "applied" and .status != "pass"' "$root/profile.json" >/dev/null || return 1
+
+    pass "resource_profile_partial_failure_reports_error"
+}
+
+test_resource_profile_no_systemd_writes_safe_fallback_wrappers() {
+    local root fake_bin output log_file wrapper_output
+    root="$ARTIFACT_DIR/resource-no-systemd-home"
+    fake_bin="$(make_resource_profile_failing_systemd_bin resource-no-systemd)"
+    log_file="$ARTIFACT_DIR/resource-no-systemd-systemd-run.log"
+
+    output="$(
+        ACFS_RESOURCE_PROFILE_HOME="$root" \
+        ACFS_CAPACITY_SYSTEMD_RUN_AVAILABLE=false \
+        ACFS_CAPACITY_SYSTEMD_USER_AVAILABLE=false \
+        bash "$CAPACITY_SH" --json --resource-profile --apply-resource-profile
+    )"
+    write_output_artifact "resource_profile_no_systemd" "json" "$output"
+
+    jq -e '
+      .mode == "applied" and
+      .systemd.systemd_run_available == false and
+      .systemd.user_manager_available == false and
+      .safety.limited_to_acfs_owned_files == true and
+      ([.classes[].properties[] | select(startswith("MemoryMax="))] | length) == 0
+    ' <<<"$output" >/dev/null || return 1
+    grep -Fq 'exec "$@"' "$root/bin/acfs-scope" || return 1
+    ! grep -R -E "pkill|killall|loginctl[[:space:]]+kill|systemctl[[:space:]]+--user[[:space:]]+stop" "$root/bin" >/dev/null 2>&1 || return 1
+
+    wrapper_output="$(
+        ACFS_FAKE_SYSTEMD_RUN_LOG="$log_file" \
+        PATH="$fake_bin:$root/bin:/usr/bin:/bin" \
+        "$root/bin/acfs-scope" support -- printf 'fallback-ok'
+    )"
+    [[ "$wrapper_output" == "fallback-ok" ]] || return 1
+    [[ ! -s "$log_file" ]] || return 1
+
+    pass "resource_profile_no_systemd_writes_safe_fallback_wrappers"
 }
 
 test_resource_profile_disable_writes_marker_without_deleting_wrappers() {
@@ -331,6 +450,9 @@ main() {
     run_test test_human_output
     run_test test_resource_profile_dry_run_json_is_read_only
     run_test test_resource_profile_apply_writes_opt_in_wrappers
+    run_test test_resource_profile_apply_is_idempotent
+    run_test test_resource_profile_partial_failure_reports_error
+    run_test test_resource_profile_no_systemd_writes_safe_fallback_wrappers
     run_test test_resource_profile_disable_writes_marker_without_deleting_wrappers
 
     echo "Results: $TESTS_PASSED passed, $TESTS_FAILED failed"

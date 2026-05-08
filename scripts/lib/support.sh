@@ -255,6 +255,7 @@ DOCTOR_TIMEOUT="${SUPPORT_BUNDLE_DOCTOR_TIMEOUT:-120}"
 SWARM_STATUS_TIMEOUT="${SUPPORT_BUNDLE_SWARM_STATUS_TIMEOUT:-10}"
 SWARM_TIMELINE_TIMEOUT="${SUPPORT_BUNDLE_SWARM_TIMELINE_TIMEOUT:-5}"
 PROVENANCE_TIMEOUT="${SUPPORT_BUNDLE_PROVENANCE_TIMEOUT:-10}"
+RESOURCE_PROFILE_TIMEOUT="${SUPPORT_BUNDLE_RESOURCE_PROFILE_TIMEOUT:-5}"
 SUPPORT_SYSTEM_STATE_WAS_EXPLICIT=false
 [[ -n "${ACFS_SYSTEM_STATE_FILE:-}" ]] && [[ "${ACFS_SYSTEM_STATE_FILE%/}" != "/var/lib/acfs/state.json" ]] && SUPPORT_SYSTEM_STATE_WAS_EXPLICIT=true
 SUPPORT_SYSTEM_STATE_FILE="$(support_sanitize_abs_nonroot_path "${ACFS_SYSTEM_STATE_FILE:-/var/lib/acfs/state.json}" 2>/dev/null || true)"
@@ -1015,6 +1016,95 @@ support_run_with_timeout() {
     fi
 }
 
+# Capture a sanitized ACFS resource-profile snapshot. Raw paths are intentionally
+# omitted; support bundles only need status, safety metadata, and wrapper shape.
+# Usage: capture_resource_profile_json <bundle_dir>
+capture_resource_profile_json() {
+    local bundle_dir="$1"
+    local resource_file="$bundle_dir/resource_profile.json"
+    local jq_bin=""
+    local capacity_script=""
+    local profile_home=""
+    local capacity_output=""
+    local capture_status="pass"
+    local capture_reason="resource profile summarized"
+
+    jq_bin="$(support_system_binary_path jq 2>/dev/null || true)"
+    if [[ -z "$jq_bin" ]]; then
+        printf '{"schema_version":1,"status":"skipped","capture":{"status":"skipped","reason":"jq not found"},"redaction":{"paths_redacted":true,"raw_paths_collected":false,"secrets_collected":false}}\n' > "$resource_file"
+        record_bundle_file "resource_profile.json"
+        return 1
+    fi
+
+    if [[ -n "$_SUPPORT_ACFS_HOME" ]] && [[ -f "$_SUPPORT_ACFS_HOME/scripts/lib/capacity.sh" ]]; then
+        capacity_script="$_SUPPORT_ACFS_HOME/scripts/lib/capacity.sh"
+    elif [[ -f "$_SUPPORT_SCRIPT_DIR/capacity.sh" ]]; then
+        capacity_script="$_SUPPORT_SCRIPT_DIR/capacity.sh"
+    fi
+
+    if [[ -z "$capacity_script" ]]; then
+        printf '{"schema_version":1,"status":"skipped","capture":{"status":"skipped","reason":"capacity.sh not found"},"redaction":{"paths_redacted":true,"raw_paths_collected":false,"secrets_collected":false}}\n' > "$resource_file"
+        record_bundle_file "resource_profile.json"
+        return 1
+    fi
+
+    profile_home="${ACFS_RESOURCE_PROFILE_HOME:-}"
+    if [[ -z "$profile_home" ]]; then
+        profile_home="${SUPPORT_TARGET_HOME:-${_SUPPORT_CURRENT_HOME:-${HOME:-/tmp}}}/.acfs/resource-profile"
+    fi
+
+    log_detail "Capturing resource profile summary..."
+    if ! capacity_output="$(ACFS_RESOURCE_PROFILE_HOME="$profile_home" support_run_with_timeout "$RESOURCE_PROFILE_TIMEOUT" bash "$capacity_script" --json --resource-profile)"; then
+        capture_status="warn"
+        capture_reason="capacity resource profile command failed or timed out"
+    fi
+
+    if ! printf '%s' "$capacity_output" | "$jq_bin" . >/dev/null 2>&1; then
+        "$jq_bin" -n \
+            --arg status "$capture_status" \
+            --arg reason "$capture_reason" \
+            '{
+                schema_version: 1,
+                status: "warn",
+                capture: {status: $status, reason: $reason},
+                redaction: {paths_redacted: true, raw_paths_collected: false, secrets_collected: false}
+            }' > "$resource_file" 2>/dev/null || printf '{"schema_version":1,"status":"warn"}\n' > "$resource_file"
+        record_bundle_file "resource_profile.json"
+        return 1
+    fi
+
+    printf '%s' "$capacity_output" | "$jq_bin" \
+        --arg capture_status "$capture_status" \
+        --arg capture_reason "$capture_reason" \
+        '{
+            schema_version: 1,
+            generated_at: (.generated_at // null),
+            status: (if (.status // "pass") == "fail" then "fail" elif $capture_status == "warn" then "warn" else (.status // "pass") end),
+            capture: {status: $capture_status, reason: $capture_reason},
+            mode: (.mode // "unknown"),
+            opt_in: (.opt_in // null),
+            systemd: (.systemd // {}),
+            safety: (.safety // {}),
+            classes: [(.classes // [])[] | {name: (.name // null), slice: (.slice // null), properties: (.properties // [])}],
+            wrappers: [(.wrappers // [])[] | {name: (.name // null), purpose: (.purpose // null), command_present: has("command")}],
+            managed_file_count: ((.managed_files // []) | length),
+            actions: (.actions // []),
+            remediation: (.remediation // []),
+            redaction: {
+                paths_redacted: true,
+                raw_paths_collected: false,
+                secrets_collected: false
+            }
+        }' > "$resource_file" 2>/dev/null || {
+        printf '{"schema_version":1,"status":"warn","capture":{"status":"warn","reason":"resource profile sanitization failed"},"redaction":{"paths_redacted":true,"raw_paths_collected":false,"secrets_collected":false}}\n' > "$resource_file"
+        record_bundle_file "resource_profile.json"
+        return 1
+    }
+
+    record_bundle_file "resource_profile.json"
+    [[ "$capture_status" == "pass" ]]
+}
+
 support_binary_path_any() {
     local candidate=""
     local path_value=""
@@ -1466,6 +1556,16 @@ write_manifest() {
     if [[ -f "$bundle_dir/swarm_timeline.json" ]]; then
         swarm_timeline_manifest="$("$jq_bin" '[.probes[]? | {id: .id, status: .status, reason: (.reason // null)}]' "$bundle_dir/swarm_timeline.json" 2>/dev/null || echo null)"
     fi
+    local resource_profile_manifest="null"
+    if [[ -f "$bundle_dir/resource_profile.json" ]]; then
+        resource_profile_manifest="$("$jq_bin" '{
+            status: (.status // "unknown"),
+            mode: (.mode // null),
+            paths_redacted: (if .redaction.paths_redacted == true then true else false end),
+            raw_paths_collected: (if .redaction.raw_paths_collected == true then true else false end),
+            managed_file_count: (.managed_file_count // null)
+        }' "$bundle_dir/resource_profile.json" 2>/dev/null || echo null)"
+    fi
 
     "$jq_bin" -n \
         --argjson schema_version 1 \
@@ -1478,6 +1578,7 @@ write_manifest() {
         --argjson redaction_enabled "$( [[ "$REDACT" == "true" ]] && echo true || echo false )" \
         --argjson redaction_files_modified "$REDACTION_COUNT" \
         --argjson swarm_timeline_manifest "$swarm_timeline_manifest" \
+        --argjson resource_profile_manifest "$resource_profile_manifest" \
         '{
             schema_version: $schema_version,
             created_at: $created_at,
@@ -1495,6 +1596,10 @@ write_manifest() {
                 swarm_timeline: {
                     included: ($swarm_timeline_manifest != null),
                     probes: ($swarm_timeline_manifest // [])
+                },
+                resource_profile: {
+                    included: ($resource_profile_manifest != null),
+                    summary: ($resource_profile_manifest // {})
                 }
             }
         }' > "$manifest_file" 2>/dev/null || return 1
@@ -1581,7 +1686,7 @@ redact_file() {
         -e 's/"([A-Za-z][A-Za-z0-9]*[_-]+[A-Za-z0-9_-]*(api[_-]?key|API[_-]?KEY|ApiKey|api[_-]?secret|API[_-]?SECRET|secret[_-]?key|SECRET[_-]?KEY|access[_-]?key|ACCESS[_-]?KEY|access[_-]?token|ACCESS[_-]?TOKEN|refresh[_-]?token|REFRESH[_-]?TOKEN|auth[_-]?token|AUTH[_-]?TOKEN|client[_-]?secret|CLIENT[_-]?SECRET|private[_-]?key|PRIVATE[_-]?KEY|secret|SECRET|token|TOKEN))"[[:space:]]*:[[:space:]]*"([^"<>]{8,})"/"\1": "<REDACTED:generic_secret>"/g' \
         -e 's/"([A-Za-z][A-Za-z0-9]*(Password|Passwd))"[[:space:]]*:[[:space:]]*"([^"<>]{4,})"/"\1": "<REDACTED:password>"/g' \
         -e 's/"([A-Za-z][A-Za-z0-9]*(ApiKey|APIKey|ApiSecret|SecretKey|AccessKey|AccessToken|RefreshToken|AuthToken|ClientSecret|PrivateKey|Secret|Token))"[[:space:]]*:[[:space:]]*"([^"<>]{8,})"/"\1": "<REDACTED:generic_secret>"/g' \
-        -e 's/"(body_md|body_text|thread_snippet|message_snippet|mail_snippet|message_preview)"[[:space:]]*:[[:space:]]*"([^"<>]{1,})"/"\1": "<REDACTED:message_snippet>"/g' \
+        -e 's/"(body_md|body_text|thread_snippet|message_snippet|mail_snippet|message_preview)"[[:space:]]*:[[:space:]]*"([^"]*)"/"\1": "<REDACTED:message_snippet>"/g' \
         -e 's#"(command|command_line|cmd|cwd|path|project_key|working_directory)"([[:space:]]*:[[:space:]]*")([^"]*)/(home|Users)/[A-Za-z0-9._-]+/[A-Za-z0-9._~+@%/=-]+([^"]*)"#"\1"\2\3/<REDACTED:path>\5"#g' \
         "$file" 2>/dev/null || return 0
 
@@ -1730,6 +1835,7 @@ main() {
     capture_doctor_json "$bundle_dir" || true
     capture_swarm_status_json "$bundle_dir" || true
     capture_provenance_json "$bundle_dir" || true
+    capture_resource_profile_json "$bundle_dir" || true
     capture_swarm_timeline_json "$bundle_dir" || true
 
     # --- Capture versions ---

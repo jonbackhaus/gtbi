@@ -38,6 +38,8 @@ Environment overrides for tests:
   ACFS_CAPACITY_DISK_AVAILABLE_KB
   ACFS_CAPACITY_RCH_AVAILABLE=true|false
   ACFS_CAPACITY_NTM_AVAILABLE=true|false
+  ACFS_CAPACITY_SYSTEMD_RUN_AVAILABLE=true|false
+  ACFS_CAPACITY_SYSTEMD_USER_AVAILABLE=true|false
   ACFS_CAPACITY_BIN_DIR
   ACFS_RESOURCE_PROFILE_HOME
 EOF
@@ -239,6 +241,13 @@ capacity_resource_profile_root() {
 }
 
 capacity_resource_systemd_run_available() {
+    case "${ACFS_CAPACITY_SYSTEMD_RUN_AVAILABLE:-}" in
+        true|false)
+            printf '%s\n' "$ACFS_CAPACITY_SYSTEMD_RUN_AVAILABLE"
+            return 0
+            ;;
+    esac
+
     if capacity_system_binary_path systemd-run >/dev/null 2>&1; then
         printf 'true\n'
     else
@@ -248,6 +257,14 @@ capacity_resource_systemd_run_available() {
 
 capacity_resource_systemd_user_available() {
     local systemctl_bin=""
+
+    case "${ACFS_CAPACITY_SYSTEMD_USER_AVAILABLE:-}" in
+        true|false)
+            printf '%s\n' "$ACFS_CAPACITY_SYSTEMD_USER_AVAILABLE"
+            return 0
+            ;;
+    esac
+
     systemctl_bin="$(capacity_system_binary_path systemctl 2>/dev/null || true)"
     if [[ -n "$systemctl_bin" ]] && "$systemctl_bin" --user show-environment >/dev/null 2>&1; then
         printf 'true\n'
@@ -271,6 +288,8 @@ capacity_resource_profile_json() {
     local state="$2"
     local systemd_run_available="$3"
     local systemd_user_available="$4"
+    local status="${5:-pass}"
+    local failure_reason="${6:-}"
     local bin_dir="$root/bin"
     local env_file="$root/acfs-resource-profile.sh"
     local manifest_file="$root/profile.json"
@@ -287,11 +306,14 @@ capacity_resource_profile_json() {
         --arg bin_dir "$bin_dir" \
         --arg env_file "$env_file" \
         --arg manifest_file "$manifest_file" \
+        --arg status "$status" \
+        --arg failure_reason "$failure_reason" \
         --argjson systemd_run_available "$systemd_run_available" \
         --argjson systemd_user_available "$systemd_user_available" \
         '{
             schema_version: 1,
             generated_at: $generated_at,
+            status: $status,
             mode: $state,
             opt_in: true,
             root: $root,
@@ -332,11 +354,27 @@ capacity_resource_profile_json() {
                 $env_file,
                 $manifest_file
             ],
+            partial_apply_possible: ($state == "error"),
+            remediation: (
+                if $state == "error" then
+                    [
+                        "Resource profile application did not complete.",
+                        "Inspect filesystem permissions under the ACFS resource profile root.",
+                        "Fix the reported write failure, then rerun acfs capacity --resource-profile --apply-resource-profile."
+                    ] + (if $failure_reason == "" then [] else [$failure_reason] end)
+                else
+                    []
+                end
+            ),
             actions: (
                 if $state == "dry-run" then
                     ["would create wrapper directory", "would write opt-in wrappers", "would write shell snippet", "would write manifest"]
                 elif $state == "disabled" then
                     ["wrote disabled shell snippet", "wrote disabled manifest"]
+                elif $state == "applying" then
+                    ["started profile write", "will write opt-in wrappers", "will write shell snippet", "will write final manifest"]
+                elif $state == "error" then
+                    ["failed before completing resource profile write", "left any already-written ACFS-owned files for inspection", "reported remediation guidance"]
                 else
                     ["wrote wrapper directory", "wrote opt-in wrappers", "wrote shell snippet", "wrote manifest"]
                 end
@@ -441,25 +479,29 @@ capacity_apply_resource_profile() {
     local env_file="$root/acfs-resource-profile.sh"
     local manifest_file="$root/profile.json"
 
-    mkdir -p "$bin_dir"
+    mkdir -p "$bin_dir" || return 1
 
     if [[ "$state" == "disabled" ]]; then
-        cat > "$env_file" <<'EOF'
+        cat > "$env_file" <<'EOF' || return 1
 # ACFS resource profile disabled.
 # Re-enable with: acfs capacity --resource-profile --apply-resource-profile
 EOF
-        printf '%s\n' "$profile_json" > "$manifest_file"
+        printf '%s\n' "$profile_json" > "$manifest_file" || return 1
         return 0
     fi
 
-    capacity_write_resource_scope_wrapper "$bin_dir/acfs-scope"
-    capacity_write_resource_command_wrapper "$bin_dir/ccs" agent claude
-    capacity_write_resource_command_wrapper "$bin_dir/cods" agent codex
-    capacity_write_resource_command_wrapper "$bin_dir/gmis" agent gemini
-    capacity_write_resource_command_wrapper "$bin_dir/acfs-local-build" local-build
-    chmod +x "$bin_dir/acfs-scope" "$bin_dir/ccs" "$bin_dir/cods" "$bin_dir/gmis" "$bin_dir/acfs-local-build"
+    local applying_json=""
+    applying_json="$(capacity_resource_profile_json "$root" "applying" "$(capacity_resource_systemd_run_available)" "$(capacity_resource_systemd_user_available)" "pending")" || return 1
+    printf '%s\n' "$applying_json" > "$manifest_file" || return 1
 
-    cat > "$env_file" <<EOF
+    capacity_write_resource_scope_wrapper "$bin_dir/acfs-scope" || return 1
+    capacity_write_resource_command_wrapper "$bin_dir/ccs" agent claude || return 1
+    capacity_write_resource_command_wrapper "$bin_dir/cods" agent codex || return 1
+    capacity_write_resource_command_wrapper "$bin_dir/gmis" agent gemini || return 1
+    capacity_write_resource_command_wrapper "$bin_dir/acfs-local-build" local-build || return 1
+    chmod +x "$bin_dir/acfs-scope" "$bin_dir/ccs" "$bin_dir/cods" "$bin_dir/gmis" "$bin_dir/acfs-local-build" || return 1
+
+    cat > "$env_file" <<EOF || return 1
 # ACFS opt-in resource profile wrappers.
 # Source this file to add wrapper commands without changing cc/cod/gmi.
 case ":\${PATH:-}:" in
@@ -467,11 +509,11 @@ case ":\${PATH:-}:" in
   *) export PATH="$bin_dir:\${PATH:-}" ;;
 esac
 EOF
-    printf '%s\n' "$profile_json" > "$manifest_file"
+    printf '%s\n' "$profile_json" > "$manifest_file" || return 1
 }
 
 capacity_emit_resource_profile_json() {
-    local root state systemd_run_available systemd_user_available profile_json
+    local root state systemd_run_available systemd_user_available profile_json failure_reason
     root="$(capacity_resource_profile_root)"
     state="$(capacity_resource_profile_state)"
     systemd_run_available="$(capacity_resource_systemd_run_available)"
@@ -479,7 +521,12 @@ capacity_emit_resource_profile_json() {
     profile_json="$(capacity_resource_profile_json "$root" "$state" "$systemd_run_available" "$systemd_user_available")"
 
     if [[ "$CAPACITY_RESOURCE_PROFILE_APPLY" == true || "$CAPACITY_RESOURCE_PROFILE_DISABLE" == true ]]; then
-        capacity_apply_resource_profile "$root" "$state" "$profile_json"
+        if ! capacity_apply_resource_profile "$root" "$state" "$profile_json"; then
+            failure_reason="Failed to write the complete ACFS resource profile."
+            profile_json="$(capacity_resource_profile_json "$root" "error" "$systemd_run_available" "$systemd_user_available" "fail" "$failure_reason")"
+            printf '%s\n' "$profile_json"
+            return 1
+        fi
         profile_json="$(capacity_resource_profile_json "$root" "$state" "$systemd_run_available" "$systemd_user_available")"
     fi
 
@@ -487,7 +534,7 @@ capacity_emit_resource_profile_json() {
 }
 
 capacity_emit_resource_profile_human() {
-    local jq_bin root state systemd_run_available systemd_user_available profile_json
+    local jq_bin root state systemd_run_available systemd_user_available profile_json apply_failed failure_reason
     jq_bin="$(capacity_system_binary_path jq 2>/dev/null || true)"
     if [[ -z "$jq_bin" ]]; then
         echo "Error: jq is required for resource profile output" >&2
@@ -499,10 +546,18 @@ capacity_emit_resource_profile_human() {
     systemd_run_available="$(capacity_resource_systemd_run_available)"
     systemd_user_available="$(capacity_resource_systemd_user_available)"
     profile_json="$(capacity_resource_profile_json "$root" "$state" "$systemd_run_available" "$systemd_user_available")"
+    apply_failed=false
+    failure_reason=""
 
     if [[ "$CAPACITY_RESOURCE_PROFILE_APPLY" == true || "$CAPACITY_RESOURCE_PROFILE_DISABLE" == true ]]; then
-        capacity_apply_resource_profile "$root" "$state" "$profile_json"
-        profile_json="$(capacity_resource_profile_json "$root" "$state" "$systemd_run_available" "$systemd_user_available")"
+        if ! capacity_apply_resource_profile "$root" "$state" "$profile_json"; then
+            apply_failed=true
+            state="error"
+            failure_reason="Failed to write the complete ACFS resource profile."
+            profile_json="$(capacity_resource_profile_json "$root" "$state" "$systemd_run_available" "$systemd_user_available" "fail" "$failure_reason")"
+        else
+            profile_json="$(capacity_resource_profile_json "$root" "$state" "$systemd_run_available" "$systemd_user_available")"
+        fi
     fi
 
     echo "ACFS Resource Profile"
@@ -538,6 +593,12 @@ capacity_emit_resource_profile_human() {
     else
         echo ""
         echo "Disabled. Re-enable with: acfs capacity --resource-profile --apply-resource-profile"
+    fi
+
+    if [[ "$apply_failed" == true ]]; then
+        echo "" >&2
+        echo "Error: $failure_reason" >&2
+        return 1
     fi
 }
 
