@@ -802,6 +802,13 @@ test_manifest_guard_scripts_cover_all_generated_outputs() {
         harness_fail "Manifest drift check does not validate generated artifacts via generate:diff"
     fi
 
+    if grep -Fq 'src/drift-contract.ts --json --root "$REPO_ROOT"' "$drift_file" \
+        && grep -Fq 'manifest_contract' "$drift_file"; then
+        harness_pass "Manifest drift check validates semantic manifest contract"
+    else
+        harness_fail "Manifest drift check does not validate semantic manifest contract"
+    fi
+
     if grep -Fq 'EXPECTED_AGENT_MAIL_MCP_URL="http://127.0.0.1:8765/mcp/"' "$drift_file" \
         && ! grep -Fq 'am --version' "$drift_file"; then
         harness_pass "Manifest drift check uses deterministic repo MCP URL"
@@ -829,7 +836,15 @@ test_manifest_guard_scripts_cover_all_generated_outputs() {
     drift_output=$(PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin" \
         "$drift_file" --json --quiet 2>&1) || drift_status=$?
     if [[ "$drift_status" -eq 0 ]] \
-        && echo "$drift_output" | jq -e '.repo_mcp_configs.expected_url == "http://127.0.0.1:8765/mcp/" and .repo_mcp_configs.drifted == 0' >/dev/null 2>&1; then
+        && echo "$drift_output" | jq -e '
+            .repo_mcp_configs.expected_url == "http://127.0.0.1:8765/mcp/" and
+            .repo_mcp_configs.drifted == 0 and
+            .manifest_contract.drifted == 0 and
+            (
+                (.manifest_contract.status == "clean" and .manifest_contract.checked > 0) or
+                .manifest_contract.status == "skipped"
+            )
+        ' >/dev/null 2>&1; then
         harness_pass "Manifest drift check passes when am is absent from PATH"
     else
         harness_fail "Manifest drift check should not require am in PATH"

@@ -25,7 +25,8 @@
     "generate": "bun run src/generate.ts",
     "generate:dry": "bun run src/generate.ts --dry-run --verbose",
     "generate:validate": "bun run src/generate.ts --validate",
-    "generate:diff": "bun run src/generate.ts --diff"
+    "generate:diff": "bun run src/generate.ts --diff",
+    "drift:contract": "bun run src/drift-contract.ts"
   },
   "dependencies": {
     "yaml": "^2.8.2",

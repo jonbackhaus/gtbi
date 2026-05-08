@@ -2366,6 +2366,8 @@ triggers:
 1. **Verify Generated Artifact Drift**: Runs `scripts/check-manifest-drift.sh --json` to detect:
    - `ACFS_MANIFEST_SHA256` mismatches
    - internal script checksum drift (`scripts/generated/internal_checksums.sh`)
+   - generated installer and web metadata drift via `bun run generate:diff`
+   - semantic manifest contract drift across `scripts/generated/doctor_checks.sh`, `apps/web/lib/generated`, `acfs/onboard/lessons`, README snippets, and `checksums.yaml`
 2. **Auto-Repair Drift**: If drift is detected, runs `--fix` (regenerate + commit + push)
 3. **Verify Current Upstream Checksums**: Downloads all upstream installers, calculates SHA256
 4. **Detect Upstream Changes**: Compares against `checksums.yaml`

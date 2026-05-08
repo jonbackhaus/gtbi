@@ -4,10 +4,11 @@
 # This script verifies that scripts/generated/manifest_index.sh has the correct
 # SHA256 hash for acfs.manifest.yaml, that internal library scripts match
 # their recorded checksums in scripts/generated/internal_checksums.sh, that the
-# full set of generated artifacts still matches `bun run generate:diff`, and
-# that checked-in MCP Agent Mail client configs still point at the canonical
-# HTTP URL. If drift is detected, it can regenerate all generated scripts,
-# commit, and push.
+# full set of generated artifacts still matches `bun run generate:diff`, that
+# manifest-derived website, onboarding, doctor, README, and checksum surfaces
+# satisfy the semantic drift contract, and that checked-in MCP Agent Mail
+# client configs still point at the canonical HTTP URL. If drift is detected,
+# it can regenerate all generated scripts, commit, and push.
 #
 # Usage:
 #   ./scripts/check-manifest-drift.sh [--fix] [--json] [--quiet]
@@ -159,6 +160,11 @@ extract_repo_mcp_config_url() {
 GENERATED_ARTIFACT_STATUS="skipped"
 GENERATED_ARTIFACT_DRIFT_FILES=()
 GENERATED_ARTIFACT_DRIFT_COUNT=0
+MANIFEST_CONTRACT_STATUS="skipped"
+MANIFEST_CONTRACT_DRIFT_FILES=()
+MANIFEST_CONTRACT_MISMATCH_CODES=()
+MANIFEST_CONTRACT_DRIFT_COUNT=0
+MANIFEST_CONTRACT_CHECKED=0
 
 check_generated_artifact_drift() {
     local record_drift="${1:-true}"
@@ -219,6 +225,79 @@ check_generated_artifact_drift() {
             log_error "generate:diff failed unexpectedly"
             if [[ -n "$diff_output" ]]; then
                 log_error "$diff_output"
+            fi
+            return 1
+            ;;
+    esac
+}
+
+check_manifest_contract_drift() {
+    local record_drift="${1:-true}"
+    local contract_output=""
+    local contract_status=0
+    local contract_summary=""
+
+    MANIFEST_CONTRACT_STATUS="skipped"
+    MANIFEST_CONTRACT_DRIFT_FILES=()
+    MANIFEST_CONTRACT_MISMATCH_CODES=()
+    MANIFEST_CONTRACT_DRIFT_COUNT=0
+    MANIFEST_CONTRACT_CHECKED=0
+
+    if ! command -v bun &>/dev/null; then
+        log "Warning: bun not found; skipping manifest drift contract validation"
+        return 0
+    fi
+
+    set +e
+    contract_output="$(
+        cd "$REPO_ROOT/packages/manifest" &&
+        bun run src/drift-contract.ts --json --root "$REPO_ROOT" 2>&1
+    )"
+    contract_status=$?
+    set -e
+
+    case "$contract_status" in
+        0)
+            MANIFEST_CONTRACT_STATUS="clean"
+            if command -v jq &>/dev/null; then
+                MANIFEST_CONTRACT_CHECKED="$(jq -r '.summary.checked // 0' <<< "$contract_output" 2>/dev/null || printf '0\n')"
+            fi
+            log "Manifest drift contract: clean (${MANIFEST_CONTRACT_CHECKED} checks)"
+            return 0
+            ;;
+        1)
+            MANIFEST_CONTRACT_STATUS="drift"
+            if command -v jq &>/dev/null && jq -e . >/dev/null 2>&1 <<< "$contract_output"; then
+                MANIFEST_CONTRACT_DRIFT_COUNT="$(jq -r '.mismatches | length' <<< "$contract_output")"
+                MANIFEST_CONTRACT_CHECKED="$(jq -r '.summary.checked // 0' <<< "$contract_output")"
+                mapfile -t MANIFEST_CONTRACT_DRIFT_FILES < <(
+                    jq -r '.mismatches[].file // empty' <<< "$contract_output" | sort -u | sed '/^$/d'
+                )
+                mapfile -t MANIFEST_CONTRACT_MISMATCH_CODES < <(
+                    jq -r '.mismatches[].code // empty' <<< "$contract_output" | sort -u | sed '/^$/d'
+                )
+            else
+                MANIFEST_CONTRACT_DRIFT_COUNT=1
+                MANIFEST_CONTRACT_DRIFT_FILES=("manifest contract")
+                MANIFEST_CONTRACT_MISMATCH_CODES=("MANIFEST_CONTRACT_DRIFT")
+            fi
+
+            if [[ "$record_drift" == "true" ]]; then
+                DRIFT_DETECTED=true
+                contract_summary="${MANIFEST_CONTRACT_MISMATCH_CODES[*]}"
+                if [[ -z "$contract_summary" ]]; then
+                    contract_summary="see packages/manifest/src/drift-contract.ts"
+                fi
+                DRIFT_REASONS+=("Manifest contract drift: $contract_summary")
+            fi
+            log "Manifest drift contract: $MANIFEST_CONTRACT_DRIFT_COUNT drifted"
+            return 0
+            ;;
+        *)
+            MANIFEST_CONTRACT_STATUS="error"
+            log_error "manifest drift contract failed unexpectedly"
+            if [[ -n "$contract_output" ]]; then
+                log_error "$contract_output"
             fi
             return 1
             ;;
@@ -379,6 +458,9 @@ log "Repo MCP configs: $REPO_MCP_CONFIGS_CHECKED checked, $REPO_MCP_CONFIG_DRIFT
 if ! check_generated_artifact_drift; then
     exit 3
 fi
+if ! check_manifest_contract_drift; then
+    exit 3
+fi
 
 # Output results
 if $JSON_MODE; then
@@ -398,12 +480,21 @@ if $JSON_MODE; then
     if [[ ${#GENERATED_ARTIFACT_DRIFT_FILES[@]} -gt 0 ]]; then
         generated_artifact_drift_json=$(printf '%s\n' "${GENERATED_ARTIFACT_DRIFT_FILES[@]}" | jq -R . | jq -s .)
     fi
+    manifest_contract_drift_json="[]"
+    if [[ ${#MANIFEST_CONTRACT_DRIFT_FILES[@]} -gt 0 ]]; then
+        manifest_contract_drift_json=$(printf '%s\n' "${MANIFEST_CONTRACT_DRIFT_FILES[@]}" | jq -R . | jq -s .)
+    fi
+    manifest_contract_code_json="[]"
+    if [[ ${#MANIFEST_CONTRACT_MISMATCH_CODES[@]} -gt 0 ]]; then
+        manifest_contract_code_json=$(printf '%s\n' "${MANIFEST_CONTRACT_MISMATCH_CODES[@]}" | jq -R . | jq -s .)
+    fi
     jq -nc \
         --argjson drift "$DRIFT_DETECTED" \
         --arg actual "$ACTUAL_SHA256" \
         --arg recorded "$RECORDED_SHA256" \
         --arg expected_mcp_url "$EXPECTED_AGENT_MAIL_MCP_URL" \
         --arg generated_status "$GENERATED_ARTIFACT_STATUS" \
+        --arg manifest_contract_status "$MANIFEST_CONTRACT_STATUS" \
         --argjson sha_lines "$SHA_LINE_COUNT" \
         --argjson manifest_modules "$MANIFEST_MODULE_COUNT" \
         --argjson index_modules "$INDEX_MODULE_COUNT" \
@@ -415,6 +506,10 @@ if $JSON_MODE; then
         --argjson repo_mcp_drift_files "$repo_mcp_drift_json" \
         --argjson generated_artifact_drifted "$GENERATED_ARTIFACT_DRIFT_COUNT" \
         --argjson generated_artifact_drift_files "$generated_artifact_drift_json" \
+        --argjson manifest_contract_checked "$MANIFEST_CONTRACT_CHECKED" \
+        --argjson manifest_contract_drifted "$MANIFEST_CONTRACT_DRIFT_COUNT" \
+        --argjson manifest_contract_drift_files "$manifest_contract_drift_json" \
+        --argjson manifest_contract_codes "$manifest_contract_code_json" \
         --argjson reasons "$reasons_json" \
         '{
             drift_detected: $drift,
@@ -440,6 +535,13 @@ if $JSON_MODE; then
                 status: $generated_status,
                 drifted: $generated_artifact_drifted,
                 drift_files: $generated_artifact_drift_files
+            },
+            manifest_contract: {
+                status: $manifest_contract_status,
+                checked: $manifest_contract_checked,
+                drifted: $manifest_contract_drifted,
+                drift_files: $manifest_contract_drift_files,
+                mismatch_codes: $manifest_contract_codes
             },
             reasons: $reasons
         }'
@@ -489,6 +591,8 @@ DIRTY_SOURCES="$(cd "$REPO_ROOT" && git status --porcelain -- \
     scripts/acfs-update \
     acfs.manifest.yaml \
     checksums.yaml \
+    README.md \
+    acfs/onboard/lessons \
     packages/manifest 2>/dev/null \
     | grep -v '^[?][?]' || true)"
 if [[ -n "$DIRTY_SOURCES" ]]; then
@@ -567,6 +671,13 @@ if ! check_generated_artifact_drift false; then
 fi
 if [[ "$GENERATED_ARTIFACT_DRIFT_COUNT" -gt 0 ]]; then
     log_error "Generated artifact drift persists after regeneration: ${GENERATED_ARTIFACT_DRIFT_FILES[*]}"
+    exit 2
+fi
+if ! check_manifest_contract_drift false; then
+    exit 2
+fi
+if [[ "$MANIFEST_CONTRACT_DRIFT_COUNT" -gt 0 ]]; then
+    log_error "Manifest contract drift requires manual repair: ${MANIFEST_CONTRACT_MISMATCH_CODES[*]}"
     exit 2
 fi
 
