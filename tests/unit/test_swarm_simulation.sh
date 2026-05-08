@@ -101,7 +101,7 @@ test_default_10_25_50_scenarios_pass() {
       .status == "pass" and
       .summary.total == 3 and
       (.scenarios | map(.scenario.agent_count) == [10,25,50]) and
-      all(.scenarios[]; .status == "pass" and (.checks | length) == 6)
+      all(.scenarios[]; .status == "pass" and (.checks | length) == 7 and .mock_rehearsal == false)
     ' <<<"$output" >/dev/null || return 1
 
     [[ -f "$run_dir/scenario_10/launch_plan.json" ]] || return 1
@@ -188,6 +188,57 @@ test_human_output_declares_simulation_only() {
     pass "human_output_declares_simulation_only"
 }
 
+test_mock_rehearsal_small_counts_produces_artifacts() {
+    local fixture output run_dir
+    fixture="$(high_capacity_status_fixture)"
+    output="$(run_sim_json mock_rehearsal "$fixture" --mock-rehearsal --counts 2,3 --mock-duration 1)"
+    run_dir="$(jq -r '.artifact_dir' <<<"$output")"
+
+    jq -e '
+      .status == "pass" and
+      .summary.total == 2 and
+      (.scenarios | map(.scenario.agent_count) == [2,3]) and
+      all(.scenarios[]; .mock_rehearsal == true and .status == "pass")
+    ' <<<"$output" >/dev/null || return 1
+
+    [[ -f "$run_dir/scenario_2/mock_launch.log" ]] || return 1
+    [[ -f "$run_dir/scenario_2/mock_status_snapshots.json" ]] || return 1
+    [[ -f "$run_dir/scenario_2/mock_resource_samples.json" ]] || return 1
+    [[ -f "$run_dir/scenario_2/mock_rehearsal.json" ]] || return 1
+
+    jq -e '
+      .enabled == true and
+      .requested_workers == 2 and
+      .launched_workers == 2 and
+      .completed_workers == 2 and
+      .failed_workers == 0 and
+      .safety.no_model_cli == true and
+      .safety.no_agent_mail_mutation == true and
+      .safety.no_beads_mutation == true and
+      .safety.no_cargo_build == true
+    ' "$run_dir/scenario_2/mock_rehearsal.json" >/dev/null || return 1
+    jq -e '.samples | length == 3' "$run_dir/scenario_2/mock_resource_samples.json" >/dev/null || return 1
+    jq -e '.before.schema_version == 1 and .after.schema_version == 1' "$run_dir/scenario_2/mock_status_snapshots.json" >/dev/null || return 1
+
+    pass "mock_rehearsal_small_counts_produces_artifacts"
+}
+
+test_mock_rehearsal_high_counts_require_flag() {
+    local fixture output status
+    fixture="$(high_capacity_status_fixture)"
+
+    set +e
+    output="$(bash "$SWARM_SIM_SH" --json --status-file "$fixture" --artifact-dir "$ARTIFACT_DIR/high-count-blocked" --mock-rehearsal --counts 11 2>&1)"
+    status=$?
+    set -e
+
+    printf '%s\n' "$output" > "$ARTIFACT_DIR/high_count_blocked.output.txt"
+    [[ "$status" -eq 2 ]] || return 1
+    grep -Fq "require --allow-high-counts" <<<"$output" || return 1
+
+    pass "mock_rehearsal_high_counts_require_flag"
+}
+
 run_test() {
     local name="$1"
     if "$name"; then
@@ -207,6 +258,8 @@ main() {
     run_test test_duplicate_counts_exit_2
     run_test test_low_capacity_fails_large_profile
     run_test test_human_output_declares_simulation_only
+    run_test test_mock_rehearsal_small_counts_produces_artifacts
+    run_test test_mock_rehearsal_high_counts_require_flag
 
     echo "Results: $TESTS_PASSED passed, $TESTS_FAILED failed"
     echo "Artifacts: $ARTIFACT_DIR"

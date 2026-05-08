@@ -10,14 +10,19 @@ set -euo pipefail
 
 SWARM_SIM_JSON=false
 SWARM_SIM_COUNTS_RAW="10,25,50"
+SWARM_SIM_COUNTS_EXPLICIT=false
 SWARM_SIM_WORKLOAD="standard"
 SWARM_SIM_ARTIFACT_DIR="${ACFS_SWARM_SIM_ARTIFACT_DIR:-}"
 SWARM_SIM_STATUS_FILE=""
+SWARM_SIM_MOCK_REHEARSAL=false
+SWARM_SIM_MOCK_DURATION=1
+SWARM_SIM_ALLOW_HIGH_COUNTS=false
 SWARM_SIM_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SWARM_STATUS_SCRIPT="${ACFS_SWARM_STATUS_SCRIPT:-$SWARM_SIM_SCRIPT_DIR/swarm_status.sh}"
 SWARM_CAPACITY_SCRIPT="${ACFS_SWARM_CAPACITY_SCRIPT:-$SWARM_SIM_SCRIPT_DIR/capacity.sh}"
 SWARM_SIM_GENERATED_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date)"
 SWARM_SIM_COUNTS=()
+SWARM_SIM_MOCK_PIDS=()
 
 swarm_sim_usage() {
     cat <<'EOF'
@@ -33,6 +38,9 @@ Options:
   --workload NAME       light, standard, or heavy (default: standard)
   --artifact-dir DIR    Directory for timing, plan, telemetry, and summaries
   --status-file FILE    Use an existing acfs swarm status JSON snapshot
+  --mock-rehearsal      Launch inert local shell workers and collect artifacts
+  --mock-duration SEC   Sleep duration for each mock worker (default: 1)
+  --allow-high-counts   Permit mock rehearsals above 10 workers
   --help, -h            Show this help
 
 Artifacts:
@@ -42,6 +50,7 @@ Artifacts:
   scenario_<N>/capacity.json
   scenario_<N>/resource_sample.json
   scenario_<N>/timing.json
+  scenario_<N>/mock_rehearsal.json
   scenario_<N>/summary.json
 EOF
 }
@@ -118,6 +127,7 @@ swarm_sim_parse_args() {
                     return 2
                 fi
                 SWARM_SIM_COUNTS_RAW="$2"
+                SWARM_SIM_COUNTS_EXPLICIT=true
                 shift 2
                 ;;
             --workload)
@@ -144,6 +154,26 @@ swarm_sim_parse_args() {
                 SWARM_SIM_STATUS_FILE="$2"
                 shift 2
                 ;;
+            --mock-rehearsal)
+                SWARM_SIM_MOCK_REHEARSAL=true
+                shift
+                ;;
+            --mock-duration)
+                if [[ -z "${2:-}" || "$2" == -* ]]; then
+                    echo "Error: --mock-duration requires seconds" >&2
+                    return 2
+                fi
+                if [[ ! "$2" =~ ^[0-9]+$ ]] || (( 10#$2 < 1 || 10#$2 > 30 )); then
+                    echo "Error: --mock-duration must be 1-30 seconds" >&2
+                    return 2
+                fi
+                SWARM_SIM_MOCK_DURATION=$((10#$2))
+                shift 2
+                ;;
+            --allow-high-counts)
+                SWARM_SIM_ALLOW_HIGH_COUNTS=true
+                shift
+                ;;
             --help|-h)
                 swarm_sim_usage
                 return 100
@@ -164,7 +194,21 @@ swarm_sim_parse_args() {
             ;;
     esac
 
-    swarm_sim_parse_counts "$SWARM_SIM_COUNTS_RAW"
+    if [[ "$SWARM_SIM_MOCK_REHEARSAL" == true && "$SWARM_SIM_COUNTS_EXPLICIT" == false ]]; then
+        SWARM_SIM_COUNTS_RAW="10"
+    fi
+
+    swarm_sim_parse_counts "$SWARM_SIM_COUNTS_RAW" || return $?
+
+    if [[ "$SWARM_SIM_MOCK_REHEARSAL" == true && "$SWARM_SIM_ALLOW_HIGH_COUNTS" != true ]]; then
+        local count=""
+        for count in "${SWARM_SIM_COUNTS[@]}"; do
+            if (( count > 10 )); then
+                echo "Error: mock rehearsals above 10 workers require --allow-high-counts" >&2
+                return 2
+            fi
+        done
+    fi
 }
 
 swarm_sim_prepare_artifact_dir() {
@@ -238,6 +282,203 @@ swarm_sim_collect_status_json() {
     fi
 
     swarm_sim_fallback_status_json "$jq_bin"
+}
+
+swarm_sim_mock_alive_count() {
+    local alive=0
+    local pid=""
+
+    for pid in "$@"; do
+        if kill -0 "$pid" 2>/dev/null; then
+            alive=$((alive + 1))
+        fi
+    done
+
+    printf '%s\n' "$alive"
+}
+
+swarm_sim_cleanup_mock_pids() {
+    local pid=""
+
+    for pid in "${SWARM_SIM_MOCK_PIDS[@]:-}"; do
+        if kill -0 "$pid" 2>/dev/null; then
+            kill "$pid" 2>/dev/null || true
+        fi
+    done
+}
+
+swarm_sim_mock_resource_snapshot_json() {
+    local jq_bin="$1"
+    local count="$2"
+    local phase="$3"
+    local alive="$4"
+    local load_1m="null"
+    local mem_available_kb=0
+
+    if [[ -r /proc/loadavg ]]; then
+        load_1m="$(awk '{print $1}' /proc/loadavg 2>/dev/null || echo null)"
+        [[ "$load_1m" =~ ^[0-9]+([.][0-9]+)?$ ]] || load_1m="null"
+    fi
+    if [[ -r /proc/meminfo ]]; then
+        mem_available_kb="$(awk '/^MemAvailable:/ {print $2}' /proc/meminfo 2>/dev/null || echo 0)"
+        [[ "$mem_available_kb" =~ ^[0-9]+$ ]] || mem_available_kb=0
+    fi
+
+    "$jq_bin" -n \
+        --arg generated_at "$SWARM_SIM_GENERATED_AT" \
+        --arg phase "$phase" \
+        --argjson count "$count" \
+        --argjson alive "$alive" \
+        --argjson load_1m "$load_1m" \
+        --argjson mem_available_kb "$mem_available_kb" \
+        '{
+            schema_version: 1,
+            generated_at: $generated_at,
+            phase: $phase,
+            requested_workers: $count,
+            alive_workers: $alive,
+            load_1m: $load_1m,
+            mem_available_kb: $mem_available_kb
+        }'
+}
+
+swarm_sim_skipped_mock_rehearsal_json() {
+    local jq_bin="$1"
+    local count="$2"
+    local scenario_dir="$3"
+    local output_file="$4"
+
+    "$jq_bin" -n \
+        --arg scenario_dir "$scenario_dir" \
+        --argjson count "$count" \
+        '{
+            schema_version: 1,
+            mode: "local-mock-rehearsal",
+            enabled: false,
+            skipped: true,
+            requested_workers: $count,
+            launched_workers: 0,
+            completed_workers: 0,
+            artifact_dir: $scenario_dir,
+            safety: {
+                no_model_cli: true,
+                no_agent_mail_mutation: true,
+                no_beads_mutation: true,
+                no_cargo_build: true
+            },
+            artifacts: {}
+        }' > "$output_file"
+}
+
+swarm_sim_run_mock_rehearsal() {
+    local jq_bin="$1"
+    local count="$2"
+    local scenario_dir="$3"
+    local output_file="$4"
+    local launch_log="$scenario_dir/mock_launch.log"
+    local status_snapshots_file="$scenario_dir/mock_status_snapshots.json"
+    local resource_samples_file="$scenario_dir/mock_resource_samples.json"
+    local before_status_file="$scenario_dir/mock_status_before.json"
+    local after_status_file="$scenario_dir/mock_status_after.json"
+    local sample_before_file="$scenario_dir/mock_resource_before.json"
+    local sample_during_file="$scenario_dir/mock_resource_during.json"
+    local sample_after_file="$scenario_dir/mock_resource_after.json"
+    local start_ms=""
+    local end_ms=""
+    local duration_ms=""
+    local alive=0
+    local completed=0
+    local failures=0
+    local index=0
+    local pid=""
+
+    : > "$launch_log"
+    start_ms="$(swarm_sim_now_ms)"
+    swarm_sim_collect_status_json "$jq_bin" > "$before_status_file"
+    swarm_sim_mock_resource_snapshot_json "$jq_bin" "$count" before 0 > "$sample_before_file"
+
+    SWARM_SIM_MOCK_PIDS=()
+    trap 'swarm_sim_cleanup_mock_pids' EXIT INT TERM
+    for ((index = 1; index <= count; index++)); do
+        (
+            printf 'mock-agent-%s start\n' "$index" >> "$launch_log"
+            sleep "$SWARM_SIM_MOCK_DURATION"
+            printf 'mock-agent-%s complete\n' "$index" >> "$launch_log"
+        ) &
+        SWARM_SIM_MOCK_PIDS+=("$!")
+    done
+
+    alive="$(swarm_sim_mock_alive_count "${SWARM_SIM_MOCK_PIDS[@]}")"
+    swarm_sim_mock_resource_snapshot_json "$jq_bin" "$count" during "$alive" > "$sample_during_file"
+
+    for pid in "${SWARM_SIM_MOCK_PIDS[@]}"; do
+        if wait "$pid"; then
+            completed=$((completed + 1))
+        else
+            failures=$((failures + 1))
+        fi
+    done
+    trap - EXIT INT TERM
+    SWARM_SIM_MOCK_PIDS=()
+
+    alive="$(swarm_sim_mock_alive_count "${SWARM_SIM_MOCK_PIDS[@]}")"
+    swarm_sim_mock_resource_snapshot_json "$jq_bin" "$count" after "$alive" > "$sample_after_file"
+    "$jq_bin" -s '{schema_version: 1, samples: .}' \
+        "$sample_before_file" \
+        "$sample_during_file" \
+        "$sample_after_file" \
+        > "$resource_samples_file"
+
+    swarm_sim_collect_status_json "$jq_bin" > "$after_status_file"
+    "$jq_bin" -n \
+        --slurpfile before "$before_status_file" \
+        --slurpfile after "$after_status_file" \
+        '{schema_version: 1, before: ($before[0] // {}), after: ($after[0] // {})}' \
+        > "$status_snapshots_file"
+
+    end_ms="$(swarm_sim_now_ms)"
+    duration_ms=$((end_ms - start_ms))
+    "$jq_bin" -n \
+        --arg scenario_dir "$scenario_dir" \
+        --arg launch_log "$launch_log" \
+        --arg status_snapshots "$status_snapshots_file" \
+        --arg resource_samples "$resource_samples_file" \
+        --argjson count "$count" \
+        --argjson duration_seconds "$SWARM_SIM_MOCK_DURATION" \
+        --argjson start_ms "$start_ms" \
+        --argjson end_ms "$end_ms" \
+        --argjson duration_ms "$duration_ms" \
+        --argjson completed "$completed" \
+        --argjson failures "$failures" \
+        '{
+            schema_version: 1,
+            mode: "local-mock-rehearsal",
+            enabled: true,
+            skipped: false,
+            requested_workers: $count,
+            launched_workers: $count,
+            completed_workers: $completed,
+            failed_workers: $failures,
+            duration_seconds: $duration_seconds,
+            timing: {
+                start_ms: $start_ms,
+                end_ms: $end_ms,
+                duration_ms: $duration_ms
+            },
+            status: (if $failures == 0 and $completed == $count then "pass" else "fail" end),
+            artifact_dir: $scenario_dir,
+            safety: {
+                no_model_cli: true,
+                no_agent_mail_mutation: true,
+                no_beads_mutation: true,
+                no_cargo_build: true
+            },
+            artifacts: {
+                launch_log: $launch_log,
+                status_snapshots: $status_snapshots,
+                resource_samples: $resource_samples
+            }
+        }' > "$output_file"
 }
 
 swarm_sim_capacity_json() {
@@ -375,6 +616,7 @@ swarm_sim_scenario_summary_json() {
     local capacity_file="$6"
     local resource_file="$7"
     local timing_file="$8"
+    local rehearsal_file="$9"
 
     "$jq_bin" -n \
         --slurpfile plan "$launch_plan_file" \
@@ -382,6 +624,7 @@ swarm_sim_scenario_summary_json() {
         --slurpfile capacity "$capacity_file" \
         --slurpfile resource "$resource_file" \
         --slurpfile timing "$timing_file" \
+        --slurpfile rehearsal "$rehearsal_file" \
         --argjson count "$count" \
         --arg scenario_dir "$scenario_dir" \
         '
@@ -392,6 +635,7 @@ swarm_sim_scenario_summary_json() {
         | ($capacity[0] // {}) as $c
         | ($resource[0] // {}) as $r
         | ($timing[0] // {}) as $time
+        | ($rehearsal[0] // {}) as $m
         | [
             check(
                 "launch_plan_shape";
@@ -424,6 +668,11 @@ swarm_sim_scenario_summary_json() {
                 "timing";
                 (if (($time.duration_ms // -1) >= 0) then "pass" else "fail" end);
                 "Scenario timing artifact records a non-negative duration"
+            ),
+            check(
+                "mock_rehearsal";
+                (if ($m.enabled == true) then ($m.status // "fail") else "pass" end);
+                (if ($m.enabled == true) then "Local inert mock workers completed without invoking model CLIs or build commands" else "Mock rehearsal disabled; dry-run simulation only" end)
             )
         ] as $checks
         | {
@@ -433,6 +682,7 @@ swarm_sim_scenario_summary_json() {
                 workload: ($p.profile.workload // "unknown"),
                 artifact_dir: $scenario_dir
             },
+            mock_rehearsal: ($m.enabled // false),
             status: (if any($checks[]; .status == "fail") then "fail" elif any($checks[]; .status == "warn") then "warn" else "pass" end),
             checks: $checks,
             artifacts: {
@@ -441,6 +691,7 @@ swarm_sim_scenario_summary_json() {
                 capacity: ($scenario_dir + "/capacity.json"),
                 resource_sample: ($scenario_dir + "/resource_sample.json"),
                 timing: ($scenario_dir + "/timing.json"),
+                mock_rehearsal: ($scenario_dir + "/mock_rehearsal.json"),
                 summary: ($scenario_dir + "/summary.json")
             }
         }'
@@ -459,6 +710,7 @@ swarm_sim_run_scenario() {
     local capacity_file="$scenario_dir/capacity.json"
     local resource_file="$scenario_dir/resource_sample.json"
     local timing_file="$scenario_dir/timing.json"
+    local rehearsal_file="$scenario_dir/mock_rehearsal.json"
     local summary_file="$scenario_dir/summary.json"
 
     mkdir -p "$scenario_dir"
@@ -468,6 +720,11 @@ swarm_sim_run_scenario() {
     cp "$status_file" "$telemetry_file"
     swarm_sim_capacity_json "$jq_bin" "$count" > "$capacity_file"
     swarm_sim_resource_sample_json "$jq_bin" "$count" "$telemetry_file" "$capacity_file" > "$resource_file"
+    if [[ "$SWARM_SIM_MOCK_REHEARSAL" == true ]]; then
+        swarm_sim_run_mock_rehearsal "$jq_bin" "$count" "$scenario_dir" "$rehearsal_file"
+    else
+        swarm_sim_skipped_mock_rehearsal_json "$jq_bin" "$count" "$scenario_dir" "$rehearsal_file"
+    fi
 
     end_ms="$(swarm_sim_now_ms)"
     duration_ms=$((end_ms - start_ms))
@@ -487,6 +744,7 @@ swarm_sim_run_scenario() {
         "$capacity_file" \
         "$resource_file" \
         "$timing_file" \
+        "$rehearsal_file" \
         > "$summary_file"
     printf '%s\n' "$summary_file"
 }
