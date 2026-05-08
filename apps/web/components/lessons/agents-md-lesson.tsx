@@ -99,9 +99,9 @@ follows below, YOU MUST LISTEN TO ME. I AM IN CHARGE, NOT YOU.
 
 ## Toolchain
 - Language: Rust / TypeScript / Python
-- Build: cargo build --release
-- Test: cargo test
-- Lint: cargo clippy -- -D warnings
+- Build: rch exec -- cargo build --release
+- Test: rch exec -- cargo test
+- Lint: rch exec -- cargo clippy -- -D warnings
 
 ## Architecture
 Brief description of modules, key files, data flow.
@@ -152,9 +152,9 @@ Brief description of modules, key files, data flow.
             code={`## Rust-Specific
 
 ### Build & Test
-cargo build --release    # Always release mode for benchmarks
-cargo test -- --nocapture  # Show println! output in tests
-cargo clippy -- -D warnings  # Treat warnings as errors
+rch exec -- cargo build --release    # Always release mode for benchmarks
+rch exec -- cargo test -- --nocapture  # Show println! output in tests
+rch exec -- cargo clippy -- -D warnings  # Treat warnings as errors
 
 ### Workspace Layout
 \u251C\u2500\u2500 crates/
