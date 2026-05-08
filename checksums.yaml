@@ -1,4 +1,4 @@
-# checksums.yaml - Auto-generated 2026-05-06T16:36:52-04:00
+# checksums.yaml - Auto-generated 2026-05-08T09:16:42+00:00
 # Run: ./scripts/lib/security.sh --update-checksums
 
 installers:
@@ -16,7 +16,7 @@ installers:
 
   br:
     url: "https://raw.githubusercontent.com/Dicklesworthstone/beads_rust/main/install.sh"
-    sha256: "d2d38c36854b3d1fe3d5390dbca696727c1765351bfd49f3566c7215f41ad7c2"
+    sha256: "a7adce0bf84c501a3b6efc513ed89fd91b1d76089f391c10ab34c6b6f53f64b4"
 
   brenner_bot:
     url: "https://raw.githubusercontent.com/Dicklesworthstone/brenner_bot/main/install.sh"
@@ -40,7 +40,7 @@ installers:
 
   cass:
     url: "https://raw.githubusercontent.com/Dicklesworthstone/coding_agent_session_search/main/install.sh"
-    sha256: "da09cef1a59982472cfa8e7aa6eec5c125ec3a9fb35d01d2850b5d5eb8b9ac1e"
+    sha256: "def9d62927e16c81197dd3a6d8f2584f9d095886d88c0a3c10fd1e5674c5ab70"
 
   claude:
     url: "https://claude.ai/install.sh"
@@ -136,7 +136,7 @@ installers:
 
   sbh:
     url: "https://raw.githubusercontent.com/Dicklesworthstone/storage_ballast_helper/main/scripts/install.sh"
-    sha256: "7335e7979ad0e721528dbfc92b9ddad34713f64c20859a4b63eb526302f2b337"
+    sha256: "2147c0de66743392f8258de1290fc078e8ce64e1d642b59fd491b0932c2e0783"
 
   slb:
     url: "https://raw.githubusercontent.com/Dicklesworthstone/simultaneous_launch_button/main/scripts/install.sh"
