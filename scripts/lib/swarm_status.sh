@@ -58,6 +58,17 @@ RCH_WARNINGS=()
 RCH_DURATION_MS=0
 RCH_AVAILABLE=false
 RCH_STATUS_JSON_OK=false
+RCH_QUEUE_JSON_OK=false
+RCH_QUEUE_DEPTH="null"
+RCH_ACTIVE_BUILD_COUNT="null"
+RCH_WORKERS_TOTAL="null"
+RCH_WORKERS_HEALTHY="null"
+RCH_WORKERS_BUSY="null"
+RCH_WORKERS_OFFLINE="null"
+RCH_SLOTS_TOTAL="null"
+RCH_SLOTS_AVAILABLE="null"
+RCH_PRESSURE_WARNING_COUNT="null"
+RCH_STALE_WORKER_COUNT="null"
 
 swarm_status_usage() {
     cat <<'EOF'
@@ -166,6 +177,97 @@ swarm_status_count_json_items() {
     count="$(printf '%s' "$json" | "$jq_bin" -r 'if type == "array" then length else (.total // (.issues | length) // 0) end' 2>/dev/null || true)"
     [[ "$count" =~ ^[0-9]+$ ]] || count="0"
     printf '%s\n' "$count"
+}
+
+swarm_status_parse_rch_status_metrics() {
+    local json="$1"
+    local jq_bin="$2"
+    local metrics=""
+
+    metrics="$(printf '%s' "$json" | "$jq_bin" -r '
+        def root: if type == "object" and (.data | type) == "object" then .data else . end;
+        def daemon:
+            (root.daemon // {}) as $d
+            | if ($d.daemon | type) == "object" then $d.daemon else $d end;
+        def workers: (root.workers // root.daemon.workers // []);
+        def active_builds: (root.active_builds // root.daemon.active_builds // []);
+        def queued_builds: (root.queued_builds // root.daemon.queued_builds // []);
+        def num($v):
+            if ($v | type) == "number" then $v
+            elif (($v | type) == "string" and ($v | test("^[0-9]+([.][0-9]+)?$"))) then ($v | tonumber)
+            else 0 end;
+        def n($v):
+            if ($v | type) == "number" then ($v | floor | tostring)
+            elif (($v | type) == "string" and ($v | test("^[0-9]+$"))) then $v
+            else "null" end;
+        root as $r
+        | daemon as $d
+        | [
+            n($d.workers_total // $r.workers_total // (workers | length)),
+            n($d.workers_healthy // $r.workers_healthy // ([workers[]? | select((.status // "") == "healthy")] | length)),
+            n($r.workers_busy // ([workers[]? | select(num(.used_slots // 0) > 0)] | length)),
+            n($r.workers_offline // ([workers[]? | select((.status // "") | IN("offline", "disabled", "unhealthy", "failed"))] | length)),
+            n($d.slots_total // $r.slots_total),
+            n($d.slots_available // $r.slots_available),
+            n($r.queue_depth // $r.queue.active // (queued_builds | length)),
+            n($r.active_build_count // (active_builds | length)),
+            n([workers[]? | select((.pressure_state // "healthy") != "healthy")] | length),
+            n([workers[]? | select((.pressure_telemetry_fresh == false) or ((.pressure_state // "") | IN("telemetry_gap", "stale")))] | length)
+          ] | @tsv
+    ' 2>/dev/null || true)"
+
+    [[ -n "$metrics" ]] || return 1
+    IFS=$'\t' read -r \
+        RCH_WORKERS_TOTAL \
+        RCH_WORKERS_HEALTHY \
+        RCH_WORKERS_BUSY \
+        RCH_WORKERS_OFFLINE \
+        RCH_SLOTS_TOTAL \
+        RCH_SLOTS_AVAILABLE \
+        RCH_QUEUE_DEPTH \
+        RCH_ACTIVE_BUILD_COUNT \
+        RCH_PRESSURE_WARNING_COUNT \
+        RCH_STALE_WORKER_COUNT <<< "$metrics"
+}
+
+swarm_status_parse_rch_queue_metrics() {
+    local json="$1"
+    local jq_bin="$2"
+    local metrics=""
+    local queue_depth active_count slots_total slots_available workers_total workers_healthy workers_busy workers_offline
+
+    metrics="$(printf '%s' "$json" | "$jq_bin" -r '
+        def root: if type == "object" and (.data | type) == "object" then .data else . end;
+        def active_builds: (root.active_builds // []);
+        def queued_builds: (root.queued_builds // []);
+        def n($v):
+            if ($v | type) == "number" then ($v | floor | tostring)
+            elif (($v | type) == "string" and ($v | test("^[0-9]+$"))) then $v
+            else "null" end;
+        root as $r
+        | [
+            n($r.queue_depth // (queued_builds | length)),
+            n($r.active_build_count // (active_builds | length)),
+            n($r.slots_total),
+            n($r.slots_available),
+            n($r.workers_total),
+            n($r.workers_healthy // $r.workers_available),
+            n($r.workers_busy),
+            n($r.workers_offline)
+          ] | @tsv
+    ' 2>/dev/null || true)"
+
+    [[ -n "$metrics" ]] || return 1
+    IFS=$'\t' read -r queue_depth active_count slots_total slots_available workers_total workers_healthy workers_busy workers_offline <<< "$metrics"
+
+    [[ "$queue_depth" =~ ^[0-9]+$ ]] && RCH_QUEUE_DEPTH="$queue_depth"
+    [[ "$active_count" =~ ^[0-9]+$ ]] && RCH_ACTIVE_BUILD_COUNT="$active_count"
+    [[ "$slots_total" =~ ^[0-9]+$ ]] && RCH_SLOTS_TOTAL="$slots_total"
+    [[ "$slots_available" =~ ^[0-9]+$ ]] && RCH_SLOTS_AVAILABLE="$slots_available"
+    [[ "$workers_total" =~ ^[0-9]+$ ]] && RCH_WORKERS_TOTAL="$workers_total"
+    [[ "$workers_healthy" =~ ^[0-9]+$ ]] && RCH_WORKERS_HEALTHY="$workers_healthy"
+    [[ "$workers_busy" =~ ^[0-9]+$ ]] && RCH_WORKERS_BUSY="$workers_busy"
+    [[ "$workers_offline" =~ ^[0-9]+$ ]] && RCH_WORKERS_OFFLINE="$workers_offline"
 }
 
 swarm_status_collect_host() {
@@ -369,7 +471,9 @@ swarm_status_collect_rch() {
 
     local rch_bin=""
     local output=""
+    local queue_output=""
     local exit_status=0
+    local queue_exit_status=0
     local jq_bin=""
 
     rch_bin="$(swarm_status_binary_path rch 2>/dev/null || true)"
@@ -383,14 +487,42 @@ swarm_status_collect_rch() {
     output="$(swarm_status_run_with_timeout "$SWARM_STATUS_TIMEOUT" "$rch_bin" status --json)" || exit_status=$?
     if [[ $exit_status -eq 0 && -n "$output" ]]; then
         jq_bin="$(swarm_status_binary_path jq 2>/dev/null || true)"
-        if [[ -z "$jq_bin" ]] || printf '%s' "$output" | "$jq_bin" . >/dev/null 2>&1; then
+        if [[ -z "$jq_bin" ]]; then
             RCH_STATUS_JSON_OK=true
-            RCH_STATUS="pass"
+            RCH_WARNINGS+=("jq not found; cannot parse RCH pressure details")
+        elif printf '%s' "$output" | "$jq_bin" . >/dev/null 2>&1; then
+            RCH_STATUS_JSON_OK=true
+            swarm_status_parse_rch_status_metrics "$output" "$jq_bin" || RCH_WARNINGS+=("rch status --json metrics could not be parsed")
         else
             RCH_WARNINGS+=("rch status --json returned invalid JSON")
         fi
     else
         RCH_WARNINGS+=("rch status --json failed or timed out")
+    fi
+
+    if [[ "$RCH_STATUS_JSON_OK" == true && -n "$jq_bin" ]]; then
+        queue_output="$(swarm_status_run_with_timeout "$SWARM_STATUS_TIMEOUT" "$rch_bin" queue --json)" || queue_exit_status=$?
+        if [[ $queue_exit_status -eq 0 && -n "$queue_output" ]]; then
+            if printf '%s' "$queue_output" | "$jq_bin" . >/dev/null 2>&1; then
+                RCH_QUEUE_JSON_OK=true
+                swarm_status_parse_rch_queue_metrics "$queue_output" "$jq_bin" || RCH_WARNINGS+=("rch queue --json metrics could not be parsed")
+            else
+                RCH_WARNINGS+=("rch queue --json returned invalid JSON")
+            fi
+        else
+            RCH_WARNINGS+=("rch queue --json failed or timed out")
+        fi
+    fi
+
+    if [[ "$RCH_PRESSURE_WARNING_COUNT" =~ ^[0-9]+$ ]] && (( RCH_PRESSURE_WARNING_COUNT > 0 )); then
+        RCH_WARNINGS+=("rch reports $RCH_PRESSURE_WARNING_COUNT worker(s) with elevated pressure")
+    fi
+    if [[ "$RCH_STALE_WORKER_COUNT" =~ ^[0-9]+$ ]] && (( RCH_STALE_WORKER_COUNT > 0 )); then
+        RCH_WARNINGS+=("rch reports $RCH_STALE_WORKER_COUNT worker(s) with stale pressure telemetry")
+    fi
+
+    if [[ "$RCH_STATUS_JSON_OK" == true && ${#RCH_WARNINGS[@]} -eq 0 ]]; then
+        RCH_STATUS="pass"
     fi
     RCH_DURATION_MS="$(swarm_status_duration_ms "$start_ms")"
 }
@@ -472,6 +604,17 @@ swarm_status_emit_json() {
         --argjson rch_duration_ms "$(swarm_status_json_number "$RCH_DURATION_MS")" \
         --argjson rch_available "$RCH_AVAILABLE" \
         --argjson rch_status_json_ok "$RCH_STATUS_JSON_OK" \
+        --argjson rch_queue_json_ok "$RCH_QUEUE_JSON_OK" \
+        --argjson rch_queue_depth "$(swarm_status_json_number "$RCH_QUEUE_DEPTH")" \
+        --argjson rch_active_build_count "$(swarm_status_json_number "$RCH_ACTIVE_BUILD_COUNT")" \
+        --argjson rch_workers_total "$(swarm_status_json_number "$RCH_WORKERS_TOTAL")" \
+        --argjson rch_workers_healthy "$(swarm_status_json_number "$RCH_WORKERS_HEALTHY")" \
+        --argjson rch_workers_busy "$(swarm_status_json_number "$RCH_WORKERS_BUSY")" \
+        --argjson rch_workers_offline "$(swarm_status_json_number "$RCH_WORKERS_OFFLINE")" \
+        --argjson rch_slots_total "$(swarm_status_json_number "$RCH_SLOTS_TOTAL")" \
+        --argjson rch_slots_available "$(swarm_status_json_number "$RCH_SLOTS_AVAILABLE")" \
+        --argjson rch_pressure_warning_count "$(swarm_status_json_number "$RCH_PRESSURE_WARNING_COUNT")" \
+        --argjson rch_stale_worker_count "$(swarm_status_json_number "$RCH_STALE_WORKER_COUNT")" \
         '{
             schema_version: 1,
             generated_at: $generated_at,
@@ -525,6 +668,17 @@ swarm_status_emit_json() {
                     status: $rch_status,
                     available: $rch_available,
                     status_json_ok: $rch_status_json_ok,
+                    queue_json_ok: $rch_queue_json_ok,
+                    queue_depth: $rch_queue_depth,
+                    active_build_count: $rch_active_build_count,
+                    workers_total: $rch_workers_total,
+                    workers_healthy: $rch_workers_healthy,
+                    workers_busy: $rch_workers_busy,
+                    workers_offline: $rch_workers_offline,
+                    slots_total: $rch_slots_total,
+                    slots_available: $rch_slots_available,
+                    pressure_warning_count: $rch_pressure_warning_count,
+                    stale_worker_count: $rch_stale_worker_count,
                     duration_ms: $rch_duration_ms,
                     warnings: $rch_warnings
                 }
@@ -540,7 +694,7 @@ swarm_status_emit_human() {
     echo "Agent Mail: $AGENT_MAIL_STATUS"
     echo "Beads: $BEADS_STATUS (ready=${BEADS_READY_COUNT}, in_progress=${BEADS_IN_PROGRESS_COUNT}, open=${BEADS_OPEN_COUNT})"
     echo "bv: $BV_STATUS"
-    echo "RCH: $RCH_STATUS"
+    echo "RCH: $RCH_STATUS (queue=${RCH_QUEUE_DEPTH}, active=${RCH_ACTIVE_BUILD_COUNT}, workers=${RCH_WORKERS_HEALTHY}/${RCH_WORKERS_TOTAL}, busy=${RCH_WORKERS_BUSY}, slots=${RCH_SLOTS_AVAILABLE}/${RCH_SLOTS_TOTAL})"
     if [[ ${#SWARM_STATUS_WARNINGS[@]} -gt 0 ]]; then
         echo ""
         echo "Warnings:"
