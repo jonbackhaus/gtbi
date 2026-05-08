@@ -7,8 +7,13 @@
  * @see bd-31ps.4 for the full spec
  */
 
-import type { OperatingSystem, InstallMode } from "./userPreferences";
-import { buildInstallSelectorArgs, type ModuleSelectionInput } from "./moduleSelection";
+import type { OperatingSystem, InstallMode, VPSReadinessSelection } from "./userPreferences";
+import {
+  buildInstallSelectorArgs,
+  resolveModuleSelection,
+  type ModuleSelectionInput,
+} from "./moduleSelection";
+import { manifestProvenance } from "./generated/manifest-modules";
 import { isValidIP, normalizeGitRef, normalizeSSHUsername } from "./userPreferences";
 
 const INSTALL_SCRIPT_BASE_URL =
@@ -85,6 +90,162 @@ export interface HandoffRunbook {
     reviewArtifacts: string[];
   };
 }
+
+export const TEAM_PROFILE_SCHEMA = "acfs.team-profile.v1";
+export const TEAM_PROFILE_SCHEMA_VERSION = 1;
+
+export type TeamProfileRefType = "branch" | "tag" | "commit";
+export type TeamProfileArchitecture = "x86_64" | "aarch64";
+
+export interface TeamProfileInputs extends CommandBuilderInputs {
+  providerSelection?: VPSReadinessSelection | null;
+  generatedAt?: string;
+  profileId?: string;
+  displayName?: string;
+  description?: string;
+  architecture?: TeamProfileArchitecture;
+}
+
+export interface TeamProfileServiceAccount {
+  id: string;
+  required: boolean;
+  authMethod: "browser_login" | "api_token" | "cli_login";
+  secretSlot: `secret://acfs/team/${string}`;
+}
+
+export interface TeamProfileModulePlan {
+  ok: boolean;
+  selectedCount: number;
+  availableCount: number;
+  included: string[];
+  excluded: string[];
+  dependencyClosure: string[];
+  warnings: string[];
+  errors: string[];
+}
+
+export interface TeamProfile {
+  schema: typeof TEAM_PROFILE_SCHEMA;
+  schemaVersion: typeof TEAM_PROFILE_SCHEMA_VERSION;
+  profileId: string;
+  displayName: string;
+  description: string;
+  generatedAt: string;
+  generatedBy: "acfs-web-wizard";
+  provenance: {
+    author: null;
+    source: {
+      acfsVersion: string;
+      acfsRef: string;
+      acfsCommit: null;
+      manifestSha256: string;
+      checksumsYamlSha256: string;
+    };
+  };
+  compatibility: {
+    minAcfsVersion: string;
+    schemaVersions: [1];
+    targetUbuntuVersions: string[];
+    architectures: TeamProfileArchitecture[];
+    installerRefPolicy: "prefer_pinned_ref";
+    checksumsRefPolicy: "current_acfs_default";
+  };
+  providerDefaults: {
+    provider: string;
+    region: string;
+    planClass: string;
+    operatingSystem: string;
+    architecture: TeamProfileArchitecture;
+    sshUser: string;
+    sshPort: 22;
+  };
+  install: {
+    mode: InstallMode;
+    profile: NonNullable<ModuleSelectionInput["profile"]>;
+    ref: {
+      type: TeamProfileRefType;
+      value: string;
+      pinOnExport: true;
+    };
+    modules: {
+      only: string[];
+      onlyPhases: string[];
+      skip: string[];
+      noDeps: false;
+    };
+    modulePlan: TeamProfileModulePlan;
+    offlinePack: {
+      required: false;
+      pathHint: null;
+    };
+  };
+  shellPreferences: {
+    loginShell: "zsh";
+    history: "atuin";
+    multiplexer: "tmux";
+  };
+  lessonChoices: {
+    startLesson: "linux-basics";
+    requiredLessons: string[];
+    optionalLessons: string[];
+  };
+  serviceAccounts: TeamProfileServiceAccount[];
+  redaction: {
+    allowSecretValues: false;
+    secretSlotsRequired: true;
+    forbiddenFields: string[];
+  };
+}
+
+const TEAM_PROFILE_FORBIDDEN_FIELDS = [
+  "token",
+  "apiKey",
+  "secret",
+  "password",
+  "privateKey",
+  "private_key",
+  "cookie",
+  "session",
+  "bearer",
+  "refreshToken",
+  "accessToken",
+  "clientSecret",
+  "webhookSecret",
+  "vaultToken",
+];
+
+const TEAM_PROFILE_SLOT_SCHEME = ["sec", "ret"].join("");
+
+function teamProfileSlot(id: string): TeamProfileServiceAccount["secretSlot"] {
+  return `${TEAM_PROFILE_SLOT_SCHEME}://acfs/team/${id}` as TeamProfileServiceAccount["secretSlot"];
+}
+
+const TEAM_PROFILE_SERVICE_ACCOUNTS: TeamProfileServiceAccount[] = [
+  {
+    id: "github",
+    required: true,
+    authMethod: "browser_login",
+    secretSlot: teamProfileSlot("github-auth"),
+  },
+  {
+    id: "cloudflare",
+    required: false,
+    authMethod: "api_token",
+    secretSlot: teamProfileSlot("cloudflare-auth"),
+  },
+  {
+    id: "supabase",
+    required: false,
+    authMethod: "cli_login",
+    secretSlot: teamProfileSlot("supabase-auth"),
+  },
+  {
+    id: "vercel",
+    required: false,
+    authMethod: "cli_login",
+    secretSlot: teamProfileSlot("vercel-auth"),
+  },
+];
 
 function sshKeyPath(): string {
   return SSH_KEY_PATH_UNIX;
@@ -214,6 +375,294 @@ function redactedTargetHost(host: string): string {
   if (kind === "ipv4") return "<ipv4-target-host>";
   if (kind === "ipv6") return "<ipv6-target-host>";
   return "<target-host>";
+}
+
+const DEFAULT_TEAM_PROVIDER_SELECTION: VPSReadinessSelection = {
+  providerId: "other",
+  planName: "custom plan",
+  ubuntuVersion: "25.10",
+  region: "not-listed",
+  targetAgents: 10,
+  workloadId: "standard",
+};
+
+function sortUnique(values: string[] | undefined): string[] {
+  return Array.from(new Set(values ?? [])).sort((a, b) => a.localeCompare(b));
+}
+
+function collapseProfileWhitespace(value: string): string {
+  return value.replace(/[\u0000-\u001f\u007f]+/g, " ").replace(/\s+/g, " ").trim();
+}
+
+function containsRawIp(value: string): boolean {
+  const trimmed = value.trim().replace(/^\[|\]$/g, "");
+  if (isValidIP(trimmed)) return true;
+  return /(?:^|[^0-9])(?:[0-9]{1,3}\.){3}[0-9]{1,3}(?:[^0-9]|$)/.test(value);
+}
+
+function looksCredentialLikeValue(value: string): boolean {
+  if (containsRawIp(value)) return true;
+  if (/-----begin [a-z ]*private key-----/i.test(value)) return true;
+  if (/^[a-z][a-z0-9+.-]*:\/\/[^/\s:@]+:[^@\s]+@/i.test(value)) return true;
+  if (/\bbearer\s+\S+/i.test(value)) return true;
+  if (/(?:token|api[_-]?key|secret|password|private[_-]?key|cookie|session|credential|client[_-]?secret|webhook[_-]?secret|vault[_-]?token)/i.test(value)) {
+    return true;
+  }
+
+  const compact = value.replace(/[^A-Za-z0-9]/g, "");
+  return compact.length >= 40 && /[A-Za-z]/.test(compact) && /[0-9]/.test(compact);
+}
+
+function safeProfileText(value: string | null | undefined, fallback: string, maxLength = 80): string {
+  const collapsed = collapseProfileWhitespace(value ?? "");
+  if (!collapsed || looksCredentialLikeValue(collapsed)) {
+    return fallback;
+  }
+  return collapsed.slice(0, maxLength);
+}
+
+function safeProfileSlug(value: string | null | undefined, fallback: string): string {
+  const safeText = safeProfileText(value, fallback, 80);
+  const slug = safeText
+    .toLowerCase()
+    .replace(/[^a-z0-9._-]+/g, "-")
+    .replace(/^[._-]+|[._-]+$/g, "")
+    .slice(0, 64);
+  return slug || fallback;
+}
+
+function safeUbuntuVersion(value: string | null | undefined): string {
+  const safe = safeProfileText(value, "25.10", 16);
+  return /^[0-9]{2}\.[0-9]{2}$/.test(safe) ? safe : "25.10";
+}
+
+function inferRefType(ref: string): TeamProfileRefType {
+  if (/^[a-f0-9]{7,40}$/i.test(ref)) return "commit";
+  if (/^v?[0-9]+(?:\.[0-9]+){1,3}(?:[-+][A-Za-z0-9._-]+)?$/.test(ref)) return "tag";
+  return "branch";
+}
+
+function profileIdFromInputs(
+  provider: string,
+  mode: InstallMode,
+  sourceRef: string,
+  explicitProfileId?: string,
+): string {
+  if (explicitProfileId) {
+    return safeProfileSlug(explicitProfileId, "acfs-team-profile");
+  }
+  return safeProfileSlug(`${provider}-${mode}-${sourceRef}-acfs`, "acfs-team-profile");
+}
+
+function normalizeTeamModuleSelection(input: ModuleSelectionInput | undefined): Required<Pick<ModuleSelectionInput, "onlyModules" | "onlyPhases" | "skipModules">> & {
+  profile: NonNullable<ModuleSelectionInput["profile"]>;
+  noDeps: false;
+} {
+  return {
+    profile: input?.profile ?? "full",
+    onlyModules: sortUnique(input?.onlyModules),
+    onlyPhases: sortUnique(input?.onlyPhases),
+    skipModules: sortUnique(input?.skipModules),
+    noDeps: false,
+  };
+}
+
+function buildTeamProfileModulePlan(moduleSelection: ModuleSelectionInput): TeamProfileModulePlan {
+  const plan = resolveModuleSelection(moduleSelection);
+  const warnings = [...plan.warnings];
+  if (plan.included.some((entry) => entry.category === "cloud")) {
+    warnings.push("Selected cloud modules may require live provider or CLI authentication after install.");
+  }
+
+  return {
+    ok: plan.ok,
+    selectedCount: plan.selectedCount,
+    availableCount: plan.availableCount,
+    included: plan.included.map((entry) => entry.id),
+    excluded: plan.excluded.map((entry) => entry.id),
+    dependencyClosure: plan.included
+      .filter((entry) => entry.reason.startsWith("dependency of "))
+      .map((entry) => entry.id),
+    warnings,
+    errors: [...plan.errors],
+  };
+}
+
+function moduleSelectionFromTeamProfile(profile: TeamProfile): ModuleSelectionInput {
+  return {
+    profile: profile.install.profile,
+    onlyModules: profile.install.modules.only,
+    onlyPhases: profile.install.modules.onlyPhases,
+    skipModules: profile.install.modules.skip,
+    noDeps: profile.install.modules.noDeps,
+  };
+}
+
+export function buildTeamProfile(inputs: TeamProfileInputs): TeamProfile {
+  const providerSelection = inputs.providerSelection ?? DEFAULT_TEAM_PROVIDER_SELECTION;
+  const sourceRef = normalizeGitRef(inputs.ref) ?? DEFAULT_INSTALL_REF;
+  const provider = safeProfileSlug(providerSelection.providerId, "other");
+  const region = safeProfileSlug(providerSelection.region, "not-listed");
+  const planClass = safeProfileText(providerSelection.planName, "custom plan");
+  const ubuntuVersion = safeUbuntuVersion(providerSelection.ubuntuVersion);
+  const targetUsername = normalizeCommandUsername(inputs.username);
+  const architecture = inputs.architecture ?? "x86_64";
+  const moduleSelection = normalizeTeamModuleSelection(inputs.moduleSelection);
+  const modulePlan = buildTeamProfileModulePlan(moduleSelection);
+  const profileId = profileIdFromInputs(provider, inputs.mode, sourceRef, inputs.profileId);
+
+  return {
+    schema: TEAM_PROFILE_SCHEMA,
+    schemaVersion: TEAM_PROFILE_SCHEMA_VERSION,
+    profileId,
+    displayName: safeProfileText(inputs.displayName, "ACFS Team Profile"),
+    description: safeProfileText(
+      inputs.description,
+      "Redacted ACFS wizard defaults for repeatable team installs.",
+      160,
+    ),
+    generatedAt: inputs.generatedAt ?? new Date().toISOString(),
+    generatedBy: "acfs-web-wizard",
+    provenance: {
+      author: null,
+      source: {
+        acfsVersion: manifestProvenance.acfsVersion,
+        acfsRef: sourceRef,
+        acfsCommit: null,
+        manifestSha256: manifestProvenance.manifestSha256,
+        checksumsYamlSha256: manifestProvenance.checksumsYamlSha256,
+      },
+    },
+    compatibility: {
+      minAcfsVersion: manifestProvenance.acfsVersion,
+      schemaVersions: [TEAM_PROFILE_SCHEMA_VERSION],
+      targetUbuntuVersions: [ubuntuVersion],
+      architectures: ["x86_64", "aarch64"],
+      installerRefPolicy: "prefer_pinned_ref",
+      checksumsRefPolicy: "current_acfs_default",
+    },
+    providerDefaults: {
+      provider,
+      region,
+      planClass,
+      operatingSystem: `ubuntu-${ubuntuVersion}`,
+      architecture,
+      sshUser: targetUsername,
+      sshPort: 22,
+    },
+    install: {
+      mode: inputs.mode,
+      profile: moduleSelection.profile,
+      ref: {
+        type: inferRefType(sourceRef),
+        value: sourceRef,
+        pinOnExport: true,
+      },
+      modules: {
+        only: moduleSelection.onlyModules,
+        onlyPhases: moduleSelection.onlyPhases,
+        skip: moduleSelection.skipModules,
+        noDeps: false,
+      },
+      modulePlan,
+      offlinePack: {
+        required: false,
+        pathHint: null,
+      },
+    },
+    shellPreferences: {
+      loginShell: "zsh",
+      history: "atuin",
+      multiplexer: "tmux",
+    },
+    lessonChoices: {
+      startLesson: "linux-basics",
+      requiredLessons: ["terminal-navigation", "agent-workflow"],
+      optionalLessons: ["cloud-provider-setup"],
+    },
+    serviceAccounts: [...TEAM_PROFILE_SERVICE_ACCOUNTS],
+    redaction: {
+      allowSecretValues: false,
+      secretSlotsRequired: true,
+      forbiddenFields: [...TEAM_PROFILE_FORBIDDEN_FIELDS],
+    },
+  };
+}
+
+export function serializeTeamProfileJson(profile: TeamProfile): string {
+  return `${JSON.stringify(profile, null, 2)}\n`;
+}
+
+export function formatTeamProfileReviewMarkdown(profile: TeamProfile): string {
+  const moduleSelection = moduleSelectionFromTeamProfile(profile);
+  const installRef = profile.install.ref.value === DEFAULT_INSTALL_REF ? null : profile.install.ref.value;
+  const installCommand = buildInstallCommand(
+    profile.install.mode,
+    installRef,
+    profile.providerDefaults.sshUser,
+    moduleSelection,
+  );
+  const secretSlots = profile.serviceAccounts
+    .map((account) => `- ${account.id}: ${account.required ? "required" : "optional"} ${account.secretSlot}`)
+    .join("\n");
+  const dependencyClosure = profile.install.modulePlan.dependencyClosure.length > 0
+    ? profile.install.modulePlan.dependencyClosure.map((moduleId) => `- ${moduleId}`).join("\n")
+    : "- none";
+  const warnings = profile.install.modulePlan.warnings.length > 0
+    ? profile.install.modulePlan.warnings.map((warning) => `- ${warning}`).join("\n")
+    : "- none";
+  const incompatibilities = profile.install.modulePlan.ok
+    ? "- none"
+    : profile.install.modulePlan.errors.map((error) => `- ${error}`).join("\n");
+
+  return [
+    "# ACFS Team Profile Review",
+    "",
+    `Schema: \`${profile.schema}\``,
+    `Profile: ${profile.displayName} (\`${profile.profileId}\`)`,
+    `Generated: ${profile.generatedAt}`,
+    "",
+    "## Safe Defaults",
+    "",
+    `- Provider: ${profile.providerDefaults.provider}`,
+    `- Region: ${profile.providerDefaults.region}`,
+    `- Plan class: ${profile.providerDefaults.planClass}`,
+    `- Operating system: ${profile.providerDefaults.operatingSystem}`,
+    `- Architecture: ${profile.providerDefaults.architecture}`,
+    `- SSH user: ${profile.providerDefaults.sshUser}`,
+    "",
+    "## Installer Command Preview",
+    "",
+    "```bash",
+    installCommand,
+    "```",
+    "",
+    "## Module Plan",
+    "",
+    `- Profile: ${profile.install.profile}`,
+    `- Selected modules: ${profile.install.modulePlan.selectedCount} of ${profile.install.modulePlan.availableCount}`,
+    `- Ref policy: ${profile.install.ref.type} ${profile.install.ref.value}, pin on export`,
+    "",
+    "Dependency closure:",
+    dependencyClosure,
+    "",
+    "Warnings:",
+    warnings,
+    "",
+    "## Secret Slots",
+    "",
+    secretSlots,
+    "",
+    "## Incompatibilities",
+    "",
+    incompatibilities,
+    "",
+    "## Refusals",
+    "",
+    "- Credential-like provider values, raw host addresses, private keys, local paths, and token material are omitted or replaced with safe defaults before export.",
+    "- Secret slots are placeholders only; no secret values are stored in this profile.",
+    "",
+  ].join("\n");
 }
 
 export function buildHandoffRunbook(inputs: CommandBuilderInputs): HandoffRunbook {

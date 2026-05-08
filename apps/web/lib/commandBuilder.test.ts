@@ -3,9 +3,12 @@ import {
   buildCommands,
   buildHandoffRunbook,
   buildInstallCommand,
+  buildTeamProfile,
   buildShareURL,
   formatHandoffRunbookMarkdown,
+  formatTeamProfileReviewMarkdown,
   serializeHandoffRunbookJson,
+  serializeTeamProfileJson,
 } from "./commandBuilder";
 
 describe("buildInstallCommand", () => {
@@ -245,6 +248,162 @@ describe("buildHandoffRunbook", () => {
 
       expectSafeHandoffArtifacts([json, markdown, ...runbook.recoveryCommands.map((command) => command.command)], scenario.rawHost);
     }
+  });
+});
+
+describe("buildTeamProfile", () => {
+  const generatedAt = "2026-05-08T00:00:00Z";
+
+  test("exports normal wizard state as a deterministic redacted team profile", () => {
+    const profile = buildTeamProfile({
+      ip: "203.0.113.42",
+      os: "mac",
+      username: "dev-user",
+      mode: "safe",
+      ref: "v1.2.3",
+      generatedAt,
+      providerSelection: {
+        providerId: "contabo",
+        planName: "Cloud VPS 50",
+        ubuntuVersion: "25.10",
+        region: "us",
+        targetAgents: 10,
+        workloadId: "standard",
+      },
+      moduleSelection: {
+        profile: "cloud-only",
+      },
+    });
+    const json = serializeTeamProfileJson(profile);
+    const review = formatTeamProfileReviewMarkdown(profile);
+
+    expect(profile.schema).toBe("acfs.team-profile.v1");
+    expect(profile.schemaVersion).toBe(1);
+    expect(profile.profileId).toBe("contabo-safe-v1.2.3-acfs");
+    expect(profile.providerDefaults).toMatchObject({
+      provider: "contabo",
+      region: "us",
+      planClass: "Cloud VPS 50",
+      operatingSystem: "ubuntu-25.10",
+      sshUser: "dev-user",
+      sshPort: 22,
+    });
+    expect(profile.install.profile).toBe("cloud-only");
+    expect(profile.install.ref).toEqual({
+      type: "tag",
+      value: "v1.2.3",
+      pinOnExport: true,
+    });
+    expect(profile.install.modulePlan.included).toContain("cloud.vercel");
+    expect(profile.install.modulePlan.warnings).toContain(
+      "Selected cloud modules may require live provider or CLI authentication after install.",
+    );
+    expect(review).toContain("# ACFS Team Profile Review");
+    expect(review).toContain('--only "cloud.wrangler"');
+    expect(json).not.toContain("203.0.113.42");
+    expect(review).not.toContain("203.0.113.42");
+  });
+
+  test("falls back to safe defaults for empty or malformed wizard state", () => {
+    const profile = buildTeamProfile({
+      ip: "",
+      os: "windows",
+      username: "Bad User",
+      mode: "vibe",
+      ref: "bad ref",
+      generatedAt,
+      providerSelection: null,
+    });
+    const json = serializeTeamProfileJson(profile);
+
+    expect(profile.profileId).toBe("other-vibe-main-acfs");
+    expect(profile.providerDefaults.provider).toBe("other");
+    expect(profile.providerDefaults.region).toBe("not-listed");
+    expect(profile.providerDefaults.planClass).toBe("custom plan");
+    expect(profile.providerDefaults.operatingSystem).toBe("ubuntu-25.10");
+    expect(profile.providerDefaults.sshUser).toBe("ubuntu");
+    expect(profile.install.ref.value).toBe("main");
+    expect(profile.install.ref.type).toBe("branch");
+    expect(profile.install.modules.noDeps).toBe(false);
+    expect(profile.install.modulePlan.ok).toBe(true);
+    expect(json).not.toContain("Bad User");
+    expect(json).not.toContain("bad ref");
+  });
+
+  test("redacts credential-looking provider values before serialization", () => {
+    const profile = buildTeamProfile({
+      ip: "198.51.100.10",
+      os: "linux",
+      username: "admin",
+      mode: "safe",
+      ref: null,
+      generatedAt,
+      providerSelection: {
+        providerId: "Bearer <credential>",
+        planName: "postgres://<user>:<password>@example.invalid/db",
+        ubuntuVersion: "25.10",
+        region: "203.0.113.42",
+        targetAgents: 4,
+        workloadId: "light",
+      },
+    });
+    const json = serializeTeamProfileJson(profile);
+
+    expect(profile.providerDefaults.provider).toBe("other");
+    expect(profile.providerDefaults.region).toBe("not-listed");
+    expect(profile.providerDefaults.planClass).toBe("custom plan");
+    expect(json).not.toContain("Bearer");
+    expect(json).not.toContain("postgres://");
+    expect(json).not.toContain("203.0.113.42");
+    expect(json).not.toContain("198.51.100.10");
+  });
+
+  test("keeps safe unknown provider choices without weakening the schema", () => {
+    const profile = buildTeamProfile({
+      ip: "",
+      os: "mac",
+      username: "ubuntu",
+      mode: "vibe",
+      ref: "feature/team-profiles",
+      generatedAt,
+      providerSelection: {
+        providerId: "Internal Dev Provider",
+        planName: "Prototype Plan",
+        ubuntuVersion: "24.04",
+        region: "eu-central-1",
+        targetAgents: 6,
+        workloadId: "standard",
+      },
+    });
+
+    expect(profile.providerDefaults.provider).toBe("internal-dev-provider");
+    expect(profile.providerDefaults.region).toBe("eu-central-1");
+    expect(profile.providerDefaults.planClass).toBe("Prototype Plan");
+    expect(profile.compatibility.targetUbuntuVersions).toEqual(["24.04"]);
+    expect(profile.install.ref).toEqual({
+      type: "branch",
+      value: "feature/team-profiles",
+      pinOnExport: true,
+    });
+  });
+
+  test("emits v1 schema provenance and secret-slot metadata only", () => {
+    const profile = buildTeamProfile({
+      ip: "",
+      os: "linux",
+      username: "ubuntu",
+      mode: "vibe",
+      ref: null,
+      generatedAt,
+    });
+
+    expect(profile.schema).toBe("acfs.team-profile.v1");
+    expect(profile.schemaVersion).toBe(1);
+    expect(profile.provenance.source.manifestSha256).toMatch(/^[a-f0-9]{64}$/);
+    expect(profile.provenance.source.checksumsYamlSha256).toMatch(/^[a-f0-9]{64}$/);
+    expect(profile.redaction.allowSecretValues).toBe(false);
+    expect(profile.redaction.secretSlotsRequired).toBe(true);
+    expect(profile.serviceAccounts.every((account) => account.secretSlot.startsWith("secret://acfs/team/"))).toBe(true);
   });
 });
 

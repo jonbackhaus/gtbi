@@ -33,9 +33,12 @@ import { withCurrentSearch } from "@/lib/utils";
 import {
   buildHandoffRunbook,
   buildInstallCommand,
+  buildTeamProfile,
   formatHandoffRunbookMarkdown,
+  formatTeamProfileReviewMarkdown,
   formatSshTarget,
   serializeHandoffRunbookJson,
+  serializeTeamProfileJson,
 } from "@/lib/commandBuilder";
 import {
   buildProviderProvisioningPacket,
@@ -208,6 +211,17 @@ export default function RunInstallerPage() {
       vpsReadinessSelection,
     ],
   );
+  const teamProfile = useMemo(
+    () => buildTeamProfile({
+      ip: effectiveVpsIP,
+      os: effectiveUserOS,
+      username: effectiveSSHUsername,
+      mode: effectiveInstallMode,
+      ref: effectiveRef,
+      providerSelection: vpsReadinessSelection ?? DEFAULT_VPS_READINESS_SELECTION,
+    }),
+    [effectiveVpsIP, effectiveUserOS, effectiveSSHUsername, effectiveInstallMode, effectiveRef, vpsReadinessSelection],
+  );
 
   // Analytics tracking for this wizard step
   const { markComplete } = useWizardAnalytics({
@@ -260,6 +274,22 @@ export default function RunInstallerPage() {
       "application/json",
     );
   }, [providerProvisioningPacket]);
+  const handleTeamProfileDownload = useCallback((format: "json" | "markdown") => {
+    if (format === "json") {
+      downloadTextFile(
+        "acfs-team-profile.json",
+        serializeTeamProfileJson(teamProfile),
+        "application/json",
+      );
+      return;
+    }
+
+    downloadTextFile(
+      "acfs-team-profile-review.md",
+      formatTeamProfileReviewMarkdown(teamProfile),
+      "text/markdown",
+    );
+  }, [teamProfile]);
 
   if (!ready || vpsIP === null) {
     return (
@@ -420,9 +450,9 @@ export default function RunInstallerPage() {
         <div className="space-y-3">
           <p className="text-sm">
             Download local artifacts with the exact installer command, redacted SSH recovery commands,
-            provider readiness choices, and support-bundle reference.
+            provider readiness choices, team profile defaults, and support-bundle reference.
           </p>
-          <div className="grid gap-2 sm:grid-cols-3">
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
             <Button
               type="button"
               variant="outline"
@@ -453,9 +483,29 @@ export default function RunInstallerPage() {
               <FileJson className="h-4 w-4" />
               Provider Packet
             </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className="justify-start gap-2"
+              onClick={() => handleTeamProfileDownload("json")}
+              aria-label="Download redacted team profile JSON"
+            >
+              <FileJson className="h-4 w-4" />
+              Team Profile
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className="justify-start gap-2"
+              onClick={() => handleTeamProfileDownload("markdown")}
+              aria-label="Download team profile review"
+            >
+              <FileText className="h-4 w-4" />
+              Profile Review
+            </Button>
           </div>
           <p className="text-xs text-muted-foreground">
-            Host addresses are redacted in the artifact; keep the real VPS address in your provider console or password manager.
+            Host addresses and provider credentials are redacted; keep the real values in your provider console or password manager.
           </p>
         </div>
       </AlertCard>

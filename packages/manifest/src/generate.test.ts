@@ -883,6 +883,13 @@ describe('manifest-modules.ts structure', () => {
     expect(content).toContain('optional: boolean;');
   });
 
+  test('exports manifest and checksum provenance for team profile exports', () => {
+    expect(content).toContain('export interface ManifestProvenanceMetadata');
+    expect(content).toContain('export const manifestProvenance = {');
+    expect(content).toMatch(/manifestSha256: "[a-f0-9]{64}"/);
+    expect(content).toMatch(/checksumsYamlSha256: "[a-f0-9]{64}"/);
+  });
+
   test('exports all module metadata and selection profiles', () => {
     expect(content).toContain('export const manifestModules: ManifestModuleMetadata[] = [');
     expect(content).toContain('export const manifestSelectionProfiles: ManifestSelectionProfile[] = [');
@@ -1020,8 +1027,8 @@ describe('manifest-web-index.ts barrel exports', () => {
   });
 
   test('re-exports manifest modules and selection profiles', () => {
-    expect(content).toContain("export { manifestModules, manifestSelectionProfiles } from './manifest-modules'");
-    expect(content).toContain("export type { ManifestModuleMetadata, ManifestSelectionProfile, ManifestSelectionProfileId } from './manifest-modules'");
+    expect(content).toContain("export { manifestModules, manifestSelectionProfiles, manifestProvenance } from './manifest-modules'");
+    expect(content).toContain("export type { ManifestModuleMetadata, ManifestSelectionProfile, ManifestSelectionProfileId, ManifestProvenanceMetadata } from './manifest-modules'");
   });
 
   test('re-exports manifestTools', () => {

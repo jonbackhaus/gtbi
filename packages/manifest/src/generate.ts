@@ -958,9 +958,27 @@ function joinList(values?: string[]): string {
   return values.join(',');
 }
 
-function computeManifestSha256(): string {
-  const content = readFileSync(MANIFEST_PATH);
+function computeFileSha256(path: string): string {
+  const content = readFileSync(path);
   return createHash('sha256').update(content).digest('hex');
+}
+
+function computeManifestSha256(): string {
+  return computeFileSha256(MANIFEST_PATH);
+}
+
+function computeChecksumsYamlSha256(): string {
+  return computeFileSha256(CHECKSUMS_PATH);
+}
+
+function readProjectVersion(): string {
+  const versionPath = join(PROJECT_ROOT, 'VERSION');
+  if (!existsSync(versionPath)) {
+    return '0.0.0-dev';
+  }
+
+  const version = readFileSync(versionPath, 'utf-8').trim();
+  return version || '0.0.0-dev';
 }
 
 function sortModulesByPhaseAndDependency(manifest: Manifest): Module[] {
@@ -2203,6 +2221,9 @@ function getWebVisibleModules(manifest: Manifest): Module[] {
  */
 function generateWebModules(manifest: Manifest): string {
   const modules = sortModulesByPhaseAndDependency(manifest);
+  const acfsVersion = readProjectVersion();
+  const manifestSha256 = computeManifestSha256();
+  const checksumsYamlSha256 = computeChecksumsYamlSha256();
   const lines: string[] = [TS_HEADER];
 
   lines.push('export interface ManifestModuleMetadata {');
@@ -2227,6 +2248,20 @@ function generateWebModules(manifest: Manifest): string {
   lines.push('  onlyModules: string[];');
   lines.push('  onlyPhases: string[];');
   lines.push('}');
+  lines.push('');
+
+  lines.push('export interface ManifestProvenanceMetadata {');
+  lines.push('  acfsVersion: string;');
+  lines.push('  manifestSha256: string;');
+  lines.push('  checksumsYamlSha256: string;');
+  lines.push('}');
+  lines.push('');
+
+  lines.push('export const manifestProvenance = {');
+  lines.push(`  acfsVersion: "${escapeTs(acfsVersion)}",`);
+  lines.push(`  manifestSha256: "${manifestSha256}",`);
+  lines.push(`  checksumsYamlSha256: "${checksumsYamlSha256}",`);
+  lines.push('} as const satisfies ManifestProvenanceMetadata;');
   lines.push('');
 
   lines.push('export const manifestModules: ManifestModuleMetadata[] = [');
@@ -2512,8 +2547,8 @@ function generateWebLessonsIndex(manifest: Manifest): string {
 function generateWebIndex(): string {
   const lines: string[] = [TS_HEADER];
 
-  lines.push("export { manifestModules, manifestSelectionProfiles } from './manifest-modules';");
-  lines.push("export type { ManifestModuleMetadata, ManifestSelectionProfile, ManifestSelectionProfileId } from './manifest-modules';");
+  lines.push("export { manifestModules, manifestSelectionProfiles, manifestProvenance } from './manifest-modules';");
+  lines.push("export type { ManifestModuleMetadata, ManifestSelectionProfile, ManifestSelectionProfileId, ManifestProvenanceMetadata } from './manifest-modules';");
   lines.push('');
   lines.push("export { manifestTools } from './manifest-tools';");
   lines.push("export type { ManifestWebTool } from './manifest-tools';");
