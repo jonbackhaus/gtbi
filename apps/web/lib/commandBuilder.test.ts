@@ -39,6 +39,26 @@ describe("buildInstallCommand", () => {
     expect(command).not.toContain("/master/install.sh");
     expect(command).not.toContain('--ref "master"');
   });
+
+  test("appends manifest-backed module selectors for profile previews", () => {
+    const command = buildInstallCommand("vibe", null, "ubuntu", {
+      profile: "cloud-only",
+    });
+
+    expect(command).toContain('--only "cloud.wrangler"');
+    expect(command).toContain('--only "cloud.supabase"');
+    expect(command).toContain('--only "cloud.vercel"');
+    expect(command).not.toContain("--profile");
+    expect(command).not.toContain("db.postgres18");
+  });
+
+  test("refuses invalid module selectors instead of serializing them", () => {
+    expect(() =>
+      buildInstallCommand("vibe", null, "ubuntu", {
+        onlyModules: ["agents.codex;sudo"],
+      }),
+    ).toThrow("Unknown module id in --only: agents.codex;sudo");
+  });
 });
 
 describe("buildCommands", () => {
@@ -91,6 +111,21 @@ describe("buildCommands", () => {
     expect(installer?.command).toContain('TARGET_USER="dev-user.1"');
     expect(sshUser?.label).toBe("SSH as dev-user.1");
     expect(sshUser?.command).toContain("dev-user.1@10.20.30.40");
+  });
+
+  test("propagates optional module selection into the installer command", () => {
+    const commands = buildCommands({
+      ip: "10.20.30.40",
+      os: "mac",
+      username: "ubuntu",
+      mode: "vibe",
+      ref: null,
+      moduleSelection: { profile: "stack-only" },
+    });
+
+    const installer = commands.find((command) => command.id === "installer");
+
+    expect(installer?.command).toContain('--only-phase "9"');
   });
 });
 

@@ -2097,6 +2097,75 @@ const TS_HEADER = `// ==========================================================
 // ============================================================
 `;
 
+const WEB_SELECTION_PROFILES = [
+  {
+    id: 'full',
+    label: 'Full',
+    onlyModules: [],
+    onlyPhases: [],
+  },
+  {
+    id: 'safe',
+    label: 'Safe',
+    mode: 'safe',
+    onlyModules: [],
+    onlyPhases: [],
+  },
+  {
+    id: 'vibe',
+    label: 'Vibe',
+    mode: 'vibe',
+    onlyModules: [],
+    onlyPhases: [],
+  },
+  {
+    id: 'minimal',
+    label: 'Minimal',
+    onlyModules: [
+      'shell.omz',
+      'cli.modern',
+      'lang.bun',
+      'lang.uv',
+      'agents.claude',
+      'agents.codex',
+      'agents.gemini',
+      'stack.ntm',
+      'stack.mcp_agent_mail',
+      'stack.ultimate_bug_scanner',
+      'stack.beads_rust',
+      'stack.beads_viewer',
+      'stack.cass',
+      'stack.cm',
+      'stack.dcg',
+      'stack.ru',
+      'stack.rch',
+      'acfs.workspace',
+      'acfs.onboard',
+      'acfs.update',
+      'acfs.doctor',
+    ],
+    onlyPhases: [],
+  },
+  {
+    id: 'agents-only',
+    label: 'Agents only',
+    onlyModules: [],
+    onlyPhases: ['agents'],
+  },
+  {
+    id: 'cloud-only',
+    label: 'Cloud only',
+    onlyModules: ['cloud.wrangler', 'cloud.supabase', 'cloud.vercel'],
+    onlyPhases: [],
+  },
+  {
+    id: 'stack-only',
+    label: 'Stack only',
+    onlyModules: [],
+    onlyPhases: ['stack'],
+  },
+] as const;
+
 /**
  * Escape a string for use inside a TypeScript string literal (double-quoted).
  */
@@ -2126,6 +2195,71 @@ function getWebVisibleModules(manifest: Manifest): Module[] {
   return manifest.modules
     .filter((m) => m.web && m.web.visible !== false)
     .sort((a, b) => a.id.localeCompare(b.id));
+}
+
+/**
+ * Generate manifest-modules.ts — full module metadata for web-side planning.
+ */
+function generateWebModules(manifest: Manifest): string {
+  const modules = sortModulesByPhaseAndDependency(manifest);
+  const lines: string[] = [TS_HEADER];
+
+  lines.push('export interface ManifestModuleMetadata {');
+  lines.push('  id: string;');
+  lines.push('  description: string;');
+  lines.push('  category: string;');
+  lines.push('  phase: number;');
+  lines.push('  dependencies: string[];');
+  lines.push('  tags: string[];');
+  lines.push('  enabledByDefault: boolean;');
+  lines.push('  optional: boolean;');
+  lines.push('}');
+  lines.push('');
+
+  const profileIds = WEB_SELECTION_PROFILES.map((profile) => `"${profile.id}"`).join(' | ');
+  lines.push(`export type ManifestSelectionProfileId = ${profileIds};`);
+  lines.push('');
+  lines.push('export interface ManifestSelectionProfile {');
+  lines.push('  id: ManifestSelectionProfileId;');
+  lines.push('  label: string;');
+  lines.push('  mode?: "safe" | "vibe";');
+  lines.push('  onlyModules: string[];');
+  lines.push('  onlyPhases: string[];');
+  lines.push('}');
+  lines.push('');
+
+  lines.push('export const manifestModules: ManifestModuleMetadata[] = [');
+  for (const module of modules) {
+    lines.push('  {');
+    lines.push(`    id: "${escapeTs(module.id)}",`);
+    lines.push(`    description: "${escapeTs(module.description)}",`);
+    lines.push(`    category: "${escapeTs(resolveModuleCategory(module))}",`);
+    lines.push(`    phase: ${getModulePhase(module)},`);
+    lines.push(`    dependencies: ${formatTsArray(module.dependencies ?? [], 4)},`);
+    lines.push(`    tags: ${formatTsArray(module.tags ?? [], 4)},`);
+    lines.push(`    enabledByDefault: ${module.enabled_by_default ? 'true' : 'false'},`);
+    lines.push(`    optional: ${module.optional ? 'true' : 'false'},`);
+    lines.push('  },');
+  }
+  lines.push('];');
+  lines.push('');
+
+  lines.push('export const manifestSelectionProfiles: ManifestSelectionProfile[] = [');
+  for (const profile of WEB_SELECTION_PROFILES) {
+    lines.push('  {');
+    lines.push(`    id: "${escapeTs(profile.id)}",`);
+    lines.push(`    label: "${escapeTs(profile.label)}",`);
+    if ('mode' in profile) {
+      lines.push(`    mode: "${profile.mode}",`);
+    }
+    lines.push(`    onlyModules: ${formatTsArray([...profile.onlyModules], 4)},`);
+    lines.push(`    onlyPhases: ${formatTsArray([...profile.onlyPhases], 4)},`);
+    lines.push('  },');
+  }
+  lines.push('];');
+  lines.push('');
+
+  return lines.join('\n');
 }
 
 /**
@@ -2377,6 +2511,9 @@ function generateWebLessonsIndex(manifest: Manifest): string {
 function generateWebIndex(): string {
   const lines: string[] = [TS_HEADER];
 
+  lines.push("export { manifestModules, manifestSelectionProfiles } from './manifest-modules';");
+  lines.push("export type { ManifestModuleMetadata, ManifestSelectionProfile, ManifestSelectionProfileId } from './manifest-modules';");
+  lines.push('');
   lines.push("export { manifestTools } from './manifest-tools';");
   lines.push("export type { ManifestWebTool } from './manifest-tools';");
   lines.push('');
@@ -2571,6 +2708,9 @@ async function main(): Promise<void> {
 
   // Web data: TypeScript modules for apps/web
   {
+    const modulesPath = join(WEB_OUTPUT_DIR, 'manifest-modules.ts');
+    filesToGenerate.set(modulesPath, { content: generateWebModules(manifest), mode: 0o644 });
+
     const toolsPath = join(WEB_OUTPUT_DIR, 'manifest-tools.ts');
     filesToGenerate.set(toolsPath, { content: generateWebTools(manifest), mode: 0o644 });
 

@@ -8,6 +8,7 @@
  */
 
 import type { OperatingSystem, InstallMode } from "./userPreferences";
+import { buildInstallSelectorArgs, type ModuleSelectionInput } from "./moduleSelection";
 import { isValidIP, normalizeGitRef, normalizeSSHUsername } from "./userPreferences";
 
 const INSTALL_SCRIPT_BASE_URL =
@@ -22,6 +23,7 @@ export interface CommandBuilderInputs {
   username: string;
   mode: InstallMode;
   ref: string | null;
+  moduleSelection?: ModuleSelectionInput;
 }
 
 export interface GeneratedCommand {
@@ -121,15 +123,18 @@ export function buildInstallCommand(
   mode: InstallMode,
   ref: string | null,
   username?: string | null,
+  moduleSelection?: ModuleSelectionInput,
 ): string {
   const safeRef = normalizeGitRef(ref);
   const safeUsername = normalizeInstallUsername(username);
   const installRef = safeRef ?? DEFAULT_INSTALL_REF;
   const userEnv = safeUsername ? `TARGET_USER="${safeUsername}" ` : "";
   const refArg = safeRef ? ` --ref "${safeRef}"` : "";
+  const selectorArgs = buildInstallSelectorArgs(moduleSelection).join(" ");
+  const selectorArgSuffix = selectorArgs ? ` ${selectorArgs}` : "";
   const installerUrl = `${INSTALL_SCRIPT_BASE_URL}/${installRef}/install.sh`;
 
-  return `curl -fsSL "${installerUrl}?$(date +%s)" | ${userEnv}bash -s -- --yes --mode ${mode}${refArg}`;
+  return `curl -fsSL "${installerUrl}?$(date +%s)" | ${userEnv}bash -s -- --yes --mode ${mode}${refArg}${selectorArgSuffix}`;
 }
 
 /**
@@ -161,7 +166,7 @@ export function buildCommands(inputs: CommandBuilderInputs): GeneratedCommand[] 
     id: "installer",
     label: "Run installer",
     description: `Install ACFS in ${mode} mode${safeRef ? ` pinned to ${safeRef}` : ""}`,
-    command: buildInstallCommand(mode, ref, safeUsername),
+    command: buildInstallCommand(mode, ref, safeUsername, inputs.moduleSelection),
     runLocation: "vps",
   });
 
@@ -217,7 +222,7 @@ export function buildHandoffRunbook(inputs: CommandBuilderInputs): HandoffRunboo
   const targetUsername = normalizeCommandUsername(inputs.username);
   const redactedHost = redactedTargetHost(inputs.ip);
   const targetHostKind = classifyTargetHost(inputs.ip);
-  const installCommand = buildInstallCommand(inputs.mode, safeRef, targetUsername);
+  const installCommand = buildInstallCommand(inputs.mode, safeRef, targetUsername, inputs.moduleSelection);
   const rootLoginCommand = `ssh root@${redactedHost}`;
   const postInstallLoginCommand = `ssh -i ${SSH_KEY_PATH_UNIX} ${targetUsername}@${redactedHost}`;
   const postInstallLoginCommandWindows = `ssh -i ${SSH_KEY_PATH_WINDOWS} ${targetUsername}@${redactedHost}`;

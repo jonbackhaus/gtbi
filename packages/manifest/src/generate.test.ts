@@ -822,6 +822,7 @@ describe('Generated script headers', () => {
 
 describe('Generated web data files exist', () => {
   const webFiles = [
+    'manifest-modules.ts',
     'manifest-tools.ts',
     'manifest-tldr.ts',
     'manifest-commands.ts',
@@ -839,6 +840,7 @@ describe('Generated web data files exist', () => {
 
 describe('Generated web files have correct headers', () => {
   const webFiles = [
+    'manifest-modules.ts',
     'manifest-tools.ts',
     'manifest-tldr.ts',
     'manifest-commands.ts',
@@ -856,6 +858,39 @@ describe('Generated web files have correct headers', () => {
       }
     });
   }
+});
+
+describe('manifest-modules.ts structure', () => {
+  let content: string;
+
+  beforeAll(() => {
+    const filepath = resolve(WEB_GENERATED_DIR, 'manifest-modules.ts');
+    content = readFileSync(filepath, 'utf-8');
+  });
+
+  test('exports ManifestModuleMetadata interface', () => {
+    expect(content).toContain('export interface ManifestModuleMetadata');
+  });
+
+  test('interface has resolver fields', () => {
+    expect(content).toContain('id: string;');
+    expect(content).toContain('description: string;');
+    expect(content).toContain('category: string;');
+    expect(content).toContain('phase: number;');
+    expect(content).toContain('dependencies: string[];');
+    expect(content).toContain('tags: string[];');
+    expect(content).toContain('enabledByDefault: boolean;');
+    expect(content).toContain('optional: boolean;');
+  });
+
+  test('exports all module metadata and selection profiles', () => {
+    expect(content).toContain('export const manifestModules: ManifestModuleMetadata[] = [');
+    expect(content).toContain('export const manifestSelectionProfiles: ManifestSelectionProfile[] = [');
+    expect(content).toContain('id: "minimal"');
+    expect(content).toContain('"stack.mcp_agent_mail"');
+    expect(content).toContain('id: "cloud-only"');
+    expect(content).toContain('"cloud.wrangler"');
+  });
 });
 
 describe('manifest-tools.ts structure', () => {
@@ -982,6 +1017,11 @@ describe('manifest-web-index.ts barrel exports', () => {
   beforeAll(() => {
     const filepath = resolve(WEB_GENERATED_DIR, 'manifest-web-index.ts');
     content = readFileSync(filepath, 'utf-8');
+  });
+
+  test('re-exports manifest modules and selection profiles', () => {
+    expect(content).toContain("export { manifestModules, manifestSelectionProfiles } from './manifest-modules'");
+    expect(content).toContain("export type { ManifestModuleMetadata, ManifestSelectionProfile, ManifestSelectionProfileId } from './manifest-modules'");
   });
 
   test('re-exports manifestTools', () => {

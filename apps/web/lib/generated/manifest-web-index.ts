@@ -3,6 +3,9 @@
 // Regenerate: bun run generate (from packages/manifest)
 // ============================================================
 
+export { manifestModules, manifestSelectionProfiles } from './manifest-modules';
+export type { ManifestModuleMetadata, ManifestSelectionProfile, ManifestSelectionProfileId } from './manifest-modules';
+
 export { manifestTools } from './manifest-tools';
 export type { ManifestWebTool } from './manifest-tools';
 
