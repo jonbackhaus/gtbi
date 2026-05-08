@@ -65,6 +65,19 @@ Context preflight:
 - Drift-prone fact to recheck: current route names in src/checkout/session.ts.
 ```
 
+For a launched swarm, generate the copyable per-agent startup packet before
+spawning or pasting prompts:
+
+```bash
+acfs swarm packet --bead bd-1234 --agent-name BlueLake --role implementation
+acfs swarm packet --json --bead bd-1234 --agent-name BlueLake
+```
+
+The packet is read-only. It packages current AGENTS.md/README guidance, the live
+Bead, bounded CM and CASS hints, Agent Mail reservation commands, RCH gate
+examples, UBS scanning, and explicit drift checks into a prompt-sized handoff.
+Live repo files and Beads always override packet hints.
+
 ---
 
 ## 3. Register With Agent Mail
@@ -235,6 +248,7 @@ Your final handoff should say what changed, which gates ran, what was not run, a
 | Claim | `br update bd-1234 --status in_progress` |
 | Context | `cm context ... --workspace ... --limit 5 --history 3 --json` |
 | Search history | `cass search ... --workspace ... --limit 5 --fields summary --json` |
+| Packet | `acfs swarm packet --bead bd-1234 --agent-name BlueLake` |
 | Reserve | `file_reservation_paths(...)` |
 | Announce | `send_message(..., thread_id="bd-1234")` |
 | Rust gates | `rch exec -- cargo test` |

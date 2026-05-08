@@ -100,6 +100,25 @@ _acfs() {
                                         '-h[Show help message]' \
                                         '--help[Show help message]'
                                     ;;
+                                packet)
+                                    _arguments \
+                                        '--json[JSON output]' \
+                                        '--markdown[Markdown output]' \
+                                        '--bead[Beads issue ID]:bead:' \
+                                        '--bead-id[Beads issue ID]:bead:' \
+                                        '--bead-file[Read Beads JSON from fixture]:file:_files' \
+                                        '--repo[Repository root]:directory:_files -/' \
+                                        '--agent-name[Agent identity]:name:' \
+                                        '--role[Agent role]:role:' \
+                                        '--max-chars[Maximum packet characters]:chars:' \
+                                        '--agents-file[AGENTS.md path]:file:_files' \
+                                        '--readme-file[README.md path]:file:_files' \
+                                        '--cm-file[CM context fixture]:file:_files' \
+                                        '--cass-file[CASS context fixture]:file:_files' \
+                                        '--no-live-context[Skip live cm and cass commands]' \
+                                        '-h[Show help message]' \
+                                        '--help[Show help message]'
+                                    ;;
                             esac
                             ;;
                     esac
@@ -127,6 +146,25 @@ _acfs() {
                         '--workload[Workload model]:workload:(light standard heavy)' \
                         '--artifact-dir[Directory for simulation artifacts]:directory:_files -/' \
                         '--status-file[Read an existing swarm status snapshot]:file:_files' \
+                        '-h[Show help message]' \
+                        '--help[Show help message]'
+                    ;;
+                swarm-packet|swarm_packet)
+                    _arguments \
+                        '--json[JSON output]' \
+                        '--markdown[Markdown output]' \
+                        '--bead[Beads issue ID]:bead:' \
+                        '--bead-id[Beads issue ID]:bead:' \
+                        '--bead-file[Read Beads JSON from fixture]:file:_files' \
+                        '--repo[Repository root]:directory:_files -/' \
+                        '--agent-name[Agent identity]:name:' \
+                        '--role[Agent role]:role:' \
+                        '--max-chars[Maximum packet characters]:chars:' \
+                        '--agents-file[AGENTS.md path]:file:_files' \
+                        '--readme-file[README.md path]:file:_files' \
+                        '--cm-file[CM context fixture]:file:_files' \
+                        '--cass-file[CASS context fixture]:file:_files' \
+                        '--no-live-context[Skip live cm and cass commands]' \
                         '-h[Show help message]' \
                         '--help[Show help message]'
                     ;;
@@ -259,13 +297,15 @@ _acfs_commands() {
         'i:System overview (alias for info)'
         'capacity:Estimate safe/recommended agent counts'
         'cap:Capacity report (alias for capacity)'
-        'swarm:Swarm plan, status, doctor, and dry-run simulation'
+        'swarm:Swarm plan, status, doctor, simulation, and startup packets'
         'swarm-plan:Queue-aware launch advisor'
         'swarm_plan:Queue-aware launch advisor'
         'swarm-status:Local swarm status snapshot'
         'swarm_status:Local swarm status snapshot'
         'swarm-simulate:Dry-run fleet-scale simulation harness'
         'swarm_simulate:Dry-run fleet-scale simulation harness'
+        'swarm-packet:Per-agent startup packet generator'
+        'swarm_packet:Per-agent startup packet generator'
         'coordinate:Coordination preflight helpers'
         'coord:Coordination helpers (alias for coordinate)'
         'cheatsheet:Command reference (aliases, shortcuts)'
@@ -318,6 +358,7 @@ _acfs_swarm_commands() {
         'doctor:Pre-swarm coordination preflight'
         'preflight:Pre-swarm coordination preflight'
         'simulate:Dry-run fleet-scale simulation harness'
+        'packet:Per-agent startup packet generator'
         'help:Show swarm help'
     )
     _describe -t commands 'swarm command' commands

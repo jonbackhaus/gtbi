@@ -4308,8 +4308,20 @@ main() {
                     echo "Error: swarm_simulation.sh not found" >&2
                     return 1
                     ;;
+                packet|packets|startup-packet)
+                    [[ $# -gt 0 ]] && shift
+                    local swarm_packet_script=""
+                    swarm_packet_script="$(_acfs_doctor_find_lib_script "swarm_packet.sh" 2>/dev/null || true)"
+
+                    if [[ -n "$swarm_packet_script" ]]; then
+                        _acfs_doctor_exec_bash_script "$swarm_packet_script" "$@"
+                    fi
+
+                    echo "Error: swarm_packet.sh not found" >&2
+                    return 1
+                    ;;
                 help|-h|--help)
-                    echo "Usage: acfs swarm <plan|status|doctor|simulate> [--json]"
+                    echo "Usage: acfs swarm <plan|status|doctor|simulate|packet> [--json]"
                     return 0
                     ;;
                 *)
@@ -4353,6 +4365,18 @@ main() {
             fi
 
             echo "Error: swarm_simulation.sh not found" >&2
+            return 1
+            ;;
+        swarm-packet|swarm_packet)
+            shift
+            local swarm_packet_script=""
+            swarm_packet_script="$(_acfs_doctor_find_lib_script "swarm_packet.sh" 2>/dev/null || true)"
+
+            if [[ -n "$swarm_packet_script" ]]; then
+                _acfs_doctor_exec_bash_script "$swarm_packet_script" "$@"
+            fi
+
+            echo "Error: swarm_packet.sh not found" >&2
             return 1
             ;;
         coordinate|coord)

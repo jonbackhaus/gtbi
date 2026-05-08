@@ -3364,6 +3364,20 @@ only: it does not launch agents, mutate Beads, send Agent Mail, force-release
 reservations, or run build commands. JSON output is available with `--json`,
 and fixture replay is available with `--status-file`.
 
+For each agent you plan to launch, generate a bounded startup packet from the
+selected Bead plus current repo instructions and bounded CM/CASS context:
+
+```bash
+acfs swarm packet --bead bd-1234 --agent-name BlueLake --role implementation
+acfs swarm packet --json --bead bd-1234 --agent-name BlueLake
+```
+
+The packet is designed for NTM prompt injection. It prioritizes live AGENTS.md,
+README.md, Beads, and Agent Mail state over memory-derived hints, includes drift
+checks, and preserves exact `bv --robot-*`, `br`, Agent Mail MCP, `rch exec --`,
+and UBS workflow guidance. It is read-only: it does not claim work, reserve
+files, send messages, start agents, run builds, or edit generated files.
+
 Before launching a large real swarm, ACFS can run an offline simulation of the control plane:
 
 ```bash
