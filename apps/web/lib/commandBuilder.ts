@@ -397,7 +397,7 @@ export function buildRootKeyRepairCommand(username: string, host: string): strin
     `&& test ! -L ${authorizedKeys}`,
     `&& touch ${authorizedKeys}`,
     `&& { [ ! -s ${authorizedKeys} ] || tail -c 1 ${authorizedKeys} | od -An -t u1 | grep -qw 10 || printf '\\n' >> ${authorizedKeys}; }`,
-    `&& if ! grep -qxF "\\$acfs_pubkey" ${authorizedKeys}; then printf '%s\\n' "\\$acfs_pubkey" >> ${authorizedKeys}; fi`,
+    `&& if ! grep -qxF \\"\\$acfs_pubkey\\" ${authorizedKeys}; then printf '%s\\n' \\"\\$acfs_pubkey\\" >> ${authorizedKeys}; fi`,
     `&& chown ${safeUsername}:${safeUsername} ${authorizedKeys}`,
     `&& chmod 600 ${authorizedKeys}"`,
   ].join(" ");

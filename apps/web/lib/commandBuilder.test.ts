@@ -24,9 +24,27 @@ describe("buildRootKeyRepairCommand", () => {
     expect(command).toContain("test ! -L /home/dev-user/.ssh");
     expect(command).toContain("tail -c 1 /home/dev-user/.ssh/authorized_keys");
     expect(command).toContain("grep -qw 10");
-    expect(command).toContain('if ! grep -qxF "\\$acfs_pubkey" /home/dev-user/.ssh/authorized_keys; then');
-    expect(command).toContain('printf \'%s\\n\' "\\$acfs_pubkey" >> /home/dev-user/.ssh/authorized_keys');
+    expect(command).toContain('if ! grep -qxF \\"\\$acfs_pubkey\\" /home/dev-user/.ssh/authorized_keys; then');
+    expect(command).toContain('printf \'%s\\n\' \\"\\$acfs_pubkey\\" >> /home/dev-user/.ssh/authorized_keys');
     expect(command).not.toContain("cat >> /home/dev-user/.ssh/authorized_keys");
+  });
+
+  test("preserves public key quoting after local shell parsing", () => {
+    const command = buildRootKeyRepairCommand("ubuntu", "203.0.113.42");
+    const result = Bun.spawnSync({
+      cmd: ["bash", "-lc", `ssh() { printf '%s\\n' "$2"; }\n${command}`],
+      env: { ...process.env, HOME: "/tmp/acfs-missing-home-for-test" },
+      stderr: "pipe",
+      stdout: "pipe",
+    });
+
+    expect(result.exitCode).toBe(0);
+
+    const remoteCommand = new TextDecoder().decode(result.stdout);
+    expect(remoteCommand).toContain('grep -qxF "$acfs_pubkey" /home/ubuntu/.ssh/authorized_keys');
+    expect(remoteCommand).toContain('printf \'%s\\n\' "$acfs_pubkey" >> /home/ubuntu/.ssh/authorized_keys');
+    expect(remoteCommand).not.toContain("grep -qxF $acfs_pubkey");
+    expect(remoteCommand).not.toContain("printf '%s\\n' $acfs_pubkey");
   });
 
   test("falls back to ubuntu for usernames the installer would reject", () => {

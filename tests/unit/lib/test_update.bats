@@ -12689,6 +12689,9 @@ EOF
     assert_success
     [[ "$output" == *'acfs_pubkey'* ]]
 
+    run grep -F '\\\"\\\$acfs_pubkey\\\"' "$PROJECT_ROOT/install.sh"
+    assert_success
+
     run grep -F 'test ! -L $target_home_for_summary/.ssh' "$PROJECT_ROOT/install.sh"
     assert_success
 
@@ -12752,6 +12755,9 @@ EOF
     assert_success
     [[ "$output" == *'acfs_pubkey'* ]]
     [[ "$output" == *'${target_home}/.ssh/authorized_keys'* ]]
+
+    run grep -F '\\\"\\\$acfs_pubkey\\\"' "$PROJECT_ROOT/scripts/lib/user.sh"
+    assert_success
 
     run grep -F 'cat >> ${target_home}/.ssh/authorized_keys' "$PROJECT_ROOT/scripts/lib/user.sh"
     assert_failure
