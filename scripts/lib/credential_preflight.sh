@@ -360,6 +360,23 @@ credential_preflight_key_is_secret_like() {
     return 1
 }
 
+credential_preflight_value_has_specific_pattern() {
+    local value="${1:-}"
+    local lower=""
+
+    lower="${value,,}"
+    [[ "$lower" =~ sk-[a-z0-9_-]{20,} ]] && return 0
+    [[ "$lower" =~ akia[a-z0-9]{16} ]] && return 0
+    [[ "$lower" =~ gh[pousr]_[a-z0-9_]{20,} ]] && return 0
+    [[ "$lower" =~ github_pat_[a-z0-9_]{22,} ]] && return 0
+    [[ "$lower" =~ hvs\.[a-z0-9]{20,} ]] && return 0
+    [[ "$lower" =~ xox[bpsar]-[a-z0-9-]{10,} ]] && return 0
+    [[ "$lower" =~ eyj[a-z0-9_-]{10,}\.[a-z0-9_-]{10,}\.[a-z0-9_-]{10,} ]] && return 0
+    [[ "$lower" =~ [a-z][a-z0-9+.-]*://[^/@[:space:]]+:[^/@[:space:]]+@ ]] && return 0
+
+    return 1
+}
+
 credential_preflight_scan_line() {
     local root="$1"
     local path="$2"
@@ -367,7 +384,6 @@ credential_preflight_scan_line() {
     local line_number="$4"
     local line="$5"
     local lower=""
-    local specific=false
     local rest=""
     local match=""
     local key=""
@@ -377,53 +393,43 @@ credential_preflight_scan_line() {
 
     if [[ "$line" =~ -----BEGIN[[:space:]][^-]*PRIVATE[[:space:]]KEY[^-]*----- ]]; then
         credential_preflight_add_finding "$root" "$path" "$source" "$line_number" "private_key" "private key block marker"
-        specific=true
     fi
     if [[ "$line" =~ sk-[A-Za-z0-9_-]{20,} ]]; then
         credential_preflight_add_finding "$root" "$path" "$source" "$line_number" "api_key" "sk-style API key pattern"
-        specific=true
     fi
     if [[ "$line" =~ AKIA[A-Z0-9]{16} ]]; then
         credential_preflight_add_finding "$root" "$path" "$source" "$line_number" "aws_key" "AWS access key pattern"
-        specific=true
     fi
     if [[ "$line" =~ gh[pousr]_[A-Za-z0-9_]{20,} ]]; then
         credential_preflight_add_finding "$root" "$path" "$source" "$line_number" "github_token" "GitHub token pattern"
-        specific=true
     fi
     if [[ "$line" =~ github_pat_[A-Za-z0-9_]{22,} ]]; then
         credential_preflight_add_finding "$root" "$path" "$source" "$line_number" "github_pat" "GitHub fine-grained PAT pattern"
-        specific=true
     fi
     if [[ "$line" =~ hvs\.[A-Za-z0-9]{20,} ]]; then
         credential_preflight_add_finding "$root" "$path" "$source" "$line_number" "vault_token" "Vault token pattern"
-        specific=true
     fi
     if [[ "$line" =~ xox[bpsar]-[A-Za-z0-9-]{10,} ]]; then
         credential_preflight_add_finding "$root" "$path" "$source" "$line_number" "slack_token" "Slack token pattern"
-        specific=true
     fi
     if [[ "$line" =~ Bearer[[:space:]][A-Za-z0-9._/-]{20,} ]]; then
         credential_preflight_add_finding "$root" "$path" "$source" "$line_number" "bearer_token" "Bearer token pattern"
-        specific=true
     fi
     if [[ "$line" =~ eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,} ]]; then
         credential_preflight_add_finding "$root" "$path" "$source" "$line_number" "jwt" "JWT pattern"
-        specific=true
     fi
     if [[ "$line" =~ [A-Za-z][A-Za-z0-9+.-]*://[^/@[:space:]]+:[^/@[:space:]]+@ ]]; then
         credential_preflight_add_finding "$root" "$path" "$source" "$line_number" "credential_url" "URL with embedded credentials"
-        specific=true
     fi
-
-    [[ "$specific" == true ]] && return 0
 
     rest="$lower"
     while [[ "$rest" =~ \"([a-z][a-z0-9_-]*)\"[[:space:]]*:[[:space:]]*\"([^\"]{4,})\" ]]; do
         match="${BASH_REMATCH[0]}"
         key="${BASH_REMATCH[1]:-}"
         value="${BASH_REMATCH[2]:-}"
-        if credential_preflight_key_is_secret_like "$key" && ! credential_preflight_value_is_placeholder "$value"; then
+        if credential_preflight_key_is_secret_like "$key" &&
+            ! credential_preflight_value_is_placeholder "$value" &&
+            ! credential_preflight_value_has_specific_pattern "$value"; then
             if [[ "$key" == *"password"* || "$key" == *"passwd"* ]]; then
                 credential_preflight_add_finding "$root" "$path" "$source" "$line_number" "password" "secret-like JSON key"
             else
@@ -438,7 +444,9 @@ credential_preflight_scan_line() {
         match="${BASH_REMATCH[0]}"
         key="${BASH_REMATCH[2]:-}"
         value="${BASH_REMATCH[3]:-}"
-        if credential_preflight_key_is_secret_like "$key" && ! credential_preflight_value_is_placeholder "$value"; then
+        if credential_preflight_key_is_secret_like "$key" &&
+            ! credential_preflight_value_is_placeholder "$value" &&
+            ! credential_preflight_value_has_specific_pattern "$value"; then
             case "$key" in
                 *password*|*passwd*) credential_preflight_add_finding "$root" "$path" "$source" "$line_number" "password" "secret-like assignment key" ;;
                 *) credential_preflight_add_finding "$root" "$path" "$source" "$line_number" "generic_secret" "secret-like assignment key" ;;

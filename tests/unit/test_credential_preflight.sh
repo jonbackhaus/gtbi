@@ -231,6 +231,27 @@ export PATH=/usr/local/bin API_TOKEN=$shell_secret"
     pass "detects_later_secret_pairs_on_same_line"
 }
 
+test_detects_secret_pair_after_specific_pattern_on_same_line() {
+    local fixture="$ARTIFACT_DIR/specific-and-generic/config.env"
+    local output="$ARTIFACT_DIR/specific-and-generic.json"
+    local api_key="sk-fakeacfscredentialmatrix000001"
+    local password="real-password-value-12345"
+
+    write_fixture "$fixture" "OPENAI_API_KEY=$api_key DB_PASSWORD=$password"
+
+    if bash "$CREDENTIAL_PREFLIGHT_SH" --json --file "$fixture" > "$output"; then
+        return 1
+    fi
+
+    assert_category_present "$output" "api_key" || return 1
+    assert_category_present "$output" "password" || return 1
+    assert_no_raw_secret "$output" "$api_key" || return 1
+    assert_no_raw_secret "$output" "$password" || return 1
+    jq -e '.summary.findings == 2' "$output" >/dev/null || return 1
+
+    pass "detects_secret_pair_after_specific_pattern_on_same_line"
+}
+
 test_password_keys_keep_password_category_after_placeholder_checks() {
     local fixture="$ARTIFACT_DIR/password-category/.env"
     local output="$ARTIFACT_DIR/password-category.json"
@@ -329,6 +350,7 @@ main() {
     run_test test_detects_hex_encoded_secret_values_under_secret_keys
     run_test test_json_secret_value_detection_ignores_unrelated_placeholder_words
     run_test test_detects_later_secret_pairs_on_same_line
+    run_test test_detects_secret_pair_after_specific_pattern_on_same_line
     run_test test_password_keys_keep_password_category_after_placeholder_checks
     run_test test_binary_and_unreadable_files_are_skipped
     run_test test_excluded_paths_are_opted_out
