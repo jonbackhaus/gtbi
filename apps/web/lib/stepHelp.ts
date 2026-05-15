@@ -182,7 +182,7 @@ export const STEP_HELP: Partial<Record<number, StepHelp>> = {
       {
         symptom: "Permission denied errors during install",
         solution:
-          "Make sure you're running as root (your prompt should show root@). If you connected as ubuntu, run: sudo -i  then re-run the installer.",
+          "Make sure you're running from a root shell (your prompt should show root@ and end with #). If you connected as ubuntu, run: sudo -i, then re-run the installer.",
       },
     ],
     tips: [
@@ -194,13 +194,13 @@ export const STEP_HELP: Partial<Record<number, StepHelp>> = {
   10: {
     commonIssues: [
       {
-        symptom: "I can't connect as ubuntu",
+        symptom: "I can't connect as the SSH user",
         solution:
-          "Use: ssh -i ~/.ssh/acfs_ed25519 ubuntu@YOUR_IP. If that fails with 'permission denied', connect as root and check that the installer completed successfully.",
+          "Use the key-based SSH command from this step, such as: ssh -i ~/.ssh/acfs_ed25519 ubuntu@YOUR_IP. If that fails with 'permission denied', connect as root and check that the installer completed successfully.",
       },
     ],
     tips: [
-      "After this step, always connect as 'ubuntu' (not 'root') for daily work.",
+      "After this step, connect as your configured SSH user (ubuntu by default), not root, for daily work.",
     ],
   },
 

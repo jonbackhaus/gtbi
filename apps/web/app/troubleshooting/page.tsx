@@ -237,24 +237,25 @@ const ISSUES: Omit<TroubleshootingIssue, "searchable">[] = [
       "sudo: command not found",
     ],
     causes: [
-      "Running as wrong user",
+      "Installer was run from a non-root shell",
       "Incorrect sudo configuration",
       "Filesystem permissions issue",
     ],
     solutions: [
       {
-        title: "Verify you're the ubuntu user",
+        title: "Verify you're in a root shell",
         steps: [
           "Check your current user",
-          "If you're root, switch to ubuntu",
+          "For the first install, the prompt should show root@...#",
+          "If it shows ubuntu@...$, run sudo -i before continuing",
         ],
         command: "whoami",
       },
       {
-        title: "Re-run installer with correct user",
+        title: "Re-run installer from root",
         steps: [
-          "The installer should be run as the ubuntu user, not root",
-          "It will use sudo internally when needed",
+          "Run the ACFS install command only after you're in the root shell",
+          "After the installer completes, reconnect as the configured SSH user (ubuntu by default) for daily work",
         ],
       },
     ],
