@@ -4935,6 +4935,55 @@ EOF
     assert_success
 }
 
+@test "doctor.sh: exec helper forwards resolved target context after env cleanup" {
+    local target_home
+    local child_script
+    target_home="$(create_temp_dir)"
+
+    mkdir -p "$target_home/.acfs" "$target_home/.local/bin"
+    child_script="$target_home/update-child.sh"
+    cat > "$child_script" <<'EOF'
+#!/usr/bin/env bash
+printf 'TARGET_USER=%s\n' "${TARGET_USER:-}"
+printf 'TARGET_HOME=%s\n' "${TARGET_HOME:-}"
+printf 'ACFS_HOME=%s\n' "${ACFS_HOME:-}"
+printf 'ACFS_BIN_DIR=%s\n' "${ACFS_BIN_DIR:-}"
+printf 'HOME=%s\n' "${HOME:-}"
+EOF
+    chmod +x "$child_script"
+
+    run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
+        set -euo pipefail
+        doctor_lib="$1"
+        child_script="$2"
+        target_home="$3"
+
+        eval "$(sed -n "/^_acfs_doctor_sanitize_abs_nonroot_path()/,/^}$/p" "$doctor_lib")"
+        eval "$(sed -n "/^_acfs_doctor_system_binary_path()/,/^}$/p" "$doctor_lib")"
+        eval "$(sed -n "/^_acfs_doctor_acfs_home_for_home()/,/^}$/p" "$doctor_lib")"
+        eval "$(sed -n "/^_acfs_doctor_acfs_home_matches_home()/,/^}$/p" "$doctor_lib")"
+        eval "$(sed -n "/^_acfs_doctor_exec_bash_script()/,/^}$/p" "$doctor_lib")"
+
+        export HOME="$target_home"
+        export TARGET_USER="tester"
+        export TARGET_HOME="$target_home"
+        export ACFS_HOME="$target_home/.acfs"
+        export ACFS_BIN_DIR="$target_home/.local/bin"
+        _acfs_doctor_original_home="$target_home"
+        _ACFS_DOCTOR_ENV_ACFS_HOME="$target_home/.acfs"
+        unset _ACFS_DOCTOR_ENV_TARGET_USER _ACFS_DOCTOR_ENV_TARGET_HOME _ACFS_DOCTOR_ENV_BIN_DIR
+
+        _acfs_doctor_exec_bash_script "$child_script"
+    ' _ "$PROJECT_ROOT/scripts/lib/doctor.sh" "$child_script" "$target_home"
+
+    assert_success
+    assert_output --partial "TARGET_USER=tester"
+    assert_output --partial "TARGET_HOME=$target_home"
+    assert_output --partial "ACFS_HOME=$target_home/.acfs"
+    assert_output --partial "ACFS_BIN_DIR=$target_home/.local/bin"
+    assert_output --partial "HOME=$target_home"
+}
+
 @test "ACFS home resolvers honor explicit TARGET_HOME over stale system state" {
     local current_home
     local target_home

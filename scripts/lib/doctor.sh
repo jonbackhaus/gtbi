@@ -1029,6 +1029,9 @@ _acfs_doctor_exec_bash_script() {
     local env_bin=""
     local passthrough_acfs_home=""
     local passthrough_home=""
+    local passthrough_target_user=""
+    local passthrough_target_home=""
+    local passthrough_bin_dir=""
     shift || true
 
     bash_bin="$(_acfs_doctor_system_binary_path bash 2>/dev/null || true)"
@@ -1037,8 +1040,11 @@ _acfs_doctor_exec_bash_script() {
         return 1
     fi
 
-    passthrough_acfs_home="$(_acfs_doctor_sanitize_abs_nonroot_path "${_ACFS_DOCTOR_ENV_ACFS_HOME:-}" 2>/dev/null || true)"
-    passthrough_home="$(_acfs_doctor_sanitize_abs_nonroot_path "${_acfs_doctor_original_home:-}" 2>/dev/null || true)"
+    passthrough_acfs_home="$(_acfs_doctor_sanitize_abs_nonroot_path "${ACFS_HOME:-}" 2>/dev/null || true)"
+    passthrough_target_home="$(_acfs_doctor_sanitize_abs_nonroot_path "${TARGET_HOME:-}" 2>/dev/null || true)"
+    passthrough_home="${passthrough_target_home:-$(_acfs_doctor_sanitize_abs_nonroot_path "${_acfs_doctor_original_home:-}" 2>/dev/null || true)}"
+    passthrough_bin_dir="$(_acfs_doctor_sanitize_abs_nonroot_path "${ACFS_BIN_DIR:-}" 2>/dev/null || true)"
+    passthrough_target_user="${TARGET_USER:-}"
     if [[ -n "$passthrough_acfs_home" ]] && [[ -n "$passthrough_home" ]] && \
        _acfs_doctor_acfs_home_matches_home "$passthrough_acfs_home" "$passthrough_home" 2>/dev/null; then
         env_bin="$(_acfs_doctor_system_binary_path env 2>/dev/null || true)"
@@ -1046,9 +1052,9 @@ _acfs_doctor_exec_bash_script() {
             exec "$env_bin" \
                 HOME="$passthrough_home" \
                 ACFS_HOME="$passthrough_acfs_home" \
-                TARGET_USER="$_ACFS_DOCTOR_ENV_TARGET_USER" \
-                TARGET_HOME="$_ACFS_DOCTOR_ENV_TARGET_HOME" \
-                ACFS_BIN_DIR="$_ACFS_DOCTOR_ENV_BIN_DIR" \
+                TARGET_USER="$passthrough_target_user" \
+                TARGET_HOME="$passthrough_target_home" \
+                ACFS_BIN_DIR="$passthrough_bin_dir" \
                 "$bash_bin" "$script_path" "$@"
         fi
     fi
