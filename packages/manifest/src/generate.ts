@@ -1053,6 +1053,8 @@ function generateVerifiedInstallerSnippet(module: Module): string[] {
   const vi = module.verified_installer!;
   const tool = vi.tool;
   const runInTmux = vi.run_in_tmux === true;
+  const tmpdirEnvValue = verifiedInstallerTmpdirEnvValue(module);
+  const hasTmpdirEnv = Boolean(tmpdirEnvValue);
   const envStr = vi.env && vi.env.length > 0
     ? vi.env.map(a => shellQuoteVerifiedInstallerArg(a)).join(' ')
     : '';
@@ -1146,7 +1148,11 @@ function generateVerifiedInstallerSnippet(module: Module): string[] {
     if (vi.env && vi.env.length > 0) {
       parts.push(shellQuote('env'));
       for (const envVar of vi.env) {
-        parts.push(shellQuoteVerifiedInstallerArg(envVar));
+        if (hasTmpdirEnv && envVar.startsWith('TMPDIR=')) {
+          parts.push('"TMPDIR=$verified_installer_tmpdir"');
+        } else {
+          parts.push(shellQuoteVerifiedInstallerArg(envVar));
+        }
       }
     }
 
@@ -1179,8 +1185,6 @@ function generateVerifiedInstallerSnippet(module: Module): string[] {
     execCmd = buildVerifiedInstallerPipe(module);
   }
 
-  const tmpdirEnvValue = verifiedInstallerTmpdirEnvValue(module);
-  const hasTmpdirEnv = Boolean(tmpdirEnvValue);
   const lines: string[] = [
     '# Try security-verified install (no unverified fallback; fail closed)',
     'local install_success=false',
@@ -1190,12 +1194,23 @@ function generateVerifiedInstallerSnippet(module: Module): string[] {
 
   if (tmpdirEnvValue) {
     lines.push(
-      `local verified_installer_tmpdir=${shellQuoteVerifiedInstallerArg(tmpdirEnvValue)}`,
-      'if [[ "$verified_installer_tmpdir" == *[[:space:]]* ]]; then',
-      `    log_error "${escapeBash(module.id)}: installer TMPDIR contains whitespace: $verified_installer_tmpdir"`,
+      `local verified_installer_tmpdir_template=${shellQuoteVerifiedInstallerArg(tmpdirEnvValue)}`,
+      'local verified_installer_tmpdir_parent="${verified_installer_tmpdir_template%/*}"',
+      'local verified_installer_tmpdir=""',
+      'if [[ "$verified_installer_tmpdir_template" == *[[:space:]]* ]]; then',
+      `    log_error "${escapeBash(module.id)}: installer TMPDIR template contains whitespace: $verified_installer_tmpdir_template"`,
       '    verified_installer_env_ready=false',
-      'elif ! run_as_target mkdir -p "$verified_installer_tmpdir"; then',
-      `    log_error "${escapeBash(module.id)}: failed to prepare installer TMPDIR: $verified_installer_tmpdir"`,
+      'elif [[ "$verified_installer_tmpdir_template" != *XXXXXX* ]]; then',
+      `    log_error "${escapeBash(module.id)}: installer TMPDIR template must contain XXXXXX: $verified_installer_tmpdir_template"`,
+      '    verified_installer_env_ready=false',
+      'elif ! run_as_target mkdir -p "$verified_installer_tmpdir_parent"; then',
+      `    log_error "${escapeBash(module.id)}: failed to prepare installer TMPDIR parent: $verified_installer_tmpdir_parent"`,
+      '    verified_installer_env_ready=false',
+      'elif ! verified_installer_tmpdir="$(run_as_target mktemp -d "$verified_installer_tmpdir_template" 2>/dev/null)"; then',
+      `    log_error "${escapeBash(module.id)}: failed to create installer TMPDIR from template: $verified_installer_tmpdir_template"`,
+      '    verified_installer_env_ready=false',
+      'elif [[ -z "$verified_installer_tmpdir" ]]; then',
+      `    log_error "${escapeBash(module.id)}: installer TMPDIR creation returned an empty path"`,
       '    verified_installer_env_ready=false',
       'fi',
       ''

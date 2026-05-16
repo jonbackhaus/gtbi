@@ -316,11 +316,14 @@ describe('Generated verified installer args', () => {
     const stackContent = readFileSync(stackPath, 'utf-8');
 
     expect(stackContent).toContain(
-      `local verified_installer_tmpdir="$TARGET_HOME"'/.cache/acfs/installer-tmp/cass-'"$$"`
+      `local verified_installer_tmpdir_template="$TARGET_HOME"'/.cache/acfs/installer-tmp/cass.XXXXXX'`
     );
-    expect(stackContent).toContain('run_as_target mkdir -p "$verified_installer_tmpdir"');
+    expect(stackContent).toContain('run_as_target mkdir -p "$verified_installer_tmpdir_parent"');
     expect(stackContent).toContain(
-      "run_as_target_runner 'env' 'TMPDIR='\"$TARGET_HOME\"'/.cache/acfs/installer-tmp/cass-'\"$$\" 'bash' '-s' '--' '--easy-mode' '--verify'"
+      'verified_installer_tmpdir="$(run_as_target mktemp -d "$verified_installer_tmpdir_template" 2>/dev/null)"'
+    );
+    expect(stackContent).toContain(
+      `run_as_target_runner 'env' "TMPDIR=$verified_installer_tmpdir" 'bash' '-s' '--' '--easy-mode' '--verify'`
     );
   });
 

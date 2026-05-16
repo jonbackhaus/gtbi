@@ -6381,7 +6381,10 @@ EOF_DASHBOARD_TRAP
     run grep -F '_stack_run_verified_installer_with_target_tmpdir "$tool" --easy-mode --verify' "$stack_lib"
     assert_success
 
-    run grep -F 'tmpdir="$TARGET_HOME/.cache/acfs/installer-tmp/${tool}-$$"' "$stack_lib"
+    run grep -F 'tmpdir_template="$tmpdir_parent/${tool}.XXXXXX"' "$stack_lib"
+    assert_success
+
+    run grep -F '_stack_run_as_user "mktemp -d $tmpdir_template_q"' "$stack_lib"
     assert_success
 }
 
@@ -10828,17 +10831,29 @@ SECURITY
 @test "update verified installer with target tmpdir prepares target-owned TMPDIR" {
     TEST_TARGET_HOME="$BATS_TEST_TMPDIR/target-home"
     TEST_PREPARED_FILE="$BATS_TEST_TMPDIR/prepared-tmpdir"
+    TEST_MKTEMP_TEMPLATE="$BATS_TEST_TMPDIR/mktemp-template"
     TEST_INSTALLER_ARGS="$BATS_TEST_TMPDIR/installer-args"
     mkdir -p "$TEST_TARGET_HOME"
 
     update_target_user() { printf '%s\n' "tester"; }
     update_target_home() { printf '%s\n' "$TEST_TARGET_HOME"; }
     update_run_in_target_context() {
-        [[ "${1:-}" == "" ]]
-        [[ "${2:-}" == "mkdir" ]]
-        [[ "${3:-}" == "-p" ]]
-        printf '%s\n' "${4:-}" > "$TEST_PREPARED_FILE"
-        return 0
+        case "${2:-}" in
+            mkdir)
+                [[ "${1:-}" == "" ]]
+                [[ "${3:-}" == "-p" ]]
+                printf '%s\n' "${4:-}" > "$TEST_PREPARED_FILE"
+                return 0
+                ;;
+            mktemp)
+                [[ "${1:-}" == "" ]]
+                [[ "${3:-}" == "-d" ]]
+                printf '%s\n' "${4:-}" > "$TEST_MKTEMP_TEMPLATE"
+                printf '%s\n' "$TEST_TARGET_HOME/.cache/acfs/installer-tmp/cass.ABC123"
+                return 0
+                ;;
+        esac
+        return 1
     }
     update_run_verified_installer_with_env() {
         printf '%s\n' "$*" > "$TEST_INSTALLER_ARGS"
@@ -10850,8 +10865,9 @@ SECURITY
 
     local prepared_tmpdir
     prepared_tmpdir="$(cat "$TEST_PREPARED_FILE")"
-    [[ "$prepared_tmpdir" == "$TEST_TARGET_HOME/.cache/acfs/installer-tmp/cass-"* ]]
-    [[ "$(cat "$TEST_INSTALLER_ARGS")" == "cass TMPDIR=$prepared_tmpdir --easy-mode --verify" ]]
+    [[ "$prepared_tmpdir" == "$TEST_TARGET_HOME/.cache/acfs/installer-tmp" ]]
+    [[ "$(cat "$TEST_MKTEMP_TEMPLATE")" == "$TEST_TARGET_HOME/.cache/acfs/installer-tmp/cass.XXXXXX" ]]
+    [[ "$(cat "$TEST_INSTALLER_ARGS")" == "cass TMPDIR=$TEST_TARGET_HOME/.cache/acfs/installer-tmp/cass.ABC123 --easy-mode --verify" ]]
 }
 
 @test "update PCR installer uses install repair path and verifies doctor state" {

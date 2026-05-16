@@ -3722,6 +3722,8 @@ update_prepare_target_installer_tmpdir() {
     local target_user=""
     local target_home=""
     local tmpdir=""
+    local tmpdir_parent=""
+    local tmpdir_template=""
 
     [[ -n "$tool" ]] || {
         echo "update_prepare_target_installer_tmpdir requires a tool name" >&2
@@ -3743,15 +3745,25 @@ update_prepare_target_installer_tmpdir() {
         return 1
     fi
 
-    tmpdir="$target_home/.cache/acfs/installer-tmp/${tool}-$$"
-    case "$tmpdir" in
+    tmpdir_parent="$target_home/.cache/acfs/installer-tmp"
+    tmpdir_template="$tmpdir_parent/${tool}.XXXXXX"
+    case "$tmpdir_template" in
         *[[:space:]]*)
-            echo "Unable to use installer TMPDIR with whitespace: $tmpdir" >&2
+            echo "Unable to use installer TMPDIR template with whitespace: $tmpdir_template" >&2
             return 1
             ;;
     esac
 
-    update_run_in_target_context "" mkdir -p "$tmpdir" || return $?
+    update_run_in_target_context "" mkdir -p "$tmpdir_parent" || return $?
+    tmpdir="$(update_run_in_target_context "" mktemp -d "$tmpdir_template" 2>/dev/null)" || {
+        echo "Unable to create installer TMPDIR from template: $tmpdir_template" >&2
+        return 1
+    }
+    if [[ -z "$tmpdir" ]]; then
+        echo "Unable to create installer TMPDIR from template: $tmpdir_template" >&2
+        return 1
+    fi
+
     printf '%s\n' "$tmpdir"
 }
 

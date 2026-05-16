@@ -1393,12 +1393,23 @@ install_stack_cass() {
             local install_success=false
             local verified_installer_env_ready=true
 
-            local verified_installer_tmpdir="$TARGET_HOME"'/.cache/acfs/installer-tmp/cass-'"$$"
-            if [[ "$verified_installer_tmpdir" == *[[:space:]]* ]]; then
-                log_error "stack.cass: installer TMPDIR contains whitespace: $verified_installer_tmpdir"
+            local verified_installer_tmpdir_template="$TARGET_HOME"'/.cache/acfs/installer-tmp/cass.XXXXXX'
+            local verified_installer_tmpdir_parent="${verified_installer_tmpdir_template%/*}"
+            local verified_installer_tmpdir=""
+            if [[ "$verified_installer_tmpdir_template" == *[[:space:]]* ]]; then
+                log_error "stack.cass: installer TMPDIR template contains whitespace: $verified_installer_tmpdir_template"
                 verified_installer_env_ready=false
-            elif ! run_as_target mkdir -p "$verified_installer_tmpdir"; then
-                log_error "stack.cass: failed to prepare installer TMPDIR: $verified_installer_tmpdir"
+            elif [[ "$verified_installer_tmpdir_template" != *XXXXXX* ]]; then
+                log_error "stack.cass: installer TMPDIR template must contain XXXXXX: $verified_installer_tmpdir_template"
+                verified_installer_env_ready=false
+            elif ! run_as_target mkdir -p "$verified_installer_tmpdir_parent"; then
+                log_error "stack.cass: failed to prepare installer TMPDIR parent: $verified_installer_tmpdir_parent"
+                verified_installer_env_ready=false
+            elif ! verified_installer_tmpdir="$(run_as_target mktemp -d "$verified_installer_tmpdir_template" 2>/dev/null)"; then
+                log_error "stack.cass: failed to create installer TMPDIR from template: $verified_installer_tmpdir_template"
+                verified_installer_env_ready=false
+            elif [[ -z "$verified_installer_tmpdir" ]]; then
+                log_error "stack.cass: installer TMPDIR creation returned an empty path"
                 verified_installer_env_ready=false
             fi
 
@@ -1419,7 +1430,7 @@ install_stack_cass() {
                     fi
 
                     if [[ -n "$url" ]] && [[ -n "$expected_sha256" ]]; then
-                        if verify_checksum "$url" "$expected_sha256" "$tool" | run_as_target_runner 'env' 'TMPDIR='"$TARGET_HOME"'/.cache/acfs/installer-tmp/cass-'"$$" 'bash' '-s' '--' '--easy-mode' '--verify'; then
+                        if verify_checksum "$url" "$expected_sha256" "$tool" | run_as_target_runner 'env' "TMPDIR=$verified_installer_tmpdir" 'bash' '-s' '--' '--easy-mode' '--verify'; then
                             install_success=true
                         else
                             log_error "stack.cass: verify_checksum or installer execution failed"

@@ -836,7 +836,10 @@ _stack_run_verified_installer() {
 _stack_prepare_target_installer_tmpdir() {
     local tool="${1:-}"
     local tmpdir=""
-    local tmpdir_q=""
+    local tmpdir_parent=""
+    local tmpdir_parent_q=""
+    local tmpdir_template=""
+    local tmpdir_template_q=""
 
     [[ -n "$tool" ]] || {
         log_warn "_stack_prepare_target_installer_tmpdir requires a tool name"
@@ -854,14 +857,29 @@ _stack_prepare_target_installer_tmpdir() {
         return 1
     fi
 
-    tmpdir="$TARGET_HOME/.cache/acfs/installer-tmp/${tool}-$$"
-    printf -v tmpdir_q '%q' "$tmpdir"
-    if _stack_run_as_user "mkdir -p $tmpdir_q"; then
+    tmpdir_parent="$TARGET_HOME/.cache/acfs/installer-tmp"
+    tmpdir_template="$tmpdir_parent/${tool}.XXXXXX"
+    case "$tmpdir_template" in
+        *[[:space:]]*)
+            log_warn "Cannot prepare installer TMPDIR template with whitespace: $tmpdir_template"
+            return 1
+            ;;
+    esac
+
+    printf -v tmpdir_parent_q '%q' "$tmpdir_parent"
+    if ! _stack_run_as_user "mkdir -p $tmpdir_parent_q"; then
+        log_warn "Failed to prepare installer TMPDIR parent: $tmpdir_parent"
+        return 1
+    fi
+
+    printf -v tmpdir_template_q '%q' "$tmpdir_template"
+    tmpdir="$(_stack_run_as_user "mktemp -d $tmpdir_template_q" 2>/dev/null)" || tmpdir=""
+    if [[ -n "$tmpdir" ]]; then
         printf '%s\n' "$tmpdir"
         return 0
     fi
 
-    log_warn "Failed to prepare installer TMPDIR: $tmpdir"
+    log_warn "Failed to create installer TMPDIR from template: $tmpdir_template"
     return 1
 }
 
