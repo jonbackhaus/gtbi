@@ -10830,6 +10830,236 @@ EOF_HOOK_PARSERS_TRUSTED_JQ
     assert_success
 }
 
+@test "services-setup DCG hook cleanup ignores PATH-poisoned core helpers" {
+    local services_setup="$PROJECT_ROOT/scripts/services-setup.sh"
+    local target_home
+    local settings_file
+    local fake_bin
+    local marker
+    local system_jq=""
+    local candidate
+    local helper
+
+    for candidate in /usr/bin/jq /bin/jq /usr/local/bin/jq /usr/local/sbin/jq /usr/sbin/jq /sbin/jq; do
+        if [[ -x "$candidate" ]]; then
+            system_jq="$candidate"
+            break
+        fi
+    done
+    [[ -n "$system_jq" ]] || skip "system jq required for DCG cleanup trust test"
+
+    target_home="$BATS_TEST_TMPDIR/services-setup-dcg-home"
+    settings_file="$target_home/.claude/settings.json"
+    fake_bin="$BATS_TEST_TMPDIR/services-setup-poison-bin"
+    marker="$BATS_TEST_TMPDIR/services-setup-poison-used"
+    mkdir -p "$target_home/.claude" "$target_home/.local/bin" "$fake_bin"
+
+    for helper in dirname mktemp tee mv rm; do
+        cat > "$fake_bin/$helper" <<EOF
+#!/usr/bin/env bash
+printf '%s\n' "$helper" > "$marker"
+exit 99
+EOF
+        chmod +x "$fake_bin/$helper"
+    done
+
+    cat > "$settings_file" <<'EOF'
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "dcg guard --source claude"
+          },
+          {
+            "type": "command",
+            "command": "echo keep"
+          }
+        ]
+      }
+    ]
+  }
+}
+EOF
+
+    run env PATH="$fake_bin:/usr/bin:/bin" bash -s -- \
+        "$services_setup" "$target_home" "$settings_file" "$marker" "$system_jq" <<'EOF_DCG_CLEANUP_TRUSTED_HELPERS'
+set -euo pipefail
+
+services_setup="$1"
+target_home="$2"
+settings_file="$3"
+marker="$4"
+system_jq="$5"
+
+# shellcheck disable=SC1090
+eval "$(sed -n '/^services_setup_sanitize_abs_nonroot_path()/,/^}$/p' "$services_setup")"
+# shellcheck disable=SC1090
+eval "$(sed -n '/^services_setup_valid_target_user()/,/^}$/p' "$services_setup")"
+# shellcheck disable=SC1090
+eval "$(sed -n '/^services_setup_validate_target_user()/,/^}$/p' "$services_setup")"
+# shellcheck disable=SC1090
+eval "$(sed -n '/^services_setup_system_binary_path()/,/^}$/p' "$services_setup")"
+# shellcheck disable=SC1090
+eval "$(sed -n '/^services_setup_getent_passwd_entry()/,/^}$/p' "$services_setup")"
+# shellcheck disable=SC1090
+eval "$(sed -n '/^services_setup_validate_bin_dir_for_home()/,/^}$/p' "$services_setup")"
+# shellcheck disable=SC1090
+eval "$(sed -n '/^services_setup_resolve_current_user()/,/^}$/p' "$services_setup")"
+# shellcheck disable=SC1090
+eval "$(sed -n '/^run_as_user()/,/^}$/p' "$services_setup")"
+# shellcheck disable=SC1090
+eval "$(sed -n '/^remove_dcg_hook_from_settings()/,/^}$/p' "$services_setup")"
+
+log_error() {
+    printf '%s\n' "$*" >&2
+}
+gum_warn() {
+    printf '%s\n' "$*" >&2
+}
+gum_detail() {
+    printf '%s\n' "$*" >&2
+}
+
+cat() {
+    printf '%s\n' "cat" > "$marker"
+    return 99
+}
+dirname() {
+    printf '%s\n' "dirname" > "$marker"
+    return 99
+}
+rm() {
+    printf '%s\n' "rm" > "$marker"
+    return 99
+}
+
+export TARGET_USER
+TARGET_USER="$(id -un)"
+export TARGET_HOME="$target_home"
+export HOME="$target_home"
+export ACFS_BIN_DIR="$target_home/.local/bin"
+
+remove_dcg_hook_from_settings "$settings_file"
+[[ ! -e "$marker" ]]
+"$system_jq" -e '(.hooks.PreToolUse | length == 1) and (.hooks.PreToolUse[0].hooks | length == 1) and (.hooks.PreToolUse[0].hooks[0].command == "echo keep")' "$settings_file" >/dev/null
+EOF_DCG_CLEANUP_TRUSTED_HELPERS
+    assert_success
+}
+
+@test "services-setup DCG pack config ignores PATH-poisoned core helpers" {
+    local services_setup="$PROJECT_ROOT/scripts/services-setup.sh"
+    local target_home
+    local fake_bin
+    local marker
+    local helper
+
+    target_home="$BATS_TEST_TMPDIR/services-setup-dcg-config-home"
+    fake_bin="$BATS_TEST_TMPDIR/services-setup-dcg-config-poison-bin"
+    marker="$BATS_TEST_TMPDIR/services-setup-dcg-config-poison-used"
+    mkdir -p "$target_home/.local/bin" "$fake_bin"
+
+    cat > "$target_home/.local/bin/dcg" <<'EOF'
+#!/usr/bin/env bash
+exit 0
+EOF
+    chmod +x "$target_home/.local/bin/dcg"
+
+    for helper in mkdir tee; do
+        cat > "$fake_bin/$helper" <<EOF
+#!/usr/bin/env bash
+printf '%s\n' "$helper" > "$marker"
+exit 99
+EOF
+        chmod +x "$fake_bin/$helper"
+    done
+
+    run env PATH="$fake_bin:/usr/bin:/bin" bash -s -- \
+        "$services_setup" "$target_home" "$marker" <<'EOF_DCG_CONFIG_TRUSTED_HELPERS'
+set -euo pipefail
+
+services_setup="$1"
+target_home="$2"
+marker="$3"
+
+# shellcheck disable=SC1090
+eval "$(sed -n '/^services_setup_sanitize_abs_nonroot_path()/,/^}$/p' "$services_setup")"
+# shellcheck disable=SC1090
+eval "$(sed -n '/^services_setup_valid_target_user()/,/^}$/p' "$services_setup")"
+# shellcheck disable=SC1090
+eval "$(sed -n '/^services_setup_validate_target_user()/,/^}$/p' "$services_setup")"
+# shellcheck disable=SC1090
+eval "$(sed -n '/^services_setup_system_binary_path()/,/^}$/p' "$services_setup")"
+# shellcheck disable=SC1090
+eval "$(sed -n '/^services_setup_getent_passwd_entry()/,/^}$/p' "$services_setup")"
+# shellcheck disable=SC1090
+eval "$(sed -n '/^services_setup_validate_bin_dir_for_home()/,/^}$/p' "$services_setup")"
+# shellcheck disable=SC1090
+eval "$(sed -n '/^services_setup_resolve_current_user()/,/^}$/p' "$services_setup")"
+# shellcheck disable=SC1090
+eval "$(sed -n '/^run_as_user()/,/^}$/p' "$services_setup")"
+# shellcheck disable=SC1090
+eval "$(sed -n '/^configure_dcg()/,/^}$/p' "$services_setup")"
+
+log_error() {
+    printf '%s\n' "$*" >&2
+}
+gum_box() {
+    :
+}
+gum_confirm() {
+    return 0
+}
+gum_detail() {
+    printf '%s\n' "$*" >&2
+}
+gum_error() {
+    printf '%s\n' "$*" >&2
+}
+gum_success() {
+    printf '%s\n' "$*" >&2
+}
+gum_warn() {
+    printf '%s\n' "$*" >&2
+}
+
+cleanup_stale_dcg_hook() {
+    :
+}
+dcg_hook_registered() {
+    return 1
+}
+find_user_bin() {
+    case "${1:-}" in
+        dcg) printf '%s\n' "$target_home/.local/bin/dcg" ;;
+        *) return 1 ;;
+    esac
+}
+select_dcg_packs() {
+    printf '%s\n' "database cloud"
+}
+user_command_exists() {
+    return 1
+}
+
+export TARGET_USER
+TARGET_USER="$(id -un)"
+export TARGET_HOME="$target_home"
+export HOME="$target_home"
+export ACFS_BIN_DIR="$target_home/.local/bin"
+export SERVICES_SETUP_NONINTERACTIVE="false"
+
+configure_dcg
+[[ ! -e "$marker" ]]
+grep -F '    "database",' "$target_home/.config/dcg/config.toml" >/dev/null
+grep -F '    "cloud",' "$target_home/.config/dcg/config.toml" >/dev/null
+EOF_DCG_CONFIG_TRUSTED_HELPERS
+    assert_success
+}
+
 @test "legacy stack RCH installer keeps daemon and fleet setup active" {
     run grep -F '_stack_run_installer "$tool" --easy-mode' "$PROJECT_ROOT/scripts/lib/stack.sh"
     assert_success
