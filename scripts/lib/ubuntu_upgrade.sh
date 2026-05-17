@@ -191,6 +191,11 @@ ubuntu_resolve_target_home() {
         return 0
     fi
 
+    if [[ -n "$explicit_home" && "$current_user" == "root" ]]; then
+        printf '%s\n' "$explicit_home"
+        return 0
+    fi
+
     return 1
 }
 
