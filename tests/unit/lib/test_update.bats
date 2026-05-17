@@ -1531,7 +1531,7 @@ EOF
     [[ "$(cat "$mode_file")" == "755" ]]
 }
 
-@test "update_stack runs CASS through target tmpdir wrapper" {
+@test "update_stack runs CASS through target tmpdir fallback and continues on failure" {
     local calls_file="$HOME/verified-installer-calls"
 
     QUIET=true
@@ -1571,16 +1571,18 @@ EOF
         printf 'env:%s\n' "$*" >> "$calls_file"
         return 0
     }
-    update_run_verified_installer_with_target_tmpdir() {
-        printf 'tmp:%s\n' "$*" >> "$calls_file"
-        return 0
+    update_run_verified_installer_with_target_tmpdir_or_existing_on_transient() {
+        printf 'tmp-existing:%s\n' "$*" >> "$calls_file"
+        return 1
     }
     update_run_slb_source_install() { return 0; }
     update_run_fsfs_installer() { return 0; }
 
     run update_stack
     assert_success
-    run grep -Fx "tmp:cass --easy-mode --verify" "$calls_file"
+    run grep -Fx "tmp-existing:CASS cass cass cass --easy-mode --verify" "$calls_file"
+    assert_success
+    run grep -Fx "plain:cm --easy-mode --verify" "$calls_file"
     assert_success
     run grep -Fx "plain:cass --easy-mode --verify" "$calls_file"
     assert_failure
@@ -11512,6 +11514,49 @@ SECURITY
     [[ "$prepared_tmpdir" == "$TEST_TARGET_HOME/.cache/acfs/installer-tmp" ]]
     [[ "$(cat "$TEST_MKTEMP_TEMPLATE")" == "$TEST_TARGET_HOME/.cache/acfs/installer-tmp/cass.XXXXXX" ]]
     [[ "$(cat "$TEST_INSTALLER_ARGS")" == "cass TMPDIR=$TEST_TARGET_HOME/.cache/acfs/installer-tmp/cass.ABC123 --easy-mode --verify" ]]
+}
+
+@test "update verified installer with target tmpdir skips transient failure when existing cass is healthy" {
+    local attempts_file="$HOME/cass-update-attempts"
+
+    mkdir -p "$HOME/.local/bin"
+    cat > "$HOME/.local/bin/cass" <<'EOF'
+#!/usr/bin/env bash
+if [[ "${1:-}" == "--version" ]]; then
+  printf 'cass 0.4.2\n'
+else
+  printf 'cass 0.4.2\n'
+fi
+EOF
+    chmod +x "$HOME/.local/bin/cass"
+
+    QUIET=true
+    VERBOSE=false
+    DRY_RUN=false
+    ABORT_ON_FAILURE=false
+    ACFS_UPDATE_RETRY_MAX_ATTEMPTS=1
+    UPDATE_LOG_FILE="$HOME/update.log"
+    SUCCESS_COUNT=0
+    FAIL_COUNT=0
+    SKIP_COUNT=0
+
+    update_run_verified_installer_with_target_tmpdir() {
+        local attempts=0
+        if [[ -f "$attempts_file" ]]; then
+            attempts="$(cat "$attempts_file")"
+        fi
+        attempts=$((attempts + 1))
+        printf '%s\n' "$attempts" > "$attempts_file"
+        echo "Error: you have exceeded GitHub's API rate limit. Please try again later." >&2
+        return 7
+    }
+
+    update_run_verified_installer_with_target_tmpdir_or_existing_on_transient "CASS" cass cass cass --easy-mode --verify
+
+    [[ "$(cat "$attempts_file")" == "1" ]]
+    [[ "$SUCCESS_COUNT" -eq 0 ]]
+    [[ "$SKIP_COUNT" -eq 1 ]]
+    [[ "$FAIL_COUNT" -eq 0 ]]
 }
 
 @test "update PCR installer uses install repair path and verifies doctor state" {

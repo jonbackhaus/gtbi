@@ -3888,7 +3888,51 @@ update_run_verified_installer_with_target_tmpdir() {
     update_run_verified_installer_with_env "$tool" "TMPDIR=$tmpdir" "$@"
 }
 
+update_run_verified_installer_with_target_tmpdir_or_existing_on_transient() {
+    if [[ $# -lt 4 ]]; then
+        echo "update_run_verified_installer_with_target_tmpdir_or_existing_on_transient requires desc, installer key, binary name, and version tool" >&2
+        return 1
+    fi
+
+    local desc="$1"
+    local installer_key="$2"
+    local binary_name="$3"
+    local version_tool="$4"
+    shift 4
+
+    local exit_code=0
+    local existing_path=""
+    local existing_version="unknown"
+
+    if [[ "$DRY_RUN" == "true" ]]; then
+        log_item "skip" "$desc" "dry-run: verified installer with target TMPDIR"
+        return 0
+    fi
+
+    log_item "run" "$desc"
+    update_run_command_capture_with_retry "$desc" update_run_verified_installer_with_target_tmpdir "$installer_key" "$@" || exit_code=$?
+    if [[ $exit_code -eq 0 ]]; then
+        update_finish_cmd_ok "$desc"
+        return 0
+    fi
+
+    existing_path="$(update_binary_path "$binary_name" 2>/dev/null || true)"
+    existing_version="$(get_version "$version_tool" 2>/dev/null || true)"
+    if update_is_transient_failure_output "$UPDATE_LAST_COMMAND_OUTPUT" && [[ -n "$existing_path" && -x "$existing_path" && -n "$existing_version" && "$existing_version" != "unknown" ]]; then
+        update_finish_cmd_skip "$desc" "upstream temporarily unavailable; existing ${binary_name} ${existing_version} remains installed"
+        return 0
+    fi
+
+    update_finish_cmd_fail "$desc" "installer exited ${exit_code}"
+    return 1
+}
+
 update_run_verified_installer_or_existing_on_transient() {
+    if [[ $# -lt 4 ]]; then
+        echo "update_run_verified_installer_or_existing_on_transient requires desc, installer key, binary name, and version tool" >&2
+        return 1
+    fi
+
     local desc="$1"
     local installer_key="$2"
     local binary_name="$3"
@@ -5650,7 +5694,7 @@ update_stack() {
     # CASS - always install/update. Its upstream installer uses a lock inside
     # TMPDIR; give it an ACFS-owned target-user temp root so stale shared
     # /tmp or /data/tmp locks cannot make only CASS fail during `acfs update`.
-    run_cmd "CASS" update_run_verified_installer_with_target_tmpdir cass --easy-mode --verify
+    update_run_verified_installer_with_target_tmpdir_or_existing_on_transient "CASS" cass cass cass --easy-mode --verify || true
 
     # CASS Memory - always install/update
     run_cmd "CASS Memory" update_run_verified_installer cm --easy-mode --verify
