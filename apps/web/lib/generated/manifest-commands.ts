@@ -283,7 +283,7 @@ export const manifestCommands: ManifestCommand[] = [
     cliName: "csctf",
     cliAliases: [],
     description: "Chat Shared Conversation to File - convert AI share links to Markdown/HTML",
-    docsUrl: "https://github.com/Dicklesworthstone/csctf",
+    docsUrl: "https://github.com/Dicklesworthstone/chat_shared_conversation_to_file",
   },
   {
     moduleId: "utils.giil",

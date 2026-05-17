@@ -1442,7 +1442,7 @@ Tech stack: Bash wrapper orchestrating Node.js/Playwright/Chromium/Sharp for hea
     id: "csctf",
     name: "Chat Shared Conversation to File",
     shortName: "CSCTF",
-    href: "https://github.com/Dicklesworthstone/csctf",
+    href: "https://github.com/Dicklesworthstone/chat_shared_conversation_to_file",
     icon: "FileText",
     color: "from-emerald-500 to-teal-600",
     tagline: "Convert AI chat share links to Markdown/HTML",
@@ -1480,7 +1480,7 @@ Key capabilities:
     ],
     cliCommands: ['csctf "https://chatgpt.com/share/..."', "csctf --md-only", "csctf --help"],
     installCommand:
-      "curl -fsSL https://raw.githubusercontent.com/Dicklesworthstone/csctf/main/install.sh | bash",
+      "curl -fsSL https://raw.githubusercontent.com/Dicklesworthstone/chat_shared_conversation_to_file/main/install.sh | bash",
     language: "Rust",
   },
   {

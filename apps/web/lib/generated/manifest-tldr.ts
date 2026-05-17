@@ -818,7 +818,7 @@ export const manifestTldrTools: ManifestTldrTool[] = [
     tldrSnippet: "Chat Shared Conversation to File - convert AI share links to Markdown/HTML",
     icon: "file-text",
     color: "#8B5CF6",
-    href: "https://github.com/Dicklesworthstone/csctf",
+    href: "https://github.com/Dicklesworthstone/chat_shared_conversation_to_file",
     features: [
       "Multi-provider support (ChatGPT, Claude, Gemini, Grok)",
       "Dual Markdown + HTML output",

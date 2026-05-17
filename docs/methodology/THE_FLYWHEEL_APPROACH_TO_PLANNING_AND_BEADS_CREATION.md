@@ -557,7 +557,7 @@ That is the key threshold. If you are still redesigning the product, stay in pla
 
 For the Cass GitHub Pages export feature, the plan went through multiple rounds over about 3 hours, growing to approximately 3,500 lines. The revisions in GitHub show massive improvements from v2 to v3, with improvements continuing all the way to the end:
 
-https://github.com/Dicklesworthstone/coding_agent_session_search/blob/main/PLAN_TO_CREATE_GH_PAGES_WEB_EXPORT_APP.md
+https://github.com/Dicklesworthstone/coding_agent_session_search/blob/main/docs/planning/PLAN_TO_CREATE_GH_PAGES_WEB_EXPORT_APP.md
 
 ### The Result: Not Slop
 

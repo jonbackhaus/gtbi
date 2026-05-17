@@ -199,7 +199,7 @@ Write it to PLAN_FOR_CASS_MEMORY_SYSTEM.md"`}
           The plan is the bedrock of a successful agentic project. Let&apos;s
           dissect what makes{" "}
           <a
-            href="https://github.com/Dicklesworthstone/cass_memory_system/blob/main/PLAN_FOR_CASS_MEMORY_SYSTEM.md"
+            href="https://github.com/Dicklesworthstone/cass_memory_system/blob/main/docs/planning/PLAN_FOR_CASS_MEMORY_SYSTEM.md"
             target="_blank"
             rel="noopener noreferrer"
             className="text-primary underline inline-flex items-center gap-1"
@@ -367,7 +367,7 @@ Write it to PLAN_FOR_CASS_MEMORY_SYSTEM.md"`}
           <TipBox variant="info">
             The full plan is available at{" "}
             <a
-              href="https://github.com/Dicklesworthstone/cass_memory_system/blob/main/PLAN_FOR_CASS_MEMORY_SYSTEM.md"
+              href="https://github.com/Dicklesworthstone/cass_memory_system/blob/main/docs/planning/PLAN_FOR_CASS_MEMORY_SYSTEM.md"
               target="_blank"
               rel="noopener noreferrer"
               className="text-primary underline"

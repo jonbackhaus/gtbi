@@ -60,7 +60,7 @@
 
 > If you want to follow along live as I conjure this complex, powerful agent memory system out of thin air today using all my tricks, I just finished the process of drafting the final markdown plan document (the agents did; I haven't even read it all yet!):
 >
-> https://github.com/Dicklesworthstone/cass_memory_system/blob/main/PLAN_FOR_CASS_MEMORY_SYSTEM.md
+> https://github.com/Dicklesworthstone/cass_memory_system/blob/main/docs/planning/PLAN_FOR_CASS_MEMORY_SYSTEM.md
 
 **Self-reply** | Dec 7, 2025 9:20 PM | [Post link](https://x.com/doodlestein/status/1997778160029729008) | 5 likes
 
@@ -578,7 +578,7 @@
 >
 > You can see the final ~3,500-line markdown plan here:
 >
-> https://github.com/Dicklesworthstone/coding_agent_session_search/blob/main/PLAN_TO_CREATE_GH_PAGES_WEB_EXPORT_APP.md
+> https://github.com/Dicklesworthstone/coding_agent_session_search/blob/main/docs/planning/PLAN_TO_CREATE_GH_PAGES_WEB_EXPORT_APP.md
 >
 > But what's more interesting is to see the revisions in GitHub, where you can see the massive improvements that are made from v2 to v3, and how the improvements actually continue all the way to the end:
 >

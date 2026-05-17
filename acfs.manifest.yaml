@@ -2836,7 +2836,7 @@ modules:
       tagline: "Convert AI chat share links to Markdown and HTML"
       icon: "file-text"
       color: "#8B5CF6"
-      href: "https://github.com/Dicklesworthstone/csctf"
+      href: "https://github.com/Dicklesworthstone/chat_shared_conversation_to_file"
       features:
         - "Multi-provider support (ChatGPT, Claude, Gemini, Grok)"
         - "Dual Markdown + HTML output"
