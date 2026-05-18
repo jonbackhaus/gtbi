@@ -3694,6 +3694,22 @@ EOF
     assert_failure
 }
 
+@test "services-setup: PostgreSQL service start uses noninteractive sudo" {
+    local services_setup="$PROJECT_ROOT/scripts/services-setup.sh"
+
+    run grep -F 'sudo_cmd=("$sudo_bin" -n)' "$services_setup"
+    assert_success
+
+    run grep -F 'if ! "${sudo_cmd[@]}" "$systemctl_bin" start postgresql; then' "$services_setup"
+    assert_success
+
+    run grep -F 'if ! "${sudo_cmd[@]}" "$systemctl_bin" enable postgresql; then' "$services_setup"
+    assert_success
+
+    run grep -F 'Could not start PostgreSQL without prompting for sudo' "$services_setup"
+    assert_success
+}
+
 @test "services-setup: run_as_user ignores function-poisoned whoami on same-user fast path" {
     local services_setup="$PROJECT_ROOT/scripts/services-setup.sh"
     local current_user

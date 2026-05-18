@@ -1700,14 +1700,22 @@ setup_postgres() {
                     gum_error "sudo not found; cannot start PostgreSQL service"
                     return 1
                 fi
-                sudo_cmd=("$sudo_bin")
+                sudo_cmd=("$sudo_bin" -n)
             fi
             if [[ -z "$systemctl_bin" ]]; then
                 gum_error "systemctl not found; cannot start PostgreSQL service"
                 return 1
             fi
-            "${sudo_cmd[@]}" "$systemctl_bin" start postgresql
-            "${sudo_cmd[@]}" "$systemctl_bin" enable postgresql
+            if ! "${sudo_cmd[@]}" "$systemctl_bin" start postgresql; then
+                gum_error "Could not start PostgreSQL without prompting for sudo"
+                gum_detail "Run acfs services-setup from a root shell, or re-run the main installer in vibe mode to enable passwordless sudo."
+                return 1
+            fi
+            if ! "${sudo_cmd[@]}" "$systemctl_bin" enable postgresql; then
+                gum_error "Could not enable PostgreSQL without prompting for sudo"
+                gum_detail "Run acfs services-setup from a root shell, or re-run the main installer in vibe mode to enable passwordless sudo."
+                return 1
+            fi
             gum_success "PostgreSQL service started and enabled"
         fi
     fi
