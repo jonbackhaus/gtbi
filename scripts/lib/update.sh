@@ -1078,6 +1078,20 @@ log_item() {
     return 0
 }
 
+# Print a printf-formatted line to stdout unless QUIET=true.
+# Always returns 0 so callers can safely use this as the last statement of a
+# function under `set -euo pipefail`. The naive idiom
+# `[[ "$QUIET" != "true" ]] && printf …` propagates exit 1 when QUIET=true,
+# which killed acfs-nightly-update on any night a per-tool function actually
+# upgraded a tool (issue #279).
+update_say() {
+    if [[ "${QUIET:-false}" != "true" ]]; then
+        # shellcheck disable=SC2059
+        printf "$@"
+    fi
+    return 0
+}
+
 update_finish_cmd_ok() {
     local desc="$1"
     local details="${2:-}"
@@ -4889,7 +4903,7 @@ update_bun() {
 
     # Capture version after and log if changed (don't use log_item "ok" to avoid double-counting)
     if capture_version_after "bun"; then
-        [[ "$QUIET" != "true" ]] && printf "       ${DIM}%s → %s${NC}\n" "${VERSION_BEFORE[bun]}" "${VERSION_AFTER[bun]}"
+        update_say "       ${DIM}%s → %s${NC}\n" "${VERSION_BEFORE[bun]}" "${VERSION_AFTER[bun]}"
     fi
 }
 
@@ -4966,7 +4980,7 @@ update_agents() {
 
         # Show version change without double-counting (run_cmd already incremented SUCCESS_COUNT)
         if capture_version_after "claude"; then
-            [[ "$QUIET" != "true" ]] && printf "       ${DIM}%s → %s${NC}\n" "${VERSION_BEFORE[claude]}" "${VERSION_AFTER[claude]}"
+            update_say "       ${DIM}%s → %s${NC}\n" "${VERSION_BEFORE[claude]}" "${VERSION_AFTER[claude]}"
         fi
     elif [[ "$FORCE_MODE" == "true" ]]; then
         capture_version_before "claude"
@@ -4974,7 +4988,7 @@ update_agents() {
             # INTENTIONAL: verified installer is the correct path for fresh installs
             run_cmd "Claude Code (install)" update_run_verified_installer claude latest
             if capture_version_after "claude"; then
-                [[ "$QUIET" != "true" ]] && printf "       ${DIM}%s → %s${NC}\n" "${VERSION_BEFORE[claude]}" "${VERSION_AFTER[claude]}"
+                update_say "       ${DIM}%s → %s${NC}\n" "${VERSION_BEFORE[claude]}" "${VERSION_AFTER[claude]}"
             fi
         else
             log_item "fail" "Claude Code" "not installed and install unavailable (missing security.sh/checksums.yaml)"
@@ -5033,7 +5047,7 @@ update_agents() {
 
         # Show version change without double-counting
         if capture_version_after "codex"; then
-            [[ "$QUIET" != "true" ]] && printf "       ${DIM}%s → %s${NC}\n" "${VERSION_BEFORE[codex]}" "${VERSION_AFTER[codex]}"
+            update_say "       ${DIM}%s → %s${NC}\n" "${VERSION_BEFORE[codex]}" "${VERSION_AFTER[codex]}"
         fi
     else
         log_item "skip" "Codex CLI" "not installed (use --force to install)"
@@ -5048,7 +5062,7 @@ update_agents() {
         run_cmd_bun_with_retry "Gemini CLI" update_run_in_target_context "" "$bun_bin" install -g --trust @google/gemini-cli@latest
         # Show version change without double-counting
         if capture_version_after "gemini"; then
-            [[ "$QUIET" != "true" ]] && printf "       ${DIM}%s → %s${NC}\n" "${VERSION_BEFORE[gemini]}" "${VERSION_AFTER[gemini]}"
+            update_say "       ${DIM}%s → %s${NC}\n" "${VERSION_BEFORE[gemini]}" "${VERSION_AFTER[gemini]}"
         fi
         # Apply Gemini CLI patches (EBADF crash fix, rate-limit retry, quota retry)
         if [[ "$DRY_RUN" == "true" ]]; then
@@ -5390,7 +5404,7 @@ update_cloud() {
             # Refresh PATH in case the target bin was created during install.
             ensure_path
             if capture_version_after "supabase"; then
-                [[ "$QUIET" != "true" ]] && printf "       ${DIM}%s → %s${NC}\n" "${VERSION_BEFORE[supabase]}" "${VERSION_AFTER[supabase]}"
+                update_say "       ${DIM}%s → %s${NC}\n" "${VERSION_BEFORE[supabase]}" "${VERSION_AFTER[supabase]}"
             fi
         fi
     else
@@ -5424,7 +5438,7 @@ update_cloud() {
         fi
         # gh itself is updated via apt, log current version
         if capture_version_after "gh"; then
-            [[ "$QUIET" != "true" ]] && printf "       ${DIM}version: %s${NC}\n" "${VERSION_AFTER[gh]}"
+            update_say "       ${DIM}version: %s${NC}\n" "${VERSION_AFTER[gh]}"
         fi
     else
         log_item "skip" "GitHub CLI" "not installed"
@@ -5444,7 +5458,7 @@ update_cloud() {
             # gcloud components update requires --quiet for non-interactive
             run_cmd "Google Cloud SDK" "$gcloud_bin" components update --quiet
             if capture_version_after "gcloud"; then
-                [[ "$QUIET" != "true" ]] && printf "       ${DIM}%s → %s${NC}\n" "${VERSION_BEFORE[gcloud]}" "${VERSION_AFTER[gcloud]}"
+                update_say "       ${DIM}%s → %s${NC}\n" "${VERSION_BEFORE[gcloud]}" "${VERSION_AFTER[gcloud]}"
             fi
         fi
     else
@@ -5483,7 +5497,7 @@ update_rust() {
 
     # Show version change without double-counting
     if capture_version_after "rust"; then
-        [[ "$QUIET" != "true" ]] && printf "       ${DIM}%s → %s${NC}\n" "${VERSION_BEFORE[rust]}" "${VERSION_AFTER[rust]}"
+        update_say "       ${DIM}%s → %s${NC}\n" "${VERSION_BEFORE[rust]}" "${VERSION_AFTER[rust]}"
     fi
 
     # Log installed toolchains
@@ -5525,7 +5539,7 @@ update_cargo_tools() {
         run_cmd "Update $tool" update_run_in_target_context "" "$cargo_bin" install "$tool" --locked --force
 
         if capture_version_after "$binary_name"; then
-             [[ "$QUIET" != "true" ]] && printf "       ${DIM}%s → %s${NC}\n" "${VERSION_BEFORE[$binary_name]}" "${VERSION_AFTER[$binary_name]}"
+             update_say "       ${DIM}%s → %s${NC}\n" "${VERSION_BEFORE[$binary_name]}" "${VERSION_AFTER[$binary_name]}"
         fi
     done
 }
@@ -5558,7 +5572,7 @@ update_uv() {
 
     # Show version change without double-counting
     if capture_version_after "uv"; then
-        [[ "$QUIET" != "true" ]] && printf "       ${DIM}%s → %s${NC}\n" "${VERSION_BEFORE[uv]}" "${VERSION_AFTER[uv]}"
+        update_say "       ${DIM}%s → %s${NC}\n" "${VERSION_BEFORE[uv]}" "${VERSION_AFTER[uv]}"
     fi
 }
 
@@ -5624,14 +5638,14 @@ update_stack() {
     capture_version_before "brenner"
     run_cmd "Brenner Bot" update_run_verified_installer brenner_bot --skip-ntm --skip-cass --skip-cm
     if capture_version_after "brenner"; then
-        [[ "$QUIET" != "true" ]] && printf "       ${DIM}%s → %s${NC}\n" "${VERSION_BEFORE[brenner]}" "${VERSION_AFTER[brenner]}"
+        update_say "       ${DIM}%s → %s${NC}\n" "${VERSION_BEFORE[brenner]}" "${VERSION_AFTER[brenner]}"
     fi
 
     # NTM - always install/update (installer is idempotent)
     capture_version_before "ntm"
     update_run_verified_installer_or_existing_on_transient "NTM" ntm ntm ntm || true
     if capture_version_after "ntm"; then
-        [[ "$QUIET" != "true" ]] && printf "       ${DIM}%s → %s${NC}\n" "${VERSION_BEFORE[ntm]}" "${VERSION_AFTER[ntm]}"
+        update_say "       ${DIM}%s → %s${NC}\n" "${VERSION_BEFORE[ntm]}" "${VERSION_AFTER[ntm]}"
     fi
 
     # MCP Agent Mail - always install/update via non-blocking installer mode,
@@ -5806,7 +5820,7 @@ update_stack() {
         capture_version_before "aadc"
         run_cmd "AADC" update_run_cargo_git_source_install https://github.com/Dicklesworthstone/aadc.git aadc
         if capture_version_after "aadc"; then
-            [[ "$QUIET" != "true" ]] && printf "       ${DIM}%s → %s${NC}\n" "${VERSION_BEFORE[aadc]}" "${VERSION_AFTER[aadc]}"
+            update_say "       ${DIM}%s → %s${NC}\n" "${VERSION_BEFORE[aadc]}" "${VERSION_AFTER[aadc]}"
         else
             log_to_file "AADC already up to date: ${VERSION_AFTER[aadc]:-${VERSION_BEFORE[aadc]:-unknown}}"
         fi
@@ -5817,7 +5831,7 @@ update_stack() {
         capture_version_before "rust_proxy"
         run_cmd "Rust Proxy" update_run_cargo_git_source_install https://github.com/Dicklesworthstone/rust_proxy.git rust_proxy
         if capture_version_after "rust_proxy"; then
-            [[ "$QUIET" != "true" ]] && printf "       ${DIM}%s → %s${NC}\n" "${VERSION_BEFORE[rust_proxy]}" "${VERSION_AFTER[rust_proxy]}"
+            update_say "       ${DIM}%s → %s${NC}\n" "${VERSION_BEFORE[rust_proxy]}" "${VERSION_AFTER[rust_proxy]}"
         else
             log_to_file "Rust Proxy already up to date: ${VERSION_AFTER[rust_proxy]:-${VERSION_BEFORE[rust_proxy]:-unknown}}"
         fi
@@ -5828,7 +5842,7 @@ update_stack() {
         capture_version_before "asb"
         run_cmd "ASB" update_run_verified_installer asb
         if capture_version_after "asb"; then
-            [[ "$QUIET" != "true" ]] && printf "       ${DIM}%s → %s${NC}\n" "${VERSION_BEFORE[asb]}" "${VERSION_AFTER[asb]}"
+            update_say "       ${DIM}%s → %s${NC}\n" "${VERSION_BEFORE[asb]}" "${VERSION_AFTER[asb]}"
         else
             log_to_file "ASB already up to date: ${VERSION_AFTER[asb]:-${VERSION_BEFORE[asb]:-unknown}}"
         fi
@@ -5862,7 +5876,7 @@ update_stack() {
         fi
 
         if [[ -n "$pcr_mtime_before" && -n "$pcr_mtime_after" && "$pcr_mtime_before" != "$pcr_mtime_after" ]]; then
-            [[ "$QUIET" != "true" ]] && printf "       ${DIM}%s → %s${NC}\n" "$pcr_mtime_before" "$pcr_mtime_after"
+            update_say "       ${DIM}%s → %s${NC}\n" "$pcr_mtime_before" "$pcr_mtime_after"
         elif [[ -n "$pcr_mtime_after" ]]; then
             log_to_file "PCR hook already up to date: mtime unchanged ($pcr_mtime_after)"
         fi
@@ -5955,7 +5969,7 @@ update_omz() {
 
     # Show version change without double-counting
     if capture_version_after "omz"; then
-        [[ "$QUIET" != "true" ]] && printf "       ${DIM}%s → %s${NC}\n" "${VERSION_BEFORE[omz]}" "${VERSION_AFTER[omz]}"
+        update_say "       ${DIM}%s → %s${NC}\n" "${VERSION_BEFORE[omz]}" "${VERSION_AFTER[omz]}"
     fi
 }
 
@@ -6121,7 +6135,7 @@ update_atuin() {
 
     # Show version change without double-counting
     if capture_version_after "atuin"; then
-        [[ "$QUIET" != "true" ]] && printf "       ${DIM}%s → %s${NC}\n" "${VERSION_BEFORE[atuin]}" "${VERSION_AFTER[atuin]}"
+        update_say "       ${DIM}%s → %s${NC}\n" "${VERSION_BEFORE[atuin]}" "${VERSION_AFTER[atuin]}"
     fi
 }
 
@@ -6161,7 +6175,7 @@ update_zoxide() {
 
     # Show version change without double-counting
     if capture_version_after "zoxide"; then
-        [[ "$QUIET" != "true" ]] && printf "       ${DIM}%s → %s${NC}\n" "${VERSION_BEFORE[zoxide]}" "${VERSION_AFTER[zoxide]}"
+        update_say "       ${DIM}%s → %s${NC}\n" "${VERSION_BEFORE[zoxide]}" "${VERSION_AFTER[zoxide]}"
     fi
 }
 
