@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # ============================================================
-# ACFS Ubuntu Upgrade Resume Script
+# GTBI Ubuntu Upgrade Resume Script
 #
-# This script is copied to /var/lib/acfs/ and executed after
+# This script is copied to /var/lib/gtbi/ and executed after
 # each reboot during the Ubuntu upgrade process.
 #
 # CRITICAL SAFETY: This script includes safeguards to prevent
@@ -11,7 +11,7 @@
 #
 # Workflow:
 # 1. FIRST: Check if already at target version (prevent loops)
-# 2. Source libraries from /var/lib/acfs/lib/
+# 2. Source libraries from /var/lib/gtbi/lib/
 # 3. Check if more upgrades needed
 # 4. If complete: cleanup, disable service, launch continue_install.sh
 # 5. If not complete: run next upgrade and trigger reboot
@@ -23,18 +23,18 @@
 set -euo pipefail
 
 # Constants
-ACFS_RESUME_DIR="/var/lib/acfs"
-ACFS_LIB_DIR="${ACFS_RESUME_DIR}/lib"
-ACFS_LOG="/var/log/acfs/upgrade_resume.log"
-ACFS_STATE_FILE="${ACFS_RESUME_DIR}/state.json"
-ACFS_CONTINUE_CONTEXT_FILE="${ACFS_RESUME_DIR}/continue_context.env"
-# Default target for ACFS. May be overridden by the state file (target_version)
+GTBI_RESUME_DIR="/var/lib/gtbi"
+GTBI_LIB_DIR="${GTBI_RESUME_DIR}/lib"
+GTBI_LOG="/var/log/gtbi/upgrade_resume.log"
+GTBI_STATE_FILE="${GTBI_RESUME_DIR}/state.json"
+GTBI_CONTINUE_CONTEXT_FILE="${GTBI_RESUME_DIR}/continue_context.env"
+# Default target for GTBI. May be overridden by the state file (target_version)
 # or by exporting UBUNTU_TARGET_VERSION before executing this script.
 UBUNTU_TARGET_VERSION="${UBUNTU_TARGET_VERSION:-25.10}"
-SERVICE_NAME="acfs-upgrade-resume"
+SERVICE_NAME="gtbi-upgrade-resume"
 
 # Ensure log directory exists
-mkdir -p "$(dirname "$ACFS_LOG")"
+mkdir -p "$(dirname "$GTBI_LOG")"
 
 # Read target version from state file if available.
 read_target_version_from_state() {
@@ -89,7 +89,7 @@ ubuntu_is_at_or_beyond_target_version() {
     return 1
 }
 
-state_target_version="$(read_target_version_from_state "$ACFS_STATE_FILE" || true)"
+state_target_version="$(read_target_version_from_state "$GTBI_STATE_FILE" || true)"
 if [[ -n "${state_target_version:-}" ]]; then
     UBUNTU_TARGET_VERSION="$state_target_version"
 fi
@@ -107,34 +107,34 @@ export UBUNTU_TARGET_VERSION_NUM
 log() {
     local timestamp
     timestamp=$(date '+%Y-%m-%d %H:%M:%S')
-    echo "[$timestamp] $*" | tee -a "$ACFS_LOG" || true
+    echo "[$timestamp] $*" | tee -a "$GTBI_LOG" || true
 }
 
 log_error() {
     local timestamp
     timestamp=$(date '+%Y-%m-%d %H:%M:%S')
-    echo "[$timestamp] ERROR: $*" | tee -a "$ACFS_LOG" >&2 || true
+    echo "[$timestamp] ERROR: $*" | tee -a "$GTBI_LOG" >&2 || true
 }
 
 load_continue_context() {
-    [[ -f "$ACFS_CONTINUE_CONTEXT_FILE" ]] || return 1
+    [[ -f "$GTBI_CONTINUE_CONTEXT_FILE" ]] || return 1
 
     # shellcheck source=/dev/null
-    source "$ACFS_CONTINUE_CONTEXT_FILE"
+    source "$GTBI_CONTINUE_CONTEXT_FILE"
     return 0
 }
 
 # Clean up the resume infrastructure on success.
 # This uses strict path checks because it runs as root on boot; a bad rm -rf would be catastrophic.
 cleanup_resume_files() {
-    local expected_resume_dir="/var/lib/acfs"
-    if [[ "${ACFS_RESUME_DIR:-}" != "$expected_resume_dir" ]]; then
-        log_error "Refusing to clean up unexpected ACFS_RESUME_DIR: ${ACFS_RESUME_DIR:-<unset>} (expected: $expected_resume_dir)"
+    local expected_resume_dir="/var/lib/gtbi"
+    if [[ "${GTBI_RESUME_DIR:-}" != "$expected_resume_dir" ]]; then
+        log_error "Refusing to clean up unexpected GTBI_RESUME_DIR: ${GTBI_RESUME_DIR:-<unset>} (expected: $expected_resume_dir)"
         return 1
     fi
 
-    local script_path="${ACFS_RESUME_DIR}/upgrade_resume.sh"
-    local lib_dir="${ACFS_RESUME_DIR}/lib"
+    local script_path="${GTBI_RESUME_DIR}/upgrade_resume.sh"
+    local lib_dir="${GTBI_RESUME_DIR}/lib"
 
     if [[ "$script_path" != "$expected_resume_dir/upgrade_resume.sh" ]]; then
         log_error "Refusing to remove unexpected resume script path: $script_path"
@@ -162,7 +162,7 @@ cleanup_service() {
 # Update MOTD with failure message and instructions
 update_motd_failure() {
     local error_msg="$1"
-    local motd_file="/etc/update-motd.d/00-acfs-upgrade"
+    local motd_file="/etc/update-motd.d/00-gtbi-upgrade"
 
     # Security: This message will be embedded into a shell script. Prevent any
     # possibility of shell injection by normalizing to a single line and
@@ -191,7 +191,7 @@ N='\033[0m'       # Reset
 
 echo ""
 echo -e "${C}╔══════════════════════════════════════════════════════════════╗${N}"
-echo -e "${C}║${N}           ${C}${B}*** ACFS UBUNTU UPGRADE FAILED ***${N}                ${C}║${N}"
+echo -e "${C}║${N}           ${C}${B}*** GTBI UBUNTU UPGRADE FAILED ***${N}                ${C}║${N}"
 echo -e "${C}╠══════════════════════════════════════════════════════════════╣${N}"
 echo -e "${C}║${N}                                                              ${C}║${N}"
 MOTD_SCRIPT
@@ -205,14 +205,14 @@ MOTD_ERROR
     cat >> "$motd_file" << 'MOTD_FOOTER'
 echo -e "${C}║${N}                                                              ${C}║${N}"
 echo -e "${C}║${N}  ${B}TO RETRY (AFTER FIXING):${N}                                   ${C}║${N}"
-echo -e "${C}║${N}    sudo systemctl enable --now acfs-upgrade-resume           ${C}║${N}"
+echo -e "${C}║${N}    sudo systemctl enable --now gtbi-upgrade-resume           ${C}║${N}"
 echo -e "${C}║${N}                                                              ${C}║${N}"
 echo -e "${C}║${N}  ${B}TO CHECK STATUS:${N}                                           ${C}║${N}"
-echo -e "${C}║${N}    /var/lib/acfs/check_status.sh                             ${C}║${N}"
+echo -e "${C}║${N}    /var/lib/gtbi/check_status.sh                             ${C}║${N}"
 echo -e "${C}║${N}                                                              ${C}║${N}"
 echo -e "${C}║${N}  ${B}TO VIEW LOGS:${N}                                              ${C}║${N}"
-echo -e "${C}║${N}    journalctl -u acfs-upgrade-resume -f                      ${C}║${N}"
-echo -e "${C}║${N}    cat /var/log/acfs/upgrade_resume.log                      ${C}║${N}"
+echo -e "${C}║${N}    journalctl -u gtbi-upgrade-resume -f                      ${C}║${N}"
+echo -e "${C}║${N}    cat /var/log/gtbi/upgrade_resume.log                      ${C}║${N}"
 echo -e "${C}║${N}                                                              ${C}║${N}"
 echo -e "${C}╚══════════════════════════════════════════════════════════════╝${N}"
 echo ""
@@ -223,15 +223,15 @@ MOTD_FOOTER
 
 # Remove MOTD
 remove_motd() {
-    rm -f /etc/update-motd.d/00-acfs-upgrade 2>/dev/null || true
+    rm -f /etc/update-motd.d/00-gtbi-upgrade 2>/dev/null || true
 }
 
 # Update state to mark upgrade as complete
 mark_state_complete() {
-    if [[ -f "$ACFS_STATE_FILE" ]] && command -v jq &>/dev/null; then
+    if [[ -f "$GTBI_STATE_FILE" ]] && command -v jq &>/dev/null; then
         local tmp_file=""
         local completed_at=""
-        tmp_file="$(mktemp "${ACFS_STATE_FILE}.tmp.XXXXXX" 2>/dev/null)" || tmp_file=""
+        tmp_file="$(mktemp "${GTBI_STATE_FILE}.tmp.XXXXXX" 2>/dev/null)" || tmp_file=""
 
         if [[ -z "$tmp_file" ]]; then
             log_error "mktemp failed; skipping state update"
@@ -245,8 +245,8 @@ mark_state_complete() {
             .ubuntu_upgrade.needs_reboot = false |
             .ubuntu_upgrade.resume_after_reboot = false |
             .ubuntu_upgrade.current_upgrade = null
-        ' "$ACFS_STATE_FILE" > "$tmp_file" 2>/dev/null; then
-            if mv "$tmp_file" "$ACFS_STATE_FILE" 2>/dev/null; then
+        ' "$GTBI_STATE_FILE" > "$tmp_file" 2>/dev/null; then
+            if mv "$tmp_file" "$GTBI_STATE_FILE" 2>/dev/null; then
                 log "State updated to 'completed'"
             else
                 rm -f "$tmp_file" 2>/dev/null || true
@@ -262,7 +262,7 @@ mark_state_complete() {
 # Launch continue script using systemd-run for reliability
 # nohup+background is unreliable when parent service exits
 launch_continue_script() {
-    local script="${ACFS_RESUME_DIR}/continue_install.sh"
+    local script="${GTBI_RESUME_DIR}/continue_install.sh"
     load_continue_context || true
 
     if [[ ! -f "$script" ]]; then
@@ -272,8 +272,8 @@ launch_continue_script() {
             curl_cmd="curl --proto '=https' --proto-redir '=https' -fsSL"
         fi
 
-        local install_url="${CONTINUE_INSTALL_URL:-https://raw.githubusercontent.com/Dicklesworthstone/agentic_coding_flywheel_setup/main/install.sh}"
-        local continue_ref="${CONTINUE_ACFS_REF:-main}"
+        local install_url="${CONTINUE_INSTALL_URL:-https://raw.githubusercontent.com/jonbackhaus/gtbi/main/install.sh}"
+        local continue_ref="${CONTINUE_GTBI_REF:-main}"
         local continue_home="${CONTINUE_HOME:-/root}"
         local -a continue_args=()
         local rendered_args=""
@@ -293,18 +293,18 @@ launch_continue_script() {
 
         [[ -n "${CONTINUE_TARGET_USER:-}" ]] && env_prefix+="TARGET_USER=$(printf '%q' "$CONTINUE_TARGET_USER") "
         [[ -n "${CONTINUE_TARGET_HOME:-}" ]] && env_prefix+="TARGET_HOME=$(printf '%q' "$CONTINUE_TARGET_HOME") "
-        [[ -n "${CONTINUE_ACFS_HOME:-}" ]] && env_prefix+="ACFS_HOME=$(printf '%q' "$CONTINUE_ACFS_HOME") "
-        [[ -n "${CONTINUE_ACFS_STATE_FILE:-}" ]] && env_prefix+="ACFS_STATE_FILE=$(printf '%q' "$CONTINUE_ACFS_STATE_FILE") "
+        [[ -n "${CONTINUE_GTBI_HOME:-}" ]] && env_prefix+="GTBI_HOME=$(printf '%q' "$CONTINUE_GTBI_HOME") "
+        [[ -n "${CONTINUE_GTBI_STATE_FILE:-}" ]] && env_prefix+="GTBI_STATE_FILE=$(printf '%q' "$CONTINUE_GTBI_STATE_FILE") "
         env_prefix+="HOME=$(printf '%q' "$continue_home") "
         if [[ -n "$continue_ref" ]] && [[ "$continue_ref" != "main" ]]; then
-            env_prefix+="ACFS_REF=$(printf '%q' "$continue_ref") "
+            env_prefix+="GTBI_REF=$(printf '%q' "$continue_ref") "
         fi
 
         log "Run: ${env_prefix}${curl_cmd} $(printf '%q' "$install_url") | bash -s -- ${rendered_args}"
         return 1
     fi
 
-    log "Launching continue_install.sh to resume ACFS installation"
+    log "Launching continue_install.sh to resume GTBI installation"
     local continue_home="${CONTINUE_HOME:-/root}"
     local -a continue_env_args=("--setenv=HOME=${continue_home}")
     local -a continue_nohup_env=("HOME=${continue_home}")
@@ -317,50 +317,50 @@ launch_continue_script() {
         continue_env_args+=("--setenv=TARGET_HOME=${CONTINUE_TARGET_HOME}")
         continue_nohup_env+=("TARGET_HOME=${CONTINUE_TARGET_HOME}")
     fi
-    if [[ -n "${CONTINUE_ACFS_HOME:-}" ]]; then
-        continue_env_args+=("--setenv=ACFS_HOME=${CONTINUE_ACFS_HOME}")
-        continue_nohup_env+=("ACFS_HOME=${CONTINUE_ACFS_HOME}")
+    if [[ -n "${CONTINUE_GTBI_HOME:-}" ]]; then
+        continue_env_args+=("--setenv=GTBI_HOME=${CONTINUE_GTBI_HOME}")
+        continue_nohup_env+=("GTBI_HOME=${CONTINUE_GTBI_HOME}")
     fi
-    if [[ -n "${CONTINUE_ACFS_STATE_FILE:-}" ]]; then
-        continue_env_args+=("--setenv=ACFS_STATE_FILE=${CONTINUE_ACFS_STATE_FILE}")
-        continue_nohup_env+=("ACFS_STATE_FILE=${CONTINUE_ACFS_STATE_FILE}")
+    if [[ -n "${CONTINUE_GTBI_STATE_FILE:-}" ]]; then
+        continue_env_args+=("--setenv=GTBI_STATE_FILE=${CONTINUE_GTBI_STATE_FILE}")
+        continue_nohup_env+=("GTBI_STATE_FILE=${CONTINUE_GTBI_STATE_FILE}")
     fi
-    if [[ -n "${CONTINUE_ACFS_REF:-}" ]]; then
-        continue_env_args+=("--setenv=ACFS_REF=${CONTINUE_ACFS_REF}")
-        continue_nohup_env+=("ACFS_REF=${CONTINUE_ACFS_REF}")
+    if [[ -n "${CONTINUE_GTBI_REF:-}" ]]; then
+        continue_env_args+=("--setenv=GTBI_REF=${CONTINUE_GTBI_REF}")
+        continue_nohup_env+=("GTBI_REF=${CONTINUE_GTBI_REF}")
     fi
 
     # Use systemd-run to spawn a proper transient service that survives this script's exit
     # --collect: auto-cleanup unit after it finishes (avoids "unit already exists" errors)
     # --no-block: don't wait for service to complete (we want to exit immediately)
     # --setenv: restore the original target-user context before install.sh resumes
-    # Service output goes to journal (check with: journalctl -u acfs-continue-install)
+    # Service output goes to journal (check with: journalctl -u gtbi-continue-install)
     if command -v systemd-run &>/dev/null; then
         # Remove any stale unit from previous failed attempts
-        systemctl reset-failed acfs-continue-install 2>/dev/null || true
+        systemctl reset-failed gtbi-continue-install 2>/dev/null || true
 
         if (
             set -o pipefail
             systemd-run --collect --no-block \
-                --unit=acfs-continue-install \
-                --description="ACFS Installation Continuation" \
+                --unit=gtbi-continue-install \
+                --description="GTBI Installation Continuation" \
                 --property=Type=oneshot \
                 --property=TimeoutStartSec=7200 \
                 "${continue_env_args[@]}" \
-                /bin/bash "$script" 2>&1 | tee -a "$ACFS_LOG"
+                /bin/bash "$script" 2>&1 | tee -a "$GTBI_LOG"
             exit "${PIPESTATUS[0]:-1}"
         ); then
-            log "ACFS continuation launched via systemd-run"
-            log "Monitor with: journalctl -u acfs-continue-install -f"
+            log "GTBI continuation launched via systemd-run"
+            log "Monitor with: journalctl -u gtbi-continue-install -f"
         else
             log "systemd-run failed, falling back to nohup"
-            env "${continue_nohup_env[@]}" nohup bash "$script" >> "$ACFS_LOG" 2>&1 &
-            log "ACFS continuation launched via nohup (PID: $!)"
+            env "${continue_nohup_env[@]}" nohup bash "$script" >> "$GTBI_LOG" 2>&1 &
+            log "GTBI continuation launched via nohup (PID: $!)"
         fi
     else
         # Fallback to nohup if systemd-run unavailable (shouldn't happen on Ubuntu)
-        env "${continue_nohup_env[@]}" nohup bash "$script" >> "$ACFS_LOG" 2>&1 &
-        log "ACFS continuation launched via nohup (PID: $!)"
+        env "${continue_nohup_env[@]}" nohup bash "$script" >> "$GTBI_LOG" 2>&1 &
+        log "GTBI continuation launched via nohup (PID: $!)"
     fi
 
     return 0
@@ -370,7 +370,7 @@ launch_continue_script() {
 # MAIN EXECUTION STARTS HERE
 # ============================================================
 
-log "=== ACFS Upgrade Resume Starting ==="
+log "=== GTBI Upgrade Resume Starting ==="
 log "Script: $0"
 log "Current directory: $(pwd)"
 
@@ -401,7 +401,7 @@ if ubuntu_is_at_or_beyond_target_version "$CURRENT_UBUNTU_VERSION"; then
     cleanup_service
 
     # Update state to mark as complete (before removing files)
-    export ACFS_STATE_FILE="${ACFS_RESUME_DIR}/state.json"
+    export GTBI_STATE_FILE="${GTBI_RESUME_DIR}/state.json"
     mark_state_complete
 
     # Remove MOTD
@@ -421,24 +421,24 @@ fi
 # Check if libraries exist
 # ============================================================
 
-if [[ ! -d "$ACFS_LIB_DIR" ]]; then
-    log_error "Library directory not found: $ACFS_LIB_DIR"
+if [[ ! -d "$GTBI_LIB_DIR" ]]; then
+    log_error "Library directory not found: $GTBI_LIB_DIR"
     cleanup_service
     update_motd_failure "Library files missing"
     exit 1
 fi
 
 # Source required libraries
-log "Sourcing libraries from $ACFS_LIB_DIR"
+log "Sourcing libraries from $GTBI_LIB_DIR"
 
-if [[ -f "$ACFS_LIB_DIR/logging.sh" ]]; then
+if [[ -f "$GTBI_LIB_DIR/logging.sh" ]]; then
     # shellcheck source=/dev/null
-    source "$ACFS_LIB_DIR/logging.sh"
+    source "$GTBI_LIB_DIR/logging.sh"
 fi
 
-if [[ -f "$ACFS_LIB_DIR/state.sh" ]]; then
+if [[ -f "$GTBI_LIB_DIR/state.sh" ]]; then
     # shellcheck source=/dev/null
-    source "$ACFS_LIB_DIR/state.sh"
+    source "$GTBI_LIB_DIR/state.sh"
 else
     log_error "state.sh not found"
     cleanup_service
@@ -446,9 +446,9 @@ else
     exit 1
 fi
 
-if [[ -f "$ACFS_LIB_DIR/ubuntu_upgrade.sh" ]]; then
+if [[ -f "$GTBI_LIB_DIR/ubuntu_upgrade.sh" ]]; then
     # shellcheck source=/dev/null
-    source "$ACFS_LIB_DIR/ubuntu_upgrade.sh"
+    source "$GTBI_LIB_DIR/ubuntu_upgrade.sh"
 else
     log_error "ubuntu_upgrade.sh not found"
     cleanup_service
@@ -463,15 +463,15 @@ fi
 trap 'upgrade_release_lock' EXIT
 
 # Set state file location for resume context
-export ACFS_STATE_FILE="${ACFS_STATE_FILE}"
+export GTBI_STATE_FILE="${GTBI_STATE_FILE}"
 
 # ============================================================
 # Check current stage in state
 # ============================================================
 
 current_stage=""
-if [[ -f "$ACFS_STATE_FILE" ]] && command -v jq &>/dev/null; then
-    current_stage=$(jq -r '.ubuntu_upgrade.current_stage // "unknown"' "$ACFS_STATE_FILE" 2>/dev/null) || current_stage="unknown"
+if [[ -f "$GTBI_STATE_FILE" ]] && command -v jq &>/dev/null; then
+    current_stage=$(jq -r '.ubuntu_upgrade.current_stage // "unknown"' "$GTBI_STATE_FILE" 2>/dev/null) || current_stage="unknown"
 fi
 log "Current stage from state file: $current_stage"
 
@@ -479,7 +479,7 @@ log "Current stage from state file: $current_stage"
 # At this point, we should disable the resume service and re-run install.sh (continue_install.sh)
 # which will proceed with the Ubuntu upgrade normally.
 if [[ "$current_stage" == "pre_upgrade_reboot" ]]; then
-    log "Detected pre-upgrade reboot marker. Continuing ACFS installer after reboot..."
+    log "Detected pre-upgrade reboot marker. Continuing GTBI installer after reboot..."
     cleanup_service
     launch_continue_script || log "Note: Manual installation may be needed"
     log "=== Upgrade Resume Complete (pre-upgrade reboot) ==="

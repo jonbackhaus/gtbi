@@ -24,7 +24,7 @@ export function LangRuntimesLesson() {
   return (
     <div className="space-y-8">
       <GoalBanner>
-        Master five language runtimes installed by ACFS &mdash; Bun for
+        Master five language runtimes installed by GTBI &mdash; Bun for
         TypeScript, uv for Python, Rust/cargo for systems code, Go for cloud
         tooling, and nvm for Node.js compatibility.
       </GoalBanner>
@@ -36,7 +36,7 @@ export function LangRuntimesLesson() {
         delay={0.1}
       >
         <Paragraph>
-          ACFS installs 5 language runtimes, each chosen for a specific role in
+          GTBI installs 5 language runtimes, each chosen for a specific role in
           the agentic coding workflow.
         </Paragraph>
 
@@ -79,7 +79,7 @@ export function LangRuntimesLesson() {
         delay={0.15}
       >
         <Paragraph>
-          Bun replaces Node.js + npm + npx for most tasks. ACFS uses Bun
+          Bun replaces Node.js + npm + npx for most tasks. GTBI uses Bun
           exclusively &mdash; never use npm/yarn/pnpm.
         </Paragraph>
 
@@ -264,7 +264,7 @@ go mod tidy
 GOOS=linux GOARCH=amd64 go build -o myapp-linux
 GOOS=darwin GOARCH=arm64 go build -o myapp-macos
 
-# Common Go tools installed by ACFS
+# Common Go tools installed by GTBI
 # lazygit, lazydocker, goreleaser, gum`}
             showLineNumbers
           />
@@ -299,7 +299,7 @@ nvm use 22
 nvm alias default 22
 
 # When to use Node vs Bun:
-# Bun: all ACFS development, Next.js, TypeScript
+# Bun: all GTBI development, Next.js, TypeScript
 # Node: CI environments, tools that don't support Bun yet
 
 # Check which runtime you're using

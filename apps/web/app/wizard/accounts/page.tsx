@@ -447,7 +447,7 @@ export default function AccountsPage() {
         <p className="text-sm text-muted-foreground">
           <strong className="text-foreground">Don&apos;t want to create accounts now?</strong>{" "}
           That&apos;s completely fine! You can skip this step and create accounts after
-          installation. The ACFS installer will still install all the tools—you&apos;ll
+          installation. The GTBI installer will still install all the tools—you&apos;ll
           just need to authenticate them later when you&apos;re ready to use them.
         </p>
       </div>

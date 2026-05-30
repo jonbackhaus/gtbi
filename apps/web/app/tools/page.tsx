@@ -365,7 +365,7 @@ function ToolsHero({ toolCount }: { toolCount: number }) {
           className="text-center"
         >
           <h1 className="text-3xl font-bold text-white sm:text-4xl md:text-5xl">
-            ACFS Tool Status
+            GTBI Tool Status
           </h1>
           <p className="mx-auto mt-4 max-w-2xl text-base text-muted-foreground sm:text-lg">
             All {toolCount} tools installed by the Agentic Coding Flywheel Setup.

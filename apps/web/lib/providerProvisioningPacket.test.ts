@@ -16,7 +16,7 @@ import { VPS_PROVIDERS } from "./vpsProviders";
 
 describe("provider provisioning packet contract", () => {
   test("pins a stable v1 schema id", () => {
-    expect(PROVIDER_PROVISIONING_PACKET_SCHEMA).toBe("acfs.provider-provisioning-packet.v1");
+    expect(PROVIDER_PROVISIONING_PACKET_SCHEMA).toBe("gtbi.provider-provisioning-packet.v1");
     expect(PROVIDER_PROVISIONING_PACKET_SCHEMA_VERSION).toBe(1);
   });
 
@@ -187,7 +187,7 @@ describe("buildProviderProvisioningPacket", () => {
     });
     expect(packet.install.commandRunLocation).toBe("cloud-init");
     expect(packet.compatibility.readinessStatus).toBe("unknown");
-    expect(packet.provider.manualStepsRemaining.join("\n")).toContain("Paste the ACFS cloud-init template");
+    expect(packet.provider.manualStepsRemaining.join("\n")).toContain("Paste the GTBI cloud-init template");
   });
 
   test("blocks known provider packets with unsupported Ubuntu images", () => {
@@ -232,7 +232,7 @@ describe("buildProviderProvisioningPacket", () => {
       planName: "Shared 32 GB",
       region: "newark",
       sshPublicKeyFingerprint: "SHA256:fixture",
-      sshPublicKeyMaterial: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFixturePublicKey acfs",
+      sshPublicKeyMaterial: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFixturePublicKey gtbi",
     });
     const json = serializeProviderProvisioningPacketJson(packet);
 

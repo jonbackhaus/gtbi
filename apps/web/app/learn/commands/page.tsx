@@ -84,7 +84,7 @@ const CATEGORY_META: Array<{
   {
     id: "system",
     name: "System & Terminal UX",
-    description: "Everyday terminal helpers installed by ACFS",
+    description: "Everyday terminal helpers installed by GTBI",
     icon: <Wrench className="h-5 w-5" />,
     gradient: "from-pink-500/20 to-rose-500/20",
   },
@@ -133,7 +133,7 @@ const COMMANDS: CommandEntry[] = [
   {
     name: "claude",
     fullName: "Claude Code",
-    description: "Full command (same as `cc` on ACFS)",
+    description: "Full command (same as `cc` on GTBI)",
     example: "claude --help",
     category: "agents",
     learnMoreHref: "/learn/tools/claude-code",
@@ -141,7 +141,7 @@ const COMMANDS: CommandEntry[] = [
   {
     name: "codex",
     fullName: "Codex CLI",
-    description: "Full command (same as `cod` on ACFS)",
+    description: "Full command (same as `cod` on GTBI)",
     example: "codex --help",
     category: "agents",
     learnMoreHref: "/learn/tools/codex-cli",
@@ -149,7 +149,7 @@ const COMMANDS: CommandEntry[] = [
   {
     name: "gemini",
     fullName: "Gemini CLI",
-    description: "Full command (same as `gmi` on ACFS)",
+    description: "Full command (same as `gmi` on GTBI)",
     example: "gemini --help",
     category: "agents",
     learnMoreHref: "/learn/tools/gemini-cli",
@@ -339,7 +339,7 @@ const COMMANDS: CommandEntry[] = [
   {
     name: "lsd / eza",
     fullName: "Modern `ls`",
-    description: "Prettier directory listing (ACFS installs one of these)",
+    description: "Prettier directory listing (GTBI installs one of these)",
     example: "lsd -la || eza -la",
     category: "system",
   },
@@ -703,7 +703,7 @@ export default function CommandReferencePage() {
           </h1>
           <p className="mx-auto max-w-2xl text-lg text-white/50 leading-relaxed">
             A quick, searchable list of the commands you&apos;ll use most in an
-            ACFS environment.
+            GTBI environment.
           </p>
         </motion.section>
 

@@ -91,7 +91,7 @@ export default function RootLayout({
         {/* Flash-prevention: apply stored theme before first paint */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var s=localStorage.getItem("acfs-theme")||"dark";var r=s==="system"?matchMedia("(prefers-color-scheme:light)").matches?"light":"dark":s;var d=document.documentElement;d.classList.remove("dark","light");d.classList.add(r==="light"?"light":"dark")}catch(e){}})()`,
+            __html: `(function(){try{var s=localStorage.getItem("gtbi-theme")||"dark";var r=s==="system"?matchMedia("(prefers-color-scheme:light)").matches?"light":"dark":s;var d=document.documentElement;d.classList.remove("dark","light");d.classList.add(r==="light"?"light":"dark")}catch(e){}})()`,
           }}
         />
       </head>

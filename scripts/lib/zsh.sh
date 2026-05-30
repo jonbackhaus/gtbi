@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-# ACFS Installer - Zsh Setup Library
+# GTBI Installer - Zsh Setup Library
 # Installs and configures zsh with oh-my-zsh and powerlevel10k
 #
 # Requires:
@@ -171,9 +171,9 @@ configure_external_shell_handoff() {
     fi
 
     cat >> "$bashrc" << 'EOF'
-# ACFS externally-managed shell handoff
-if [[ $- == *i* ]] && [[ -t 0 ]] && command -v zsh >/dev/null 2>&1 && [[ -z "${ACFS_ZSH_HANDOFF_ACTIVE:-}" ]]; then
-  export ACFS_ZSH_HANDOFF_ACTIVE=1
+# GTBI externally-managed shell handoff
+if [[ $- == *i* ]] && [[ -t 0 ]] && command -v zsh >/dev/null 2>&1 && [[ -z "${GTBI_ZSH_HANDOFF_ACTIVE:-}" ]]; then
+  export GTBI_ZSH_HANDOFF_ACTIVE=1
   exec "$(command -v zsh)" -l
 fi
 EOF
@@ -185,9 +185,9 @@ zsh_external_shell_handoff_configured() {
     [[ -n "$bashrc_path" && -f "$bashrc_path" ]] || return 1
 
     awk '
-        $0 == "# ACFS externally-managed shell handoff" { marker=1; next }
+        $0 == "# GTBI externally-managed shell handoff" { marker=1; next }
         marker && $0 ~ /^[[:space:]]*#/ { next }
-        marker && index($0, "command -v zsh") && index($0, "ACFS_ZSH_HANDOFF_ACTIVE") { found=1; exit }
+        marker && index($0, "command -v zsh") && index($0, "GTBI_ZSH_HANDOFF_ACTIVE") { found=1; exit }
         marker && $0 !~ /^[[:space:]]*$/ { marker=0 }
         END { exit(found ? 0 : 1) }
     ' "$bashrc_path" 2>/dev/null
@@ -350,8 +350,8 @@ _zsh_is_managed_loader() {
         { lines[++line_count]=$0 }
         END {
             if (line_count == 2 &&
-                lines[1] ~ /^# ACFS loader/ &&
-                lines[2] == "source \"$HOME/.acfs/zsh/acfs.zshrc\"") {
+                lines[1] ~ /^# GTBI loader/ &&
+                lines[2] == "source \"$HOME/.gtbi/zsh/gtbi.zshrc\"") {
                 exit 0
             }
             exit 1
@@ -359,27 +359,27 @@ _zsh_is_managed_loader() {
     ' "$file" 2>/dev/null
 }
 
-# Install ACFS zshrc configuration
-install_acfs_zshrc() {
-    local acfs_zsh_dir="$HOME/.acfs/zsh"
-    local acfs_zshrc="$acfs_zsh_dir/acfs.zshrc"
+# Install GTBI zshrc configuration
+install_gtbi_zshrc() {
+    local gtbi_zsh_dir="$HOME/.gtbi/zsh"
+    local gtbi_zshrc="$gtbi_zsh_dir/gtbi.zshrc"
     local user_zshrc="$HOME/.zshrc"
     local user_profile="$HOME/.profile"
     local user_zprofile="$HOME/.zprofile"
     local legacy_profile_path_line='export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$HOME/.bun/bin:$PATH"'
     local profile_path_line='export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$HOME/.bun/bin:$HOME/.atuin/bin:$PATH"'
 
-    mkdir -p "$acfs_zsh_dir"
+    mkdir -p "$gtbi_zsh_dir"
 
-    # Download ACFS zshrc from repository
-    log_detail "Installing ACFS zshrc..."
+    # Download GTBI zshrc from repository
+    log_detail "Installing GTBI zshrc..."
 
     if ! _zsh_require_security; then
         return 1
     fi
 
-    if ! acfs_curl "${ACFS_RAW:-https://raw.githubusercontent.com/Dicklesworthstone/agentic_coding_flywheel_setup/${ACFS_REF:-main}}/acfs/zsh/acfs.zshrc" "$acfs_zshrc" "ACFS zshrc"; then
-        log_error "Failed to download ACFS zshrc"
+    if ! gtbi_curl "${GTBI_RAW:-https://raw.githubusercontent.com/jonbackhaus/gtbi/${GTBI_REF:-main}}/gtbi/zsh/gtbi.zshrc" "$gtbi_zshrc" "GTBI zshrc"; then
+        log_error "Failed to download GTBI zshrc"
         return 1
     fi
 
@@ -393,8 +393,8 @@ install_acfs_zshrc() {
 
     # Create minimal loader .zshrc
     cat > "$user_zshrc" << 'EOF'
-# ACFS loader — user overrides go in ~/.zshrc.local (sourced by acfs.zshrc)
-source "$HOME/.acfs/zsh/acfs.zshrc"
+# GTBI loader — user overrides go in ~/.zshrc.local (sourced by gtbi.zshrc)
+source "$HOME/.gtbi/zsh/gtbi.zshrc"
 EOF
 
     if [[ ! -f "$user_profile" ]]; then
@@ -410,7 +410,7 @@ EOF
          ! _zsh_profile_path_has_fragment "$user_profile" '.atuin/bin'; then
         {
             echo ""
-            echo "# Added by ACFS - user binary paths"
+            echo "# Added by GTBI - user binary paths"
             echo "$profile_path_line"
         } >> "$user_profile"
     fi
@@ -428,12 +428,12 @@ EOF
          ! _zsh_profile_path_has_fragment "$user_zprofile" '.atuin/bin'; then
         {
             echo ""
-            echo "# Added by ACFS - user binary paths"
+            echo "# Added by GTBI - user binary paths"
             echo "$profile_path_line"
         } >> "$user_zprofile"
     fi
 
-    log_success "ACFS zshrc installed"
+    log_success "GTBI zshrc installed"
 }
 
 # Set zsh as default shell
@@ -481,7 +481,7 @@ setup_shell() {
     install_ohmyzsh
     install_powerlevel10k
     install_zsh_plugins
-    install_acfs_zshrc
+    install_gtbi_zshrc
     set_zsh_default
 
     log_success "Shell setup complete"

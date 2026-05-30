@@ -1,0 +1,659 @@
+# shellcheck shell=bash disable=SC2034,SC1091
+# ~/.gtbi/zsh/gtbi.zshrc
+# GTBI canonical zsh config (managed). Safe, fast, minimal duplication.
+#
+# SC2034: ZSH_THEME, plugins, PROMPT, RPROMPT are used by zsh/omz (not bash)
+# SC1091: Dynamic source paths can't be followed by shellcheck
+
+# --- SSH stty guard (prevents weird remote terminal settings) ---
+if [[ -n "$SSH_CONNECTION" ]]; then
+  stty() {
+    case "$1" in
+      *:*:*) return 0 ;;  # ignore colon-separated terminal settings
+      *) command stty "$@" ;;
+    esac
+  }
+fi
+
+# --- Terminal type fallback (Ghostty, Kitty, etc.) ---
+# Fall back to xterm-256color if current $TERM is unknown to the system.
+# This fixes "unknown terminal type" errors with modern terminals like Ghostty.
+if [[ -n "$TERM" ]] && ! infocmp "$TERM" &>/dev/null; then
+  export TERM="xterm-256color"
+fi
+
+# --- Paths (early) ---
+# User ~/bin takes highest precedence (for custom shims)
+[[ -d "$HOME/bin" ]] && export PATH="$HOME/bin:$PATH"
+export PATH="$HOME/.cargo/bin:$PATH"
+
+# Go (support both apt-style and /usr/local/go)
+export PATH="$HOME/go/bin:$PATH"
+[[ -d /usr/local/go/bin ]] && export PATH="/usr/local/go/bin:$PATH"
+
+# Bun
+export BUN_INSTALL="$HOME/.bun"
+[[ -d "$BUN_INSTALL/bin" ]] && export PATH="$BUN_INSTALL/bin:$PATH"
+[[ -s "$HOME/.bun/_bun" ]] && source "$HOME/.bun/_bun"
+
+# Atuin (installer default)
+if [[ -f "$HOME/.atuin/bin/env" ]]; then
+  source "$HOME/.atuin/bin/env"
+elif [[ -d "$HOME/.atuin/bin" ]]; then
+  export PATH="$HOME/.atuin/bin:$PATH"
+fi
+
+# Ensure user-local binaries take precedence (e.g., native Claude install).
+export PATH="$HOME/.local/bin:$PATH"
+if command -v zsh &>/dev/null; then
+  export SHELL="$(command -v zsh)"
+fi
+
+_GTBI_ATUIN_BIN=""
+if command -v atuin &>/dev/null; then
+  _GTBI_ATUIN_BIN="$(command -v atuin)"
+elif [[ -x "$HOME/.local/bin/atuin" ]]; then
+  _GTBI_ATUIN_BIN="$HOME/.local/bin/atuin"
+elif [[ -x "$HOME/.atuin/bin/atuin" ]]; then
+  _GTBI_ATUIN_BIN="$HOME/.atuin/bin/atuin"
+fi
+
+# --- Oh My Zsh ---
+export ZSH="$HOME/.oh-my-zsh"
+
+# Theme
+ZSH_THEME="powerlevel10k/powerlevel10k"
+
+# Disable p10k configuration wizard - we provide a pre-configured ~/.p10k.zsh
+# This is a fallback in case the config file is missing for some reason
+typeset -g POWERLEVEL9K_DISABLE_CONFIGURATION_WIZARD=true
+
+# Oh My Zsh auto-update
+zstyle ':omz:update' mode auto
+zstyle ':omz:update' frequency 1
+
+# Plugins
+plugins=(
+  git
+  sudo
+  colored-man-pages
+  command-not-found
+  docker
+  docker-compose
+  python
+  pip
+  tmux
+  tmuxinator
+  systemd
+  rsync
+  zsh-autosuggestions
+  zsh-syntax-highlighting
+)
+
+# Load OMZ if installed
+if [[ -f "$ZSH/oh-my-zsh.sh" ]]; then
+  source "$ZSH/oh-my-zsh.sh"
+fi
+
+# --- Editor preference ---
+if [[ -n "$SSH_CONNECTION" ]]; then
+  export EDITOR='vim'
+else
+  export EDITOR='nvim'
+fi
+
+# --- Modern CLI aliases (only if present) ---
+if command -v lsd &>/dev/null; then
+  alias ls='lsd --inode --long --all'
+  alias ll='lsd -l'
+  alias la='lsd -la'
+  alias l='lsd'
+  alias tree='lsd --tree'
+elif command -v eza &>/dev/null; then
+  alias ls='eza --icons'
+  alias ll='eza -l --icons'
+  alias la='eza -la --icons'
+  alias l='eza --icons --classify'
+  alias tree='eza --tree --icons'
+else
+  alias ll='ls -alF'
+  alias la='ls -A'
+  alias l='ls -CF'
+fi
+
+# Prefer bat over batcat (Debian/Ubuntu names it batcat)
+if command -v bat &>/dev/null; then
+  alias cat='bat'
+elif command -v batcat &>/dev/null; then
+  alias cat='batcat'
+fi
+# fd/fdfind as a standalone alias (NOT aliased over 'find' — fd has incompatible syntax)
+if command -v fd &>/dev/null; then
+  alias fdfind='fd'
+elif command -v fdfind &>/dev/null; then
+  alias fd='fdfind'
+fi
+command -v rg &>/dev/null && alias grep='rg'
+command -v dust &>/dev/null && alias du='dust'
+command -v btop &>/dev/null && alias top='btop'
+command -v nvim &>/dev/null && alias vim='nvim'
+command -v lazygit &>/dev/null && alias lg='lazygit'
+command -v lazydocker &>/dev/null && alias lzd='lazydocker'
+
+# --- Git aliases ---
+alias gs='git status'
+alias gd='git diff'
+alias gdc='git diff --cached'
+alias gp='git push'
+alias gpu='git pull'
+alias gco='git checkout'
+alias gcm='git commit -m'
+alias gca='git commit -a -m'
+alias gb='git branch'
+alias glog='git log --oneline --graph --decorate'
+
+# --- Docker aliases ---
+alias dc='docker compose'
+alias dps='docker ps'
+alias dpsa='docker ps -a'
+alias dimg='docker images'
+alias dex='docker exec -it'
+
+# --- Directory shortcuts ---
+alias dev='cd ~/Development'
+alias proj='cd /data/projects'
+alias dots='cd ~/dotfiles'
+alias p='cd /data/projects'
+
+# --- Ubuntu/Debian convenience ---
+alias update='sudo apt update && sudo apt upgrade -y && sudo apt autoremove -y'
+alias install='sudo apt install'
+alias search='apt search'
+
+# Update agent CLIs
+alias uca='(curl -fsSL https://claude.ai/install.sh | bash -s -- latest) && ("$HOME/.bun/bin/bun" install -g --trust @openai/codex@latest || "$HOME/.bun/bin/bun" install -g --trust @openai/codex) && "$HOME/.bun/bin/bun" install -g --trust @google/gemini-cli@latest && curl -fsSL https://raw.githubusercontent.com/Dicklesworthstone/misc_coding_agent_tips_and_scripts/main/fix-gemini-cli-ebadf-crash.sh | bash'
+
+# --- Custom functions ---
+mkcd() { mkdir -p "$1" && cd "$1" || return; }
+
+extract() {
+  if [[ -f "$1" ]]; then
+    case "$1" in
+      *.tar.bz2) tar xjf "$1" ;;
+      *.tar.gz)  tar xzf "$1" ;;
+      *.bz2)     bunzip2 "$1" ;;
+      *.rar)     unrar x "$1" ;;
+      *.gz)      gunzip "$1" ;;
+      *.tar)     tar xf "$1" ;;
+      *.tbz2)    tar xjf "$1" ;;
+      *.tgz)     tar xzf "$1" ;;
+      *.zip)     unzip "$1" ;;
+      *.Z)       uncompress "$1" ;;
+      *.7z)      7z x "$1" ;;
+      *)         echo "'$1' cannot be extracted" ;;
+    esac
+  else
+    echo "'$1' is not a valid file"
+  fi
+}
+
+# --- Safe "ls after cd" via chpwd hook (no overriding cd) ---
+autoload -U add-zsh-hook
+_gtbi_ls_after_cd() {
+  # only in interactive shells
+  [[ -o interactive ]] || return
+  if command -v lsd &>/dev/null; then
+    lsd
+  elif command -v eza &>/dev/null; then
+    eza --icons
+  else
+    ls
+  fi
+}
+add-zsh-hook chpwd _gtbi_ls_after_cd
+
+# --- Tool settings ---
+export UV_LINK_MODE=copy
+
+# Cargo env (if present)
+[[ -f "$HOME/.cargo/env" ]] && source "$HOME/.cargo/env"
+
+# nvm (Node Version Manager)
+export NVM_DIR="$HOME/.nvm"
+[[ -s "$NVM_DIR/nvm.sh" ]] && source "$NVM_DIR/nvm.sh"
+[[ -s "$NVM_DIR/bash_completion" ]] && source "$NVM_DIR/bash_completion"
+
+# Atuin init (after PATH)
+if [[ -n "$_GTBI_ATUIN_BIN" ]]; then
+  eval "$("$_GTBI_ATUIN_BIN" init zsh)"
+fi
+
+# Zoxide (better cd)
+command -v zoxide &>/dev/null && eval "$(zoxide init zsh)"
+
+# direnv
+command -v direnv &>/dev/null && eval "$(direnv hook zsh)"
+
+# fzf integration (optional)
+export DISABLE_FZF_KEY_BINDINGS=1
+[[ -f "$HOME/.fzf.zsh" ]] && source "$HOME/.fzf.zsh"
+
+# --- Prompt config ---
+if [[ "$TERM_PROGRAM" == "vscode" ]]; then
+  PROMPT='%n@%m:%~%# '
+  RPROMPT=''
+else
+  [[ -f "$HOME/.p10k.zsh" ]] && source "$HOME/.p10k.zsh"
+fi
+
+# --- Local overrides ---
+[[ -f "$HOME/.zshrc.local" ]] && source "$HOME/.zshrc.local"
+
+# --- Force Atuin bindings (must be last) ---
+bindkey -e
+if [[ -n "$_GTBI_ATUIN_BIN" ]]; then
+  bindkey -M emacs '^R' atuin-search 2>/dev/null
+  bindkey -M viins '^R' atuin-search-viins 2>/dev/null
+  bindkey -M vicmd '^R' atuin-search-vicmd 2>/dev/null
+fi
+
+# --- GTBI env shim (optional) ---
+[[ -f "$HOME/.local/bin/env" ]] && source "$HOME/.local/bin/env"
+
+# --- GTBI CLI ---
+# Provides `gtbi <subcommand>` for post-install utilities
+gtbi() {
+  local gtbi_home="${GTBI_HOME:-$HOME/.gtbi}"
+  local gtbi_bin="$HOME/.local/bin/gtbi"
+  local cmd="${1:-help}"
+  shift 1 2>/dev/null || true
+
+  case "$cmd" in
+    newproj|new)
+      if [[ -f "$gtbi_home/scripts/lib/newproj.sh" ]]; then
+        bash "$gtbi_home/scripts/lib/newproj.sh" "$@"
+      elif [[ -x "$gtbi_bin" ]]; then
+        "$gtbi_bin" newproj "$@"
+      else
+        echo "Error: newproj.sh not found"
+        echo "Re-run the GTBI installer to get the latest scripts"
+        return 1
+      fi
+      ;;
+    services|svc)
+      if [[ -f "$gtbi_home/scripts/lib/gtbi-services.sh" ]]; then
+        bash "$gtbi_home/scripts/lib/gtbi-services.sh" "$@"
+      elif [[ -x "$gtbi_bin" ]]; then
+        "$gtbi_bin" services "$@"
+      else
+        echo "Error: gtbi-services.sh not found"
+        echo "Re-run the GTBI installer to get the latest scripts"
+        return 1
+      fi
+      ;;
+    services-setup|setup)
+      if [[ -f "$gtbi_home/scripts/services-setup.sh" ]]; then
+        bash "$gtbi_home/scripts/services-setup.sh" "$@"
+      elif [[ -x "$gtbi_bin" ]]; then
+        "$gtbi_bin" services-setup "$@"
+      else
+        echo "Error: services-setup.sh not found"
+        echo "Re-run the GTBI installer to get the latest scripts"
+        return 1
+      fi
+      ;;
+    doctor|check)
+      if [[ -f "$gtbi_home/scripts/lib/doctor.sh" ]]; then
+        bash "$gtbi_home/scripts/lib/doctor.sh" "$@"
+      elif [[ -x "$gtbi_bin" ]]; then
+        "$gtbi_bin" doctor "$@"
+      else
+        echo "Error: doctor.sh not found"
+        echo "Re-run the GTBI installer to get the latest scripts"
+        return 1
+      fi
+      ;;
+    session|sessions)
+      if [[ -f "$gtbi_home/scripts/lib/doctor.sh" ]]; then
+        bash "$gtbi_home/scripts/lib/doctor.sh" session "$@"
+      elif [[ -x "$gtbi_bin" ]]; then
+        "$gtbi_bin" session "$@"
+      else
+        echo "Error: doctor.sh not found"
+        echo "Re-run the GTBI installer to get the latest scripts"
+        return 1
+      fi
+      ;;
+    update)
+      if [[ -f "$gtbi_home/scripts/lib/update.sh" ]]; then
+        bash "$gtbi_home/scripts/lib/update.sh" "$@"
+      elif [[ -x "$gtbi_bin" ]]; then
+        "$gtbi_bin" update "$@"
+      else
+        echo "Error: update.sh not found"
+        echo "Re-run the GTBI installer to get the latest scripts"
+        return 1
+      fi
+      ;;
+    status)
+      if [[ -f "$gtbi_home/scripts/lib/status.sh" ]]; then
+        bash "$gtbi_home/scripts/lib/status.sh" "$@"
+      elif [[ -x "$gtbi_bin" ]]; then
+        "$gtbi_bin" status "$@"
+      else
+        echo "Error: status.sh not found"
+        echo "Re-run the GTBI installer to get the latest scripts"
+        return 1
+      fi
+      ;;
+    continue|progress)
+      if [[ -f "$gtbi_home/scripts/lib/continue.sh" ]]; then
+        bash "$gtbi_home/scripts/lib/continue.sh" "$@"
+      elif [[ -x "$gtbi_bin" ]]; then
+        "$gtbi_bin" continue "$@"
+      else
+        echo "Error: continue.sh not found"
+        echo "Re-run the GTBI installer to get the latest scripts"
+        return 1
+      fi
+      ;;
+    info|i)
+      if [[ -f "$gtbi_home/scripts/lib/info.sh" ]]; then
+        bash "$gtbi_home/scripts/lib/info.sh" "$@"
+      elif [[ -x "$gtbi_bin" ]]; then
+        "$gtbi_bin" info "$@"
+      else
+        echo "Error: info.sh not found"
+        echo "Re-run the GTBI installer to get the latest scripts"
+        return 1
+      fi
+      ;;
+    cheatsheet|cs)
+      if [[ -f "$gtbi_home/scripts/lib/cheatsheet.sh" ]]; then
+        bash "$gtbi_home/scripts/lib/cheatsheet.sh" "$@"
+      elif [[ -x "$gtbi_bin" ]]; then
+        "$gtbi_bin" cheatsheet "$@"
+      else
+        echo "Error: cheatsheet.sh not found"
+        echo "Re-run the GTBI installer to get the latest scripts"
+        return 1
+      fi
+      ;;
+    dashboard|dash)
+      if [[ -f "$gtbi_home/scripts/lib/dashboard.sh" ]]; then
+        bash "$gtbi_home/scripts/lib/dashboard.sh" "$@"
+      elif [[ -x "$gtbi_bin" ]]; then
+        "$gtbi_bin" dashboard "$@"
+      else
+        echo "Error: dashboard.sh not found"
+        echo "Re-run the GTBI installer to get the latest scripts"
+        return 1
+      fi
+      ;;
+    support-bundle|bundle)
+      if [[ -f "$gtbi_home/scripts/lib/support.sh" ]]; then
+        bash "$gtbi_home/scripts/lib/support.sh" "$@"
+      elif [[ -x "$gtbi_bin" ]]; then
+        "$gtbi_bin" support-bundle "$@"
+      else
+        echo "Error: support.sh not found"
+        echo "Re-run the GTBI installer to get the latest scripts"
+        return 1
+      fi
+      ;;
+    provisioning-packet|provider-packet)
+      if [[ -f "$gtbi_home/scripts/lib/provisioning_packet.sh" ]]; then
+        bash "$gtbi_home/scripts/lib/provisioning_packet.sh" "$@"
+      elif [[ -x "$gtbi_bin" ]]; then
+        "$gtbi_bin" provisioning-packet "$@"
+      else
+        echo "Error: provisioning_packet.sh not found"
+        echo "Re-run the GTBI installer to get the latest scripts"
+        return 1
+      fi
+      ;;
+    offline-pack|artifact-pack)
+      if [[ -f "$gtbi_home/scripts/lib/offline_artifact_pack.sh" ]]; then
+        bash "$gtbi_home/scripts/lib/offline_artifact_pack.sh" "$@"
+      elif [[ -x "$gtbi_bin" ]]; then
+        "$gtbi_bin" offline-pack "$@"
+      else
+        echo "Error: offline_artifact_pack.sh not found"
+        echo "Re-run the GTBI installer to get the latest scripts"
+        return 1
+      fi
+      ;;
+    landing-plane|land|closeout)
+      if [[ -f "$gtbi_home/scripts/lib/landing_plane.sh" ]]; then
+        bash "$gtbi_home/scripts/lib/landing_plane.sh" "$@"
+      elif [[ -x "$gtbi_bin" ]]; then
+        "$gtbi_bin" landing-plane "$@"
+      else
+        echo "Error: landing_plane.sh not found"
+        echo "Re-run the GTBI installer to get the latest scripts"
+        return 1
+      fi
+      ;;
+    provenance|prov)
+      if [[ -f "$gtbi_home/scripts/lib/provenance.sh" ]]; then
+        bash "$gtbi_home/scripts/lib/provenance.sh" "$@"
+      elif [[ -x "$gtbi_bin" ]]; then
+        "$gtbi_bin" provenance "$@"
+      else
+        echo "Error: provenance.sh not found"
+        echo "Re-run the GTBI installer to get the latest scripts"
+        return 1
+      fi
+      ;;
+    changelog|changes|log)
+      if [[ -f "$gtbi_home/scripts/lib/changelog.sh" ]]; then
+        bash "$gtbi_home/scripts/lib/changelog.sh" "$@"
+      elif [[ -x "$gtbi_bin" ]]; then
+        "$gtbi_bin" changelog "$@"
+      else
+        echo "Error: changelog.sh not found"
+        echo "Re-run the GTBI installer to get the latest scripts"
+        return 1
+      fi
+      ;;
+    notifications|notify)
+      if [[ -f "$gtbi_home/scripts/lib/notifications.sh" ]]; then
+        bash "$gtbi_home/scripts/lib/notifications.sh" "$@"
+      elif [[ -x "$gtbi_bin" ]]; then
+        "$gtbi_bin" notifications "$@"
+      else
+        echo "Error: notifications.sh not found"
+        echo "Re-run the GTBI installer to get the latest scripts"
+        return 1
+      fi
+      ;;
+    export-config|export)
+      if [[ -f "$gtbi_home/scripts/lib/export-config.sh" ]]; then
+        bash "$gtbi_home/scripts/lib/export-config.sh" "$@"
+      elif [[ -x "$gtbi_bin" ]]; then
+        "$gtbi_bin" export-config "$@"
+      else
+        echo "Error: export-config.sh not found"
+        echo "Re-run the GTBI installer to get the latest scripts"
+        return 1
+      fi
+      ;;
+    version|-v|--version)
+      if [[ -f "$gtbi_home/VERSION" ]]; then
+        cat "$gtbi_home/VERSION"
+      else
+        echo "GTBI version unknown"
+      fi
+      ;;
+    help|-h|--help)
+      echo "GTBI - Agentic Coding Flywheel Setup"
+      echo ""
+      echo "Usage: gtbi <command>"
+      echo ""
+      echo "Commands:"
+      echo "  newproj         Create new project (git, br, AGENTS.md, Claude settings)"
+      echo "                  Use 'gtbi newproj -i' for interactive TUI wizard"
+      echo "  info            Quick system overview (hostname, IP, uptime, progress)"
+      echo "  cheatsheet      Command reference (aliases, shortcuts)"
+      echo "  dashboard, dash <generate|serve> - Static HTML dashboard"
+      echo "  continue        View installation progress (after Ubuntu upgrade)"
+      echo "  services        Manage background daemons (start/stop/status/logs)"
+      echo "  services-setup  Configure AI agents and cloud services"
+      echo "  doctor          Check system health and tool status"
+      echo "  status          Quick one-line health summary (fast, no network)"
+      echo "  session         List/export/import agent sessions (cass)"
+      echo "  support-bundle  Collect diagnostic data for troubleshooting"
+      echo "  provisioning-packet Validate/render provider packet JSON"
+      echo "  offline-pack    Build verified offline artifact packs"
+      echo "  landing-plane   Closeout checklist for gates, Beads, Mail, and reservations"
+      echo "  provenance      Installed-tool provenance ledger for diagnostics"
+      echo "  changelog       Show recent changes (--all, --since 7d, --json)"
+      echo "  export-config   Export config for backup/migration (--json, --minimal)"
+      echo "  notifications   Manage push notifications via ntfy.sh"
+      echo "  update          Update GTBI tools to latest versions"
+      echo "  version         Show GTBI version"
+      echo "  help            Show this help message"
+      echo ""
+      echo "Output formats (for info/doctor/cheatsheet):"
+      echo "  --json          JSON output for scripting"
+      echo "  --html          Self-contained HTML dashboard (info only)"
+      echo "  --minimal       Just the essentials (info only)"
+      ;;
+    *)
+      # Pass unknown commands to the binary (supports newproj and future commands)
+      if [[ -x "$gtbi_bin" ]]; then
+        "$gtbi_bin" "$cmd" "$@"
+      else
+        echo "Error: Unknown command '$cmd' and gtbi binary not found at $gtbi_bin"
+        echo "Try 'gtbi help' for available commands."
+        return 1
+      fi
+      ;;
+  esac
+}
+
+# --- GTBI Tab Completion (zsh) ---
+# Load gtbi completions if the function is available
+if [[ -f "$HOME/.gtbi/completions/_gtbi" ]]; then
+  # Add to fpath before compinit, or load directly if compinit already ran
+  fpath=("$HOME/.gtbi/completions" "${fpath[@]}")
+  autoload -Uz _gtbi 2>/dev/null
+fi
+
+# --- Agent aliases (dangerously enabled by design) ---
+alias cc='NODE_OPTIONS="--max-old-space-size=32768" ~/.local/bin/claude --dangerously-skip-permissions'
+alias cod='codex --dangerously-bypass-approvals-and-sandbox'
+
+# gmi: update gemini-cli via bun, apply patches, then launch (hardcoded bun path to avoid npm hijacking)
+gmi() {
+  echo "▶ Updating gemini-cli to latest..."
+  "$HOME/.bun/bin/bun" install -g --trust @google/gemini-cli@latest 2>&1 | tail -1
+  echo "▶ Applying patches..."
+  curl -fsSL https://raw.githubusercontent.com/Dicklesworthstone/misc_coding_agent_tips_and_scripts/main/fix-gemini-cli-ebadf-crash.sh | bash
+  echo "▶ Launching gemini..."
+  "$HOME/.bun/bin/gemini" --yolo "$@"
+}
+
+# bun project helpers (common)
+alias bdev='bun run dev'
+alias bl='bun run lint'
+alias bt='bun run type-check'
+
+# --- br (beads_rust) alias guard ---
+# Older GTBI versions incorrectly aliased br='bun run dev'. Remove stale alias if br binary exists.
+# whence -p finds the binary path, ignoring aliases/functions (zsh-specific)
+if whence -p br &>/dev/null && alias br &>/dev/null; then
+  unalias br 2>/dev/null
+fi
+# bd is the legacy Go beads binary name; alias it to br (beads_rust)
+if whence -p br &>/dev/null; then
+  alias bd='br'
+fi
+
+# MCP Agent Mail helper (leave the real `am` CLI available for service/macros)
+amserve() {
+  if ! command -v am &>/dev/null; then
+    echo "am CLI not found — install with: curl -fsSL https://raw.githubusercontent.com/Dicklesworthstone/mcp_agent_mail_rust/refs/heads/main/install.sh | bash"
+    return 1
+  fi
+
+  # Detect MCP base path: Rust am uses /mcp/, Python mcp_agent_mail uses /api/
+  local am_mcp_path="/mcp/"
+  if ! am --version 2>/dev/null | grep -q '^am '; then
+    am_mcp_path="/api/"
+  fi
+
+  am serve-http --host 127.0.0.1 --port 8765 --path "$am_mcp_path"
+}
+
+# --- GTBI tool aliases (new tools) ---
+# RCH: offload cargo/gcc builds to remote workers
+command -v rch &>/dev/null && alias rb='rch exec -- cargo build --release'
+command -v rch &>/dev/null && alias rt='rch exec -- cargo test'
+# FrankenSearch
+command -v fsfs &>/dev/null && alias fs='fsfs search'
+# Process Triage
+command -v pt &>/dev/null && alias ptop='pt top'
+# Storage Ballast Helper
+command -v sbh &>/dev/null && alias sbs='sbh status'
+# Cross-Agent Session Resumer
+command -v casr &>/dev/null && alias resume='casr resume'
+# Doodlestein Self-Releaser
+command -v dsr &>/dev/null && alias dsrc='dsr check --all'
+# Agent Settings Backup
+command -v asb &>/dev/null && alias asbk='asb backup --all'
+# Post-Compact Reminder (no alias needed, runs as a hook)
+# Repo Updater
+command -v ru &>/dev/null && alias rusync='ru sync'
+
+# --- Keybindings (quality of life) ---
+# Ctrl+Arrow for word movement
+bindkey "^[[1;5C" forward-word
+bindkey "^[[1;5D" backward-word
+
+# Alt+Arrow for word movement
+bindkey "^[[1;3C" forward-word
+bindkey "^[[1;3D" backward-word
+bindkey "^[^[[C" forward-word
+bindkey "^[^[[D" backward-word
+
+# Ctrl+Backspace and Ctrl+Delete
+bindkey "^H" backward-kill-word
+bindkey "^[[3;5~" kill-word
+
+# Home/End keys
+bindkey "^[[H" beginning-of-line
+bindkey "^[[F" end-of-line
+bindkey "^[[1~" beginning-of-line
+bindkey "^[[4~" end-of-line
+
+# --- Beads Viewer (bv) protection ---
+# Prevent gcloud's 'bv' (BigQuery Visualizer) from shadowing beads_viewer.
+# This function ensures the correct bv is always invoked, regardless of PATH order.
+# Must be defined AFTER .zshrc.local is sourced (where gcloud SDK may modify PATH).
+bv() {
+  local bv_bin=""
+  # Check known locations in order of preference
+  for candidate in "$HOME/.local/bin/bv" "$HOME/.bun/bin/bv" "$HOME/go/bin/bv" "$HOME/.cargo/bin/bv"; do
+    if [[ -x "$candidate" ]]; then
+      bv_bin="$candidate"
+      break
+    fi
+  done
+  # Fallback: search PATH but skip gcloud's bv
+  if [[ -z "$bv_bin" ]]; then
+    while IFS= read -r p; do
+      if [[ "$p" != *"google-cloud-sdk"* ]]; then
+        bv_bin="$p"
+        break
+      fi
+    done < <(whence -ap bv 2>/dev/null)
+  fi
+  if [[ -n "$bv_bin" ]]; then
+    "$bv_bin" "$@"
+  else
+    echo "Error: beads_viewer (bv) not found. Install with:" >&2
+    echo "  curl -fsSL https://raw.githubusercontent.com/Dicklesworthstone/beads_viewer/main/install.sh | bash" >&2
+    return 1
+  fi
+}

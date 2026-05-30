@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# release-doctor.sh - local pre-release readiness gate for ACFS maintainers.
+# release-doctor.sh - local pre-release readiness gate for GTBI maintainers.
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="${ACFS_RELEASE_DOCTOR_REPO_ROOT:-$(cd "$SCRIPT_DIR/.." && pwd)}"
+REPO_ROOT="${GTBI_RELEASE_DOCTOR_REPO_ROOT:-$(cd "$SCRIPT_DIR/.." && pwd)}"
 
 FULL_MODE=false
 JSON_MODE=false
@@ -26,7 +26,7 @@ usage() {
     cat <<'EOF'
 Usage: scripts/release-doctor.sh [--json] [--quiet] [--full] [--network=skip|check] [--web=auto|always|never]
 
-Runs the ACFS maintainer release readiness gate:
+Runs the GTBI maintainer release readiness gate:
   - branch policy and clean worktree check
   - ShellCheck over installer scripts
   - manifest/generated/checksum drift contract
@@ -93,7 +93,7 @@ fake_status_var_name() {
     id="${id^^}"
     id="${id//-/_}"
     id="${id//./_}"
-    printf 'ACFS_RELEASE_DOCTOR_FAKE_%s_STATUS' "$id"
+    printf 'GTBI_RELEASE_DOCTOR_FAKE_%s_STATUS' "$id"
 }
 
 fake_detail_var_name() {
@@ -101,7 +101,7 @@ fake_detail_var_name() {
     id="${id^^}"
     id="${id//-/_}"
     id="${id//./_}"
-    printf 'ACFS_RELEASE_DOCTOR_FAKE_%s_DETAIL' "$id"
+    printf 'GTBI_RELEASE_DOCTOR_FAKE_%s_DETAIL' "$id"
 }
 
 record_fake_check_if_requested() {
@@ -176,10 +176,10 @@ check_branch_policy() {
     local failures=()
     local warnings=()
 
-    branch="$(git_value_or_override ACFS_RELEASE_DOCTOR_GIT_BRANCH git rev-parse --abbrev-ref HEAD 2>/dev/null || true)"
-    status_output="$(git_value_or_override ACFS_RELEASE_DOCTOR_GIT_STATUS git status --porcelain 2>/dev/null || true)"
-    main_ref="$(git_value_or_override ACFS_RELEASE_DOCTOR_ORIGIN_MAIN git rev-parse origin/main 2>/dev/null || true)"
-    master_ref="$(git_value_or_override ACFS_RELEASE_DOCTOR_ORIGIN_MASTER git rev-parse origin/master 2>/dev/null || true)"
+    branch="$(git_value_or_override GTBI_RELEASE_DOCTOR_GIT_BRANCH git rev-parse --abbrev-ref HEAD 2>/dev/null || true)"
+    status_output="$(git_value_or_override GTBI_RELEASE_DOCTOR_GIT_STATUS git status --porcelain 2>/dev/null || true)"
+    main_ref="$(git_value_or_override GTBI_RELEASE_DOCTOR_ORIGIN_MAIN git rev-parse origin/main 2>/dev/null || true)"
+    master_ref="$(git_value_or_override GTBI_RELEASE_DOCTOR_ORIGIN_MASTER git rev-parse origin/master 2>/dev/null || true)"
 
     if [[ "$branch" != "main" ]]; then
         failures+=("current branch is '$branch', expected main")
@@ -299,8 +299,8 @@ check_checksum_candidate() {
 }
 
 changed_files() {
-    if [[ -v ACFS_RELEASE_DOCTOR_CHANGED_FILES ]]; then
-        printf '%s\n' "$ACFS_RELEASE_DOCTOR_CHANGED_FILES"
+    if [[ -v GTBI_RELEASE_DOCTOR_CHANGED_FILES ]]; then
+        printf '%s\n' "$GTBI_RELEASE_DOCTOR_CHANGED_FILES"
         return 0
     fi
     (cd "$REPO_ROOT" && git diff --name-only HEAD -- 2>/dev/null || true)
@@ -357,7 +357,7 @@ print_human_report() {
         return 0
     fi
 
-    echo "ACFS release doctor"
+    echo "GTBI release doctor"
     echo
     for i in "${!CHECK_IDS[@]}"; do
         status="${CHECK_STATUSES[$i]}"

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-# ACFS Installer - OS Detection Library
+# GTBI Installer - OS Detection Library
 # Detects and validates the operating system
 #
 # Requires: logging.sh to be sourced first for log_* functions
@@ -119,7 +119,7 @@ os_detect_passwd_home_from_entry() {
 }
 
 detect_os() {
-    local os_release_file="${ACFS_OS_RELEASE_PATH:-/etc/os-release}"
+    local os_release_file="${GTBI_OS_RELEASE_PATH:-/etc/os-release}"
 
     if [[ ! -f "$os_release_file" ]]; then
         log_fatal "Cannot detect OS. $os_release_file not found."
@@ -142,7 +142,7 @@ validate_os() {
     detect_os
 
     if [[ "$OS_ID" != "ubuntu" ]]; then
-        log_warn "ACFS is designed for Ubuntu but detected: $OS_ID"
+        log_warn "GTBI is designed for Ubuntu but detected: $OS_ID"
         log_warn "Proceeding anyway, but some features may not work correctly."
         return 1
     fi
@@ -204,7 +204,7 @@ is_fresh_vps() {
         return 1
     fi
 
-    if [[ -f "$target_home/.bashrc" ]] && ! grep -q "ACFS" "$target_home/.bashrc" 2>/dev/null; then
+    if [[ -f "$target_home/.bashrc" ]] && ! grep -q "GTBI" "$target_home/.bashrc" 2>/dev/null; then
         ((indicators += 1))
     fi
 
@@ -244,7 +244,7 @@ get_arch() {
 
 # Check if running in WSL
 is_wsl() {
-    local version_file="${ACFS_PROC_VERSION:-/proc/version}"
+    local version_file="${GTBI_PROC_VERSION:-/proc/version}"
     if grep -qi microsoft "$version_file" 2>/dev/null; then
         return 0
     fi
@@ -253,8 +253,8 @@ is_wsl() {
 
 # Check if running in Docker
 is_docker() {
-    local dockerenv="${ACFS_DOCKERENV:-/.dockerenv}"
-    local cgroup="${ACFS_CGROUP:-/proc/1/cgroup}"
+    local dockerenv="${GTBI_DOCKERENV:-/.dockerenv}"
+    local cgroup="${GTBI_CGROUP:-/proc/1/cgroup}"
 
     if [[ -f "$dockerenv" ]]; then
         return 0

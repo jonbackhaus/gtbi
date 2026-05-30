@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-# Unit tests for ACFS credential/environment preflight
+# Unit tests for GTBI credential/environment preflight
 # ============================================================
 
 set -euo pipefail
@@ -10,7 +10,7 @@ CREDENTIAL_PREFLIGHT_SH="$REPO_ROOT/scripts/lib/credential_preflight.sh"
 
 TESTS_PASSED=0
 TESTS_FAILED=0
-ARTIFACT_DIR="${ACFS_CREDENTIAL_PREFLIGHT_TEST_ARTIFACTS_DIR:-${TMPDIR:-/tmp}/acfs-credential-preflight-test-artifacts-$(date +%Y%m%d-%H%M%S)-$$}"
+ARTIFACT_DIR="${GTBI_CREDENTIAL_PREFLIGHT_TEST_ARTIFACTS_DIR:-${TMPDIR:-/tmp}/gtbi-credential-preflight-test-artifacts-$(date +%Y%m%d-%H%M%S)-$$}"
 
 mkdir -p "$ARTIFACT_DIR"
 
@@ -62,7 +62,7 @@ test_detects_common_fake_secret_shapes_without_printing_values() {
 GITHUB_TOKEN=ghp_ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmn
 AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE
 Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.examplepayload.signaturevalue
-DATABASE_URL=postgres://acfs:supersecret@db.example.test/app
+DATABASE_URL=postgres://gtbi:supersecret@db.example.test/app
 '
 
     if bash "$CREDENTIAL_PREFLIGHT_SH" --json --file "$fixture" > "$output"; then
@@ -87,14 +87,14 @@ test_secret_matrix_detects_categories_without_value_leaks() {
     local human_output="$ARTIFACT_DIR/matrix.human"
     local secret=""
 
-    write_fixture "$fixture" 'OPENAI_API_KEY=sk-fakeacfscredentialmatrix000001
-GITHUB_TOKEN=ghp_FAKEACFSCREDENTIALMATRIX0000000001
-GITHUB_FINE=github_pat_FAKEACFSMATRIX_123456789012345678901234
-VAULT_TOKEN=hvs.FAKEACFSCREDENTIALMATRIX001
-SLACK_BOT_TOKEN=xoxb-fake-acfs-credential-matrix
-Authorization: Bearer fakeacfscredentialmatrixbearer001
-SESSION_JWT=eyJfakeacfsmatrix.eyJfakeacfsmatrix.fakeacfsmatrixsig
-DATABASE_URL=postgres://acfs:fake-matrix-password@app.example.invalid/db
+    write_fixture "$fixture" 'OPENAI_API_KEY=sk-fakegtbicredentialmatrix000001
+GITHUB_TOKEN=ghp_FAKEGTBICREDENTIALMATRIX0000000001
+GITHUB_FINE=github_pat_FAKEGTBIMATRIX_123456789012345678901234
+VAULT_TOKEN=hvs.FAKEGTBICREDENTIALMATRIX001
+SLACK_BOT_TOKEN=xoxb-fake-gtbi-credential-matrix
+Authorization: Bearer fakegtbicredentialmatrixbearer001
+SESSION_JWT=eyJfakegtbimatrix.eyJfakegtbimatrix.fakegtbimatrixsig
+DATABASE_URL=postgres://gtbi:fake-matrix-password@app.example.invalid/db
 DB_PASSWORD=fake-matrix-password-002
 '
 
@@ -111,13 +111,13 @@ DB_PASSWORD=fake-matrix-password-002
     done
 
     for secret in \
-        "sk-fakeacfscredentialmatrix000001" \
-        "ghp_FAKEACFSCREDENTIALMATRIX0000000001" \
-        "github_pat_FAKEACFSMATRIX_123456789012345678901234" \
-        "hvs.FAKEACFSCREDENTIALMATRIX001" \
-        "xoxb-fake-acfs-credential-matrix" \
-        "fakeacfscredentialmatrixbearer001" \
-        "eyJfakeacfsmatrix.eyJfakeacfsmatrix.fakeacfsmatrixsig" \
+        "sk-fakegtbicredentialmatrix000001" \
+        "ghp_FAKEGTBICREDENTIALMATRIX0000000001" \
+        "github_pat_FAKEGTBIMATRIX_123456789012345678901234" \
+        "hvs.FAKEGTBICREDENTIALMATRIX001" \
+        "xoxb-fake-gtbi-credential-matrix" \
+        "fakegtbicredentialmatrixbearer001" \
+        "eyJfakegtbimatrix.eyJfakegtbimatrix.fakegtbimatrixsig" \
         "fake-matrix-password"
     do
         assert_file_no_raw_secret "$json_output" "$secret" || return 1
@@ -263,7 +263,7 @@ export PATH=/usr/local/bin API_TOKEN=$shell_secret"
 test_detects_secret_pair_after_specific_pattern_on_same_line() {
     local fixture="$ARTIFACT_DIR/specific-and-generic/config.env"
     local output="$ARTIFACT_DIR/specific-and-generic.json"
-    local api_key="sk-fakeacfscredentialmatrix000001"
+    local api_key="sk-fakegtbicredentialmatrix000001"
     local password="real-password-value-12345"
 
     write_fixture "$fixture" "OPENAI_API_KEY=$api_key DB_PASSWORD=$password"
@@ -337,16 +337,16 @@ test_excluded_paths_are_opted_out() {
     pass "excluded_paths_are_opted_out"
 }
 
-test_default_scan_covers_shell_history_and_acfs_state() {
+test_default_scan_covers_shell_history_and_gtbi_state() {
     local home_dir="$ARTIFACT_DIR/default-home"
-    local acfs_home="$home_dir/.acfs"
+    local gtbi_home="$home_dir/.gtbi"
     local output="$ARTIFACT_DIR/default.json"
 
-    mkdir -p "$acfs_home"
+    mkdir -p "$gtbi_home"
     write_fixture "$home_dir/.zsh_history" 'export SLACK_BOT_TOKEN=xoxb-123456789012-abcdefghijkl'
-    write_fixture "$acfs_home/state.json" '{"access_token":"realistic-token-value-12345"}'
+    write_fixture "$gtbi_home/state.json" '{"access_token":"realistic-token-value-12345"}'
 
-    if bash "$CREDENTIAL_PREFLIGHT_SH" --json --home "$home_dir" --acfs-home "$acfs_home" > "$output"; then
+    if bash "$CREDENTIAL_PREFLIGHT_SH" --json --home "$home_dir" --gtbi-home "$gtbi_home" > "$output"; then
         return 1
     fi
 
@@ -354,11 +354,11 @@ test_default_scan_covers_shell_history_and_acfs_state() {
     assert_category_present "$output" "generic_secret" || return 1
     jq -e '
       (.findings[] | select(.source == "shell_history")) and
-      (.findings[] | select(.source == "acfs_state"))
+      (.findings[] | select(.source == "gtbi_state"))
     ' "$output" >/dev/null || return 1
     assert_no_raw_secret "$output" "realistic-token-value-12345" || return 1
 
-    pass "default_scan_covers_shell_history_and_acfs_state"
+    pass "default_scan_covers_shell_history_and_gtbi_state"
 }
 
 run_test() {
@@ -384,7 +384,7 @@ main() {
     run_test test_password_keys_keep_password_category_after_placeholder_checks
     run_test test_binary_and_unreadable_files_are_skipped
     run_test test_excluded_paths_are_opted_out
-    run_test test_default_scan_covers_shell_history_and_acfs_state
+    run_test test_default_scan_covers_shell_history_and_gtbi_state
 
     echo ""
     echo "Tests passed: $TESTS_PASSED"

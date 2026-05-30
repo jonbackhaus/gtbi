@@ -24,7 +24,7 @@ jobs:
 
       - name: Run installer canary
         env:
-          ACFS_CHECKSUMS_REF: main
+          GTBI_CHECKSUMS_REF: main
           INPUT_UBUNTU: ${{ inputs.ubuntu }}
           INPUT_MODE: ${{ inputs.mode }}
           EVENT_NAME: ${{ github.event_name }}

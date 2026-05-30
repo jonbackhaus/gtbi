@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # shellcheck disable=SC1091
 # ============================================================
-# ACFS Support Bundle Tests
+# GTBI Support Bundle Tests
 # Tests: collection functions, redaction, CLI flags, manifest
 # Usage: bash tests/vm/test_support_bundle.sh
 # ============================================================
@@ -14,18 +14,18 @@ SUPPORT_SH="$REPO_ROOT/scripts/lib/support.sh"
 source "$REPO_ROOT/tests/vm/lib/test_harness.sh"
 
 # ============================================================
-# Test setup: create a mock ACFS environment
+# Test setup: create a mock GTBI environment
 # ============================================================
 MOCK_HOME=""
-MOCK_ACFS=""
+MOCK_GTBI=""
 
 setup_mock_env() {
     MOCK_HOME=$(mktemp -d)
-    MOCK_ACFS="$MOCK_HOME/.acfs"
-    mkdir -p "$MOCK_ACFS/logs"
+    MOCK_GTBI="$MOCK_HOME/.gtbi"
+    mkdir -p "$MOCK_GTBI/logs"
 
     # Create mock state.json
-    cat > "$MOCK_ACFS/state.json" <<'JSON'
+    cat > "$MOCK_GTBI/state.json" <<'JSON'
 {
   "completed_phases": ["base_packages", "shell_setup"],
   "phase_durations": {"base_packages": 45, "shell_setup": 12},
@@ -35,11 +35,11 @@ setup_mock_env() {
 JSON
 
     # Create mock VERSION
-    echo "0.42.0-test" > "$MOCK_ACFS/VERSION"
+    echo "0.42.0-test" > "$MOCK_GTBI/VERSION"
 
     # Create a mock install log with secrets
-    cat > "$MOCK_ACFS/logs/install-20260126_220000.log" <<'LOG'
-[2026-01-26T22:00:00] Starting ACFS install
+    cat > "$MOCK_GTBI/logs/install-20260126_220000.log" <<'LOG'
+[2026-01-26T22:00:00] Starting GTBI install
 API_KEY=sk-proj-abc123def456ghi789jkl012mno345pqr
 VAULT_TOKEN=hvs.CAESIJRemUxuRxxxxxxxxxxxxxxxYYY
 ghp_ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmn
@@ -55,7 +55,7 @@ git_sha=a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0
 LOG
 
     # Create mock install summary JSON
-    cat > "$MOCK_ACFS/logs/install_summary_20260126_220000.json" <<'JSON'
+    cat > "$MOCK_GTBI/logs/install_summary_20260126_220000.json" <<'JSON'
 {
   "status": "success",
   "secret_key": "my_very_secret_value_here_1234",
@@ -64,7 +64,7 @@ LOG
 JSON
 
     # Create mock performance budget JSON
-    cat > "$MOCK_ACFS/logs/performance_budget_20260126_220000.json" <<'JSON'
+    cat > "$MOCK_GTBI/logs/performance_budget_20260126_220000.json" <<'JSON'
 {
   "schema_version": 1,
   "status": "pass",
@@ -91,18 +91,18 @@ JSON
     echo "# mock zshrc" > "$MOCK_HOME/.zshrc"
 
     # Create a fast mock doctor.sh so support.sh doesn't timeout on real doctor
-    mkdir -p "$MOCK_ACFS/scripts/lib"
-    cat > "$MOCK_ACFS/scripts/lib/doctor.sh" <<'DOCTOR'
+    mkdir -p "$MOCK_GTBI/scripts/lib"
+    cat > "$MOCK_GTBI/scripts/lib/doctor.sh" <<'DOCTOR'
 #!/usr/bin/env bash
 echo '{"status": "mock", "checks": []}'
 DOCTOR
-    chmod +x "$MOCK_ACFS/scripts/lib/doctor.sh"
+    chmod +x "$MOCK_GTBI/scripts/lib/doctor.sh"
 
-    cat > "$MOCK_ACFS/scripts/lib/swarm_status.sh" <<'SWARM'
+    cat > "$MOCK_GTBI/scripts/lib/swarm_status.sh" <<'SWARM'
 #!/usr/bin/env bash
 echo '{"schema_version": 1, "status": "pass", "probes": {}}'
 SWARM
-    chmod +x "$MOCK_ACFS/scripts/lib/swarm_status.sh"
+    chmod +x "$MOCK_GTBI/scripts/lib/swarm_status.sh"
 }
 
 cleanup_mock_env() {
@@ -129,7 +129,7 @@ test_bundle_creates_archive() {
     mkdir -p "$output_dir"
 
     local archive_path
-    archive_path=$(HOME="$MOCK_HOME" ACFS_HOME="$MOCK_ACFS" SUPPORT_BUNDLE_DOCTOR_TIMEOUT=5 \
+    archive_path=$(HOME="$MOCK_HOME" GTBI_HOME="$MOCK_GTBI" SUPPORT_BUNDLE_DOCTOR_TIMEOUT=5 \
         bash "$SUPPORT_SH" --output "$output_dir" 2>/dev/null) || true
 
     if [[ -n "$archive_path" ]] && [[ -f "$archive_path" ]]; then
@@ -154,7 +154,7 @@ test_bundle_contains_expected_files() {
     mkdir -p "$output_dir"
 
     local archive_path
-    archive_path=$(HOME="$MOCK_HOME" ACFS_HOME="$MOCK_ACFS" SUPPORT_BUNDLE_DOCTOR_TIMEOUT=5 \
+    archive_path=$(HOME="$MOCK_HOME" GTBI_HOME="$MOCK_GTBI" SUPPORT_BUNDLE_DOCTOR_TIMEOUT=5 \
         bash "$SUPPORT_SH" --output "$output_dir" 2>/dev/null) || true
 
     if [[ -z "$archive_path" ]] || [[ ! -f "$archive_path" ]]; then
@@ -231,7 +231,7 @@ test_manifest_json_valid() {
     mkdir -p "$output_dir"
 
     local archive_path
-    archive_path=$(HOME="$MOCK_HOME" ACFS_HOME="$MOCK_ACFS" SUPPORT_BUNDLE_DOCTOR_TIMEOUT=5 \
+    archive_path=$(HOME="$MOCK_HOME" GTBI_HOME="$MOCK_GTBI" SUPPORT_BUNDLE_DOCTOR_TIMEOUT=5 \
         bash "$SUPPORT_SH" --output "$output_dir" 2>/dev/null) || true
 
     if [[ -z "$archive_path" ]] || [[ ! -f "$archive_path" ]]; then
@@ -323,7 +323,7 @@ test_manifest_lists_each_summary_once() {
     mkdir -p "$output_dir"
 
     local archive_path
-    archive_path=$(HOME="$MOCK_HOME" ACFS_HOME="$MOCK_ACFS" SUPPORT_BUNDLE_DOCTOR_TIMEOUT=5 \
+    archive_path=$(HOME="$MOCK_HOME" GTBI_HOME="$MOCK_GTBI" SUPPORT_BUNDLE_DOCTOR_TIMEOUT=5 \
         bash "$SUPPORT_SH" --output "$output_dir" 2>/dev/null) || true
 
     if [[ -z "$archive_path" ]] || [[ ! -f "$archive_path" ]]; then
@@ -384,9 +384,9 @@ EOF
 
     local first_path=""
     local second_path=""
-    first_path=$(HOME="$MOCK_HOME" ACFS_HOME="$MOCK_ACFS" PATH="$stub_dir:$PATH" SUPPORT_BUNDLE_DOCTOR_TIMEOUT=5 \
+    first_path=$(HOME="$MOCK_HOME" GTBI_HOME="$MOCK_GTBI" PATH="$stub_dir:$PATH" SUPPORT_BUNDLE_DOCTOR_TIMEOUT=5 \
         bash "$SUPPORT_SH" --output "$output_dir" 2>/dev/null) || true
-    second_path=$(HOME="$MOCK_HOME" ACFS_HOME="$MOCK_ACFS" PATH="$stub_dir:$PATH" SUPPORT_BUNDLE_DOCTOR_TIMEOUT=5 \
+    second_path=$(HOME="$MOCK_HOME" GTBI_HOME="$MOCK_GTBI" PATH="$stub_dir:$PATH" SUPPORT_BUNDLE_DOCTOR_TIMEOUT=5 \
         bash "$SUPPORT_SH" --output "$output_dir" 2>/dev/null) || true
 
     if [[ -n "$first_path" ]] && [[ -n "$second_path" ]] \
@@ -406,7 +406,7 @@ test_manifest_matches_bundle_inventory() {
     mkdir -p "$output_dir"
 
     local archive_path
-    archive_path=$(HOME="$MOCK_HOME" ACFS_HOME="$MOCK_ACFS" SUPPORT_BUNDLE_DOCTOR_TIMEOUT=5 \
+    archive_path=$(HOME="$MOCK_HOME" GTBI_HOME="$MOCK_GTBI" SUPPORT_BUNDLE_DOCTOR_TIMEOUT=5 \
         bash "$SUPPORT_SH" --output "$output_dir" 2>/dev/null) || true
 
     if [[ -z "$archive_path" ]] || [[ ! -f "$archive_path" ]]; then
@@ -464,10 +464,10 @@ test_log_collection_skips_symlinked_logs() {
     cat > "$MOCK_HOME/outside-secret.log" <<'LOG'
 SYMLINK_SHOULD_NOT_LEAK=super-secret-diagnostic-value
 LOG
-    ln -s "$MOCK_HOME/outside-secret.log" "$MOCK_ACFS/logs/install-20260126_230000.log"
+    ln -s "$MOCK_HOME/outside-secret.log" "$MOCK_GTBI/logs/install-20260126_230000.log"
 
     local archive_path
-    archive_path=$(HOME="$MOCK_HOME" ACFS_HOME="$MOCK_ACFS" SUPPORT_BUNDLE_DOCTOR_TIMEOUT=5 \
+    archive_path=$(HOME="$MOCK_HOME" GTBI_HOME="$MOCK_GTBI" SUPPORT_BUNDLE_DOCTOR_TIMEOUT=5 \
         bash "$SUPPORT_SH" --output "$output_dir" 2>/dev/null) || true
 
     if [[ -z "$archive_path" ]]; then
@@ -503,7 +503,7 @@ test_redaction_catches_secrets() {
     mkdir -p "$output_dir"
 
     local archive_path
-    archive_path=$(HOME="$MOCK_HOME" ACFS_HOME="$MOCK_ACFS" SUPPORT_BUNDLE_DOCTOR_TIMEOUT=5 \
+    archive_path=$(HOME="$MOCK_HOME" GTBI_HOME="$MOCK_GTBI" SUPPORT_BUNDLE_DOCTOR_TIMEOUT=5 \
         bash "$SUPPORT_SH" --output "$output_dir" 2>/dev/null) || true
 
     if [[ -z "$archive_path" ]] || [[ ! -f "$archive_path" ]]; then
@@ -651,10 +651,10 @@ test_binary_log_replaced_with_redaction_marker() {
     local output_dir="$MOCK_HOME/test-output"
     mkdir -p "$output_dir"
 
-    printf 'binary-prefix\000BINARY_SECRET_SHOULD_NOT_LEAK\n' > "$MOCK_ACFS/logs/install-20260126_235959.log"
+    printf 'binary-prefix\000BINARY_SECRET_SHOULD_NOT_LEAK\n' > "$MOCK_GTBI/logs/install-20260126_235959.log"
 
     local archive_path
-    archive_path=$(HOME="$MOCK_HOME" ACFS_HOME="$MOCK_ACFS" \
+    archive_path=$(HOME="$MOCK_HOME" GTBI_HOME="$MOCK_GTBI" \
         SUPPORT_BUNDLE_DOCTOR_TIMEOUT=1 \
         SUPPORT_BUNDLE_SWARM_STATUS_TIMEOUT=1 \
         SUPPORT_BUNDLE_PROVENANCE_TIMEOUT=1 \
@@ -705,7 +705,7 @@ test_no_redact_flag() {
     mkdir -p "$output_dir"
 
     local archive_path
-    archive_path=$(HOME="$MOCK_HOME" ACFS_HOME="$MOCK_ACFS" SUPPORT_BUNDLE_DOCTOR_TIMEOUT=5 \
+    archive_path=$(HOME="$MOCK_HOME" GTBI_HOME="$MOCK_GTBI" SUPPORT_BUNDLE_DOCTOR_TIMEOUT=5 \
         bash "$SUPPORT_SH" --no-redact --output "$output_dir" 2>/dev/null) || true
 
     if [[ -z "$archive_path" ]] || [[ ! -f "$archive_path" ]]; then
@@ -754,7 +754,7 @@ test_verbose_flag() {
     mkdir -p "$output_dir"
 
     local stderr_output
-    stderr_output=$(HOME="$MOCK_HOME" ACFS_HOME="$MOCK_ACFS" SUPPORT_BUNDLE_DOCTOR_TIMEOUT=5 \
+    stderr_output=$(HOME="$MOCK_HOME" GTBI_HOME="$MOCK_GTBI" SUPPORT_BUNDLE_DOCTOR_TIMEOUT=5 \
         bash "$SUPPORT_SH" --verbose --output "$output_dir" 2>&1 >/dev/null) || true
 
     if echo "$stderr_output" | grep -qiE 'collected|scanned|redact'; then
@@ -766,18 +766,18 @@ test_verbose_flag() {
     cleanup_mock_env
 }
 
-test_sudo_user_defaults_to_target_acfs_home() {
+test_sudo_user_defaults_to_target_gtbi_home() {
     setup_mock_env
 
     local root_home="$MOCK_HOME/root-home"
     local target_home="$MOCK_HOME/target-home"
-    local target_acfs="$target_home/.acfs"
-    mkdir -p "$root_home" "$target_home" "$target_acfs"
+    local target_gtbi="$target_home/.gtbi"
+    mkdir -p "$root_home" "$target_home" "$target_gtbi"
 
-    cp -R "$MOCK_ACFS/." "$target_acfs/"
-    cat > "$target_acfs/state.json" <<JSON
+    cp -R "$MOCK_GTBI/." "$target_gtbi/"
+    cat > "$target_gtbi/state.json" <<JSON
 {
-  "target_user": "acfstarget",
+  "target_user": "gtbitarget",
   "target_home": "$target_home",
   "completed_phases": ["base_packages", "shell_setup"]
 }
@@ -786,13 +786,13 @@ JSON
     echo "# target zshrc" > "$target_home/.zshrc"
 
     local archive_path=""
-    archive_path=$(HOME="$root_home" SUDO_USER="acfstarget" ACFS_SYSTEM_STATE_FILE="$target_acfs/state.json" SUPPORT_BUNDLE_DOCTOR_TIMEOUT=5 \
+    archive_path=$(HOME="$root_home" SUDO_USER="gtbitarget" GTBI_SYSTEM_STATE_FILE="$target_gtbi/state.json" SUPPORT_BUNDLE_DOCTOR_TIMEOUT=5 \
         bash "$SUPPORT_SH" 2>/dev/null) || true
 
-    if [[ "$archive_path" == "$target_acfs"/support/* ]] && [[ -f "$archive_path" ]]; then
-        harness_pass "SUDO_USER support bundle defaults to target ACFS home"
+    if [[ "$archive_path" == "$target_gtbi"/support/* ]] && [[ -f "$archive_path" ]]; then
+        harness_pass "SUDO_USER support bundle defaults to target GTBI home"
     else
-        harness_fail "SUDO_USER support bundle defaults to target ACFS home" "Got: $archive_path"
+        harness_fail "SUDO_USER support bundle defaults to target GTBI home" "Got: $archive_path"
         cleanup_mock_env
         return
     fi
@@ -827,7 +827,7 @@ EOF
     chmod +x "$stub_dir/tar"
 
     local output_path=""
-    output_path=$(HOME="$MOCK_HOME" ACFS_HOME="$MOCK_ACFS" PATH="$stub_dir:$PATH" SUPPORT_BUNDLE_DOCTOR_TIMEOUT=5 \
+    output_path=$(HOME="$MOCK_HOME" GTBI_HOME="$MOCK_GTBI" PATH="$stub_dir:$PATH" SUPPORT_BUNDLE_DOCTOR_TIMEOUT=5 \
         bash "$SUPPORT_SH" --output "$output_dir" 2>/dev/null) || true
 
     if [[ "$output_path" == "$output_dir"/* ]] && [[ "$output_path" != *.tar.gz ]] && [[ -d "$output_path" ]]; then
@@ -854,7 +854,7 @@ test_unknown_flag_errors() {
 # Main
 # ============================================================
 main() {
-    harness_init "ACFS Support Bundle Tests"
+    harness_init "GTBI Support Bundle Tests"
 
     # Pre-flight check
     if ! command -v jq &>/dev/null; then
@@ -869,7 +869,7 @@ main() {
     harness_section "Bundle Collection Tests"
     test_bundle_creates_archive || true
     test_bundle_contains_expected_files || true
-    test_sudo_user_defaults_to_target_acfs_home || true
+    test_sudo_user_defaults_to_target_gtbi_home || true
     test_bundle_names_stay_unique_when_timestamps_collide || true
     test_log_collection_skips_symlinked_logs || true
     test_tar_failure_returns_bundle_dir || true

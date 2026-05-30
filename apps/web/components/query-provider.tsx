@@ -33,13 +33,13 @@ export function QueryProvider({ children }: { children: ReactNode }) {
     // Guard against localStorage being unavailable (private browsing, restrictions)
     try {
       // Test localStorage availability first
-      const testKey = "__acfs_test__";
+      const testKey = "__gtbi_test__";
       window.localStorage.setItem(testKey, "test");
       window.localStorage.removeItem(testKey);
 
       const storagePersister = createSyncStoragePersister({
         storage: window.localStorage,
-        key: "acfs-query-cache",
+        key: "gtbi-query-cache",
       });
 
       // Defer state update to avoid setState-in-effect lint violations.
@@ -55,7 +55,7 @@ export function QueryProvider({ children }: { children: ReactNode }) {
       // localStorage unavailable (private browsing, quota exceeded, etc.)
       // Silently fall back to non-persisted state - app will still work
       console.warn(
-        "[ACFS] localStorage unavailable, running without query persistence"
+        "[GTBI] localStorage unavailable, running without query persistence"
       );
     }
   }, []);

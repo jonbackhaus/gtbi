@@ -53,7 +53,7 @@ spawn bash $newproj_script --interactive
 # Wait for welcome
 expect {
     timeout { puts stderr "ERROR: Timeout at Welcome"; exit 1 }
-    "Welcome to ACFS" { log_step "At Welcome screen" }
+    "Welcome to GTBI" { log_step "At Welcome screen" }
 }
 
 # ============================================================

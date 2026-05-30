@@ -30,7 +30,7 @@ ensure_probe_workspace() {
         return 0
     fi
 
-    PROBE_DIR=$(mktemp -d "${TMPDIR:-/tmp}/acfs_br_integration.XXXXXX")
+    PROBE_DIR=$(mktemp -d "${TMPDIR:-/tmp}/gtbi_br_integration.XXXXXX")
     if [[ -z "$PROBE_DIR" || ! -d "$PROBE_DIR" ]]; then
         log "Probe workspace setup failed: mktemp did not create a directory"
         return 1

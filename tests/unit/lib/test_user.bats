@@ -19,10 +19,10 @@ setup() {
     stub_command "chmod" ""
     
     # Mock environment
-    # Note: user.sh uses TARGET_USER not ACFS_TARGET_USER
+    # Note: user.sh uses TARGET_USER not GTBI_TARGET_USER
     export TARGET_USER="testuser"
-    export ACFS_TARGET_HOME=$(create_temp_dir)
-    export TARGET_HOME="$ACFS_TARGET_HOME"
+    export GTBI_TARGET_HOME=$(create_temp_dir)
+    export TARGET_HOME="$GTBI_TARGET_HOME"
     export HOME=$(create_temp_dir)
     
     # We need mkdir and touch to work for some tests, so we won't stub them globally
@@ -111,7 +111,7 @@ teardown() {
 
 @test "enable_passwordless_sudo: writes sudoers" {
     # Stub tee to write to file
-    local capture_file="$ACFS_TARGET_HOME/sudoers_capture"
+    local capture_file="$GTBI_TARGET_HOME/sudoers_capture"
     cat > "$STUB_DIR/tee" <<EOF
 #!/bin/bash
 cat > "$capture_file"
@@ -153,7 +153,7 @@ EOF
     # Use real tee for this test (remove stub if it exists from previous tests? No, separate processes)
     # But wait, tee writes to a file owned by root usually?
     # No, we set SUDO="", so it writes as current user.
-    # ACFS_TARGET_HOME is a temp dir owned by current user.
+    # GTBI_TARGET_HOME is a temp dir owned by current user.
     # So real tee works.
     
     # Ensure grep is real (we didn't stub it)
@@ -161,7 +161,7 @@ EOF
     run migrate_ssh_keys
     assert_success
     
-    assert_equal "$(cat "$ACFS_TARGET_HOME/.ssh/authorized_keys")" "ssh-rsa TESTKEY"
+    assert_equal "$(cat "$GTBI_TARGET_HOME/.ssh/authorized_keys")" "ssh-rsa TESTKEY"
 }
 
 @test "migrate_ssh_keys: repairs stale TARGET_HOME from resolved target home" {
@@ -217,7 +217,7 @@ EOF
 
     export TARGET_HOME="$custom_home"
     export HOME="$(create_temp_dir)"
-    export ACFS_CI=false
+    export GTBI_CI=false
 
     user_resolve_current_user() {
         printf '%s\n' "root"
@@ -239,7 +239,7 @@ EOF
 
     local_home="$(create_temp_dir)"
     mkdir -p "$local_home/.ssh"
-    printf 'ssh-ed25519 AAAATEST acfs\n' > "$local_home/.ssh/acfs_ed25519.pub"
+    printf 'ssh-ed25519 AAAATEST gtbi\n' > "$local_home/.ssh/gtbi_ed25519.pub"
 
     ssh_stub_dir="$(create_temp_dir)"
     cat > "$ssh_stub_dir/ssh" <<'EOF'
@@ -264,7 +264,7 @@ EOF
 
     resolved_home="$(create_temp_dir)"
     export TARGET_HOME="$resolved_home"
-    export ACFS_CI=false
+    export GTBI_CI=false
     unset HOME
 
     user_resolve_current_user() {
@@ -358,7 +358,7 @@ EOF
 }
 
 @test "set_default_shell: external handoff uses passwd home over stale TARGET_HOME" {
-    local managed_user="acfs-managed-user"
+    local managed_user="gtbi-managed-user"
     local stale_home
     local resolved_home
 
@@ -375,12 +375,12 @@ EOF
     run set_default_shell /bin/bash
     assert_success
 
-    grep -q 'ACFS externally-managed shell handoff' "$resolved_home/.bashrc"
+    grep -q 'GTBI externally-managed shell handoff' "$resolved_home/.bashrc"
     [[ ! -f "$stale_home/.bashrc" ]]
 }
 
 @test "set_default_shell: external handoff ignores marker-only comments" {
-    local managed_user="acfs-managed-user"
+    local managed_user="gtbi-managed-user"
     local stale_home
     local resolved_home
 
@@ -390,7 +390,7 @@ EOF
     export TARGET_HOME="$stale_home"
 
     cat > "$resolved_home/.bashrc" <<'EOF'
-# ACFS externally-managed shell handoff
+# GTBI externally-managed shell handoff
 # Historical note only; no active zsh handoff lives here.
 EOF
 
@@ -439,16 +439,16 @@ EOF
 }
 
 @test "user.sh: sourcing preserves explicit TARGET_HOME for current target without passwd" {
-    run grep -F 'elif [[ -n "$_ACFS_USER_EXPLICIT_TARGET_HOME" ]] && [[ "$TARGET_USER" == "$_ACFS_USER_CURRENT_USER" ]]; then' "$PROJECT_ROOT/scripts/lib/user.sh"
+    run grep -F 'elif [[ -n "$_GTBI_USER_EXPLICIT_TARGET_HOME" ]] && [[ "$TARGET_USER" == "$_GTBI_USER_CURRENT_USER" ]]; then' "$PROJECT_ROOT/scripts/lib/user.sh"
     assert_success
 }
 
 @test "prompt_ssh_key: --yes keeps existing root keys without prompting" {
     local root_keys="$BATS_TEST_TMPDIR/root_authorized_keys"
-    printf 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAITestKey acfs\n' > "$root_keys"
+    printf 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAITestKey gtbi\n' > "$root_keys"
 
-    export ACFS_TEST_MODE=1
-    export ACFS_TEST_ROOT_AUTHORIZED_KEYS="$root_keys"
+    export GTBI_TEST_MODE=1
+    export GTBI_TEST_ROOT_AUTHORIZED_KEYS="$root_keys"
     export YES_MODE=true
 
     run prompt_ssh_key
@@ -460,13 +460,13 @@ EOF
 @test "prompt_ssh_key: --yes skips missing root keys without prompting" {
     command -v setsid >/dev/null || skip "setsid is required to detach /dev/tty"
 
-    export ACFS_TEST_MODE=1
-    export ACFS_TEST_ROOT_AUTHORIZED_KEYS="$BATS_TEST_TMPDIR/missing_authorized_keys"
+    export GTBI_TEST_MODE=1
+    export GTBI_TEST_ROOT_AUTHORIZED_KEYS="$BATS_TEST_TMPDIR/missing_authorized_keys"
     export YES_MODE=true
 
     run env PROJECT_ROOT="$PROJECT_ROOT" BATS_TEST_TMPDIR="$BATS_TEST_TMPDIR" setsid bash -c '
-        export ACFS_TEST_MODE=1
-        export ACFS_TEST_ROOT_AUTHORIZED_KEYS="$BATS_TEST_TMPDIR/missing_authorized_keys"
+        export GTBI_TEST_MODE=1
+        export GTBI_TEST_ROOT_AUTHORIZED_KEYS="$BATS_TEST_TMPDIR/missing_authorized_keys"
         export TARGET_USER=testuser
         export YES_MODE=true
         source "$PROJECT_ROOT/scripts/lib/logging.sh"
@@ -483,13 +483,13 @@ EOF
 
     local root_keys="$BATS_TEST_TMPDIR/root_authorized_keys"
     local runner="$BATS_TEST_TMPDIR/prompt_key_runner.sh"
-    local pubkey="ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAITestKey acfs"
+    local pubkey="ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAITestKey gtbi"
 
     cat > "$runner" <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
-export ACFS_TEST_MODE=1
-export ACFS_TEST_ROOT_AUTHORIZED_KEYS="$ROOT_KEYS"
+export GTBI_TEST_MODE=1
+export GTBI_TEST_ROOT_AUTHORIZED_KEYS="$ROOT_KEYS"
 export TARGET_USER=testuser
 export YES_MODE=true
 source "$PROJECT_ROOT/scripts/lib/logging.sh"
@@ -518,12 +518,12 @@ EOF
         set -euo pipefail
         source "$PROJECT_ROOT/scripts/lib/logging.sh"
         source "$PROJECT_ROOT/scripts/lib/user.sh"
-        export ACFS_TEST_MODE=1
-        export ACFS_TEST_ROOT_AUTHORIZED_KEYS="$BATS_TEST_TMPDIR/missing_authorized_keys"
+        export GTBI_TEST_MODE=1
+        export GTBI_TEST_ROOT_AUTHORIZED_KEYS="$BATS_TEST_TMPDIR/missing_authorized_keys"
         export TARGET_USER=testuser
         export YES_MODE=true
         prompt_ssh_key
-        printf "warning=%s\n" "${ACFS_SSH_KEY_WARNING:-}"
+        printf "warning=%s\n" "${GTBI_SSH_KEY_WARNING:-}"
     '
     assert_success
     assert_output --partial "warning=true"
@@ -536,12 +536,12 @@ EOF
         set -euo pipefail
         source "$PROJECT_ROOT/scripts/lib/logging.sh"
         source "$PROJECT_ROOT/scripts/lib/user.sh"
-        export ACFS_TEST_MODE=1
-        export ACFS_TEST_ROOT_AUTHORIZED_KEYS="$BATS_TEST_TMPDIR/missing_authorized_keys"
+        export GTBI_TEST_MODE=1
+        export GTBI_TEST_ROOT_AUTHORIZED_KEYS="$BATS_TEST_TMPDIR/missing_authorized_keys"
         export TARGET_USER=testuser
         export YES_MODE=false
         prompt_ssh_key </dev/null
-        printf "warning=%s\n" "${ACFS_SSH_KEY_WARNING:-}"
+        printf "warning=%s\n" "${GTBI_SSH_KEY_WARNING:-}"
     '
     assert_success
     assert_output --partial "Non-interactive mode detected"

@@ -1,17 +1,17 @@
 # Redacted Team Profile Schema
 
-This note defines the `bd-0aotl` design contract for portable ACFS team
+This note defines the `bd-0aotl` design contract for portable GTBI team
 profiles. A team profile is a shareable set of defaults for the web wizard,
 installer, onboarding lessons, and future team-mode import flow. It must never
 carry credentials, raw host addresses, private keys, or provider account data.
 
 ## Goals
 
-- Let a maintainer publish safe defaults for repeated ACFS installs.
+- Let a maintainer publish safe defaults for repeated GTBI installs.
 - Keep installer choices auditable before any mutation.
 - Make required secret slots explicit without storing secret values.
 - Support deterministic import diffs so users can review exactly what changes.
-- Fail closed when a profile is incompatible with the current ACFS manifest or
+- Fail closed when a profile is incompatible with the current GTBI manifest or
   security policy.
 
 ## Non-Goals
@@ -26,7 +26,7 @@ carry credentials, raw host addresses, private keys, or provider account data.
 Recommended file name:
 
 ```text
-acfs-team-profile.json
+gtbi-team-profile.json
 ```
 
 The file is plain JSON. Future compressed bundles may include documentation,
@@ -36,23 +36,23 @@ but the profile JSON remains the trust boundary and must validate by itself.
 
 ```json
 {
-  "schema": "acfs.team-profile.v1",
+  "schema": "gtbi.team-profile.v1",
   "schemaVersion": 1,
   "profileId": "example-team-vps",
   "displayName": "Example Team VPS",
-  "description": "Shared ACFS defaults for the example team.",
+  "description": "Shared GTBI defaults for the example team.",
   "generatedAt": "2026-05-08T00:00:00Z",
-  "generatedBy": "acfs wizard",
+  "generatedBy": "gtbi wizard",
   "provenance": {
     "author": {
       "name": "Example Maintainer",
       "email": "maintainer@example.invalid"
     },
     "source": {
-      "acfsVersion": "0.0.0-dev",
-      "acfsRef": "main",
-      "acfsCommit": "0123456789abcdef0123456789abcdef01234567",
-      "manifestSha256": "<sha256 of acfs.manifest.yaml>",
+      "gtbiVersion": "0.0.0-dev",
+      "gtbiRef": "main",
+      "gtbiCommit": "0123456789abcdef0123456789abcdef01234567",
+      "manifestSha256": "<sha256 of gtbi.manifest.yaml>",
       "checksumsYamlSha256": "<sha256 of checksums.yaml>"
     }
   },
@@ -62,7 +62,7 @@ but the profile JSON remains the trust boundary and must validate by itself.
     "targetUbuntuVersions": ["25.10"],
     "architectures": ["x86_64", "aarch64"],
     "installerRefPolicy": "prefer_pinned_ref",
-    "checksumsRefPolicy": "current_acfs_default"
+    "checksumsRefPolicy": "current_gtbi_default"
   },
   "providerDefaults": {
     "provider": "contabo",
@@ -107,13 +107,13 @@ but the profile JSON remains the trust boundary and must validate by itself.
       "id": "github",
       "required": true,
       "authMethod": "browser_login",
-      "secretSlot": "secret://acfs/team/github-token"
+      "secretSlot": "secret://gtbi/team/github-token"
     },
     {
       "id": "cloudflare",
       "required": false,
       "authMethod": "api_token",
-      "secretSlot": "secret://acfs/team/cloudflare-api-token"
+      "secretSlot": "secret://gtbi/team/cloudflare-api-token"
     }
   ],
   "redaction": {
@@ -136,9 +136,9 @@ but the profile JSON remains the trust boundary and must validate by itself.
 
 Every v1 profile must include:
 
-- `schema: "acfs.team-profile.v1"` and `schemaVersion: 1`
+- `schema: "gtbi.team-profile.v1"` and `schemaVersion: 1`
 - `profileId`, `displayName`, `generatedAt`, and `generatedBy`
-- `provenance.source.acfsRef`, `provenance.source.manifestSha256`, and
+- `provenance.source.gtbiRef`, `provenance.source.manifestSha256`, and
   `provenance.source.checksumsYamlSha256`
 - `compatibility.targetUbuntuVersions`, `compatibility.architectures`,
   `compatibility.installerRefPolicy`, and `compatibility.checksumsRefPolicy`
@@ -162,7 +162,7 @@ Allowed values are defaults, choices, and identifiers:
   pinning policy
 - shell and onboarding lesson preferences
 - service account requirements and authentication method names
-- secret-slot references that start with `secret://acfs/team/`
+- secret-slot references that start with `secret://gtbi/team/`
 
 Disallowed values include:
 
@@ -170,7 +170,7 @@ Disallowed values include:
 - passwords, OAuth refresh tokens, API tokens, session cookies, bearer tokens,
   private keys, recovery codes, database URLs, webhook secrets, or Vault tokens
 - raw SSH public keys when they identify a private machine or person
-- full local filesystem paths outside documented ACFS paths
+- full local filesystem paths outside documented GTBI paths
 - generated support-bundle contents, installer logs, or shell history
 
 ## Secret Slots
@@ -182,7 +182,7 @@ Secret slots describe future inputs without carrying the secret:
   "id": "cloudflare",
   "required": true,
   "authMethod": "api_token",
-  "secretSlot": "secret://acfs/team/cloudflare-api-token"
+  "secretSlot": "secret://gtbi/team/cloudflare-api-token"
 }
 ```
 
@@ -212,13 +212,13 @@ Profile validators must also reject values that look like:
 - raw IPv4 or IPv6 addresses in provider host fields
 
 Examples in docs and tests must use placeholder text such as
-`secret://acfs/team/example-token`; they must not include realistic secret
+`secret://gtbi/team/example-token`; they must not include realistic secret
 samples.
 
 ## Compatibility Checks
 
 Before applying an import, the consumer must compare the profile with the
-current ACFS source:
+current GTBI source:
 
 1. `schema` and `schemaVersion` are supported.
 2. `compatibility.targetUbuntuVersions` includes the requested target.

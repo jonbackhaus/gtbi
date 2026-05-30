@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # shellcheck disable=SC1091
 # ============================================================
-# ACFS Support Bundle - Collect diagnostic data for troubleshooting
-# Usage: acfs support-bundle [--verbose] [--output DIR]
-# Output: ~/.acfs/support/<timestamp>/ + .tar.gz archive
+# GTBI Support Bundle - Collect diagnostic data for troubleshooting
+# Usage: gtbi support-bundle [--verbose] [--output DIR]
+# Output: ~/.gtbi/support/<timestamp>/ + .tar.gz archive
 # ============================================================
 _SUPPORT_WAS_SOURCED=false
 _SUPPORT_ORIGINAL_HOME=""
@@ -188,7 +188,7 @@ support_initial_current_home() {
     local cached_home=""
     local resolved_home=""
 
-    if [[ "${_SUPPORT_WAS_SOURCED:-false}" == "true" ]] && [[ -z "${TARGET_HOME:-}${TARGET_USER:-}${ACFS_HOME:-}${ACFS_STATE_FILE:-}${ACFS_SYSTEM_STATE_FILE:-}" ]]; then
+    if [[ "${_SUPPORT_WAS_SOURCED:-false}" == "true" ]] && [[ -z "${TARGET_HOME:-}${TARGET_USER:-}${GTBI_HOME:-}${GTBI_STATE_FILE:-}${GTBI_SYSTEM_STATE_FILE:-}" ]]; then
         cached_home="$(support_sanitize_abs_nonroot_path "${_SUPPORT_ORIGINAL_HOME:-${HOME:-}}" 2>/dev/null || true)"
         if [[ -n "$cached_home" ]]; then
             printf '%s\n' "$cached_home"
@@ -219,11 +219,11 @@ if [[ -n "$_SUPPORT_CURRENT_HOME" ]]; then
 fi
 
 _SUPPORT_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-_SUPPORT_EXPLICIT_ACFS_HOME="$(support_sanitize_abs_nonroot_path "${ACFS_HOME:-}" 2>/dev/null || true)"
-_SUPPORT_DEFAULT_ACFS_HOME=""
-[[ -n "$_SUPPORT_CURRENT_HOME" ]] && _SUPPORT_DEFAULT_ACFS_HOME="${_SUPPORT_CURRENT_HOME}/.acfs"
-_SUPPORT_ACFS_HOME="$_SUPPORT_EXPLICIT_ACFS_HOME"
-_SUPPORT_ACFS_HOME_SOURCE=""
+_SUPPORT_EXPLICIT_GTBI_HOME="$(support_sanitize_abs_nonroot_path "${GTBI_HOME:-}" 2>/dev/null || true)"
+_SUPPORT_DEFAULT_GTBI_HOME=""
+[[ -n "$_SUPPORT_CURRENT_HOME" ]] && _SUPPORT_DEFAULT_GTBI_HOME="${_SUPPORT_CURRENT_HOME}/.gtbi"
+_SUPPORT_GTBI_HOME="$_SUPPORT_EXPLICIT_GTBI_HOME"
+_SUPPORT_GTBI_HOME_SOURCE=""
 _SUPPORT_EXPLICIT_TARGET_HOME_RAW="${TARGET_HOME:-}"
 _SUPPORT_EXPLICIT_TARGET_USER_RAW="${TARGET_USER:-}"
 _SUPPORT_EXPLICIT_TARGET_HOME="$(support_existing_abs_home "${TARGET_HOME:-}" 2>/dev/null || true)"
@@ -263,10 +263,10 @@ PROVENANCE_TIMEOUT="${SUPPORT_BUNDLE_PROVENANCE_TIMEOUT:-10}"
 RESOURCE_PROFILE_TIMEOUT="${SUPPORT_BUNDLE_RESOURCE_PROFILE_TIMEOUT:-5}"
 SWARM_INVENTORY_TIMEOUT="${SUPPORT_BUNDLE_SWARM_INVENTORY_TIMEOUT:-5}"
 SUPPORT_SYSTEM_STATE_WAS_EXPLICIT=false
-[[ -n "${ACFS_SYSTEM_STATE_FILE:-}" ]] && [[ "${ACFS_SYSTEM_STATE_FILE%/}" != "/var/lib/acfs/state.json" ]] && SUPPORT_SYSTEM_STATE_WAS_EXPLICIT=true
-SUPPORT_SYSTEM_STATE_FILE="$(support_sanitize_abs_nonroot_path "${ACFS_SYSTEM_STATE_FILE:-/var/lib/acfs/state.json}" 2>/dev/null || true)"
+[[ -n "${GTBI_SYSTEM_STATE_FILE:-}" ]] && [[ "${GTBI_SYSTEM_STATE_FILE%/}" != "/var/lib/gtbi/state.json" ]] && SUPPORT_SYSTEM_STATE_WAS_EXPLICIT=true
+SUPPORT_SYSTEM_STATE_FILE="$(support_sanitize_abs_nonroot_path "${GTBI_SYSTEM_STATE_FILE:-/var/lib/gtbi/state.json}" 2>/dev/null || true)"
 if [[ -z "$SUPPORT_SYSTEM_STATE_FILE" ]]; then
-    SUPPORT_SYSTEM_STATE_FILE="/var/lib/acfs/state.json"
+    SUPPORT_SYSTEM_STATE_FILE="/var/lib/gtbi/state.json"
 fi
 SUPPORT_TARGET_USER=""
 SUPPORT_TARGET_HOME=""
@@ -276,21 +276,21 @@ SUPPORT_TARGET_HOME=""
 # ============================================================
 
 support_print_help() {
-    echo "Usage: acfs support-bundle [options]"
+    echo "Usage: gtbi support-bundle [options]"
     echo ""
     echo "Collect diagnostic data into a tarball for troubleshooting."
     echo "Sensitive data (API keys, tokens, secrets) is redacted by default."
     echo ""
     echo "Options:"
     echo "  --verbose, -v    Show detailed output during collection"
-    echo "  --output, -o DIR Output directory (default: ~/.acfs/support)"
+    echo "  --output, -o DIR Output directory (default: ~/.gtbi/support)"
     echo "  --no-redact      Disable secret redaction (WARNING: bundle may contain secrets)"
     echo "  --help, -h       Show this help"
     echo ""
     echo "Output:"
-    echo "  ~/.acfs/support/<timestamp>/          Unpacked bundle directory"
-    echo "  ~/.acfs/support/<timestamp>.tar.gz    Compressed archive"
-    echo "  ~/.acfs/support/<timestamp>/manifest.json  Bundle manifest"
+    echo "  ~/.gtbi/support/<timestamp>/          Unpacked bundle directory"
+    echo "  ~/.gtbi/support/<timestamp>.tar.gz    Compressed archive"
+    echo "  ~/.gtbi/support/<timestamp>/manifest.json  Bundle manifest"
 }
 
 support_parse_args() {
@@ -319,7 +319,7 @@ support_parse_args() {
                 ;;
             *)
                 log_error "Unknown option: $1"
-                echo "Try 'acfs support-bundle --help' for usage." >&2
+                echo "Try 'gtbi support-bundle --help' for usage." >&2
                 return 1
                 ;;
         esac
@@ -377,7 +377,7 @@ support_resolve_explicit_target_home() {
             return 0
         fi
         target_home="$_SUPPORT_EXPLICIT_TARGET_HOME"
-        if [[ -n "$target_home" ]] && [[ "$target_home" != "${_SUPPORT_CURRENT_HOME:-}" ]] && support_candidate_has_acfs_data "$target_home/.acfs"; then
+        if [[ -n "$target_home" ]] && [[ "$target_home" != "${_SUPPORT_CURRENT_HOME:-}" ]] && support_candidate_has_gtbi_data "$target_home/.gtbi"; then
             printf '%s\n' "${target_home%/}"
             return 0
         fi
@@ -428,7 +428,7 @@ support_read_user_for_home() {
         return 0
     fi
 
-    state_file="$user_home/.acfs/state.json"
+    state_file="$user_home/.gtbi/state.json"
     candidate_user="$(support_read_target_user_from_state "$state_file" 2>/dev/null || true)"
     if [[ -n "$candidate_user" ]]; then
         current_home="$(support_home_for_user "$candidate_user" 2>/dev/null || true)"
@@ -440,21 +440,21 @@ support_read_user_for_home() {
 
     return 1
 }
-support_candidate_has_acfs_data() {
+support_candidate_has_gtbi_data() {
     local candidate="$1"
     [[ -n "$candidate" ]] || return 1
     [[ -e "$candidate/state.json" || -e "$candidate/onboard_progress.json" || -d "$candidate/logs" || -d "$candidate/onboard" ]]
 }
 
-support_script_acfs_home() {
+support_script_gtbi_home() {
     local candidate=""
     candidate=$(cd "$_SUPPORT_SCRIPT_DIR/../.." 2>/dev/null && pwd) || return 1
-    [[ "$(basename "$candidate")" == ".acfs" ]] || return 1
+    [[ "$(basename "$candidate")" == ".gtbi" ]] || return 1
     printf '%s\n' "$candidate"
 }
 
-support_current_home_acfs_candidate() {
-    local candidate="$_SUPPORT_DEFAULT_ACFS_HOME"
+support_current_home_gtbi_candidate() {
+    local candidate="$_SUPPORT_DEFAULT_GTBI_HOME"
     local current_home="$_SUPPORT_CURRENT_HOME"
     local current_user=""
     local original_home=""
@@ -464,7 +464,7 @@ support_current_home_acfs_candidate() {
 
     [[ -n "$candidate" && -n "$current_home" ]] || return 1
     [[ "$current_home" != "/root" ]] || return 1
-    support_candidate_has_acfs_data "$candidate" || return 1
+    support_candidate_has_gtbi_data "$candidate" || return 1
 
     if [[ "${_SUPPORT_ORIGINAL_HOME_WAS_SET:-false}" == true ]]; then
         original_home="$(support_sanitize_abs_nonroot_path "$_SUPPORT_ORIGINAL_HOME" 2>/dev/null || true)"
@@ -554,7 +554,7 @@ support_resolve_target_home() {
             printf '%s\n' "$state_home"
             return 0
         fi
-        if [[ -n "$_SUPPORT_EXPLICIT_ACFS_HOME" ]] && [[ "$state_file" == "$_SUPPORT_EXPLICIT_ACFS_HOME/state.json" ]]; then
+        if [[ -n "$_SUPPORT_EXPLICIT_GTBI_HOME" ]] && [[ "$state_file" == "$_SUPPORT_EXPLICIT_GTBI_HOME/state.json" ]]; then
             printf '%s\n' "$state_home"
             return 0
         fi
@@ -576,8 +576,8 @@ support_resolve_target_home() {
 support_get_install_state_file() {
     local candidate=""
 
-    if [[ -n "$_SUPPORT_ACFS_HOME" ]]; then
-        candidate="${_SUPPORT_ACFS_HOME}/state.json"
+    if [[ -n "$_SUPPORT_GTBI_HOME" ]]; then
+        candidate="${_SUPPORT_GTBI_HOME}/state.json"
     fi
 
     if [[ -n "$candidate" ]] && [[ -f "$candidate" ]]; then
@@ -593,40 +593,40 @@ support_get_install_state_file() {
     printf '%s\n' "$candidate"
 }
 
-support_resolve_acfs_home() {
+support_resolve_gtbi_home() {
     local target_home=""
     local candidate=""
     local target_user=""
     local explicit_target_home=""
 
-    _SUPPORT_ACFS_HOME_SOURCE=""
+    _SUPPORT_GTBI_HOME_SOURCE=""
 
-    candidate=$(support_script_acfs_home 2>/dev/null || true)
-    if support_candidate_has_acfs_data "$candidate"; then
-        _SUPPORT_ACFS_HOME_SOURCE="script_acfs_home"
+    candidate=$(support_script_gtbi_home 2>/dev/null || true)
+    if support_candidate_has_gtbi_data "$candidate"; then
+        _SUPPORT_GTBI_HOME_SOURCE="script_gtbi_home"
         printf '%s\n' "$candidate"
         return 0
     fi
 
     explicit_target_home="$(support_resolve_explicit_target_home 2>/dev/null || true)"
     if [[ -n "$explicit_target_home" ]]; then
-        candidate="${explicit_target_home}/.acfs"
-        if support_candidate_has_acfs_data "$candidate"; then
-            _SUPPORT_ACFS_HOME_SOURCE="explicit_target_home"
+        candidate="${explicit_target_home}/.gtbi"
+        if support_candidate_has_gtbi_data "$candidate"; then
+            _SUPPORT_GTBI_HOME_SOURCE="explicit_target_home"
             printf '%s\n' "$candidate"
             return 0
         fi
     fi
 
-    if [[ ! -f "$SUPPORT_SYSTEM_STATE_FILE" ]] && [[ -n "$_SUPPORT_ACFS_HOME" ]] && support_candidate_has_acfs_data "$_SUPPORT_ACFS_HOME"; then
-        _SUPPORT_ACFS_HOME_SOURCE="explicit_acfs_home"
-        printf '%s\n' "$_SUPPORT_ACFS_HOME"
+    if [[ ! -f "$SUPPORT_SYSTEM_STATE_FILE" ]] && [[ -n "$_SUPPORT_GTBI_HOME" ]] && support_candidate_has_gtbi_data "$_SUPPORT_GTBI_HOME"; then
+        _SUPPORT_GTBI_HOME_SOURCE="explicit_gtbi_home"
+        printf '%s\n' "$_SUPPORT_GTBI_HOME"
         return 0
     fi
 
-    candidate="$(support_current_home_acfs_candidate 2>/dev/null || true)"
+    candidate="$(support_current_home_gtbi_candidate 2>/dev/null || true)"
     if [[ -n "$candidate" ]]; then
-        _SUPPORT_ACFS_HOME_SOURCE="current_home"
+        _SUPPORT_GTBI_HOME_SOURCE="current_home"
         printf '%s\n' "$candidate"
         return 0
     fi
@@ -634,9 +634,9 @@ support_resolve_acfs_home() {
     if [[ "$SUPPORT_SYSTEM_STATE_WAS_EXPLICIT" == true ]]; then
         target_home=$(support_read_target_home_from_state "$SUPPORT_SYSTEM_STATE_FILE" 2>/dev/null || true)
         if [[ -n "$target_home" ]]; then
-            candidate="${target_home}/.acfs"
-            if support_candidate_has_acfs_data "$candidate"; then
-                _SUPPORT_ACFS_HOME_SOURCE="system_state_target_home"
+            candidate="${target_home}/.gtbi"
+            if support_candidate_has_gtbi_data "$candidate"; then
+                _SUPPORT_GTBI_HOME_SOURCE="system_state_target_home"
                 printf '%s\n' "$candidate"
                 return 0
             fi
@@ -645,18 +645,18 @@ support_resolve_acfs_home() {
         target_user=$(support_read_target_user_from_state "$SUPPORT_SYSTEM_STATE_FILE" 2>/dev/null || true)
         if [[ -n "$target_user" ]]; then
             target_home=$(support_home_for_user "$target_user" 2>/dev/null || true)
-            candidate="${target_home}/.acfs"
-            if [[ -n "$target_home" ]] && support_candidate_has_acfs_data "$candidate"; then
-                _SUPPORT_ACFS_HOME_SOURCE="system_state_target_user"
+            candidate="${target_home}/.gtbi"
+            if [[ -n "$target_home" ]] && support_candidate_has_gtbi_data "$candidate"; then
+                _SUPPORT_GTBI_HOME_SOURCE="system_state_target_user"
                 printf '%s\n' "$candidate"
                 return 0
             fi
         fi
     fi
 
-    if [[ -n "$_SUPPORT_ACFS_HOME" ]] && support_candidate_has_acfs_data "$_SUPPORT_ACFS_HOME"; then
-        _SUPPORT_ACFS_HOME_SOURCE="explicit_acfs_home"
-        printf '%s\n' "$_SUPPORT_ACFS_HOME"
+    if [[ -n "$_SUPPORT_GTBI_HOME" ]] && support_candidate_has_gtbi_data "$_SUPPORT_GTBI_HOME"; then
+        _SUPPORT_GTBI_HOME_SOURCE="explicit_gtbi_home"
+        printf '%s\n' "$_SUPPORT_GTBI_HOME"
         return 0
     fi
 
@@ -666,9 +666,9 @@ support_resolve_acfs_home() {
 
     if [[ -n "${SUDO_USER:-}" ]] && [[ "${SUDO_USER}" != "root" ]]; then
         target_home=$(support_home_for_user "$SUDO_USER" || true)
-        candidate="${target_home}/.acfs"
-        if [[ -n "$target_home" ]] && support_candidate_has_acfs_data "$candidate"; then
-            _SUPPORT_ACFS_HOME_SOURCE="sudo_user_home"
+        candidate="${target_home}/.gtbi"
+        if [[ -n "$target_home" ]] && support_candidate_has_gtbi_data "$candidate"; then
+            _SUPPORT_GTBI_HOME_SOURCE="sudo_user_home"
             printf '%s\n' "$candidate"
             return 0
         fi
@@ -676,9 +676,9 @@ support_resolve_acfs_home() {
 
     target_home=$(support_read_target_home_from_state || true)
     if [[ -n "$target_home" ]]; then
-        candidate="${target_home}/.acfs"
-        if support_candidate_has_acfs_data "$candidate"; then
-            _SUPPORT_ACFS_HOME_SOURCE="system_state_target_home"
+        candidate="${target_home}/.gtbi"
+        if support_candidate_has_gtbi_data "$candidate"; then
+            _SUPPORT_GTBI_HOME_SOURCE="system_state_target_home"
             printf '%s\n' "$candidate"
             return 0
         fi
@@ -687,50 +687,50 @@ support_resolve_acfs_home() {
     target_user=$(support_read_target_user_from_state || true)
     if [[ -n "$target_user" ]]; then
         target_home=$(support_home_for_user "$target_user" || true)
-        candidate="${target_home}/.acfs"
-        if [[ -n "$target_home" ]] && support_candidate_has_acfs_data "$candidate"; then
-            _SUPPORT_ACFS_HOME_SOURCE="system_state_target_user"
+        candidate="${target_home}/.gtbi"
+        if [[ -n "$target_home" ]] && support_candidate_has_gtbi_data "$candidate"; then
+            _SUPPORT_GTBI_HOME_SOURCE="system_state_target_user"
             printf '%s\n' "$candidate"
             return 0
         fi
     fi
 
-    if [[ -n "$_SUPPORT_DEFAULT_ACFS_HOME" ]] && support_candidate_has_acfs_data "$_SUPPORT_DEFAULT_ACFS_HOME"; then
-        _SUPPORT_ACFS_HOME_SOURCE="current_home"
-        printf '%s\n' "$_SUPPORT_DEFAULT_ACFS_HOME"
+    if [[ -n "$_SUPPORT_DEFAULT_GTBI_HOME" ]] && support_candidate_has_gtbi_data "$_SUPPORT_DEFAULT_GTBI_HOME"; then
+        _SUPPORT_GTBI_HOME_SOURCE="current_home"
+        printf '%s\n' "$_SUPPORT_DEFAULT_GTBI_HOME"
         return 0
     fi
 
-    _SUPPORT_ACFS_HOME_SOURCE="current_home"
-    printf '%s\n' "${_SUPPORT_CURRENT_HOME:+${_SUPPORT_CURRENT_HOME}/.acfs}"
+    _SUPPORT_GTBI_HOME_SOURCE="current_home"
+    printf '%s\n' "${_SUPPORT_CURRENT_HOME:+${_SUPPORT_CURRENT_HOME}/.gtbi}"
 }
 
-support_infer_target_home_from_acfs_home() {
-    local acfs_home_candidate=""
+support_infer_target_home_from_gtbi_home() {
+    local gtbi_home_candidate=""
     local inferred_home=""
 
-    acfs_home_candidate="$(support_sanitize_abs_nonroot_path "${_SUPPORT_ACFS_HOME:-}" 2>/dev/null || true)"
-    [[ -n "$acfs_home_candidate" ]] || return 1
-    [[ "$(basename "$acfs_home_candidate")" == ".acfs" ]] || return 1
-    [[ -e "$acfs_home_candidate/state.json" || -e "$acfs_home_candidate/onboard_progress.json" || -d "$acfs_home_candidate/logs" || -d "$acfs_home_candidate/onboard" ]] || return 1
+    gtbi_home_candidate="$(support_sanitize_abs_nonroot_path "${_SUPPORT_GTBI_HOME:-}" 2>/dev/null || true)"
+    [[ -n "$gtbi_home_candidate" ]] || return 1
+    [[ "$(basename "$gtbi_home_candidate")" == ".gtbi" ]] || return 1
+    [[ -e "$gtbi_home_candidate/state.json" || -e "$gtbi_home_candidate/onboard_progress.json" || -d "$gtbi_home_candidate/logs" || -d "$gtbi_home_candidate/onboard" ]] || return 1
 
-    if [[ -n "$_SUPPORT_EXPLICIT_ACFS_HOME" ]] && [[ "$acfs_home_candidate" == "$_SUPPORT_EXPLICIT_ACFS_HOME" ]]; then
+    if [[ -n "$_SUPPORT_EXPLICIT_GTBI_HOME" ]] && [[ "$gtbi_home_candidate" == "$_SUPPORT_EXPLICIT_GTBI_HOME" ]]; then
         :
-    elif [[ -n "$_SUPPORT_DEFAULT_ACFS_HOME" ]] && [[ "$acfs_home_candidate" == "$_SUPPORT_DEFAULT_ACFS_HOME" ]]; then
+    elif [[ -n "$_SUPPORT_DEFAULT_GTBI_HOME" ]] && [[ "$gtbi_home_candidate" == "$_SUPPORT_DEFAULT_GTBI_HOME" ]]; then
         :
-    elif [[ "${_SUPPORT_ACFS_HOME_SOURCE:-}" == "explicit_target_home" ]]; then
+    elif [[ "${_SUPPORT_GTBI_HOME_SOURCE:-}" == "explicit_target_home" ]]; then
         :
-    elif [[ "${_SUPPORT_ACFS_HOME_SOURCE:-}" == "script_acfs_home" ]]; then
+    elif [[ "${_SUPPORT_GTBI_HOME_SOURCE:-}" == "script_gtbi_home" ]]; then
         :
-    elif [[ "${_SUPPORT_ACFS_HOME_SOURCE:-}" == "system_state_target_home" ]]; then
+    elif [[ "${_SUPPORT_GTBI_HOME_SOURCE:-}" == "system_state_target_home" ]]; then
         :
-    elif [[ "${_SUPPORT_ACFS_HOME_SOURCE:-}" == "system_state_target_user" ]]; then
+    elif [[ "${_SUPPORT_GTBI_HOME_SOURCE:-}" == "system_state_target_user" ]]; then
         :
     else
         return 1
     fi
 
-    inferred_home="${acfs_home_candidate%/.acfs}"
+    inferred_home="${gtbi_home_candidate%/.gtbi}"
     inferred_home="$(support_sanitize_abs_nonroot_path "$inferred_home" 2>/dev/null || true)"
     [[ -n "$inferred_home" ]] || return 1
     printf '%s\n' "$inferred_home"
@@ -746,11 +746,11 @@ support_initialize_context() {
 
     SUPPORT_TARGET_USER=""
     SUPPORT_TARGET_HOME=""
-    _SUPPORT_ACFS_HOME=$(support_resolve_acfs_home 2>/dev/null || true)
+    _SUPPORT_GTBI_HOME=$(support_resolve_gtbi_home 2>/dev/null || true)
     state_file=$(support_get_install_state_file)
-    path_home="$(support_infer_target_home_from_acfs_home 2>/dev/null || true)"
+    path_home="$(support_infer_target_home_from_gtbi_home 2>/dev/null || true)"
     explicit_target_home="$(support_resolve_explicit_target_home 2>/dev/null || true)"
-    if [[ "${_SUPPORT_ACFS_HOME_SOURCE:-}" == system_state_* ]]; then
+    if [[ "${_SUPPORT_GTBI_HOME_SOURCE:-}" == system_state_* ]]; then
         state_target_user="$(support_read_target_user_from_state "$SUPPORT_SYSTEM_STATE_FILE" 2>/dev/null || support_read_target_user_from_state "$state_file" 2>/dev/null || true)"
     elif [[ -n "$path_home" ]]; then
         state_target_user="$(support_read_target_user_from_state "$state_file" 2>/dev/null || true)"
@@ -795,11 +795,11 @@ support_initialize_context() {
         target_home_source="path_home"
     fi
 
-    if [[ -z "$SUPPORT_TARGET_HOME" ]] && [[ "$_SUPPORT_ACFS_HOME" == */.acfs ]]; then
-        resolved_target_home="$(support_existing_abs_home "${_SUPPORT_ACFS_HOME%/.acfs}" 2>/dev/null || true)"
+    if [[ -z "$SUPPORT_TARGET_HOME" ]] && [[ "$_SUPPORT_GTBI_HOME" == */.gtbi ]]; then
+        resolved_target_home="$(support_existing_abs_home "${_SUPPORT_GTBI_HOME%/.gtbi}" 2>/dev/null || true)"
         if [[ -n "$resolved_target_home" ]]; then
             SUPPORT_TARGET_HOME="$resolved_target_home"
-            target_home_source="acfs_home_path"
+            target_home_source="gtbi_home_path"
         fi
     fi
 
@@ -842,10 +842,10 @@ support_initialize_context() {
     fi
 
     if [[ "$OUTPUT_BASE_EXPLICIT" != "true" ]]; then
-        if [[ -n "$_SUPPORT_ACFS_HOME" ]]; then
-            OUTPUT_BASE="${_SUPPORT_ACFS_HOME}/support"
+        if [[ -n "$_SUPPORT_GTBI_HOME" ]]; then
+            OUTPUT_BASE="${_SUPPORT_GTBI_HOME}/support"
         else
-            OUTPUT_BASE="${SUPPORT_TARGET_HOME:+${SUPPORT_TARGET_HOME}/.acfs/support}"
+            OUTPUT_BASE="${SUPPORT_TARGET_HOME:+${SUPPORT_TARGET_HOME}/.gtbi/support}"
         fi
     fi
 }
@@ -1354,9 +1354,9 @@ support_checkpoint_summary_json() {
     local jq_bin="$1"
     local state_file="$2"
     local file_status=""
-    local now_epoch="${ACFS_SUPPORT_NOW_EPOCH:-}"
+    local now_epoch="${GTBI_SUPPORT_NOW_EPOCH:-}"
     local now_epoch_json="null"
-    local stale_seconds="${ACFS_CHECKPOINT_STALE_SECONDS:-3600}"
+    local stale_seconds="${GTBI_CHECKPOINT_STALE_SECONDS:-3600}"
     local supported_schema_version=3
 
     [[ "$now_epoch" =~ ^[0-9]+$ ]] && now_epoch_json="$now_epoch"
@@ -1370,13 +1370,13 @@ support_checkpoint_summary_json() {
                 status: "empty",
                 severity: "needs_state",
                 install_status: "unknown",
-                next_action: "acfs status --json",
+                next_action: "gtbi status --json",
                 state: {
                     source_file: "state.json",
                     source_status: $source_status,
                     schema_version: null,
                     supported_schema_version: 3,
-                    acfs_version: null,
+                    gtbi_version: null,
                     mode: null
                 },
                 checkpoint: {
@@ -1411,14 +1411,14 @@ support_checkpoint_summary_json() {
                 status: "warn",
                 severity: "malformed_state",
                 install_status: "unknown",
-                next_action: "acfs support-bundle",
+                next_action: "gtbi support-bundle",
                 reason: "installer state JSON is malformed; raw content intentionally not summarized",
                 state: {
                     source_file: "state.json",
                     source_status: "malformed",
                     schema_version: null,
                     supported_schema_version: 3,
-                    acfs_version: null,
+                    gtbi_version: null,
                     mode: null
                 },
                 checkpoint: {
@@ -1514,20 +1514,20 @@ support_checkpoint_summary_json() {
                 else "unknown" end
               ),
               next_action: (
-                if $future_schema then "acfs support-bundle"
-                elif $failed_phase != null then "acfs rescue --json"
+                if $future_schema then "gtbi support-bundle"
+                elif $failed_phase != null then "gtbi rescue --json"
                 elif ($completed | index("finalize")) then "onboard"
-                elif $stale then "acfs continue --status"
-                elif $current_phase != null then "acfs continue"
-                elif ($completed | length) > 0 then "acfs rescue --json"
-                else "acfs status --json" end
+                elif $stale then "gtbi continue --status"
+                elif $current_phase != null then "gtbi continue"
+                elif ($completed | length) > 0 then "gtbi rescue --json"
+                else "gtbi status --json" end
               ),
               state: {
                 source_file: "state.json",
                 source_status: (if $future_schema then "future_version" else "present" end),
                 schema_version: $state_schema,
                 supported_schema_version: $supported_schema,
-                acfs_version: ($state.version | safe_version),
+                gtbi_version: ($state.version | safe_version),
                 mode: ($state.mode | safe_mode)
               },
               checkpoint: {
@@ -1559,7 +1559,7 @@ support_checkpoint_summary_json() {
             status: "warn",
             severity: "summary_failed",
             install_status: "unknown",
-            next_action: "acfs support-bundle",
+            next_action: "gtbi support-bundle",
             redaction: {
                 raw_values_collected: false,
                 raw_paths_collected: false,
@@ -1589,7 +1589,7 @@ JSON
         return 0
     fi
 
-    state_file="${_SUPPORT_ACFS_HOME:+$_SUPPORT_ACFS_HOME/state.json}"
+    state_file="${_SUPPORT_GTBI_HOME:+$_SUPPORT_GTBI_HOME/state.json}"
     support_checkpoint_summary_json "$jq_bin" "$state_file" > "$output_file" 2>/dev/null || {
         cat > "$output_file" <<'JSON'
 {"schema_version":1,"status":"warn","severity":"summary_failed","reason":"checkpoint summary rendering failed","redaction":{"raw_values_collected":false,"raw_paths_collected":false,"paths_redacted":true}}
@@ -1627,9 +1627,9 @@ JSON
         opt_out=true
     fi
 
-    progress_file="${ACFS_LOCAL_PROGRESS_FILE:-${_SUPPORT_ACFS_HOME:+$_SUPPORT_ACFS_HOME/local_progress.json}}"
-    onboard_file="${_SUPPORT_ACFS_HOME:+$_SUPPORT_ACFS_HOME/onboard_progress.json}"
-    state_file="${_SUPPORT_ACFS_HOME:+$_SUPPORT_ACFS_HOME/state.json}"
+    progress_file="${GTBI_LOCAL_PROGRESS_FILE:-${_SUPPORT_GTBI_HOME:+$_SUPPORT_GTBI_HOME/local_progress.json}}"
+    onboard_file="${_SUPPORT_GTBI_HOME:+$_SUPPORT_GTBI_HOME/onboard_progress.json}"
+    state_file="${_SUPPORT_GTBI_HOME:+$_SUPPORT_GTBI_HOME/state.json}"
 
     milestones_json="$(support_local_progress_milestones_summary_json "$jq_bin" "$progress_file" "$opt_out")"
     onboard_json="$(support_onboard_progress_summary_json "$jq_bin" "$onboard_file")"
@@ -1658,7 +1658,7 @@ JSON
            },
            stuck_hint: (
              if ($installer.failed_phase // null) != null then
-               {source: "installer", status: "failed", phase_id: $installer.failed_phase, next_action: "acfs rescue --json or acfs support-bundle"}
+               {source: "installer", status: "failed", phase_id: $installer.failed_phase, next_action: "gtbi rescue --json or gtbi support-bundle"}
              elif ($milestones.latest_event // null) != null then
                {
                  source: $milestones.latest_event.source,
@@ -1668,11 +1668,11 @@ JSON
                  next_action: "continue from the latest local milestone"
                }
              elif ($installer.current_phase // null) != null then
-               {source: "installer", status: "in_progress", phase_id: $installer.current_phase, next_action: "acfs status --json"}
+               {source: "installer", status: "in_progress", phase_id: $installer.current_phase, next_action: "gtbi status --json"}
              elif ($onboard.current_lesson_index // null) != null then
                {source: "onboard", status: "in_progress", lesson_index: $onboard.current_lesson_index, next_action: "onboard status"}
              else
-               {source: null, status: "empty", next_action: "acfs doctor --json"}
+               {source: null, status: "empty", next_action: "gtbi doctor --json"}
              end
            ),
            redaction: {
@@ -1705,14 +1705,14 @@ capture_doctor_json() {
     local bundle_dir="$1"
 
     local doctor_script=""
-    if [[ -n "$_SUPPORT_ACFS_HOME" ]] && [[ -f "$_SUPPORT_ACFS_HOME/scripts/lib/doctor.sh" ]]; then
-        doctor_script="$_SUPPORT_ACFS_HOME/scripts/lib/doctor.sh"
+    if [[ -n "$_SUPPORT_GTBI_HOME" ]] && [[ -f "$_SUPPORT_GTBI_HOME/scripts/lib/doctor.sh" ]]; then
+        doctor_script="$_SUPPORT_GTBI_HOME/scripts/lib/doctor.sh"
     elif [[ -f "$_SUPPORT_SCRIPT_DIR/doctor.sh" ]]; then
         doctor_script="$_SUPPORT_SCRIPT_DIR/doctor.sh"
     fi
 
     if [[ -n "$doctor_script" ]]; then
-        log_detail "Running acfs doctor --json ..."
+        log_detail "Running gtbi doctor --json ..."
         if timeout "$DOCTOR_TIMEOUT" bash "$doctor_script" doctor --json > "$bundle_dir/doctor.json" 2>/dev/null; then
             record_bundle_file "doctor.json"
             return 0
@@ -1735,8 +1735,8 @@ capture_swarm_status_json() {
     local bundle_dir="$1"
 
     local swarm_status_script=""
-    if [[ -n "$_SUPPORT_ACFS_HOME" ]] && [[ -f "$_SUPPORT_ACFS_HOME/scripts/lib/swarm_status.sh" ]]; then
-        swarm_status_script="$_SUPPORT_ACFS_HOME/scripts/lib/swarm_status.sh"
+    if [[ -n "$_SUPPORT_GTBI_HOME" ]] && [[ -f "$_SUPPORT_GTBI_HOME/scripts/lib/swarm_status.sh" ]]; then
+        swarm_status_script="$_SUPPORT_GTBI_HOME/scripts/lib/swarm_status.sh"
     elif [[ -f "$_SUPPORT_SCRIPT_DIR/swarm_status.sh" ]]; then
         swarm_status_script="$_SUPPORT_SCRIPT_DIR/swarm_status.sh"
     fi
@@ -1746,7 +1746,7 @@ capture_swarm_status_json() {
         return 1
     fi
 
-    log_detail "Running acfs swarm status --json ..."
+    log_detail "Running gtbi swarm status --json ..."
     local timeout_bin=""
     timeout_bin="$(support_system_binary_path timeout 2>/dev/null || command -v timeout 2>/dev/null || true)"
     if [[ -n "$timeout_bin" ]]; then
@@ -1771,8 +1771,8 @@ capture_provenance_json() {
     local bundle_dir="$1"
 
     local provenance_script=""
-    if [[ -n "$_SUPPORT_ACFS_HOME" ]] && [[ -f "$_SUPPORT_ACFS_HOME/scripts/lib/provenance.sh" ]]; then
-        provenance_script="$_SUPPORT_ACFS_HOME/scripts/lib/provenance.sh"
+    if [[ -n "$_SUPPORT_GTBI_HOME" ]] && [[ -f "$_SUPPORT_GTBI_HOME/scripts/lib/provenance.sh" ]]; then
+        provenance_script="$_SUPPORT_GTBI_HOME/scripts/lib/provenance.sh"
     elif [[ -f "$_SUPPORT_SCRIPT_DIR/provenance.sh" ]]; then
         provenance_script="$_SUPPORT_SCRIPT_DIR/provenance.sh"
     fi
@@ -1782,7 +1782,7 @@ capture_provenance_json() {
         return 1
     fi
 
-    log_detail "Running acfs provenance --json ..."
+    log_detail "Running gtbi provenance --json ..."
     local timeout_bin=""
     timeout_bin="$(support_system_binary_path timeout 2>/dev/null || command -v timeout 2>/dev/null || true)"
     if [[ -n "$timeout_bin" ]]; then
@@ -1817,19 +1817,19 @@ support_run_with_timeout() {
 support_swarm_inventory_file() {
     local explicit_inventory=""
 
-    explicit_inventory="$(support_sanitize_abs_nonroot_path "${ACFS_SWARM_INVENTORY_FILE:-}" 2>/dev/null || true)"
+    explicit_inventory="$(support_sanitize_abs_nonroot_path "${GTBI_SWARM_INVENTORY_FILE:-}" 2>/dev/null || true)"
     if [[ -n "$explicit_inventory" ]]; then
         printf '%s\n' "$explicit_inventory"
         return 0
     fi
 
-    if [[ -n "$_SUPPORT_ACFS_HOME" ]]; then
-        printf '%s\n' "$_SUPPORT_ACFS_HOME/swarm/hosts.inventory.json"
+    if [[ -n "$_SUPPORT_GTBI_HOME" ]]; then
+        printf '%s\n' "$_SUPPORT_GTBI_HOME/swarm/hosts.inventory.json"
         return 0
     fi
 
     if [[ -n "${SUPPORT_TARGET_HOME:-}" ]]; then
-        printf '%s\n' "$SUPPORT_TARGET_HOME/.acfs/swarm/hosts.inventory.json"
+        printf '%s\n' "$SUPPORT_TARGET_HOME/.gtbi/swarm/hosts.inventory.json"
         return 0
     fi
 
@@ -1900,8 +1900,8 @@ capture_swarm_inventory_json() {
         return 0
     fi
 
-    if [[ -n "$_SUPPORT_ACFS_HOME" && -f "$_SUPPORT_ACFS_HOME/scripts/lib/swarm_inventory.sh" ]]; then
-        swarm_inventory_script="$_SUPPORT_ACFS_HOME/scripts/lib/swarm_inventory.sh"
+    if [[ -n "$_SUPPORT_GTBI_HOME" && -f "$_SUPPORT_GTBI_HOME/scripts/lib/swarm_inventory.sh" ]]; then
+        swarm_inventory_script="$_SUPPORT_GTBI_HOME/scripts/lib/swarm_inventory.sh"
     elif [[ -f "$_SUPPORT_SCRIPT_DIR/swarm_inventory.sh" ]]; then
         swarm_inventory_script="$_SUPPORT_SCRIPT_DIR/swarm_inventory.sh"
     fi
@@ -2055,7 +2055,7 @@ capture_swarm_inventory_json() {
     [[ "$("$jq_bin" -r '.status // "fail"' "$inventory_file" 2>/dev/null || printf 'fail')" != "fail" ]]
 }
 
-# Capture a sanitized ACFS resource-profile snapshot. Raw paths are intentionally
+# Capture a sanitized GTBI resource-profile snapshot. Raw paths are intentionally
 # omitted; support bundles only need status, safety metadata, and wrapper shape.
 # Usage: capture_resource_profile_json <bundle_dir>
 capture_resource_profile_json() {
@@ -2075,8 +2075,8 @@ capture_resource_profile_json() {
         return 1
     fi
 
-    if [[ -n "$_SUPPORT_ACFS_HOME" ]] && [[ -f "$_SUPPORT_ACFS_HOME/scripts/lib/capacity.sh" ]]; then
-        capacity_script="$_SUPPORT_ACFS_HOME/scripts/lib/capacity.sh"
+    if [[ -n "$_SUPPORT_GTBI_HOME" ]] && [[ -f "$_SUPPORT_GTBI_HOME/scripts/lib/capacity.sh" ]]; then
+        capacity_script="$_SUPPORT_GTBI_HOME/scripts/lib/capacity.sh"
     elif [[ -f "$_SUPPORT_SCRIPT_DIR/capacity.sh" ]]; then
         capacity_script="$_SUPPORT_SCRIPT_DIR/capacity.sh"
     fi
@@ -2087,13 +2087,13 @@ capture_resource_profile_json() {
         return 1
     fi
 
-    profile_home="${ACFS_RESOURCE_PROFILE_HOME:-}"
+    profile_home="${GTBI_RESOURCE_PROFILE_HOME:-}"
     if [[ -z "$profile_home" ]]; then
-        profile_home="${SUPPORT_TARGET_HOME:-${_SUPPORT_CURRENT_HOME:-${HOME:-/tmp}}}/.acfs/resource-profile"
+        profile_home="${SUPPORT_TARGET_HOME:-${_SUPPORT_CURRENT_HOME:-${HOME:-/tmp}}}/.gtbi/resource-profile"
     fi
 
     log_detail "Capturing resource profile summary..."
-    if ! capacity_output="$(ACFS_RESOURCE_PROFILE_HOME="$profile_home" support_run_with_timeout "$RESOURCE_PROFILE_TIMEOUT" bash "$capacity_script" --json --resource-profile)"; then
+    if ! capacity_output="$(GTBI_RESOURCE_PROFILE_HOME="$profile_home" support_run_with_timeout "$RESOURCE_PROFILE_TIMEOUT" bash "$capacity_script" --json --resource-profile)"; then
         capture_status="warn"
         capture_reason="capacity resource profile command failed or timed out"
     fi
@@ -2523,9 +2523,9 @@ capture_env_summary() {
         os_codename=$(. /etc/os-release && echo "${VERSION_CODENAME:-unknown}")
     fi
 
-    local acfs_version="unknown"
-    if [[ -n "$_SUPPORT_ACFS_HOME" ]] && [[ -f "$_SUPPORT_ACFS_HOME/VERSION" ]]; then
-        acfs_version=$(cat "$_SUPPORT_ACFS_HOME/VERSION" 2>/dev/null) || acfs_version="unknown"
+    local gtbi_version="unknown"
+    if [[ -n "$_SUPPORT_GTBI_HOME" ]] && [[ -f "$_SUPPORT_GTBI_HOME/VERSION" ]]; then
+        gtbi_version=$(cat "$_SUPPORT_GTBI_HOME/VERSION" 2>/dev/null) || gtbi_version="unknown"
     fi
 
     "$jq_bin" -n \
@@ -2537,8 +2537,8 @@ capture_env_summary() {
         --arg os_codename "$os_codename" \
         --arg user "$support_user" \
         --arg home "$support_home" \
-        --arg acfs_home "$_SUPPORT_ACFS_HOME" \
-        --arg acfs_version "$acfs_version" \
+        --arg gtbi_home "$_SUPPORT_GTBI_HOME" \
+        --arg gtbi_version "$gtbi_version" \
         --arg shell "${SHELL:-unknown}" \
         --argjson uptime_seconds "$(cat /proc/uptime 2>/dev/null | awk '{printf "%d", $1}' || echo 0)" \
         --argjson mem_total_kb "$(grep MemTotal /proc/meminfo 2>/dev/null | awk '{print $2}' || echo 0)" \
@@ -2552,8 +2552,8 @@ capture_env_summary() {
             os: {id: $os_id, version: $os_version, codename: $os_codename},
             user: $user,
             home: $home,
-            acfs_home: $acfs_home,
-            acfs_version: $acfs_version,
+            gtbi_home: $gtbi_home,
+            gtbi_version: $gtbi_version,
             shell: $shell,
             uptime_seconds: $uptime_seconds,
             memory: {total_kb: $mem_total_kb, available_kb: $mem_available_kb},
@@ -2583,9 +2583,9 @@ write_manifest() {
 
     record_bundle_file "manifest.json"
 
-    local acfs_version="unknown"
-    if [[ -n "$_SUPPORT_ACFS_HOME" ]] && [[ -f "$_SUPPORT_ACFS_HOME/VERSION" ]]; then
-        acfs_version=$(cat "$_SUPPORT_ACFS_HOME/VERSION" 2>/dev/null) || acfs_version="unknown"
+    local gtbi_version="unknown"
+    if [[ -n "$_SUPPORT_GTBI_HOME" ]] && [[ -f "$_SUPPORT_GTBI_HOME/VERSION" ]]; then
+        gtbi_version=$(cat "$_SUPPORT_GTBI_HOME/VERSION" 2>/dev/null) || gtbi_version="unknown"
     fi
 
     # Build files array from BUNDLE_FILES
@@ -2615,8 +2615,8 @@ write_manifest() {
     "$jq_bin" -n \
         --argjson schema_version 1 \
         --arg created_at "$(date -Iseconds)" \
-        --arg created_by "acfs support-bundle" \
-        --arg acfs_version "$acfs_version" \
+        --arg created_by "gtbi support-bundle" \
+        --arg gtbi_version "$gtbi_version" \
         --arg bundle_dir "$(basename "$bundle_dir")" \
         --argjson files "$files_json" \
         --argjson file_count "${#BUNDLE_FILES[@]}" \
@@ -2636,7 +2636,7 @@ write_manifest() {
             schema_version: $schema_version,
             created_at: $created_at,
             created_by: $created_by,
-            acfs_version: $acfs_version,
+            gtbi_version: $gtbi_version,
             bundle_id: $bundle_dir,
             file_count: $file_count,
             files: $files,
@@ -2755,7 +2755,7 @@ write_support_report_index() {
     sensitive_findings="$(support_report_sensitive_field_findings "$bundle_dir" "$jq_bin")"
 
     {
-        printf '# ACFS Support Bundle Report\n\n'
+        printf '# GTBI Support Bundle Report\n\n'
         printf 'Generated: %s\n\n' "$generated_at"
         printf 'This report is a redacted index. It links only files present in this bundle and does not include raw command output, local paths, hostnames, message bodies, tokens, passwords, or private keys.\n\n'
 
@@ -3010,7 +3010,7 @@ main() {
     # Track collected files for manifest
     BUNDLE_FILES=()
 
-    log_section "ACFS Support Bundle"
+    log_section "GTBI Support Bundle"
     log_step "Collecting diagnostic data..."
 
     # Create bundle directory
@@ -3019,19 +3019,19 @@ main() {
         exit 1
     }
 
-    # --- Collect ACFS state files ---
-    log_detail "Collecting ACFS state files..."
-    if [[ -n "$_SUPPORT_ACFS_HOME" ]]; then
-        collect_file "$_SUPPORT_ACFS_HOME/state.json" "$bundle_dir" "state.json" || true
-        collect_file "$_SUPPORT_ACFS_HOME/VERSION" "$bundle_dir" "VERSION" || true
-        collect_file "$_SUPPORT_ACFS_HOME/checksums.yaml" "$bundle_dir" "checksums.yaml" || true
+    # --- Collect GTBI state files ---
+    log_detail "Collecting GTBI state files..."
+    if [[ -n "$_SUPPORT_GTBI_HOME" ]]; then
+        collect_file "$_SUPPORT_GTBI_HOME/state.json" "$bundle_dir" "state.json" || true
+        collect_file "$_SUPPORT_GTBI_HOME/VERSION" "$bundle_dir" "VERSION" || true
+        collect_file "$_SUPPORT_GTBI_HOME/checksums.yaml" "$bundle_dir" "checksums.yaml" || true
     fi
 
     # --- Collect install logs ---
     log_detail "Collecting install logs..."
     local logs_dir=""
-    if [[ -n "$_SUPPORT_ACFS_HOME" ]]; then
-        logs_dir="$_SUPPORT_ACFS_HOME/logs"
+    if [[ -n "$_SUPPORT_GTBI_HOME" ]]; then
+        logs_dir="$_SUPPORT_GTBI_HOME/logs"
     fi
     if [[ -d "$logs_dir" ]]; then
         mkdir -p "$bundle_dir/logs"
@@ -3084,13 +3084,13 @@ main() {
         collect_file "/etc/os-release" "$bundle_dir" "os-release" || true
     fi
 
-    # Systemd journal (last 100 acfs-related lines)
+    # Systemd journal (last 100 gtbi-related lines)
     if command -v journalctl &>/dev/null; then
         local journal_tmp=""
-        journal_tmp=$(mktemp "${bundle_dir}/journal-acfs.log.tmp.XXXXXX") || journal_tmp=""
-        if [[ -n "$journal_tmp" ]] && journalctl --no-pager -n 100 -u 'acfs*' > "$journal_tmp" 2>/dev/null; then
-            if mv "$journal_tmp" "$bundle_dir/journal-acfs.log"; then
-                record_bundle_file "journal-acfs.log"
+        journal_tmp=$(mktemp "${bundle_dir}/journal-gtbi.log.tmp.XXXXXX") || journal_tmp=""
+        if [[ -n "$journal_tmp" ]] && journalctl --no-pager -n 100 -u 'gtbi*' > "$journal_tmp" 2>/dev/null; then
+            if mv "$journal_tmp" "$bundle_dir/journal-gtbi.log"; then
+                record_bundle_file "journal-gtbi.log"
             else
                 log_warn "Could not finalize journal capture"
                 rm -f "$journal_tmp"
@@ -3103,8 +3103,8 @@ main() {
     # --- Collect configuration ---
     log_detail "Collecting configuration..."
     collect_file "${SUPPORT_TARGET_HOME}/.zshrc" "$bundle_dir" "config/.zshrc" ".zshrc" || true
-    if [[ -n "$_SUPPORT_ACFS_HOME" ]]; then
-        collect_file "$_SUPPORT_ACFS_HOME/acfs.manifest.yaml" "$bundle_dir" "config/acfs.manifest.yaml" "acfs.manifest.yaml" || true
+    if [[ -n "$_SUPPORT_GTBI_HOME" ]]; then
+        collect_file "$_SUPPORT_GTBI_HOME/gtbi.manifest.yaml" "$bundle_dir" "config/gtbi.manifest.yaml" "gtbi.manifest.yaml" || true
     fi
 
     # --- Redact sensitive data ---

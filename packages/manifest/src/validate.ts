@@ -1,5 +1,5 @@
 /**
- * ACFS Manifest Validation
+ * GTBI Manifest Validation
  * Validates manifest dependencies, cycles, and phase ordering
  *
  * Related: bead mjt.3.2
@@ -195,7 +195,7 @@ const RESERVED_FUNCTION_NAMES = new Set([
   'install_agents',
   'install_cloud',
   'install_stack',
-  'install_acfs',
+  'install_gtbi',
   'install_shell',
   'install_cli',
   'install_db',
@@ -215,13 +215,13 @@ const RESERVED_FUNCTION_NAMES = new Set([
   'log_info',
 
   // Security functions (from security.sh)
-  'acfs_security_init',
+  'gtbi_security_init',
   'load_checksums',
   'get_checksum',
   'verify_checksum',
 
   // Contract functions (from contract.sh)
-  'acfs_require_contract',
+  'gtbi_require_contract',
 
   // State functions (from state.sh)
   'state_tool_done',

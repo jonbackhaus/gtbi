@@ -48,7 +48,7 @@ const webServerCommand = (() => {
   if (!isCI && process.env.PW_USE_DEV_SERVER === "1") {
     return `bun run dev -- -H 127.0.0.1 --port ${port}`;
   }
-  return `ACFS_NEXT_DIST_SCOPE=${isolatedScope} bun run build:isolated && ACFS_NEXT_DIST_SCOPE=${isolatedScope} bun run start:isolated -- -H 127.0.0.1 -p ${port}`;
+  return `GTBI_NEXT_DIST_SCOPE=${isolatedScope} bun run build:isolated && GTBI_NEXT_DIST_SCOPE=${isolatedScope} bun run start:isolated -- -H 127.0.0.1 -p ${port}`;
 })();
 
 export default defineConfig({

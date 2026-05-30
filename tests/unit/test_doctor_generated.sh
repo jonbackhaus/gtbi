@@ -23,7 +23,7 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 source "$REPO_ROOT/tests/vm/lib/test_harness.sh"
 
 # Log file
-LOG_FILE="/tmp/acfs_doctor_generated_test_$(date +%Y%m%d_%H%M%S).log"
+LOG_FILE="/tmp/gtbi_doctor_generated_test_$(date +%Y%m%d_%H%M%S).log"
 DOCTOR_JSON_OUTPUT=""
 DOCTOR_JSON_LOADED=false
 
@@ -325,7 +325,7 @@ test_fix_hint_uses_module_id() {
 
     # Sample a few installer-backed checks and verify fix hints reference
     # their module. Some modules intentionally return bespoke prose guidance
-    # instead of an ACFS reinstall command, so skip those here.
+    # instead of an GTBI reinstall command, so skip those here.
     local samples
     samples=$(echo "$output" | jq -r '.checks[] | select(.fix and .id and (.fix | contains("agent-flywheel.com/install"))) | "\(.id)|\(.fix)"' 2>/dev/null | head -5)
 
@@ -519,26 +519,26 @@ test_workspace_checks_are_not_required_health_failures() {
     doctor_file="$REPO_ROOT/scripts/lib/doctor.sh"
     checks_file="$REPO_ROOT/scripts/generated/doctor_checks.sh"
 
-    if grep -Eq 'acfs\.workspace\|acfs\.workspace\.\*' "$doctor_file"; then
-        harness_pass "doctor.sh suppresses manifest duplicates for acfs.workspace"
+    if grep -Eq 'gtbi\.workspace\|gtbi\.workspace\.\*' "$doctor_file"; then
+        harness_pass "doctor.sh suppresses manifest duplicates for gtbi.workspace"
     else
-        harness_fail "doctor.sh does not suppress manifest duplicates for acfs.workspace"
+        harness_fail "doctor.sh does not suppress manifest duplicates for gtbi.workspace"
     fi
 
-    if grep -F 'acfs.workspace.1' "$checks_file" | grep -Fq $'\toptional\t'; then
-        harness_pass "generated acfs.workspace checks are optional"
+    if grep -F 'gtbi.workspace.1' "$checks_file" | grep -Fq $'\toptional\t'; then
+        harness_pass "generated gtbi.workspace checks are optional"
     else
-        harness_fail "generated acfs.workspace checks are still required"
+        harness_fail "generated gtbi.workspace checks are still required"
     fi
 
     ensure_doctor_json_output
     output="$DOCTOR_JSON_OUTPUT"
     local workspace_check_count
-    workspace_check_count=$(echo "$output" | jq '[.checks[] | select(.id | startswith("acfs.workspace"))] | length' 2>/dev/null || echo "0")
+    workspace_check_count=$(echo "$output" | jq '[.checks[] | select(.id | startswith("gtbi.workspace"))] | length' 2>/dev/null || echo "0")
     if [[ "$workspace_check_count" -eq 0 ]]; then
-        harness_pass "doctor output no longer surfaces acfs.workspace onboarding checks"
+        harness_pass "doctor output no longer surfaces gtbi.workspace onboarding checks"
     else
-        harness_fail "doctor output still surfaces acfs.workspace onboarding checks"
+        harness_fail "doctor output still surfaces gtbi.workspace onboarding checks"
         harness_capture_output "doctor_json_output" "$output"
     fi
 }
@@ -587,9 +587,9 @@ test_base_filesystem_3_verify_runs_with_injected_helpers() {
     cmd="$(printf '%b' "$encoded_cmd")"
 
     # Sanity: the decoded body must contain the actual verify
-    # logic (test -d "$target_home/.acfs"). If it doesn't, the
+    # logic (test -d "$target_home/.gtbi"). If it doesn't, the
     # extraction broke and we'd false-pass on a stub.
-    if [[ "$cmd" != *'test -d "$target_home/.acfs"'* ]]; then
+    if [[ "$cmd" != *'test -d "$target_home/.gtbi"'* ]]; then
         harness_fail "decoded base.filesystem.3 body is missing the verify line — extraction is broken" \
             "first 400 chars: ${cmd:0:400}"
         return
@@ -597,20 +597,20 @@ test_base_filesystem_3_verify_runs_with_injected_helpers() {
 
     local temp_root=""
     temp_root="$(mktemp -d)"
-    mkdir -p "$temp_root/.acfs"
+    mkdir -p "$temp_root/.gtbi"
 
     # The generated doctor runner injects these helpers before manifest
-    # commands that reference acfs_generated_* functions. Keep this harness
+    # commands that reference gtbi_generated_* functions. Keep this harness
     # minimal, but model that real execution path so the test does not pass by
     # trusting inherited TARGET_HOME directly.
     local helper_prelude=""
     helper_prelude='
-acfs_generated_getent_passwd_entry() {
+gtbi_generated_getent_passwd_entry() {
     local user="${1:-}"
-    [[ -n "$user" && -n "${ACFS_TEST_PASSWD_HOME:-}" ]] || return 1
-    printf "%s:x:1000:1000::%s:/bin/bash\n" "$user" "$ACFS_TEST_PASSWD_HOME"
+    [[ -n "$user" && -n "${GTBI_TEST_PASSWD_HOME:-}" ]] || return 1
+    printf "%s:x:1000:1000::%s:/bin/bash\n" "$user" "$GTBI_TEST_PASSWD_HOME"
 }
-acfs_generated_passwd_home_from_entry() {
+gtbi_generated_passwd_home_from_entry() {
     local entry="${1:-}"
     local home=""
     [[ -n "$entry" ]] || return 1
@@ -618,7 +618,7 @@ acfs_generated_passwd_home_from_entry() {
     [[ -n "$home" && "$home" == /* && "$home" != "/" ]] || return 1
     printf "%s\n" "${home%/}"
 }
-acfs_generated_resolve_current_user() {
+gtbi_generated_resolve_current_user() {
     [[ -n "${USER:-}" ]] || return 1
     printf "%s\n" "$USER"
 }
@@ -630,7 +630,7 @@ acfs_generated_resolve_current_user() {
         PATH="/usr/local/bin:/usr/bin:/bin" \
         TARGET_USER="$(id -un)" \
         TARGET_HOME="$temp_root/stale-home" \
-        ACFS_TEST_PASSWD_HOME="$temp_root" \
+        GTBI_TEST_PASSWD_HOME="$temp_root" \
         bash -o pipefail -c "$wrapped_cmd" 2>&1)"
     local rc=$?
 
@@ -645,7 +645,7 @@ acfs_generated_resolve_current_user() {
     output="$(env -i \
         PATH="/usr/local/bin:/usr/bin:/bin" \
         TARGET_USER="$(id -un)" \
-        ACFS_TEST_PASSWD_HOME="$temp_root" \
+        GTBI_TEST_PASSWD_HOME="$temp_root" \
         USER="$(id -un)" \
         HOME="$temp_root" \
         bash -o pipefail -c "$wrapped_cmd" 2>&1)"
@@ -708,7 +708,7 @@ test_generated_target_home_fallbacks_are_dynamic() {
         harness_pass "install_stack.sh no longer hardcodes /home/ubuntu for TARGET_HOME fallback"
     fi
 
-    if grep -Fq 'acfs_generated_getent_passwd_entry "${TARGET_USER:-ubuntu}"' "$filesystem_file"; then
+    if grep -Fq 'gtbi_generated_getent_passwd_entry "${TARGET_USER:-ubuntu}"' "$filesystem_file"; then
         harness_pass "install_filesystem.sh resolves TARGET_HOME through getent when unset"
     else
         harness_fail "install_filesystem.sh does not resolve TARGET_HOME through getent when unset"

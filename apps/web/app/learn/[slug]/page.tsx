@@ -24,7 +24,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 
   return {
-    title: `${lesson.title} | ACFS Learning Hub`,
+    title: `${lesson.title} | GTBI Learning Hub`,
     description: lesson.description,
   };
 }

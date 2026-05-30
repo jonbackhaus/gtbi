@@ -4,7 +4,7 @@
 # Test script for install_helpers.sh selection logic
 # Run: bash scripts/lib/test_install_helpers.sh
 #
-# Tests the acfs_resolve_selection function from install_helpers.sh
+# Tests the gtbi_resolve_selection function from install_helpers.sh
 # which is the version actually used by install.sh.
 # ============================================================
 
@@ -46,26 +46,26 @@ reset_selection() {
     PRINT_PLAN=false
 
     # Clear effective arrays
-    ACFS_EFFECTIVE_PLAN=()
-    declare -gA ACFS_EFFECTIVE_RUN=()
-    declare -gA ACFS_PLAN_REASON=()
-    declare -gA ACFS_PLAN_EXCLUDE_REASON=()
+    GTBI_EFFECTIVE_PLAN=()
+    declare -gA GTBI_EFFECTIVE_RUN=()
+    declare -gA GTBI_PLAN_REASON=()
+    declare -gA GTBI_PLAN_EXCLUDE_REASON=()
 }
 
 reset_generated_flags() {
-    unset ACFS_USE_GENERATED \
-        ACFS_USE_GENERATED_BASE \
-        ACFS_USE_GENERATED_USERS \
-        ACFS_USE_GENERATED_SHELL \
-        ACFS_USE_GENERATED_CLI \
-        ACFS_USE_GENERATED_LANG \
-        ACFS_USE_GENERATED_TOOLS \
-        ACFS_USE_GENERATED_AGENTS \
-        ACFS_USE_GENERATED_DB \
-        ACFS_USE_GENERATED_CLOUD \
-        ACFS_USE_GENERATED_STACK \
-        ACFS_USE_GENERATED_ACFS
-    ACFS_GENERATED_DEFAULT_CATEGORIES=()
+    unset GTBI_USE_GENERATED \
+        GTBI_USE_GENERATED_BASE \
+        GTBI_USE_GENERATED_USERS \
+        GTBI_USE_GENERATED_SHELL \
+        GTBI_USE_GENERATED_CLI \
+        GTBI_USE_GENERATED_LANG \
+        GTBI_USE_GENERATED_TOOLS \
+        GTBI_USE_GENERATED_AGENTS \
+        GTBI_USE_GENERATED_DB \
+        GTBI_USE_GENERATED_CLOUD \
+        GTBI_USE_GENERATED_STACK \
+        GTBI_USE_GENERATED_GTBI
+    GTBI_GENERATED_DEFAULT_CATEGORIES=()
 }
 
 # ============================================================
@@ -76,7 +76,7 @@ test_default_includes_enabled_modules() {
     local name="Default selection includes enabled_by_default modules"
     reset_selection
 
-    if acfs_resolve_selection 2>/dev/null; then
+    if gtbi_resolve_selection 2>/dev/null; then
         # Check that common default modules are included
         if should_run_module "lang.bun" && should_run_module "base.system"; then
             test_pass "$name"
@@ -90,7 +90,7 @@ test_default_excludes_disabled_modules() {
     local name="Default selection excludes disabled modules"
     reset_selection
 
-    if acfs_resolve_selection 2>/dev/null; then
+    if gtbi_resolve_selection 2>/dev/null; then
         # db.postgres18 and tools.vault are disabled by default
         if ! should_run_module "db.postgres18" && ! should_run_module "tools.vault"; then
             test_pass "$name"
@@ -109,7 +109,7 @@ test_only_single_module() {
     reset_selection
     ONLY_MODULES=("agents.claude")
 
-    if acfs_resolve_selection 2>/dev/null; then
+    if gtbi_resolve_selection 2>/dev/null; then
         if should_run_module "agents.claude"; then
             test_pass "$name"
             return
@@ -123,7 +123,7 @@ test_only_module_includes_deps() {
     reset_selection
     ONLY_MODULES=("agents.codex")
 
-    if acfs_resolve_selection 2>/dev/null; then
+    if gtbi_resolve_selection 2>/dev/null; then
         # agents.codex depends on lang.bun which depends on base.system
         if should_run_module "agents.codex" && should_run_module "lang.bun" && should_run_module "base.system"; then
             test_pass "$name"
@@ -138,7 +138,7 @@ test_only_excludes_unrelated() {
     reset_selection
     ONLY_MODULES=("agents.claude")
 
-    if acfs_resolve_selection 2>/dev/null; then
+    if gtbi_resolve_selection 2>/dev/null; then
         # lang.rust and tools.atuin should not be included
         if ! should_run_module "lang.rust" && ! should_run_module "tools.atuin"; then
             test_pass "$name"
@@ -153,7 +153,7 @@ test_only_unknown_module_fails() {
     reset_selection
     ONLY_MODULES=("nonexistent.module")
 
-    if ! acfs_resolve_selection 2>/dev/null; then
+    if ! gtbi_resolve_selection 2>/dev/null; then
         test_pass "$name"
     else
         test_fail "$name" "Should fail for unknown module"
@@ -169,7 +169,7 @@ test_only_phase_selects_modules() {
     reset_selection
     ONLY_PHASES=("6")  # Phase 6 has lang.* modules
 
-    if acfs_resolve_selection 2>/dev/null; then
+    if gtbi_resolve_selection 2>/dev/null; then
         if should_run_module "lang.bun" && should_run_module "lang.rust"; then
             test_pass "$name"
             return
@@ -183,7 +183,7 @@ test_only_phase_includes_deps() {
     reset_selection
     ONLY_PHASES=("6")  # Phase 6 modules depend on phase 1 (base.system)
 
-    if acfs_resolve_selection 2>/dev/null; then
+    if gtbi_resolve_selection 2>/dev/null; then
         if should_run_module "base.system"; then
             test_pass "$name"
             return
@@ -197,7 +197,7 @@ test_only_phase_unknown_fails() {
     reset_selection
     ONLY_PHASES=("99")
 
-    if ! acfs_resolve_selection 2>/dev/null; then
+    if ! gtbi_resolve_selection 2>/dev/null; then
         test_pass "$name"
     else
         test_fail "$name" "Should fail for unknown phase"
@@ -213,7 +213,7 @@ test_skip_removes_module() {
     reset_selection
     SKIP_MODULES=("tools.atuin")
 
-    if acfs_resolve_selection 2>/dev/null; then
+    if gtbi_resolve_selection 2>/dev/null; then
         if ! should_run_module "tools.atuin"; then
             test_pass "$name"
             return
@@ -227,7 +227,7 @@ test_skip_leaves_others() {
     reset_selection
     SKIP_MODULES=("tools.atuin")
 
-    if acfs_resolve_selection 2>/dev/null; then
+    if gtbi_resolve_selection 2>/dev/null; then
         if should_run_module "lang.bun"; then
             test_pass "$name"
             return
@@ -242,7 +242,7 @@ test_skip_dependency_fails() {
     ONLY_MODULES=("agents.codex")
     SKIP_MODULES=("lang.bun")  # agents.codex requires lang.bun
 
-    if ! acfs_resolve_selection 2>/dev/null; then
+    if ! gtbi_resolve_selection 2>/dev/null; then
         test_pass "$name"
     else
         test_fail "$name" "Should fail when skipping a required dependency"
@@ -256,7 +256,7 @@ test_skip_dependency_with_no_deps_allowed() {
     SKIP_MODULES=("lang.bun")  # redundant when --no-deps, but should not error
     NO_DEPS=true
 
-    if acfs_resolve_selection 2>/dev/null; then
+    if gtbi_resolve_selection 2>/dev/null; then
         if should_run_module "agents.codex" && ! should_run_module "lang.bun" && ! should_run_module "base.system"; then
             test_pass "$name"
             return
@@ -271,7 +271,7 @@ test_only_and_skip_same_module_fails() {
     ONLY_MODULES=("agents.codex")
     SKIP_MODULES=("agents.codex")
 
-    if ! acfs_resolve_selection 2>/dev/null; then
+    if ! gtbi_resolve_selection 2>/dev/null; then
         test_pass "$name"
     else
         test_fail "$name" "Should fail when a directly requested module is also skipped"
@@ -285,7 +285,7 @@ test_only_and_skip_same_module_with_no_deps_fails() {
     SKIP_MODULES=("agents.codex")
     NO_DEPS=true
 
-    if ! acfs_resolve_selection 2>/dev/null; then
+    if ! gtbi_resolve_selection 2>/dev/null; then
         test_pass "$name"
     else
         test_fail "$name" "Direct selector contradictions should not be masked by --no-deps"
@@ -298,7 +298,7 @@ test_only_phase_can_skip_selected_module() {
     ONLY_PHASES=("7")
     SKIP_MODULES=("agents.codex")
 
-    if acfs_resolve_selection 2>/dev/null; then
+    if gtbi_resolve_selection 2>/dev/null; then
         if ! should_run_module "agents.codex" && should_run_module "agents.claude"; then
             test_pass "$name"
             return
@@ -312,7 +312,7 @@ test_skip_unknown_module_fails() {
     reset_selection
     SKIP_MODULES=("nonexistent.module")
 
-    if ! acfs_resolve_selection 2>/dev/null; then
+    if ! gtbi_resolve_selection 2>/dev/null; then
         test_pass "$name"
     else
         test_fail "$name" "Should fail for unknown module"
@@ -329,7 +329,7 @@ test_no_deps_excludes_dependencies() {
     ONLY_MODULES=("agents.codex")
     NO_DEPS=true
 
-    if acfs_resolve_selection 2>/dev/null; then
+    if gtbi_resolve_selection 2>/dev/null; then
         # With no-deps, should only have agents.codex, not its deps
         if should_run_module "agents.codex" && ! should_run_module "lang.bun" && ! should_run_module "base.system"; then
             test_pass "$name"
@@ -347,7 +347,7 @@ test_no_deps_prints_warning() {
 
     # Capture stderr to check for warning
     local output
-    output=$(acfs_resolve_selection 2>&1)
+    output=$(gtbi_resolve_selection 2>&1)
     if [[ "$output" == *"WARNING"* ]] && [[ "$output" == *"no-deps"* || "$output" == *"dependency"* ]]; then
         test_pass "$name"
     else
@@ -360,12 +360,12 @@ test_no_deps_prints_warning() {
 # ============================================================
 
 test_effective_plan_populated() {
-    local name="ACFS_EFFECTIVE_PLAN is populated"
+    local name="GTBI_EFFECTIVE_PLAN is populated"
     reset_selection
     ONLY_MODULES=("lang.bun")
 
-    if acfs_resolve_selection 2>/dev/null; then
-        if [[ ${#ACFS_EFFECTIVE_PLAN[@]} -gt 0 ]]; then
+    if gtbi_resolve_selection 2>/dev/null; then
+        if [[ ${#GTBI_EFFECTIVE_PLAN[@]} -gt 0 ]]; then
             test_pass "$name"
             return
         fi
@@ -374,13 +374,13 @@ test_effective_plan_populated() {
 }
 
 test_effective_run_membership() {
-    local name="ACFS_EFFECTIVE_RUN provides O(1) membership check"
+    local name="GTBI_EFFECTIVE_RUN provides O(1) membership check"
     reset_selection
     ONLY_MODULES=("lang.bun")
 
-    if acfs_resolve_selection 2>/dev/null; then
+    if gtbi_resolve_selection 2>/dev/null; then
         # Direct associative array access
-        if [[ -n "${ACFS_EFFECTIVE_RUN[lang.bun]:-}" ]]; then
+        if [[ -n "${GTBI_EFFECTIVE_RUN[lang.bun]:-}" ]]; then
             test_pass "$name"
             return
         fi
@@ -389,12 +389,12 @@ test_effective_run_membership() {
 }
 
 test_plan_reason_tracked() {
-    local name="ACFS_PLAN_REASON tracks inclusion reasons"
+    local name="GTBI_PLAN_REASON tracks inclusion reasons"
     reset_selection
     ONLY_MODULES=("agents.claude")
 
-    if acfs_resolve_selection 2>/dev/null; then
-        local reason="${ACFS_PLAN_REASON[agents.claude]:-}"
+    if gtbi_resolve_selection 2>/dev/null; then
+        local reason="${GTBI_PLAN_REASON[agents.claude]:-}"
         if [[ "$reason" == *"explicitly requested"* ]]; then
             test_pass "$name"
             return
@@ -404,13 +404,13 @@ test_plan_reason_tracked() {
 }
 
 test_exclude_reason_tracked() {
-    local name="ACFS_PLAN_EXCLUDE_REASON tracks exclusion reasons"
+    local name="GTBI_PLAN_EXCLUDE_REASON tracks exclusion reasons"
     reset_selection
     ONLY_MODULES=("lang.bun")  # Only select lang.bun
 
-    if acfs_resolve_selection 2>/dev/null; then
+    if gtbi_resolve_selection 2>/dev/null; then
         # lang.rust should be excluded as "not selected"
-        local reason="${ACFS_PLAN_EXCLUDE_REASON[lang.rust]:-}"
+        local reason="${GTBI_PLAN_EXCLUDE_REASON[lang.rust]:-}"
         if [[ -n "$reason" ]]; then
             test_pass "$name"
             return
@@ -428,11 +428,11 @@ test_plan_respects_dependency_order() {
     reset_selection
     ONLY_MODULES=("stack.ultimate_bug_scanner")
 
-    if acfs_resolve_selection 2>/dev/null; then
+    if gtbi_resolve_selection 2>/dev/null; then
         # Find positions in plan
         local base_pos=-1 bun_pos=-1 ubs_pos=-1
         local i=0
-        for module_id in "${ACFS_EFFECTIVE_PLAN[@]}"; do
+        for module_id in "${GTBI_EFFECTIVE_PLAN[@]}"; do
             case "$module_id" in
                 "base.system") base_pos=$i ;;
                 "lang.bun") bun_pos=$i ;;
@@ -461,8 +461,8 @@ test_plan_is_deterministic() {
 
     # Run selection twice
     local plan1 plan2
-    if acfs_resolve_selection 2>/dev/null; then
-        plan1="${ACFS_EFFECTIVE_PLAN[*]}"
+    if gtbi_resolve_selection 2>/dev/null; then
+        plan1="${GTBI_EFFECTIVE_PLAN[*]}"
     else
         test_fail "$name" "First selection failed"
         return
@@ -470,8 +470,8 @@ test_plan_is_deterministic() {
 
     reset_selection
     ONLY_MODULES=("stack.mcp_agent_mail")
-    if acfs_resolve_selection 2>/dev/null; then
-        plan2="${ACFS_EFFECTIVE_PLAN[*]}"
+    if gtbi_resolve_selection 2>/dev/null; then
+        plan2="${GTBI_EFFECTIVE_PLAN[*]}"
     else
         test_fail "$name" "Second selection failed"
         return
@@ -490,12 +490,12 @@ test_plan_does_not_mutate_state() {
     ONLY_MODULES=("lang.bun")
 
     # Run once
-    acfs_resolve_selection 2>/dev/null || true
-    local count1="${#ACFS_EFFECTIVE_PLAN[@]}"
+    gtbi_resolve_selection 2>/dev/null || true
+    local count1="${#GTBI_EFFECTIVE_PLAN[@]}"
 
     # Run again without reset - should produce same result
-    acfs_resolve_selection 2>/dev/null || true
-    local count2="${#ACFS_EFFECTIVE_PLAN[@]}"
+    gtbi_resolve_selection 2>/dev/null || true
+    local count2="${#GTBI_EFFECTIVE_PLAN[@]}"
 
     if [[ "$count1" == "$count2" ]]; then
         test_pass "$name"
@@ -513,7 +513,7 @@ test_legacy_skip_postgres() {
     reset_selection
     SKIP_POSTGRES=true
 
-    acfs_apply_legacy_skips
+    gtbi_apply_legacy_skips
 
     local found=false
     for module in "${SKIP_MODULES[@]}"; do
@@ -535,7 +535,7 @@ test_legacy_skip_vault() {
     reset_selection
     SKIP_VAULT=true
 
-    acfs_apply_legacy_skips
+    gtbi_apply_legacy_skips
 
     local found=false
     for module in "${SKIP_MODULES[@]}"; do
@@ -557,7 +557,7 @@ test_legacy_skip_cloud() {
     reset_selection
     SKIP_CLOUD=true
 
-    acfs_apply_legacy_skips
+    gtbi_apply_legacy_skips
 
     local found_wrangler=false found_supabase=false found_vercel=false
     for module in "${SKIP_MODULES[@]}"; do
@@ -580,9 +580,9 @@ test_legacy_flags_affect_selection() {
     reset_selection
     SKIP_VAULT=true
 
-    acfs_apply_legacy_skips
+    gtbi_apply_legacy_skips
 
-    if acfs_resolve_selection 2>/dev/null; then
+    if gtbi_resolve_selection 2>/dev/null; then
         # tools.vault should be excluded
         if ! should_run_module "tools.vault"; then
             test_pass "$name"
@@ -600,7 +600,7 @@ test_should_run_module_true() {
     local name="should_run_module returns true for included modules"
     reset_selection
 
-    if acfs_resolve_selection 2>/dev/null; then
+    if gtbi_resolve_selection 2>/dev/null; then
         if should_run_module "lang.bun"; then
             test_pass "$name"
             return
@@ -613,7 +613,7 @@ test_should_run_module_false() {
     local name="should_run_module returns false for excluded modules"
     reset_selection
 
-    if acfs_resolve_selection 2>/dev/null; then
+    if gtbi_resolve_selection 2>/dev/null; then
         if ! should_run_module "db.postgres18"; then
             test_pass "$name"
             return
@@ -627,11 +627,11 @@ test_should_run_module_false() {
 # ============================================================
 
 test_generated_defaults() {
-    local name="Generated defaults honor ACFS_GENERATED_DEFAULT_CATEGORIES"
+    local name="Generated defaults honor GTBI_GENERATED_DEFAULT_CATEGORIES"
     reset_generated_flags
-    ACFS_GENERATED_DEFAULT_CATEGORIES=("shell" "lang")
+    GTBI_GENERATED_DEFAULT_CATEGORIES=("shell" "lang")
 
-    if acfs_use_generated_category "shell" 2>/dev/null && ! acfs_use_generated_category "cloud" 2>/dev/null; then
+    if gtbi_use_generated_category "shell" 2>/dev/null && ! gtbi_use_generated_category "cloud" 2>/dev/null; then
         test_pass "$name"
         return
     fi
@@ -639,14 +639,14 @@ test_generated_defaults() {
 }
 
 test_generated_global_override() {
-    local name="Global ACFS_USE_GENERATED=0 forces legacy for all categories"
+    local name="Global GTBI_USE_GENERATED=0 forces legacy for all categories"
     reset_generated_flags
-    ACFS_GENERATED_DEFAULT_CATEGORIES=("shell")
-    ACFS_USE_GENERATED=0
+    GTBI_GENERATED_DEFAULT_CATEGORIES=("shell")
+    GTBI_USE_GENERATED=0
 
     # Global=0 should disable even default categories
-    if ! acfs_use_generated_category "shell" 2>/dev/null; then
-        if ! acfs_use_generated_category "cloud" 2>/dev/null; then
+    if ! gtbi_use_generated_category "shell" 2>/dev/null; then
+        if ! gtbi_use_generated_category "cloud" 2>/dev/null; then
             test_pass "$name"
             return
         fi
@@ -655,12 +655,12 @@ test_generated_global_override() {
 }
 
 test_generated_per_category_override() {
-    local name="Per-category ACFS_USE_GENERATED_* overrides global"
+    local name="Per-category GTBI_USE_GENERATED_* overrides global"
     reset_generated_flags
-    ACFS_USE_GENERATED=0
-    ACFS_USE_GENERATED_SHELL=1
+    GTBI_USE_GENERATED=0
+    GTBI_USE_GENERATED_SHELL=1
 
-    if acfs_use_generated_category "shell" 2>/dev/null && ! acfs_use_generated_category "lang" 2>/dev/null; then
+    if gtbi_use_generated_category "shell" 2>/dev/null && ! gtbi_use_generated_category "lang" 2>/dev/null; then
         test_pass "$name"
         return
     fi
@@ -668,16 +668,16 @@ test_generated_per_category_override() {
 }
 
 test_generated_env_var_csv_override() {
-    local name="ACFS_GENERATED_MIGRATED_CATEGORIES env var overrides defaults"
+    local name="GTBI_GENERATED_MIGRATED_CATEGORIES env var overrides defaults"
     reset_generated_flags
-    ACFS_GENERATED_DEFAULT_CATEGORIES=("shell")
-    ACFS_GENERATED_MIGRATED_CATEGORIES="base,lang"
+    GTBI_GENERATED_DEFAULT_CATEGORIES=("shell")
+    GTBI_GENERATED_MIGRATED_CATEGORIES="base,lang"
 
     # Shell should NOT be migrated (env var overrides code default)
     # Base and Lang SHOULD be migrated
-    if ! acfs_use_generated_category "shell" 2>/dev/null && \
-       acfs_use_generated_category "base" 2>/dev/null && \
-       acfs_use_generated_category "lang" 2>/dev/null; then
+    if ! gtbi_use_generated_category "shell" 2>/dev/null && \
+       gtbi_use_generated_category "base" 2>/dev/null && \
+       gtbi_use_generated_category "lang" 2>/dev/null; then
         test_pass "$name"
         return
     fi
@@ -689,7 +689,7 @@ test_generated_env_var_csv_override() {
 # ============================================================
 
 echo ""
-echo "ACFS Install Helpers Selection Tests"
+echo "GTBI Install Helpers Selection Tests"
 echo "====================================="
 echo ""
 

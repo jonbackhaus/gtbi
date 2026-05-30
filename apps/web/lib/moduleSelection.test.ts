@@ -52,7 +52,7 @@ describe("resolveModuleSelection", () => {
     expect(ids).toContain("tools.ast_grep");
     expect(ids).not.toContain("network.tailscale");
     expect(ids).not.toContain("tools.lazygit");
-    expect(ids).not.toContain("acfs.nightly");
+    expect(ids).not.toContain("gtbi.nightly");
   });
 
   test("stack-only profile follows phase selection and dependencies", () => {
@@ -255,7 +255,7 @@ describe("formatModuleSelectionPlan", () => {
   test("renders stable human-readable plan output", () => {
     const text = formatModuleSelectionPlan(resolveModuleSelection({ onlyModules: ["agents.codex"] }));
 
-    expect(text).toContain("ACFS Module Selection Plan");
+    expect(text).toContain("GTBI Module Selection Plan");
     expect(text).toContain("Selected modules:");
     expect(text).toContain("[Phase 6] lang.bun");
     expect(text).toContain("[Phase 7] agents.codex");

@@ -229,8 +229,8 @@ export default function CoreFlywheelPage() {
             ]} />
 
             <SubSection title="What a Good Bead Looks Like">
-              <P>The bead is the unit of work agents actually execute. Weak beads force improvisation. Rich beads make execution mechanical. Here is a real bead from the ACFS project:</P>
-              <CodeBlock language="markdown" code={`bd-01s: Add --deep flag to acfs doctor
+              <P>The bead is the unit of work agents actually execute. Weak beads force improvisation. Rich beads make execution mechanical. Here is a real bead from the GTBI project:</P>
+              <CodeBlock language="markdown" code={`bd-01s: Add --deep flag to gtbi doctor
 
 Context:
 Part of EPIC: Enhanced Doctor with Functional Tests.
@@ -527,7 +527,7 @@ When you're not sure what to do next, use the bv tool mentioned in AGENTS.md to 
                 "Big prompt libraries",
                 "Advanced launch tooling like ntm",
                 "The full exhaustive planning doctrine",
-                "Every supporting tool in ACFS",
+                "Every supporting tool in GTBI",
               ]} />
               <P>Those things help. Some help a lot. But they are multipliers on top of the core loop, not prerequisites. You can run the core loop with separate terminal tabs and no special session manager.</P>
             </SubSection>

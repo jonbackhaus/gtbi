@@ -1,6 +1,6 @@
 # Hetzner Cloud VPS Setup Guide
 
-Set up a VPS on Hetzner Cloud for running ACFS and coding agents.
+Set up a VPS on Hetzner Cloud for running GTBI and coding agents.
 
 ---
 
@@ -73,7 +73,7 @@ Pick the closest location to you for best latency.
 
 Hetzner offers shared and dedicated CPU options:
 
-**Shared vCPU (Recommended for ACFS)**:
+**Shared vCPU (Recommended for GTBI)**:
 | Type | vCPU | RAM | Storage | Price |
 |------|------|-----|---------|-------|
 | CX21 | 2 | 4GB | 40GB | ~$5/mo |
@@ -117,7 +117,7 @@ Leave defaults:
 
 ## Step 8: Name Your Server
 
-1. Enter a memorable name (e.g., "acfs-dev")
+1. Enter a memorable name (e.g., "gtbi-dev")
 2. Review configuration
 3. Click "Create & Buy now"
 
@@ -150,7 +150,7 @@ Hetzner uses `root` by default with SSH key authentication.
 
 ## Step 11: Create Ubuntu User (Recommended)
 
-ACFS expects an `ubuntu` user. Create it:
+GTBI expects an `ubuntu` user. Create it:
 
 ```bash
 # Create user with sudo
@@ -183,7 +183,7 @@ For automated server bootstrap, use the companion cloud-init template:
 
 ```bash
 hcloud server create \
-  --name acfs-dev \
+  --name gtbi-dev \
   --type cpx31 \
   --image ubuntu-24.04 \
   --ssh-key your-key-name \
@@ -227,10 +227,10 @@ Take snapshots before major changes:
 
 ## Next Step
 
-Once connected as `ubuntu`, run the ACFS installer:
+Once connected as `ubuntu`, run the GTBI installer:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Dicklesworthstone/agentic_coding_flywheel_setup/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/jonbackhaus/gtbi/main/install.sh | bash
 ```
 
 ---

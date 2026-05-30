@@ -109,7 +109,7 @@ export interface BuildAgentReadinessOptions {
   home: string;
   env?: Record<string, string | undefined>;
   pathEntries?: string[];
-  acfsBinDir?: string;
+  gtbiBinDir?: string;
   fileSystem?: AgentReadinessFileSystem;
   commandRunner?: AgentReadinessCommandRunner;
   collectVersions?: boolean;
@@ -388,8 +388,8 @@ function executableSearchDirs(home: string, options: BuildAgentReadinessOptions)
 function managedExecutableDirs(home: string, options: BuildAgentReadinessOptions): string[] {
   const env = options.env ?? process.env;
   return unique([
-    options.acfsBinDir,
-    env.ACFS_BIN_DIR,
+    options.gtbiBinDir,
+    env.GTBI_BIN_DIR,
     join(home, '.local', 'bin'),
     join(home, '.bun', 'bin'),
     join(home, '.cargo', 'bin'),
@@ -437,7 +437,7 @@ function findExecutable(
       status: 'fail',
       command,
       aliases: aliasesFound,
-      detail: `${command} was not found in ACFS or PATH bin directories`,
+      detail: `${command} was not found in GTBI or PATH bin directories`,
     };
   }
 
@@ -970,7 +970,7 @@ Options:
 
 function printHumanReport(report: AgentReadinessReport, quiet: boolean): void {
   if (quiet) return;
-  console.log('ACFS agent readiness audit');
+  console.log('GTBI agent readiness audit');
   console.log(`Home: ${report.home}`);
   console.log(`Summary: pass=${report.summary.pass} warn=${report.summary.warn} unknown=${report.summary.unknown} fail=${report.summary.fail}`);
   console.log('');
@@ -1002,7 +1002,7 @@ async function runCli(): Promise<void> {
     pathEntries: options.pathEntries,
     env: process.env,
     collectVersions: options.collectVersions,
-    acfsBinDir: process.env.ACFS_BIN_DIR ?? join(DEFAULT_ROOT, 'bin'),
+    gtbiBinDir: process.env.GTBI_BIN_DIR ?? join(DEFAULT_ROOT, 'bin'),
   });
 
   if (options.json) {

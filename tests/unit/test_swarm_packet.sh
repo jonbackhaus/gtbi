@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-# Unit tests for acfs swarm packet generator
+# Unit tests for gtbi swarm packet generator
 # ============================================================
 
 set -euo pipefail
@@ -10,7 +10,7 @@ SWARM_PACKET_SH="$REPO_ROOT/scripts/lib/swarm_packet.sh"
 
 TESTS_PASSED=0
 TESTS_FAILED=0
-ARTIFACT_DIR="${ACFS_SWARM_PACKET_TEST_ARTIFACTS_DIR:-${TMPDIR:-/tmp}/acfs-swarm-packet-test-artifacts-$(date +%Y%m%d-%H%M%S)-$$}"
+ARTIFACT_DIR="${GTBI_SWARM_PACKET_TEST_ARTIFACTS_DIR:-${TMPDIR:-/tmp}/gtbi-swarm-packet-test-artifacts-$(date +%Y%m%d-%H%M%S)-$$}"
 
 mkdir -p "$ARTIFACT_DIR"
 
@@ -69,7 +69,7 @@ readme_fixture() {
     write_fixture README.md <<'EOF'
 # README fixture
 
-ACFS provides swarm planning, status, doctor, simulation, and startup packet helpers.
+GTBI provides swarm planning, status, doctor, simulation, and startup packet helpers.
 EOF
 }
 

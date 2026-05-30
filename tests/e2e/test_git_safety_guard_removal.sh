@@ -82,10 +82,10 @@ log "INFO" "init" "Starting git_safety_guard removal verification"
 log "INFO" "init" "Target user: $TARGET_USER, Home: $TARGET_HOME"
 
 # ============================================================
-# Test Case 1: No acfs/claude/hooks/ directory
+# Test Case 1: No gtbi/claude/hooks/ directory
 # ============================================================
 log "INFO" "test" "Checking for hooks directory..."
-hooks_dir="${TARGET_HOME}/.acfs/claude/hooks"
+hooks_dir="${TARGET_HOME}/.gtbi/claude/hooks"
 if [[ -d "$hooks_dir" ]]; then
     record_result "hooks_directory" "fail" "Directory exists: $hooks_dir"
 else
@@ -97,7 +97,7 @@ fi
 # ============================================================
 log "INFO" "test" "Checking for git_safety_guard.py..."
 found_guard_py=false
-for loc in "${TARGET_HOME}/.acfs/claude/hooks/git_safety_guard.py" "${TARGET_HOME}/.claude/hooks/git_safety_guard.py"; do
+for loc in "${TARGET_HOME}/.gtbi/claude/hooks/git_safety_guard.py" "${TARGET_HOME}/.claude/hooks/git_safety_guard.py"; do
     if [[ -f "$loc" ]]; then
         record_result "guard_py_file" "fail" "File exists: $loc"
         found_guard_py=true
@@ -114,11 +114,11 @@ fi
 log "INFO" "test" "Checking doctor output..."
 doctor_output=""
 # Use timeout to prevent hanging (60s should be plenty for a fresh install)
-if command -v acfs >/dev/null 2>&1; then
-    doctor_output=$(timeout 60 acfs doctor 2>&1 || true)
+if command -v gtbi >/dev/null 2>&1; then
+    doctor_output=$(timeout 60 gtbi doctor 2>&1 || true)
 elif [[ -f "${REPO_ROOT}/scripts/lib/doctor.sh" ]]; then
     # For local testing, skip doctor (takes too long without full setup)
-    log "INFO" "test" "Skipping doctor check (local run without acfs command)"
+    log "INFO" "test" "Skipping doctor check (local run without gtbi command)"
 fi
 
 if [[ -n "$doctor_output" ]]; then

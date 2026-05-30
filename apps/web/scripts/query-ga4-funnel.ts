@@ -304,7 +304,7 @@ function printFunnelChart(steps: FunnelStep[], title: string, maxSteps: number, 
 
 async function main() {
   console.log('═'.repeat(60));
-  console.log('📊 ACFS GA4 Funnel Analytics Report');
+  console.log('📊 GTBI GA4 Funnel Analytics Report');
   console.log('═'.repeat(60));
   console.log(`\nProperty ID: ${PROPERTY_ID}`);
   console.log('Date Range: Last 30 days\n');

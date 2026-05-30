@@ -310,7 +310,7 @@ all project-specific sections"`}
         delay={0.35}
       >
         <Paragraph>
-          The ACFS <Highlight>newproj</Highlight> wizard auto-generates
+          The GTBI <Highlight>newproj</Highlight> wizard auto-generates
           AGENTS.md for new projects. It detects tech stacks and generates
           appropriate sections automatically:
         </Paragraph>
@@ -319,7 +319,7 @@ all project-specific sections"`}
           <CommandList
             commands={[
               {
-                command: "acfs newproj",
+                command: "gtbi newproj",
                 description:
                   "TUI wizard guides you through project setup",
               },

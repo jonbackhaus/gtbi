@@ -205,7 +205,7 @@ describe('authChecks', () => {
   });
 
   test('checkCodex respects the injected PATH when using the default command lookup', () => {
-    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'acfs-auth-checks-'));
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gtbi-auth-checks-'));
     const fakeCodexPath = path.join(tempDir, 'codex');
     fs.writeFileSync(fakeCodexPath, '#!/bin/sh\nexit 0\n', 'utf-8');
     fs.chmodSync(fakeCodexPath, 0o755);
@@ -318,7 +318,7 @@ describe('authChecks', () => {
         commandExists: (command) => command === 'gemini',
         existsSync: (filePath) => filePath === envPath,
         readFileSync: (filePath) =>
-          filePath === envPath ? 'GEMINI_API_KEY="gemini-from-env-file" # installed by ACFS\n' : '',
+          filePath === envPath ? 'GEMINI_API_KEY="gemini-from-env-file" # installed by GTBI\n' : '',
       }),
     );
 

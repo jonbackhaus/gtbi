@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-# ACFS E2E Test Helper
+# GTBI E2E Test Helper
 # Provides TUI automation, terminal simulation, and test utilities
 # for end-to-end testing of the newproj wizard
 # ============================================================
@@ -9,7 +9,7 @@
 E2E_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TESTS_DIR="$(cd "$E2E_DIR/.." && pwd)"
 PROJECT_ROOT="$(cd "$TESTS_DIR/.." && pwd)"
-ACFS_LIB_DIR="$PROJECT_ROOT/scripts/lib"
+GTBI_LIB_DIR="$PROJECT_ROOT/scripts/lib"
 E2E_LIB_DIR="$E2E_DIR/lib"
 E2E_LOGS_DIR="$E2E_DIR/logs"
 
@@ -77,10 +77,10 @@ setup_e2e_env() {
     unset CI GITHUB_ACTIONS GITLAB_CI JENKINS_URL TRAVIS CIRCLECI
 
     # Enable test mode
-    export ACFS_TEST_MODE=1
-    export ACFS_LOG_DIR="$E2E_TEST_DIR/logs"
-    export ACFS_LOG_LEVEL=0  # DEBUG level
-    mkdir -p "$ACFS_LOG_DIR"
+    export GTBI_TEST_MODE=1
+    export GTBI_LOG_DIR="$E2E_TEST_DIR/logs"
+    export GTBI_LOG_LEVEL=0  # DEBUG level
+    mkdir -p "$GTBI_LOG_DIR"
 
     log_e2e "INFO" "E2E test environment initialized"
     log_e2e "INFO" "Test directory: $E2E_TEST_DIR"
@@ -103,7 +103,7 @@ teardown_e2e_env() {
     E2E_TEMP_DIRS=()
 
     # Reset environment
-    unset ACFS_TEST_MODE ACFS_LOG_DIR
+    unset GTBI_TEST_MODE GTBI_LOG_DIR
 
     log_e2e "INFO" "E2E test environment cleaned up (exit: $exit_code)"
 }
@@ -136,9 +136,9 @@ capture_e2e_artifacts() {
 
     log_e2e "INFO" "Capturing E2E artifacts to $dest_dir"
 
-    # Capture ACFS logs
-    if [[ -d "$ACFS_LOG_DIR" ]]; then
-        cp -r "$ACFS_LOG_DIR" "$dest_dir/acfs_logs" 2>/dev/null || true
+    # Capture GTBI logs
+    if [[ -d "$GTBI_LOG_DIR" ]]; then
+        cp -r "$GTBI_LOG_DIR" "$dest_dir/gtbi_logs" 2>/dev/null || true
     fi
 
     # Capture TUI driver logs
@@ -242,7 +242,7 @@ on_screen() {
 
     case "$screen_name" in
         welcome)
-            screen_contains "Welcome to ACFS" "$screen_content"
+            screen_contains "Welcome to GTBI" "$screen_content"
             ;;
         project_name)
             screen_contains "Project Name" "$screen_content"
@@ -290,7 +290,7 @@ run_wizard_with_input() {
     log_e2e "INFO" "Running wizard with input sequence"
     log_e2e "DEBUG" "Project: $project_name at $E2E_PROJECT_DIR"
 
-    tui_run_with_input "$ACFS_LIB_DIR/newproj.sh" "--interactive" <<< "$input_sequence"
+    tui_run_with_input "$GTBI_LIB_DIR/newproj.sh" "--interactive" <<< "$input_sequence"
 }
 
 # Run wizard through happy path (all defaults)
@@ -325,7 +325,7 @@ q
 EOF
 )
 
-    tui_run_with_input "$ACFS_LIB_DIR/newproj.sh" "--interactive" <<< "$input_sequence"
+    tui_run_with_input "$GTBI_LIB_DIR/newproj.sh" "--interactive" <<< "$input_sequence"
 }
 
 # ============================================================

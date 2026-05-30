@@ -139,7 +139,7 @@ function LessonSidebar({
                   Learning Hub
                 </span>
                 <span className="text-xs text-white/60 uppercase tracking-[0.2em] font-medium">
-                  ACFS Academy
+                  GTBI Academy
                 </span>
               </div>
             </Link>
@@ -639,7 +639,7 @@ export function LessonContent({ lesson }: Props) {
                       </div>
                       <div className="flex-1">
                         <h3 className="text-xl font-bold text-white mb-2">
-                          New to ACFS?
+                          New to GTBI?
                         </h3>
                         <p className="text-white/50 mb-6 leading-relaxed">
                           Complete the setup wizard first to get the most from these lessons.

@@ -10,7 +10,7 @@ SUPPORT_SH="$REPO_ROOT/scripts/lib/support.sh"
 
 TESTS_PASSED=0
 TESTS_FAILED=0
-ARTIFACT_DIR="${ACFS_SUPPORT_REPORT_TEST_ARTIFACTS_DIR:-${TMPDIR:-/tmp}/acfs-support-report-test-artifacts-$(date +%Y%m%d-%H%M%S)-$$}"
+ARTIFACT_DIR="${GTBI_SUPPORT_REPORT_TEST_ARTIFACTS_DIR:-${TMPDIR:-/tmp}/gtbi-support-report-test-artifacts-$(date +%Y%m%d-%H%M%S)-$$}"
 
 mkdir -p "$ARTIFACT_DIR"
 
@@ -118,7 +118,7 @@ test_minimal_bundle_handles_missing_optional_artifacts() {
     render_report "$bundle_dir"
 
     [[ -f "$report_file" ]] || return 1
-    assert_contains "$report_file" "ACFS Support Bundle Report" || return 1
+    assert_contains "$report_file" "GTBI Support Bundle Report" || return 1
     assert_contains "$report_file" "[state.json](state.json)" || return 1
     assert_not_contains "$report_file" "[swarm_status.json](swarm_status.json)" || return 1
 
@@ -170,7 +170,7 @@ test_manifest_redaction_proof_sanitizes_bad_sources() {
 
     write_file "$bundle_dir" "doctor.json" '{"status":'
     write_file "$bundle_dir" "swarm_inventory.json" '{"schema_version":1,"status":"pass","inventory":{"present":true,"raw_hosts_collected":false},"summary":{"hosts_total":2},"redaction":{"paths_redacted":true,"raw_hosts_collected":false},"host":"prod-controller.example.com","path":"/home/alice/private","token":"ghp_ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmn"}'
-    write_file "$bundle_dir" "environment.json" '{"status":"pass","hostname":"prod.example.com","home":"/home/alice","acfs_home":"/home/alice/.acfs"}'
+    write_file "$bundle_dir" "environment.json" '{"status":"pass","hostname":"prod.example.com","home":"/home/alice","gtbi_home":"/home/alice/.gtbi"}'
     write_file "$bundle_dir" "provenance.json" '{"status":"pass","token":"ghp_ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmn"}'
     chmod 000 "$bundle_dir/provenance.json"
 

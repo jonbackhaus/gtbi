@@ -82,7 +82,7 @@ export function CommandReference() {
             Command Reference
           </h1>
           <p className="mx-auto max-w-2xl text-base text-muted-foreground md:text-lg">
-            A quick lookup for every command ACFS installs. Search by name or
+            A quick lookup for every command GTBI installs. Search by name or
             description, copy examples, and jump to detailed docs when you need
             them.
           </p>

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # shellcheck disable=SC1091
 # ============================================================
-# ACFS Selection E2E Checks
+# GTBI Selection E2E Checks
 #
 # Validates that install.sh CLI flags properly interact with
 # the selection engine and produce correct execution plans.
@@ -18,7 +18,7 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 # Source test harness
 source "$SCRIPT_DIR/lib/test_harness.sh"
 
-harness_init "ACFS Selection E2E Checks"
+harness_init "GTBI Selection E2E Checks"
 
 # ============================================================
 # Helper Functions
@@ -59,10 +59,10 @@ output=$(run_install --list-modules) || {
     harness_capture_output "list-modules-output" "$output"
 }
 
-if echo "$output" | grep -q "Available ACFS Modules"; then
+if echo "$output" | grep -q "Available GTBI Modules"; then
     harness_pass "--list-modules shows header"
 else
-    harness_fail "--list-modules missing header" "Expected 'Available ACFS Modules'"
+    harness_fail "--list-modules missing header" "Expected 'Available GTBI Modules'"
 fi
 
 if echo "$output" | grep -q "base.system"; then
@@ -88,7 +88,7 @@ output=$(run_install --print-plan) || {
     harness_capture_output "print-plan-output" "$output"
 }
 
-if echo "$output" | grep -qE "ACFS Installation Plan|Execution Plan|Plan:"; then
+if echo "$output" | grep -qE "GTBI Installation Plan|Execution Plan|Plan:"; then
     harness_pass "--print-plan shows plan header"
 else
     harness_fail "--print-plan missing plan header"
@@ -307,16 +307,16 @@ else
 fi
 
 # Check for expected content
-if grep -q "ACFS_MANIFEST_SHA256" "$MANIFEST_INDEX"; then
-    harness_pass "manifest_index.sh has ACFS_MANIFEST_SHA256"
+if grep -q "GTBI_MANIFEST_SHA256" "$MANIFEST_INDEX"; then
+    harness_pass "manifest_index.sh has GTBI_MANIFEST_SHA256"
 else
-    harness_fail "manifest_index.sh missing ACFS_MANIFEST_SHA256"
+    harness_fail "manifest_index.sh missing GTBI_MANIFEST_SHA256"
 fi
 
-if grep -q "ACFS_MODULES_IN_ORDER" "$MANIFEST_INDEX"; then
-    harness_pass "manifest_index.sh has ACFS_MODULES_IN_ORDER"
+if grep -q "GTBI_MODULES_IN_ORDER" "$MANIFEST_INDEX"; then
+    harness_pass "manifest_index.sh has GTBI_MODULES_IN_ORDER"
 else
-    harness_fail "manifest_index.sh missing ACFS_MODULES_IN_ORDER"
+    harness_fail "manifest_index.sh missing GTBI_MODULES_IN_ORDER"
 fi
 
 # ============================================================

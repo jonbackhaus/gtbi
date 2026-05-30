@@ -22,7 +22,7 @@ teardown() {
     local project_name="cli-default-test"
     local project_dir="$E2E_TEST_DIR/$project_name"
 
-    run bash "$ACFS_LIB_DIR/newproj.sh" "$project_name" "$project_dir"
+    run bash "$GTBI_LIB_DIR/newproj.sh" "$project_name" "$project_dir"
 
     assert_success
     [[ -d "$project_dir" ]]
@@ -35,7 +35,7 @@ teardown() {
     local project_name="cli-agents-test"
     local project_dir="$E2E_TEST_DIR/$project_name"
 
-    run bash "$ACFS_LIB_DIR/newproj.sh" "$project_name" "$project_dir"
+    run bash "$GTBI_LIB_DIR/newproj.sh" "$project_name" "$project_dir"
 
     assert_success
     [[ -f "$project_dir/AGENTS.md" ]]
@@ -48,7 +48,7 @@ teardown() {
     local project_name="cli-beads-test"
     local project_dir="$E2E_TEST_DIR/$project_name"
 
-    run bash "$ACFS_LIB_DIR/newproj.sh" "$project_name" "$project_dir"
+    run bash "$GTBI_LIB_DIR/newproj.sh" "$project_name" "$project_dir"
 
     assert_success
     [[ -d "$project_dir/.beads" ]] || skip "br not installed"
@@ -58,7 +58,7 @@ teardown() {
     local project_name="cli-no-br-test"
     local project_dir="$E2E_TEST_DIR/$project_name"
 
-    run bash "$ACFS_LIB_DIR/newproj.sh" "$project_name" "$project_dir" --no-br
+    run bash "$GTBI_LIB_DIR/newproj.sh" "$project_name" "$project_dir" --no-br
 
     assert_success
     [[ ! -d "$project_dir/.beads" ]]
@@ -69,7 +69,7 @@ teardown() {
     local project_name="cli-no-agents-test"
     local project_dir="$E2E_TEST_DIR/$project_name"
 
-    run bash "$ACFS_LIB_DIR/newproj.sh" "$project_name" "$project_dir" --no-agents --no-br
+    run bash "$GTBI_LIB_DIR/newproj.sh" "$project_name" "$project_dir" --no-agents --no-br
 
     assert_success
     [[ ! -f "$project_dir/AGENTS.md" ]]
@@ -79,7 +79,7 @@ teardown() {
     local project_name="cli-git-test"
     local project_dir="$E2E_TEST_DIR/$project_name"
 
-    run bash "$ACFS_LIB_DIR/newproj.sh" "$project_name" "$project_dir"
+    run bash "$GTBI_LIB_DIR/newproj.sh" "$project_name" "$project_dir"
 
     assert_success
     [[ -d "$project_dir/.git" ]]
@@ -102,14 +102,14 @@ teardown() {
 @test "Interactive mode detects CI environment" {
     export CI=true
 
-    run bash "$ACFS_LIB_DIR/newproj.sh" --interactive
+    run bash "$GTBI_LIB_DIR/newproj.sh" --interactive
 
     assert_failure
     [[ "$output" == *"CI environment"* ]]
 }
 
 @test "Interactive mode help shows --interactive flag" {
-    run bash "$ACFS_LIB_DIR/newproj.sh" --help
+    run bash "$GTBI_LIB_DIR/newproj.sh" --help
 
     assert_success
     [[ "$output" == *"--interactive"* ]]
@@ -127,7 +127,7 @@ teardown() {
     local project_dir="$E2E_TEST_DIR/$project_name"
 
     run expect "$E2E_DIR/expect/happy_path.exp" \
-        "$ACFS_LIB_DIR/newproj.sh" \
+        "$GTBI_LIB_DIR/newproj.sh" \
         "$project_name" \
         "$project_dir"
 
@@ -147,7 +147,7 @@ teardown() {
     local project_dir="$E2E_TEST_DIR/$project_name"
 
     run expect "$E2E_DIR/expect/happy_path.exp" \
-        "$ACFS_LIB_DIR/newproj.sh" \
+        "$GTBI_LIB_DIR/newproj.sh" \
         "$project_name" \
         "$project_dir"
 
@@ -183,7 +183,7 @@ EOF
 
     # Try running with piped input
     # This may fail without PTY - that's expected in some environments
-    run bash -c "echo '$input' | TERM=dumb bash '$ACFS_LIB_DIR/newproj.sh' --interactive 2>&1"
+    run bash -c "echo '$input' | TERM=dumb bash '$GTBI_LIB_DIR/newproj.sh' --interactive 2>&1"
 
     # Check if it either succeeded or failed appropriately
     if [[ "$status" -eq 0 ]]; then
@@ -212,7 +212,7 @@ EOF
     local project_name="readme-content-test"
     local project_dir="$E2E_TEST_DIR/$project_name"
 
-    bash "$ACFS_LIB_DIR/newproj.sh" "$project_name" "$project_dir"
+    bash "$GTBI_LIB_DIR/newproj.sh" "$project_name" "$project_dir"
 
     grep -q "$project_name" "$project_dir/README.md"
 }
@@ -221,7 +221,7 @@ EOF
     local project_name="gitignore-content-test"
     local project_dir="$E2E_TEST_DIR/$project_name"
 
-    bash "$ACFS_LIB_DIR/newproj.sh" "$project_name" "$project_dir"
+    bash "$GTBI_LIB_DIR/newproj.sh" "$project_name" "$project_dir"
 
     # Check for common patterns
     grep -q "node_modules" "$project_dir/.gitignore"
@@ -233,7 +233,7 @@ EOF
     local project_name="agents-content-test"
     local project_dir="$E2E_TEST_DIR/$project_name"
 
-    bash "$ACFS_LIB_DIR/newproj.sh" "$project_name" "$project_dir"
+    bash "$GTBI_LIB_DIR/newproj.sh" "$project_name" "$project_dir"
 
     # Check AGENTS.md exists and has content
     [[ -f "$project_dir/AGENTS.md" ]]

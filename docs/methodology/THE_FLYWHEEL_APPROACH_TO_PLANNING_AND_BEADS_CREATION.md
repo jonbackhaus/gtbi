@@ -1,6 +1,6 @@
 # The Flywheel Approach to Planning and Beads Creation
 
-> A comprehensive guide to Jeffrey Emanuel's methodology for creating software with frontier AI models, exhaustive markdown planning, beads-based task management, and coordinated agent swarms. This revision is synthesized from the prior Claude Code session that originally created this document, the [Agentic Coding Flywheel Setup](https://github.com/Dicklesworthstone/agentic_coding_flywheel_setup) documentation, planning- and beads-related skill/background docs, [CASS](https://github.com/Dicklesworthstone/coding_agent_session_search)-mined session rituals, and X posts/threads about planning, [`br`](https://github.com/Dicklesworthstone/beads_rust), [`bv`](https://github.com/Dicklesworthstone/beads_viewer), and [Agent Mail](https://github.com/Dicklesworthstone/mcp_agent_mail).
+> A comprehensive guide to Jeffrey Emanuel's methodology for creating software with frontier AI models, exhaustive markdown planning, beads-based task management, and coordinated agent swarms. This revision is synthesized from the prior Claude Code session that originally created this document, the [Agentic Coding Flywheel Setup](https://github.com/jonbackhaus/gtbi) documentation, planning- and beads-related skill/background docs, [CASS](https://github.com/Dicklesworthstone/coding_agent_session_search)-mined session rituals, and X posts/threads about planning, [`br`](https://github.com/Dicklesworthstone/beads_rust), [`bv`](https://github.com/Dicklesworthstone/beads_viewer), and [Agent Mail](https://github.com/Dicklesworthstone/mcp_agent_mail).
 
 ---
 
@@ -292,9 +292,9 @@ That is the posture of the workflow. Implementation can still surface surprises,
 
 ## 3. Infrastructure: Setting Up the Environment
 
-### ACFS: The One-Liner Bootstrapper
+### GTBI: The One-Liner Bootstrapper
 
-The [Agentic Coding Flywheel Setup (ACFS)](https://github.com/Dicklesworthstone/agentic_coding_flywheel_setup) is a "Rails installer" for agentic engineering. A beginner with a credit card and a laptop can:
+The [Agentic Coding Flywheel Setup (GTBI)](https://github.com/jonbackhaus/gtbi) is a "Rails installer" for agentic engineering. A beginner with a credit card and a laptop can:
 
 1. Visit the wizard website at [agent-flywheel.com](https://agent-flywheel.com/)
 2. Follow step-by-step instructions to rent a VPS (~$40-56/month)
@@ -324,10 +324,10 @@ alias gmi='gemini --yolo'
 
 ### Bootstrapping a New Project
 
-Use `acfs newproj` to create a project with full tooling:
+Use `gtbi newproj` to create a project with full tooling:
 
 ```bash
-acfs newproj myproject --interactive
+gtbi newproj myproject --interactive
 ```
 
 This creates:
@@ -340,7 +340,7 @@ myproject/
 └── .gitignore         # Standard ignores
 ```
 
-`acfs newproj` prepares the project structure; `ntm spawn` starts agents.
+`gtbi newproj` prepares the project structure; `ntm spawn` starts agents.
 
 ---
 
@@ -874,7 +874,7 @@ In real usage, a strong `AGENTS.md` usually does not get written from scratch on
 
 A blank or weak `AGENTS.md` creates chaos immediately. Agents need a mature default behavioral contract before they need a perfect project-specific one. Starting from the destructive-command-guard template gives them that contract from the first session.
 
-### Core Rules (from the ACFS AGENTS.md)
+### Core Rules (from the GTBI AGENTS.md)
 
 1. **Rule 0 -- The Override Prerogative**: The human's instructions override everything
 2. **Rule 1 -- No File Deletion**: Never delete files without explicit permission
@@ -923,7 +923,7 @@ Every tool in the system should come with a prepared blurb designed for inclusio
 
 ### Project-Specific Customization
 
-Each project should have its own AGENTS.md that includes only the blurbs for the tools relevant to that project. Creating a new project with `acfs newproj` generates a starter AGENTS.md automatically.
+Each project should have its own AGENTS.md that includes only the blurbs for the tools relevant to that project. Creating a new project with `gtbi newproj` generates a starter AGENTS.md automatically.
 
 ### Examples
 
@@ -1244,7 +1244,7 @@ Use these commands instead of hand-rolling graph logic; bv already computes
 the hard parts so agents can act safely and quickly.
 ```
 
-For humans, the TUI has an insights tab (`i` key), graph view (`g`), kanban board (`b`), and fuzzy search (`/`). You can also view beads remotely via the GitHub Pages static site export, e.g. https://dicklesworthstone.github.io/beads_viewer_for_agentic_coding_flywheel_setup/
+For humans, the TUI has an insights tab (`i` key), graph view (`g`), kanban board (`b`), and fuzzy search (`/`). You can also view beads remotely via the GitHub Pages static site export, e.g. https://dicklesworthstone.github.io/beads_viewer_for_gastown_batteries_included/
 
 ### The "Clockwork Deity" Mindset
 
@@ -1292,7 +1292,7 @@ caam activate claude backup-2   # Switch instantly
 
 ## 13. Phase 8: The Single-Branch Git Model
 
-ACFS uses **one branch (`main`) with one worktree**. All agents commit directly to `main`. This may surprise you if you're used to feature branches.
+GTBI uses **one branch (`main`) with one worktree**. All agents commit directly to `main`. This may surprise you if you're used to feature branches.
 
 ### Why Not Branches or Worktrees?
 
@@ -1308,7 +1308,7 @@ ACFS uses **one branch (`main`) with one worktree**. All agents commit directly 
 
 ### Three Conflict Prevention Mechanisms
 
-Instead of branch isolation, ACFS uses three complementary mechanisms:
+Instead of branch isolation, GTBI uses three complementary mechanisms:
 
 #### 1. File Reservations ([Agent Mail](https://github.com/Dicklesworthstone/mcp_agent_mail))
 
@@ -1344,10 +1344,10 @@ DCG mechanically blocks dangerous commands that could destroy other agents' work
 | Blocked Command | Safe Alternative | Why |
 |----------------|------------------|-----|
 | `git reset --hard` | `git stash` | Recoverable |
-| `git checkout -- file` | `git stash push file` | Preserves changes <!-- acfs-policy-lint: allow filesystem.no_destructive_cleanup --> |
+| `git checkout -- file` | `git stash push file` | Preserves changes <!-- gtbi-policy-lint: allow filesystem.no_destructive_cleanup --> |
 | `git push --force` | `git push --force-with-lease` | Checks remote unchanged |
-| `git clean -fd` | `git clean -fdn` (preview first) | Shows what would delete <!-- acfs-policy-lint: allow filesystem.no_destructive_cleanup --> |
-| `rm -rf /path` | Ask the user before deleting files | Preserves explicit human control <!-- acfs-policy-lint: allow filesystem.no_destructive_cleanup --> |
+| `git clean -fd` | `git clean -fdn` (preview first) | Shows what would delete <!-- gtbi-policy-lint: allow filesystem.no_destructive_cleanup --> |
+| `rm -rf /path` | Ask the user before deleting files | Preserves explicit human control <!-- gtbi-policy-lint: allow filesystem.no_destructive_cleanup --> |
 
 **Origin:** On December 17, 2025, an agent ran `git checkout --` on uncommitted work. Files were recovered via `git fsck --lost-found`, but the incident proved that instructions don't prevent execution -- **mechanical enforcement does**.
 
@@ -1676,8 +1676,8 @@ Not every entry is used the same way. `br`, `bv`, `ubs`, and `rch` are ordinary 
 | **AGENTS.md** | Per-project configuration teaching agents about tools and rules |
 | **Best practices guides** | Referenced in AGENTS.md, kept current |
 | **Markdown plan files** | Source-of-truth planning documents |
-| **`acfs newproj`** | Bootstraps projects with full tooling |
-| **`acfs doctor`** | Single command to verify entire installation |
+| **`gtbi newproj`** | Bootstraps projects with full tooling |
+| **`gtbi doctor`** | Single command to verify entire installation |
 | **NTM command palette** | Battle-tested prompt library |
 | **Claude Code Skills** | Each tool has a dedicated skill for automated workflows |
 
@@ -2442,7 +2442,7 @@ ssh ubuntu@your-server-ip
 onboard
 
 # 6. Create your first project
-acfs newproj my-first-project --interactive
+gtbi newproj my-first-project --interactive
 
 # 7. Spawn agents
 ntm spawn my-first-project --cc=2 --cod=1 --gmi=1
@@ -2891,7 +2891,7 @@ even better for you in the future!
 
 ---
 
-*Synthesized from ~75+ substantive X posts by [@doodlestein](https://x.com/doodlestein) (Jeffrey Emanuel) mined via [xf](https://github.com/Dicklesworthstone/xf) archive search, the [Agentic Coding Flywheel Setup](https://github.com/Dicklesworthstone/agentic_coding_flywheel_setup) documentation, and real-world usage patterns from coding agent session history via CASS. Source posts compiled in [COMPLETE_X_POSTS_ABOUT_PLANNING_AND_BEADS.md](./COMPLETE_X_POSTS_ABOUT_PLANNING_AND_BEADS.md).*
+*Synthesized from ~75+ substantive X posts by [@doodlestein](https://x.com/doodlestein) (Jeffrey Emanuel) mined via [xf](https://github.com/Dicklesworthstone/xf) archive search, the [Agentic Coding Flywheel Setup](https://github.com/jonbackhaus/gtbi) documentation, and real-world usage patterns from coding agent session history via CASS. Source posts compiled in [COMPLETE_X_POSTS_ABOUT_PLANNING_AND_BEADS.md](./COMPLETE_X_POSTS_ABOUT_PLANNING_AND_BEADS.md).*
 
 
 • Two things are done.

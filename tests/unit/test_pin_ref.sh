@@ -21,7 +21,7 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 source "$REPO_ROOT/tests/vm/lib/test_harness.sh"
 
 # Log file
-LOG_FILE="/tmp/acfs_pin_ref_test_$(date +%Y%m%d_%H%M%S).log"
+LOG_FILE="/tmp/gtbi_pin_ref_test_$(date +%Y%m%d_%H%M%S).log"
 
 # Redirect all output to log file as well
 exec > >(tee -a "$LOG_FILE") 2>&1
@@ -52,7 +52,7 @@ test_pin_ref_resolves_main() {
     harness_section "Test: --pin-ref resolves main branch to SHA"
 
     local output
-    output=$(ACFS_REF="main" bash "$REPO_ROOT/install.sh" --pin-ref 2>&1)
+    output=$(GTBI_REF="main" bash "$REPO_ROOT/install.sh" --pin-ref 2>&1)
     local exit_code=$?
 
     harness_assert_eq "0" "$exit_code" "Exit code should be 0 for valid ref"
@@ -88,7 +88,7 @@ test_pin_ref_output_structure() {
     local checks_passed=0
     local checks_total=5
 
-    if echo "$output" | grep -q "ACFS Pinned Reference"; then
+    if echo "$output" | grep -q "GTBI Pinned Reference"; then
         harness_pass "Output has header"
         ((checks_passed++))
     else
@@ -133,13 +133,13 @@ test_pin_ref_output_structure() {
 }
 
 test_pin_ref_with_custom_ref() {
-    harness_section "Test: --pin-ref works with custom ACFS_REF"
+    harness_section "Test: --pin-ref works with custom GTBI_REF"
 
     # Use 'main' as a custom ref - it should always resolve
     local test_ref="main"
 
     local output
-    output=$(ACFS_REF="$test_ref" bash "$REPO_ROOT/install.sh" --pin-ref 2>&1)
+    output=$(GTBI_REF="$test_ref" bash "$REPO_ROOT/install.sh" --pin-ref 2>&1)
     local exit_code=$?
 
     harness_assert_eq "0" "$exit_code" "Exit code should be 0"
@@ -165,7 +165,7 @@ test_pin_ref_invalid_ref() {
     harness_section "Test: --pin-ref handles invalid ref gracefully"
 
     local output
-    output=$(ACFS_REF="invalid-nonexistent-ref-12345" bash "$REPO_ROOT/install.sh" --pin-ref 2>&1)
+    output=$(GTBI_REF="invalid-nonexistent-ref-12345" bash "$REPO_ROOT/install.sh" --pin-ref 2>&1)
     local exit_code=$?
 
     # Should fail with non-zero exit code
@@ -223,8 +223,8 @@ test_pin_ref_confirms_ref_alias() {
     output2=$(bash "$REPO_ROOT/install.sh" --confirm-ref 2>&1)
 
     # Both should have similar structure (same SHA may differ if repo updated between calls)
-    if echo "$output1" | grep -q "ACFS Pinned Reference" && \
-       echo "$output2" | grep -q "ACFS Pinned Reference"; then
+    if echo "$output1" | grep -q "GTBI Pinned Reference" && \
+       echo "$output2" | grep -q "GTBI Pinned Reference"; then
         harness_pass "--confirm-ref produces same format as --pin-ref"
     else
         harness_fail "--confirm-ref output differs from --pin-ref"

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-# ACFS Bootstrap - Offline Simulation Test
+# GTBI Bootstrap - Offline Simulation Test
 #
 # Validates the curl|bash bootstrap path without network by
 # serving a local archive via a stubbed curl binary.
@@ -42,42 +42,42 @@ create_archive() {
   # Portable archive creation (GNU tar and BSD tar compatible):
   # create a staging dir with an explicit top-level folder, then tar it.
   local stage_dir
-  stage_dir="$(mktemp -d "${TMPDIR:-/tmp}/acfs-offline-stage.XXXXXX")"
+  stage_dir="$(mktemp -d "${TMPDIR:-/tmp}/gtbi-offline-stage.XXXXXX")"
 
-  mkdir -p "$stage_dir/acfs-offline/scripts"
+  mkdir -p "$stage_dir/gtbi-offline/scripts"
 
-  cp -R "$REPO_ROOT/scripts/lib" "$stage_dir/acfs-offline/scripts/"
-  cp -R "$REPO_ROOT/scripts/generated" "$stage_dir/acfs-offline/scripts/"
-  cp "$REPO_ROOT/scripts/preflight.sh" "$stage_dir/acfs-offline/scripts/preflight.sh"
-  # acfs-global and acfs-update are tracked in scripts/generated/internal_checksums.sh
-  # (ACFS_INTERNAL_CHECKSUMS), so install.sh's integrity check will treat them as
+  cp -R "$REPO_ROOT/scripts/lib" "$stage_dir/gtbi-offline/scripts/"
+  cp -R "$REPO_ROOT/scripts/generated" "$stage_dir/gtbi-offline/scripts/"
+  cp "$REPO_ROOT/scripts/preflight.sh" "$stage_dir/gtbi-offline/scripts/preflight.sh"
+  # gtbi-global and gtbi-update are tracked in scripts/generated/internal_checksums.sh
+  # (GTBI_INTERNAL_CHECKSUMS), so install.sh's integrity check will treat them as
   # "missing" and fail unless they're in the bootstrap archive.
-  cp "$REPO_ROOT/scripts/acfs-global" "$stage_dir/acfs-offline/scripts/acfs-global"
-  cp "$REPO_ROOT/scripts/acfs-update" "$stage_dir/acfs-offline/scripts/acfs-update"
+  cp "$REPO_ROOT/scripts/gtbi-global" "$stage_dir/gtbi-offline/scripts/gtbi-global"
+  cp "$REPO_ROOT/scripts/gtbi-update" "$stage_dir/gtbi-offline/scripts/gtbi-update"
 
-  cp -R "$REPO_ROOT/acfs" "$stage_dir/acfs-offline/acfs"
-  cp "$REPO_ROOT/checksums.yaml" "$stage_dir/acfs-offline/checksums.yaml"
-  cp "$REPO_ROOT/acfs.manifest.yaml" "$stage_dir/acfs-offline/acfs.manifest.yaml"
-  cp "$REPO_ROOT/VERSION" "$stage_dir/acfs-offline/VERSION"
+  cp -R "$REPO_ROOT/gtbi" "$stage_dir/gtbi-offline/gtbi"
+  cp "$REPO_ROOT/checksums.yaml" "$stage_dir/gtbi-offline/checksums.yaml"
+  cp "$REPO_ROOT/gtbi.manifest.yaml" "$stage_dir/gtbi-offline/gtbi.manifest.yaml"
+  cp "$REPO_ROOT/VERSION" "$stage_dir/gtbi-offline/VERSION"
 
-  tar -czf "$archive_path" -C "$stage_dir" acfs-offline
+  tar -czf "$archive_path" -C "$stage_dir" gtbi-offline
 }
 
 create_bad_archive() {
   local good_archive="$1"
   local bad_archive="$2"
   local bad_dir
-  bad_dir="$(mktemp -d "${TMPDIR:-/tmp}/acfs-offline-bad.XXXXXX")"
+  bad_dir="$(mktemp -d "${TMPDIR:-/tmp}/gtbi-offline-bad.XXXXXX")"
 
   log "Creating bad archive: $bad_archive"
   tar -xzf "$good_archive" -C "$bad_dir"
-  printf '\n# bootstrap mismatch\n' >> "$bad_dir/acfs-offline/acfs.manifest.yaml"
-  tar -czf "$bad_archive" -C "$bad_dir" acfs-offline
+  printf '\n# bootstrap mismatch\n' >> "$bad_dir/gtbi-offline/gtbi.manifest.yaml"
+  tar -czf "$bad_archive" -C "$bad_dir" gtbi-offline
 }
 
 create_stub_curl() {
   local stub_dir
-  stub_dir="$(mktemp -d "${TMPDIR:-/tmp}/acfs-curl-stub.XXXXXX")"
+  stub_dir="$(mktemp -d "${TMPDIR:-/tmp}/gtbi-curl-stub.XXXXXX")"
 
   cat > "$stub_dir/curl" <<'CURL'
 #!/usr/bin/env bash
@@ -109,12 +109,12 @@ if [[ -z "$out" ]]; then
   exit 1
 fi
 
-if [[ -z "${ACFS_TEST_ARCHIVE:-}" ]]; then
-  echo "stub curl: ACFS_TEST_ARCHIVE not set" >&2
+if [[ -z "${GTBI_TEST_ARCHIVE:-}" ]]; then
+  echo "stub curl: GTBI_TEST_ARCHIVE not set" >&2
   exit 1
 fi
 
-cp "$ACFS_TEST_ARCHIVE" "$out"
+cp "$GTBI_TEST_ARCHIVE" "$out"
 CURL
 
   chmod +x "$stub_dir/curl"
@@ -133,7 +133,7 @@ run_bootstrap() {
   if [[ "$expect_failure" == "true" ]]; then
     set +e
     local output
-    output="$(ACFS_TEST_MODE=1 ACFS_TEST_ARCHIVE="$archive_path" PATH="$stub_dir:$PATH" bash -lc "cat '$REPO_ROOT/install.sh' | bash -s -- --list-modules" 2>&1)"
+    output="$(GTBI_TEST_MODE=1 GTBI_TEST_ARCHIVE="$archive_path" PATH="$stub_dir:$PATH" bash -lc "cat '$REPO_ROOT/install.sh' | bash -s -- --list-modules" 2>&1)"
     local status=$?
     set -e
 
@@ -155,7 +155,7 @@ run_bootstrap() {
 
   set +e
   local output
-  output="$(ACFS_TEST_MODE=1 ACFS_TEST_ARCHIVE="$archive_path" PATH="$stub_dir:$PATH" bash -lc "cat '$REPO_ROOT/install.sh' | bash -s -- --list-modules" 2>&1)"
+  output="$(GTBI_TEST_MODE=1 GTBI_TEST_ARCHIVE="$archive_path" PATH="$stub_dir:$PATH" bash -lc "cat '$REPO_ROOT/install.sh' | bash -s -- --list-modules" 2>&1)"
   local status=$?
   set -e
 
@@ -171,7 +171,7 @@ run_bootstrap() {
     exit 1
   }
 
-  echo "$output" | grep -q "Available ACFS Modules" || {
+  echo "$output" | grep -q "Available GTBI Modules" || {
     echo "$output" >&2
     echo "ERROR: list-modules output missing for $label" >&2
     exit 1
@@ -185,8 +185,8 @@ main() {
   local bad_archive
 
   # mktemp portability: BSD mktemp requires Xs at the end of the template
-  good_archive="$(mktemp "${TMPDIR:-/tmp}/acfs-offline-archive.XXXXXX")"
-  bad_archive="$(mktemp "${TMPDIR:-/tmp}/acfs-offline-archive-bad.XXXXXX")"
+  good_archive="$(mktemp "${TMPDIR:-/tmp}/gtbi-offline-archive.XXXXXX")"
+  bad_archive="$(mktemp "${TMPDIR:-/tmp}/gtbi-offline-archive-bad.XXXXXX")"
 
   create_archive "$good_archive"
   run_bootstrap "$good_archive" "happy-path"

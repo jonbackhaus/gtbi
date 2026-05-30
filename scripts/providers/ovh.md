@@ -1,6 +1,6 @@
 # OVHcloud VPS Setup Guide
 
-Set up a VPS on OVHcloud for running ACFS and coding agents.
+Set up a VPS on OVHcloud for running GTBI and coding agents.
 
 ---
 
@@ -72,14 +72,14 @@ Select a plan with at least:
 
 ## Step 5: Choose Password Authentication
 
-For the ACFS beginner flow, use password authentication for the first login and let the installer handle SSH keys.
+For the GTBI beginner flow, use password authentication for the first login and let the installer handle SSH keys.
 
 1. In the order form, find the authentication or login method section
 2. Choose **Password** authentication
 3. Skip the SSH key section for now
 4. Save the VPS root password or temporary provider password somewhere safe
 
-ACFS creates the `ubuntu` user after the first password login, then either sets up SSH key access automatically or prints the exact follow-up command to run.
+GTBI creates the `ubuntu` user after the first password login, then either sets up SSH key access automatically or prints the exact follow-up command to run.
 
 ![OVH Step 5: Choose authentication](screenshots/ovh-step5-add-ssh-key.png)
 
@@ -140,7 +140,7 @@ sudo -i
 ## OVH-Specific Notes
 
 ### Default User
-Some OVH Ubuntu images default to `ubuntu` or disable direct root login. ACFS should still be run from a root shell, so use `sudo -i` before starting the installer when the first login lands on `ubuntu`. A sudo password prompt belongs to the `ubuntu` Linux account, not to your OVH website account.
+Some OVH Ubuntu images default to `ubuntu` or disable direct root login. GTBI should still be run from a root shell, so use `sudo -i` before starting the installer when the first login lands on `ubuntu`. A sudo password prompt belongs to the `ubuntu` Linux account, not to your OVH website account.
 
 ### Firewall
 OVH has a basic firewall in the control panel. For most setups, the default configuration works fine.
@@ -159,13 +159,13 @@ sudo reboot
 
 ## Next Step
 
-Once connected as root, run the ACFS installer:
+Once connected as root, run the GTBI installer:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Dicklesworthstone/agentic_coding_flywheel_setup/main/install.sh | bash -s -- --yes --mode vibe
+curl -fsSL https://raw.githubusercontent.com/jonbackhaus/gtbi/main/install.sh | bash -s -- --yes --mode vibe
 ```
 
-When the installer finishes, follow its reconnect command for the `ubuntu` user. If it prints an SSH-key follow-up warning, run the printed command from your local machine once, then reconnect with the ACFS SSH key.
+When the installer finishes, follow its reconnect command for the `ubuntu` user. If it prints an SSH-key follow-up warning, run the printed command from your local machine once, then reconnect with the GTBI SSH key.
 
 ---
 

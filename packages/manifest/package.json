@@ -1,8 +1,8 @@
 {
-  "name": "@acfs/manifest",
+  "name": "@gtbi/manifest",
   "version": "0.7.0",
   "private": true,
-  "description": "Parser and utilities for ACFS manifest files",
+  "description": "Parser and utilities for GTBI manifest files",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",

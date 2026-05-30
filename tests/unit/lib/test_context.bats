@@ -102,12 +102,12 @@ teardown() {
     mkdir -p "$fake_bin"
     cat > "$fake_bin/bash" <<'EOF'
 #!/bin/sh
-printf poisoned > "$ACFS_POISON_MARKER"
+printf poisoned > "$GTBI_POISON_MARKER"
 exit 43
 EOF
     chmod +x "$fake_bin/bash"
 
-    run env ACFS_POISON_MARKER="$marker" PATH="$fake_bin:/usr/bin:/bin" /usr/bin/bash -c '
+    run env GTBI_POISON_MARKER="$marker" PATH="$fake_bin:/usr/bin:/bin" /usr/bin/bash -c '
         set -euo pipefail
         source "$1"
         try_step_eval "trusted bash probe" "true" >/dev/null 2>&1

@@ -1,7 +1,7 @@
 /**
  * Manifest Adapter
  *
- * Bridges generated manifest data (from acfs.manifest.yaml) with the
+ * Bridges generated manifest data (from gtbi.manifest.yaml) with the
  * hand-maintained UI data files (flywheel.ts, tldr-content.ts, commands.ts).
  *
  * The manifest is the source of truth for basic metadata (names, taglines,

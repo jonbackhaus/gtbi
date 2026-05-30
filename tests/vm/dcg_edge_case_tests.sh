@@ -396,14 +396,14 @@ test_dcg_checkpoint_resume_markers() {
     fi
 
     local state_dir
-    state_dir="/tmp/acfs-dcg-state-$(date +%s)-${RANDOM}"
+    state_dir="/tmp/gtbi-dcg-state-$(date +%s)-${RANDOM}"
     if ! mkdir -p "$state_dir"; then
         fail "Failed to create temp state directory"
         return
     fi
 
-    export ACFS_HOME="$state_dir"
-    export ACFS_STATE_FILE="${state_dir}/state.json"
+    export GTBI_HOME="$state_dir"
+    export GTBI_STATE_FILE="${state_dir}/state.json"
 
     if ! state_init; then
         fail "state_init failed for checkpoint/resume test"
@@ -417,8 +417,8 @@ test_dcg_checkpoint_resume_markers() {
     state_phase_fail "stack" "Registering DCG hook" "simulated hook failure" || true
 
     local failed_step failed_phase
-    failed_step=$(jq -r '.failed_step // empty' "$ACFS_STATE_FILE" 2>/dev/null)
-    failed_phase=$(jq -r '.failed_phase // empty' "$ACFS_STATE_FILE" 2>/dev/null)
+    failed_step=$(jq -r '.failed_step // empty' "$GTBI_STATE_FILE" 2>/dev/null)
+    failed_phase=$(jq -r '.failed_phase // empty' "$GTBI_STATE_FILE" 2>/dev/null)
 
     if [[ "$failed_step" == "Registering DCG hook" && "$failed_phase" == "stack" ]]; then
         pass "Hook failure recorded at step 'Registering DCG hook'"
@@ -432,9 +432,9 @@ test_dcg_checkpoint_resume_markers() {
     state_step_update "Installing DCG" || true
     state_phase_fail "stack" "Installing DCG" "simulated network interruption" || true
 
-    failed_step=$(jq -r '.failed_step // empty' "$ACFS_STATE_FILE" 2>/dev/null)
+    failed_step=$(jq -r '.failed_step // empty' "$GTBI_STATE_FILE" 2>/dev/null)
     local failed_error
-    failed_error=$(jq -r '.failed_error // empty' "$ACFS_STATE_FILE" 2>/dev/null)
+    failed_error=$(jq -r '.failed_error // empty' "$GTBI_STATE_FILE" 2>/dev/null)
 
     if [[ "$failed_step" == "Installing DCG" ]]; then
         pass "Install failure recorded at step 'Installing DCG'"
@@ -449,13 +449,13 @@ test_dcg_checkpoint_resume_markers() {
     fi
 
     # Optional: verify dcg-specific flags if state schema includes them
-    if jq -e '.dcg_installed != null' "$ACFS_STATE_FILE" >/dev/null 2>&1; then
+    if jq -e '.dcg_installed != null' "$GTBI_STATE_FILE" >/dev/null 2>&1; then
         pass "State file includes dcg_installed flag"
     else
         skip "State schema does not include dcg_installed flag"
     fi
 
-    if jq -e '.dcg_hook_registered != null' "$ACFS_STATE_FILE" >/dev/null 2>&1; then
+    if jq -e '.dcg_hook_registered != null' "$GTBI_STATE_FILE" >/dev/null 2>&1; then
         pass "State file includes dcg_hook_registered flag"
     else
         skip "State schema does not include dcg_hook_registered flag"
@@ -569,7 +569,7 @@ test_failopen_large_input() {
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Checkpoint/Resume Tests
-# These tests verify DCG installation state tracking for the ACFS installer's
+# These tests verify DCG installation state tracking for the GTBI installer's
 # checkpoint/resume system.
 # ─────────────────────────────────────────────────────────────────────────────
 

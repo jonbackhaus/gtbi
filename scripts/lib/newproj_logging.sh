@@ -1,27 +1,27 @@
 #!/usr/bin/env bash
 # ============================================================
-# ACFS newproj TUI Wizard - Logging Infrastructure
+# GTBI newproj TUI Wizard - Logging Infrastructure
 # Provides detailed session logging for debugging and troubleshooting
 # ============================================================
 
 # Prevent multiple sourcing
-if [[ -n "${_ACFS_NEWPROJ_LOGGING_SH_LOADED:-}" ]]; then
+if [[ -n "${_GTBI_NEWPROJ_LOGGING_SH_LOADED:-}" ]]; then
     return 0
 fi
-_ACFS_NEWPROJ_LOGGING_SH_LOADED=1
+_GTBI_NEWPROJ_LOGGING_SH_LOADED=1
 
 # ============================================================
 # Configuration
 # ============================================================
 
 # Log levels (matching syslog convention)
-readonly ACFS_LOG_DEBUG=0
-readonly ACFS_LOG_INFO=1
-readonly ACFS_LOG_WARN=2
-readonly ACFS_LOG_ERROR=3
+readonly GTBI_LOG_DEBUG=0
+readonly GTBI_LOG_INFO=1
+readonly GTBI_LOG_WARN=2
+readonly GTBI_LOG_ERROR=3
 
 # Current log level (can be overridden via env var or --verbose flag)
-export ACFS_LOG_LEVEL="${ACFS_LOG_LEVEL:-$ACFS_LOG_INFO}"
+export GTBI_LOG_LEVEL="${GTBI_LOG_LEVEL:-$GTBI_LOG_INFO}"
 
 newproj_logging_sanitize_abs_nonroot_path() {
     local path_value="${1:-}"
@@ -55,20 +55,20 @@ newproj_logging_default_state_dir() {
     if [[ -z "$tmp_dir" ]]; then
         tmp_dir="/tmp"
     fi
-    printf '%s/acfs-state\n' "$tmp_dir"
+    printf '%s/gtbi-state\n' "$tmp_dir"
 }
 
 # Log directory (XDG compliant)
-export ACFS_LOG_DIR="${ACFS_LOG_DIR:-$(newproj_logging_default_state_dir)/acfs/logs}"
+export GTBI_LOG_DIR="${GTBI_LOG_DIR:-$(newproj_logging_default_state_dir)/gtbi/logs}"
 
 # Session log file (set by init_logging)
-export ACFS_SESSION_LOG=""
+export GTBI_SESSION_LOG=""
 
 # Version file location
-ACFS_VERSION_FILE="${ACFS_VERSION_FILE:-/etc/acfs/VERSION}"
+GTBI_VERSION_FILE="${GTBI_VERSION_FILE:-/etc/gtbi/VERSION}"
 
 # Log retention in days
-ACFS_LOG_RETENTION_DAYS="${ACFS_LOG_RETENTION_DAYS:-7}"
+GTBI_LOG_RETENTION_DAYS="${GTBI_LOG_RETENTION_DAYS:-7}"
 
 # ============================================================
 # Initialization
@@ -85,7 +85,7 @@ init_logging() {
         case "$1" in
             --verbose|-v)
                 verbose=true
-                export ACFS_LOG_LEVEL=$ACFS_LOG_DEBUG
+                export GTBI_LOG_LEVEL=$GTBI_LOG_DEBUG
                 shift
                 ;;
             *)
@@ -95,21 +95,21 @@ init_logging() {
     done
 
     # Create log directory
-    if ! mkdir -p "$ACFS_LOG_DIR" 2>/dev/null; then
+    if ! mkdir -p "$GTBI_LOG_DIR" 2>/dev/null; then
         fallback_log_dir="${TMPDIR:-/tmp}"
-        echo "Warning: Could not create log directory $ACFS_LOG_DIR, falling back to $fallback_log_dir" >&2
-        ACFS_LOG_DIR="$fallback_log_dir"
-        export ACFS_LOG_DIR
-        ACFS_SESSION_LOG=$(mktemp "${TMPDIR:-/tmp}/newproj_XXXXXX.log" 2>/dev/null) || {
+        echo "Warning: Could not create log directory $GTBI_LOG_DIR, falling back to $fallback_log_dir" >&2
+        GTBI_LOG_DIR="$fallback_log_dir"
+        export GTBI_LOG_DIR
+        GTBI_SESSION_LOG=$(mktemp "${TMPDIR:-/tmp}/newproj_XXXXXX.log" 2>/dev/null) || {
             echo "Error: Could not create temp log file" >&2
             # Still set it to /dev/null so logging functions don't fail, just discard
-            ACFS_SESSION_LOG="/dev/null"
+            GTBI_SESSION_LOG="/dev/null"
         }
     else
         # Generate session log filename with timestamp and PID for uniqueness
-        ACFS_SESSION_LOG="$ACFS_LOG_DIR/newproj_$(date +%Y%m%d_%H%M%S)_$$.log"
+        GTBI_SESSION_LOG="$GTBI_LOG_DIR/newproj_$(date +%Y%m%d_%H%M%S)_$$.log"
     fi
-    export ACFS_SESSION_LOG
+    export GTBI_SESSION_LOG
 
     # Clean up old logs (non-blocking)
     _cleanup_old_logs &
@@ -117,7 +117,7 @@ init_logging() {
     # Write session header
     {
         echo "========================================"
-        echo "ACFS newproj TUI Wizard Session Log"
+        echo "GTBI newproj TUI Wizard Session Log"
         echo "========================================"
         echo "Started: $(date -Iseconds)"
         echo "PID: $$"
@@ -127,16 +127,16 @@ init_logging() {
         echo "Terminal: ${TERM:-unknown}"
         echo "Terminal size: $(tput cols 2>/dev/null || echo '?')x$(tput lines 2>/dev/null || echo '?')"
         echo "Color support: $(tput colors 2>/dev/null || echo 'unknown')"
-        echo "ACFS version: $(cat "$ACFS_VERSION_FILE" 2>/dev/null || echo 'unknown')"
+        echo "GTBI version: $(cat "$GTBI_VERSION_FILE" 2>/dev/null || echo 'unknown')"
         echo "Working directory: $(pwd)"
-        echo "Log level: $(log_level_name "$ACFS_LOG_LEVEL")"
+        echo "Log level: $(log_level_name "$GTBI_LOG_LEVEL")"
         echo "Has gum: $(command -v gum &>/dev/null && echo 'yes' || echo 'no')"
         echo "Has glow: $(command -v glow &>/dev/null && echo 'yes' || echo 'no')"
         echo "========================================"
         echo ""
-    } >> "$ACFS_SESSION_LOG" 2>/dev/null || true
+    } >> "$GTBI_SESSION_LOG" 2>/dev/null || true
 
-    log_debug "Logging initialized to: $ACFS_SESSION_LOG"
+    log_debug "Logging initialized to: $GTBI_SESSION_LOG"
 
     if [[ "$verbose" == "true" ]]; then
         log_info "Verbose mode enabled (log level: DEBUG)"
@@ -168,10 +168,10 @@ _log() {
     local message="$*"
 
     # Skip if no log file
-    [[ -z "$ACFS_SESSION_LOG" ]] && return 0
+    [[ -z "$GTBI_SESSION_LOG" ]] && return 0
 
     # Skip if level is below threshold
-    [[ "$level_num" -lt "${ACFS_LOG_LEVEL:-1}" ]] && return 0
+    [[ "$level_num" -lt "${GTBI_LOG_LEVEL:-1}" ]] && return 0
 
     # Get timestamp with milliseconds
     local timestamp
@@ -186,27 +186,27 @@ _log() {
     printf -v padded_level "%-5s" "$level"
 
     # Format: [HH:MM:SS.mmm] [LEVEL] [caller:line] message
-    echo "[$timestamp] [$padded_level] [$caller:$line] $message" >> "$ACFS_SESSION_LOG" 2>/dev/null || true
+    echo "[$timestamp] [$padded_level] [$caller:$line] $message" >> "$GTBI_SESSION_LOG" 2>/dev/null || true
 }
 
 # Log at DEBUG level (for detailed debugging information)
 log_debug() {
-    _log "DEBUG" "$ACFS_LOG_DEBUG" "$@"
+    _log "DEBUG" "$GTBI_LOG_DEBUG" "$@"
 }
 
 # Log at INFO level (for general information)
 log_info() {
-    _log "INFO" "$ACFS_LOG_INFO" "$@"
+    _log "INFO" "$GTBI_LOG_INFO" "$@"
 }
 
 # Log at WARN level (for warnings that don't stop execution)
 log_warn() {
-    _log "WARN" "$ACFS_LOG_WARN" "$@"
+    _log "WARN" "$GTBI_LOG_WARN" "$@"
 }
 
 # Log at ERROR level (for errors that may affect execution)
 log_error() {
-    _log "ERROR" "$ACFS_LOG_ERROR" "$@"
+    _log "ERROR" "$GTBI_LOG_ERROR" "$@"
 }
 
 # ============================================================
@@ -220,12 +220,12 @@ log_state() {
     local old_value="$2"
     local new_value="$3"
 
-    [[ -z "$ACFS_SESSION_LOG" ]] && return 0
+    [[ -z "$GTBI_SESSION_LOG" ]] && return 0
 
     local timestamp
     timestamp=$(date +"%H:%M:%S.%3N" 2>/dev/null || date +"%H:%M:%S")
 
-    printf '[%s] [STATE] %s: \047%s\047 -> \047%s\047\n' "$timestamp" "$key" "$old_value" "$new_value" >> "$ACFS_SESSION_LOG" 2>/dev/null || true
+    printf '[%s] [STATE] %s: \047%s\047 -> \047%s\047\n' "$timestamp" "$key" "$old_value" "$new_value" >> "$GTBI_SESSION_LOG" 2>/dev/null || true
 }
 
 # Log screen transitions
@@ -234,12 +234,12 @@ log_screen() {
     local action="$1"  # ENTER, EXIT, RENDER
     local screen="$2"
 
-    [[ -z "$ACFS_SESSION_LOG" ]] && return 0
+    [[ -z "$GTBI_SESSION_LOG" ]] && return 0
 
     local timestamp
     timestamp=$(date +"%H:%M:%S.%3N" 2>/dev/null || date +"%H:%M:%S")
 
-    printf '[%s] [SCRN ] %s: %s\n' "$timestamp" "$action" "$screen" >> "$ACFS_SESSION_LOG" 2>/dev/null || true
+    printf '[%s] [SCRN ] %s: %s\n' "$timestamp" "$action" "$screen" >> "$GTBI_SESSION_LOG" 2>/dev/null || true
 }
 
 # Log user input (sanitized for security)
@@ -248,7 +248,7 @@ log_input() {
     local field="$1"
     local value="$2"
 
-    [[ -z "$ACFS_SESSION_LOG" ]] && return 0
+    [[ -z "$GTBI_SESSION_LOG" ]] && return 0
 
     # Sanitize: truncate long inputs, mask potentially sensitive data
     local sanitized="${value:0:100}"
@@ -274,7 +274,7 @@ log_input() {
     local timestamp
     timestamp=$(date +"%H:%M:%S.%3N" 2>/dev/null || date +"%H:%M:%S")
 
-    printf '[%s] [INPUT] %s: \047%s\047\n' "$timestamp" "$field" "$sanitized" >> "$ACFS_SESSION_LOG" 2>/dev/null || true
+    printf '[%s] [INPUT] %s: \047%s\047\n' "$timestamp" "$field" "$sanitized" >> "$GTBI_SESSION_LOG" 2>/dev/null || true
 }
 
 # Log key press events
@@ -282,12 +282,12 @@ log_input() {
 log_key() {
     local key="$1"
 
-    [[ -z "$ACFS_SESSION_LOG" ]] && return 0
+    [[ -z "$GTBI_SESSION_LOG" ]] && return 0
 
     local timestamp
     timestamp=$(date +"%H:%M:%S.%3N" 2>/dev/null || date +"%H:%M:%S")
 
-    printf '[%s] [KEY  ] %s\n' "$timestamp" "$key" >> "$ACFS_SESSION_LOG" 2>/dev/null || true
+    printf '[%s] [KEY  ] %s\n' "$timestamp" "$key" >> "$GTBI_SESSION_LOG" 2>/dev/null || true
 }
 
 # Log validation results
@@ -298,7 +298,7 @@ log_validation() {
     local result="$3"  # PASS or FAIL
     local error_msg="${4:-}"
 
-    [[ -z "$ACFS_SESSION_LOG" ]] && return 0
+    [[ -z "$GTBI_SESSION_LOG" ]] && return 0
 
     local timestamp
     timestamp=$(date +"%H:%M:%S.%3N" 2>/dev/null || date +"%H:%M:%S")
@@ -309,7 +309,7 @@ log_validation() {
     # Sanitize newlines in validation message
     msg="${msg//[$'\r\n']/ }"
 
-    printf '[%s] [VALID] %s\n' "$timestamp" "$msg" >> "$ACFS_SESSION_LOG" 2>/dev/null || true
+    printf '[%s] [VALID] %s\n' "$timestamp" "$msg" >> "$GTBI_SESSION_LOG" 2>/dev/null || true
 }
 
 # Log file operations
@@ -319,12 +319,12 @@ log_file_op() {
     local path="$2"
     local status="${3:-OK}"
 
-    [[ -z "$ACFS_SESSION_LOG" ]] && return 0
+    [[ -z "$GTBI_SESSION_LOG" ]] && return 0
 
     local timestamp
     timestamp=$(date +"%H:%M:%S.%3N" 2>/dev/null || date +"%H:%M:%S")
 
-    printf '[%s] [FILE ] %s: %s (%s)\n' "$timestamp" "$operation" "$path" "$status" >> "$ACFS_SESSION_LOG" 2>/dev/null || true
+    printf '[%s] [FILE ] %s: %s (%s)\n' "$timestamp" "$operation" "$path" "$status" >> "$GTBI_SESSION_LOG" 2>/dev/null || true
 }
 
 # Log command execution
@@ -333,7 +333,7 @@ log_cmd() {
     local cmd="$1"
     local exit_code="$2"
 
-    [[ -z "$ACFS_SESSION_LOG" ]] && return 0
+    [[ -z "$GTBI_SESSION_LOG" ]] && return 0
 
     local timestamp
     timestamp=$(date +"%H:%M:%S.%3N" 2>/dev/null || date +"%H:%M:%S")
@@ -345,7 +345,7 @@ log_cmd() {
     local short_cmd="${cmd:0:200}"
     [[ ${#cmd} -gt 200 ]] && short_cmd="$short_cmd..."
 
-    printf '[%s] [CMD  ] %s -> %s\n' "$timestamp" "$short_cmd" "$status" >> "$ACFS_SESSION_LOG" 2>/dev/null || true
+    printf '[%s] [CMD  ] %s -> %s\n' "$timestamp" "$short_cmd" "$status" >> "$GTBI_SESSION_LOG" 2>/dev/null || true
 }
 
 # Log structured JSON data (for debugging complex state)
@@ -354,7 +354,7 @@ log_json() {
     local label="$1"
     local json="$2"
 
-    [[ -z "$ACFS_SESSION_LOG" ]] && return 0
+    [[ -z "$GTBI_SESSION_LOG" ]] && return 0
 
     local timestamp
     timestamp=$(date +"%H:%M:%S.%3N" 2>/dev/null || date +"%H:%M:%S")
@@ -364,7 +364,7 @@ log_json() {
         # Indent each line of JSON for readability
         local indented="    ${json//$'\n'/$'\n    '}"
         echo "$indented"
-    } >> "$ACFS_SESSION_LOG" 2>/dev/null || true
+    } >> "$GTBI_SESSION_LOG" 2>/dev/null || true
 }
 
 # Log tech stack detection results
@@ -374,12 +374,12 @@ log_tech_detect() {
     local detected_via="$2"
     local confidence="${3:-high}"
 
-    [[ -z "$ACFS_SESSION_LOG" ]] && return 0
+    [[ -z "$GTBI_SESSION_LOG" ]] && return 0
 
     local timestamp
     timestamp=$(date +"%H:%M:%S.%3N" 2>/dev/null || date +"%H:%M:%S")
 
-    echo "[$timestamp] [TECH ] Detected: $tech (via: $detected_via, confidence: $confidence)" >> "$ACFS_SESSION_LOG" 2>/dev/null || true
+    echo "[$timestamp] [TECH ] Detected: $tech (via: $detected_via, confidence: $confidence)" >> "$GTBI_SESSION_LOG" 2>/dev/null || true
 }
 
 # Log navigation actions
@@ -389,7 +389,7 @@ log_nav() {
     local from="${2:-}"
     local to="${3:-}"
 
-    [[ -z "$ACFS_SESSION_LOG" ]] && return 0
+    [[ -z "$GTBI_SESSION_LOG" ]] && return 0
 
     local timestamp
     timestamp=$(date +"%H:%M:%S.%3N" 2>/dev/null || date +"%H:%M:%S")
@@ -398,7 +398,7 @@ log_nav() {
     [[ -n "$from" ]] && msg="$msg from=$from"
     [[ -n "$to" ]] && msg="$msg to=$to"
 
-    echo "[$timestamp] [NAV  ] $msg" >> "$ACFS_SESSION_LOG" 2>/dev/null || true
+    echo "[$timestamp] [NAV  ] $msg" >> "$GTBI_SESSION_LOG" 2>/dev/null || true
 }
 
 # ============================================================
@@ -410,7 +410,7 @@ log_nav() {
 finalize_logging() {
     local exit_code="${1:-0}"
 
-    [[ -z "$ACFS_SESSION_LOG" ]] && return 0
+    [[ -z "$GTBI_SESSION_LOG" ]] && return 0
 
     {
         echo ""
@@ -419,12 +419,12 @@ finalize_logging() {
         echo "Exit code: $exit_code"
         echo "Duration: $((SECONDS / 60))m $((SECONDS % 60))s"
         echo "========================================"
-    } >> "$ACFS_SESSION_LOG" 2>/dev/null || true
+    } >> "$GTBI_SESSION_LOG" 2>/dev/null || true
 
     # Show log location on error
     if [[ "$exit_code" -ne 0 ]]; then
         echo "" >&2
-        echo "Session log saved to: $ACFS_SESSION_LOG" >&2
+        echo "Session log saved to: $GTBI_SESSION_LOG" >&2
         echo "Please include this log when reporting issues." >&2
     fi
 }
@@ -432,8 +432,8 @@ finalize_logging() {
 # Show log file location to user
 # Usage: show_log_location
 show_log_location() {
-    if [[ -n "$ACFS_SESSION_LOG" && -f "$ACFS_SESSION_LOG" ]]; then
-        echo "Debug log: $ACFS_SESSION_LOG"
+    if [[ -n "$GTBI_SESSION_LOG" && -f "$GTBI_SESSION_LOG" ]]; then
+        echo "Debug log: $GTBI_SESSION_LOG"
     else
         echo "Debug log: (not initialized)"
     fi
@@ -442,7 +442,7 @@ show_log_location() {
 # Get the current session log path
 # Usage: get_log_path
 get_log_path() {
-    echo "${ACFS_SESSION_LOG:-}"
+    echo "${GTBI_SESSION_LOG:-}"
 }
 
 # ============================================================
@@ -452,11 +452,11 @@ get_log_path() {
 # Clean up logs older than retention period
 # Called automatically by init_logging
 _cleanup_old_logs() {
-    [[ -z "$ACFS_LOG_DIR" ]] && return 0
-    [[ ! -d "$ACFS_LOG_DIR" ]] && return 0
+    [[ -z "$GTBI_LOG_DIR" ]] && return 0
+    [[ ! -d "$GTBI_LOG_DIR" ]] && return 0
 
     # Delete old newproj logs (older than retention days)
-    find "$ACFS_LOG_DIR" -name "newproj_*.log" -type f -mtime +"$ACFS_LOG_RETENTION_DAYS" -delete 2>/dev/null || true
+    find "$GTBI_LOG_DIR" -name "newproj_*.log" -type f -mtime +"$GTBI_LOG_RETENTION_DAYS" -delete 2>/dev/null || true
 }
 
 # List recent session logs
@@ -464,8 +464,8 @@ _cleanup_old_logs() {
 list_recent_logs() {
     local count="${1:-10}"
 
-    if [[ -d "$ACFS_LOG_DIR" ]]; then
-        find "$ACFS_LOG_DIR" -name "newproj_*.log" -type f -printf '%T@ %p\n' 2>/dev/null \
+    if [[ -d "$GTBI_LOG_DIR" ]]; then
+        find "$GTBI_LOG_DIR" -name "newproj_*.log" -type f -printf '%T@ %p\n' 2>/dev/null \
             | sort -rn \
             | head -"$count" \
             | cut -d' ' -f2-
@@ -481,7 +481,7 @@ list_recent_logs() {
 log_dump_state() {
     local -n state_ref="$1"
 
-    [[ -z "$ACFS_SESSION_LOG" ]] && return 0
+    [[ -z "$GTBI_SESSION_LOG" ]] && return 0
 
     local timestamp
     timestamp=$(date +"%H:%M:%S.%3N" 2>/dev/null || date +"%H:%M:%S")
@@ -491,13 +491,13 @@ log_dump_state() {
         for key in "${!state_ref[@]}"; do
             echo "    $key = '${state_ref[$key]}'"
         done
-    } >> "$ACFS_SESSION_LOG" 2>/dev/null || true
+    } >> "$GTBI_SESSION_LOG" 2>/dev/null || true
 }
 
 # Log environment snapshot (useful for debugging)
 # Usage: log_env_snapshot
 log_env_snapshot() {
-    [[ -z "$ACFS_SESSION_LOG" ]] && return 0
+    [[ -z "$GTBI_SESSION_LOG" ]] && return 0
 
     local timestamp
     timestamp=$(date +"%H:%M:%S.%3N" 2>/dev/null || date +"%H:%M:%S")
@@ -510,8 +510,8 @@ log_env_snapshot() {
         echo "    LC_ALL=${LC_ALL:-unset}"
         echo "    HOME=${HOME:-unset}"
         echo "    PWD=${PWD:-unset}"
-        echo "    ACFS_LOG_LEVEL=$ACFS_LOG_LEVEL"
-    } >> "$ACFS_SESSION_LOG" 2>/dev/null || true
+        echo "    GTBI_LOG_LEVEL=$GTBI_LOG_LEVEL"
+    } >> "$GTBI_SESSION_LOG" 2>/dev/null || true
 }
 
 # Log timing checkpoint
@@ -519,12 +519,12 @@ log_env_snapshot() {
 log_checkpoint() {
     local label="$1"
 
-    [[ -z "$ACFS_SESSION_LOG" ]] && return 0
+    [[ -z "$GTBI_SESSION_LOG" ]] && return 0
 
     local timestamp
     timestamp=$(date +"%H:%M:%S.%3N" 2>/dev/null || date +"%H:%M:%S")
 
-    echo "[$timestamp] [TIME ] Checkpoint: $label (elapsed: ${SECONDS}s)" >> "$ACFS_SESSION_LOG" 2>/dev/null || true
+    echo "[$timestamp] [TIME ] Checkpoint: $label (elapsed: ${SECONDS}s)" >> "$GTBI_SESSION_LOG" 2>/dev/null || true
 }
 
 # ============================================================
@@ -534,12 +534,12 @@ log_checkpoint() {
 # Enable verbose/debug mode
 # Usage: enable_verbose
 enable_verbose() {
-    export ACFS_LOG_LEVEL=$ACFS_LOG_DEBUG
+    export GTBI_LOG_LEVEL=$GTBI_LOG_DEBUG
     log_info "Verbose mode enabled"
 }
 
 # Check if verbose mode is enabled
 # Usage: if is_verbose; then ... fi
 is_verbose() {
-    [[ "${ACFS_LOG_LEVEL:-1}" -eq "$ACFS_LOG_DEBUG" ]]
+    [[ "${GTBI_LOG_LEVEL:-1}" -eq "$GTBI_LOG_DEBUG" ]]
 }

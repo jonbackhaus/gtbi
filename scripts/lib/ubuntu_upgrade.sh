@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # ============================================================
-# ACFS Installer - Ubuntu Upgrade Library
+# GTBI Installer - Ubuntu Upgrade Library
 # Automatically upgrades Ubuntu to target version (default: 25.10)
 #
 # Requires: logging.sh, os_detect.sh to be sourced first
 # ============================================================
 
-# Target Ubuntu version for ACFS
+# Target Ubuntu version for GTBI
 # Callers (install.sh / upgrade_resume.sh) may override by exporting
 # UBUNTU_TARGET_VERSION (and optionally UBUNTU_TARGET_VERSION_NUM) before sourcing.
 export UBUNTU_TARGET_VERSION="${UBUNTU_TARGET_VERSION:-25.10}"
@@ -19,12 +19,12 @@ export UBUNTU_TARGET_VERSION_NUM
 export UBUNTU_UPGRADE_MIN_DISK_MB=5000
 
 # Directory for resume infrastructure (created during upgrade)
-export ACFS_RESUME_DIR="/var/lib/acfs"
+export GTBI_RESUME_DIR="/var/lib/gtbi"
 
 # Lock file location
-export ACFS_UPGRADE_LOCK="/var/run/acfs-upgrade.lock"
-ACFS_UPGRADE_LOCK_FD="${ACFS_UPGRADE_LOCK_FD:-}"
-_ACFS_UPGRADE_LOCK_FILE="${_ACFS_UPGRADE_LOCK_FILE:-}"
+export GTBI_UPGRADE_LOCK="/var/run/gtbi-upgrade.lock"
+GTBI_UPGRADE_LOCK_FD="${GTBI_UPGRADE_LOCK_FD:-}"
+_GTBI_UPGRADE_LOCK_FILE="${_GTBI_UPGRADE_LOCK_FILE:-}"
 
 # Fallback logging if not already defined (check each individually)
 declare -f log_fatal &>/dev/null || log_fatal() { echo "FATAL: $1" >&2; exit 1; }
@@ -633,7 +633,7 @@ ubuntu_check_reboot_required() {
             log_detail "Packages requiring reboot: $pkgs"
         fi
         log_detail "Run: sudo reboot"
-        log_detail "Then re-run ACFS installer after reboot"
+        log_detail "Then re-run GTBI installer after reboot"
         return 1
     fi
 
@@ -651,7 +651,7 @@ ubuntu_check_reboot_required() {
 ubuntu_workaround_deb822_bug() {
     local sources_file="/etc/apt/sources.list.d/ubuntu.sources"
     local disabled_file="${sources_file}.disabled"
-    local legacy_file="/etc/apt/sources.list.d/ubuntu-acfs-temp.list"
+    local legacy_file="/etc/apt/sources.list.d/ubuntu-gtbi-temp.list"
 
     # Check if DEB822 format sources exist
     if [[ ! -f "$sources_file" ]]; then
@@ -687,7 +687,7 @@ ubuntu_workaround_deb822_bug() {
     # Create legacy format sources.list entries
     cat > "$legacy_file" << LEGACY_SOURCES
 # Temporary legacy format sources for Ubuntu upgrade
-# Created by ACFS - will be removed after upgrade
+# Created by GTBI - will be removed after upgrade
 deb http://archive.ubuntu.com/ubuntu ${current_codename} main restricted universe multiverse
 deb http://archive.ubuntu.com/ubuntu ${current_codename}-updates main restricted universe multiverse
 deb http://archive.ubuntu.com/ubuntu ${current_codename}-backports main restricted universe multiverse
@@ -708,7 +708,7 @@ LEGACY_SOURCES
 ubuntu_cleanup_deb822_workaround() {
     local sources_file="/etc/apt/sources.list.d/ubuntu.sources"
     local disabled_file="${sources_file}.disabled"
-    local legacy_file="/etc/apt/sources.list.d/ubuntu-acfs-temp.list"
+    local legacy_file="/etc/apt/sources.list.d/ubuntu-gtbi-temp.list"
 
     # Remove our temporary legacy file
     if [[ -f "$legacy_file" ]]; then
@@ -832,15 +832,15 @@ ubuntu_do_upgrade() {
             return 1
         fi
 
-        local acfs_source_dir=""
+        local gtbi_source_dir=""
         if [[ -n "${SCRIPT_DIR:-}" ]] && [[ -d "$SCRIPT_DIR" ]]; then
-            acfs_source_dir="$SCRIPT_DIR"
-        elif [[ -n "${ACFS_BOOTSTRAP_DIR:-}" ]] && [[ -d "$ACFS_BOOTSTRAP_DIR" ]]; then
-            acfs_source_dir="$ACFS_BOOTSTRAP_DIR"
+            gtbi_source_dir="$SCRIPT_DIR"
+        elif [[ -n "${GTBI_BOOTSTRAP_DIR:-}" ]] && [[ -d "$GTBI_BOOTSTRAP_DIR" ]]; then
+            gtbi_source_dir="$GTBI_BOOTSTRAP_DIR"
         fi
 
-        if [[ -z "$acfs_source_dir" ]]; then
-            log_error "Cannot determine ACFS source directory for resume setup; refusing automatic reboot"
+        if [[ -z "$gtbi_source_dir" ]]; then
+            log_error "Cannot determine GTBI source directory for resume setup; refusing automatic reboot"
             return 1
         fi
 
@@ -849,7 +849,7 @@ ubuntu_do_upgrade() {
             state_update ".ubuntu_upgrade.enabled = true | .ubuntu_upgrade.current_stage = \"pre_upgrade_reboot\"" 2>/dev/null || true
         fi
 
-        if ! upgrade_setup_infrastructure "$acfs_source_dir"; then
+        if ! upgrade_setup_infrastructure "$gtbi_source_dir"; then
             log_error "Failed to set up upgrade resume infrastructure; refusing automatic reboot"
             return 1
         fi
@@ -861,7 +861,7 @@ ubuntu_do_upgrade() {
         log_warn "Rebooting in 5 seconds to clear pending kernel updates..."
         log_info "After reboot, the upgrade will continue automatically."
         sleep 5
-        shutdown -r now "ACFS: Rebooting to apply kernel updates before do-release-upgrade"
+        shutdown -r now "GTBI: Rebooting to apply kernel updates before do-release-upgrade"
         exit 0
     fi
 
@@ -879,7 +879,7 @@ ubuntu_do_upgrade() {
     # Run do-release-upgrade from a world-readable working directory.
     # Some environments (e.g., running from /root with a restrictive umask) can
     # trigger _apt permission errors when the upgrader downloads artifacts.
-    local upgrade_work_dir="${ACFS_RESUME_DIR:-/var/lib/acfs}"
+    local upgrade_work_dir="${GTBI_RESUME_DIR:-/var/lib/gtbi}"
     if ! mkdir -p "$upgrade_work_dir" 2>/dev/null; then
         upgrade_work_dir="/tmp"
     fi
@@ -912,7 +912,7 @@ ubuntu_do_upgrade() {
 # Creates systemd service that will run on next boot
 ubuntu_setup_resume() {
     local resume_script="$1"  # Script to run after reboot
-    local service_name="${2:-acfs-resume}"
+    local service_name="${2:-gtbi-resume}"
 
     if [[ -z "$resume_script" ]]; then
         log_error "No resume script specified"
@@ -924,7 +924,7 @@ ubuntu_setup_resume() {
     # Create systemd service file
     cat > "/etc/systemd/system/${service_name}.service" << EOF
 [Unit]
-Description=ACFS Installation Resume (after Ubuntu upgrade)
+Description=GTBI Installation Resume (after Ubuntu upgrade)
 After=network-online.target
 Wants=network-online.target
 ConditionPathExists=$resume_script
@@ -950,7 +950,7 @@ EOF
 
 # Cleanup resume mechanism after completion
 ubuntu_cleanup_resume() {
-    local service_name="${1:-acfs-resume}"
+    local service_name="${1:-gtbi-resume}"
 
     log_step "Cleaning up resume service..."
 
@@ -975,13 +975,13 @@ ubuntu_trigger_reboot() {
     echo ""
     log_info "After reconnecting via SSH, the upgrade continues automatically in the background."
     log_info "To monitor progress:"
-    log_info "  journalctl -u acfs-upgrade-resume -f"
-    log_info "  tail -f /var/log/acfs/upgrade_resume.log"
+    log_info "  journalctl -u gtbi-upgrade-resume -f"
+    log_info "  tail -f /var/log/gtbi/upgrade_resume.log"
     echo ""
 
     # Use shutdown for graceful reboot
     # Note: +N means N minutes from now
-    shutdown -r +"$delay_minutes" "ACFS: Ubuntu upgrade requires reboot" &
+    shutdown -r +"$delay_minutes" "GTBI: Ubuntu upgrade requires reboot" &
 
     return 0
 }
@@ -1028,7 +1028,7 @@ ubuntu_print_upgrade_warning() {
     echo "║                    UBUNTU UPGRADE REQUIRED                     ║"
     echo "╠══════════════════════════════════════════════════════════════╣"
     echo "║  Your Ubuntu version needs to be upgraded before installing   ║"
-    echo "║  ACFS. This process is fully automatic but takes 30-60 min   ║"
+    echo "║  GTBI. This process is fully automatic but takes 30-60 min   ║"
     echo "║  per version and requires reboots.                            ║"
     echo "║                                                                ║"
     echo "║  IMPORTANT:                                                    ║"
@@ -1049,7 +1049,7 @@ ubuntu_print_upgrade_warning() {
 # This helps users understand what's happening when they reconnect via SSH
 upgrade_update_motd() {
     local message="${1:-Ubuntu upgrade in progress}"
-    local motd_file="/etc/update-motd.d/00-acfs-upgrade"
+    local motd_file="/etc/update-motd.d/00-gtbi-upgrade"
 
     # Security: This message is embedded into a shell script. Normalize to a
     # single line and use shell-escaped assignment to prevent injection.
@@ -1072,7 +1072,7 @@ upgrade_update_motd() {
     # Create MOTD script with embedded ANSI colors
     cat > "$motd_file" << 'MOTD_HEADER'
 #!/bin/bash
-# ACFS Upgrade MOTD - shows status when user logs in via SSH
+# GTBI Upgrade MOTD - shows status when user logs in via SSH
 C='\033[0;36m'    # Cyan (borders)
 Y='\033[1;33m'    # Yellow (warnings)
 G='\033[0;32m'    # Green (success)
@@ -1082,7 +1082,7 @@ N='\033[0m'       # Reset
 
 echo ""
 echo -e "${C}╔══════════════════════════════════════════════════════════════╗${N}"
-echo -e "${C}║${N}          ${Y}${B}>>> ACFS UBUNTU UPGRADE IN PROGRESS <<<${N}             ${C}║${N}"
+echo -e "${C}║${N}          ${Y}${B}>>> GTBI UBUNTU UPGRADE IN PROGRESS <<<${N}             ${C}║${N}"
 echo -e "${C}╠══════════════════════════════════════════════════════════════╣${N}"
 echo -e "${C}║${N}                                                              ${C}║${N}"
 MOTD_HEADER
@@ -1107,7 +1107,7 @@ MOTD_FOOTER
 
 # Remove MOTD upgrade notice
 upgrade_remove_motd() {
-    rm -f /etc/update-motd.d/00-acfs-upgrade
+    rm -f /etc/update-motd.d/00-gtbi-upgrade
 }
 
 # ============================================================
@@ -1117,23 +1117,23 @@ upgrade_remove_motd() {
 # Acquire upgrade lock to prevent concurrent runs
 # Returns: 0 if lock acquired, 1 if already locked
 upgrade_acquire_lock() {
-    if [[ -n "${ACFS_UPGRADE_LOCK_FD:-}" && "${_ACFS_UPGRADE_LOCK_FILE:-}" == "$ACFS_UPGRADE_LOCK" ]]; then
-        case "$ACFS_UPGRADE_LOCK_FD" in
+    if [[ -n "${GTBI_UPGRADE_LOCK_FD:-}" && "${_GTBI_UPGRADE_LOCK_FILE:-}" == "$GTBI_UPGRADE_LOCK" ]]; then
+        case "$GTBI_UPGRADE_LOCK_FD" in
             196|197)
-                if { : >&"$ACFS_UPGRADE_LOCK_FD"; } 2>/dev/null; then
+                if { : >&"$GTBI_UPGRADE_LOCK_FD"; } 2>/dev/null; then
                     return 0
                 fi
                 ;;
         esac
     fi
-    if [[ -n "${ACFS_UPGRADE_LOCK_FD:-}" ]]; then
+    if [[ -n "${GTBI_UPGRADE_LOCK_FD:-}" ]]; then
         upgrade_release_lock
     else
-        _ACFS_UPGRADE_LOCK_FILE=""
+        _GTBI_UPGRADE_LOCK_FILE=""
     fi
 
     local lock_dir
-    lock_dir="$(dirname "$ACFS_UPGRADE_LOCK")"
+    lock_dir="$(dirname "$GTBI_UPGRADE_LOCK")"
     if ! mkdir -p "$lock_dir" 2>/dev/null; then
         log_error "Could not create upgrade lock directory: $lock_dir"
         return 1
@@ -1141,20 +1141,20 @@ upgrade_acquire_lock() {
 
     # Open without truncating first. A contending process must not erase the
     # current holder's PID before it knows it owns the flock.
-    if (exec 197>>"$ACFS_UPGRADE_LOCK") 2>/dev/null; then
-        exec 197>>"$ACFS_UPGRADE_LOCK"
-        ACFS_UPGRADE_LOCK_FD=197
-    elif (exec 196>>"$ACFS_UPGRADE_LOCK") 2>/dev/null; then
-        exec 196>>"$ACFS_UPGRADE_LOCK"
-        ACFS_UPGRADE_LOCK_FD=196
+    if (exec 197>>"$GTBI_UPGRADE_LOCK") 2>/dev/null; then
+        exec 197>>"$GTBI_UPGRADE_LOCK"
+        GTBI_UPGRADE_LOCK_FD=197
+    elif (exec 196>>"$GTBI_UPGRADE_LOCK") 2>/dev/null; then
+        exec 196>>"$GTBI_UPGRADE_LOCK"
+        GTBI_UPGRADE_LOCK_FD=196
     else
-        log_error "Could not open upgrade lock: $ACFS_UPGRADE_LOCK"
+        log_error "Could not open upgrade lock: $GTBI_UPGRADE_LOCK"
         return 1
     fi
 
-    if ! flock -n "$ACFS_UPGRADE_LOCK_FD"; then
+    if ! flock -n "$GTBI_UPGRADE_LOCK_FD"; then
         local pid=""
-        pid="$(cat "$ACFS_UPGRADE_LOCK" 2>/dev/null || true)"
+        pid="$(cat "$GTBI_UPGRADE_LOCK" 2>/dev/null || true)"
         if [[ -n "$pid" ]]; then
             log_error "Another upgrade is in progress (PID: $pid)"
         else
@@ -1164,19 +1164,19 @@ upgrade_acquire_lock() {
         return 1
     fi
 
-    printf '%s\n' "$$" > "$ACFS_UPGRADE_LOCK" || {
-        log_error "Could not write upgrade lock PID: $ACFS_UPGRADE_LOCK"
+    printf '%s\n' "$$" > "$GTBI_UPGRADE_LOCK" || {
+        log_error "Could not write upgrade lock PID: $GTBI_UPGRADE_LOCK"
         upgrade_release_lock
         return 1
     }
 
-    _ACFS_UPGRADE_LOCK_FILE="$ACFS_UPGRADE_LOCK"
+    _GTBI_UPGRADE_LOCK_FILE="$GTBI_UPGRADE_LOCK"
     return 0
 }
 
 # Release upgrade lock
 upgrade_release_lock() {
-    case "${ACFS_UPGRADE_LOCK_FD:-}" in
+    case "${GTBI_UPGRADE_LOCK_FD:-}" in
         196)
             flock -u 196 2>/dev/null || true
             { exec 196>&-; } 2>/dev/null || true
@@ -1186,8 +1186,8 @@ upgrade_release_lock() {
             { exec 197>&-; } 2>/dev/null || true
             ;;
     esac
-    ACFS_UPGRADE_LOCK_FD=""
-    _ACFS_UPGRADE_LOCK_FILE=""
+    GTBI_UPGRADE_LOCK_FD=""
+    _GTBI_UPGRADE_LOCK_FILE=""
 }
 
 # Show progress and time estimation
@@ -1229,11 +1229,11 @@ upgrade_warn_reboot() {
 
 # Create status check script for users
 upgrade_create_status_script() {
-    cat > "${ACFS_RESUME_DIR}/check_status.sh" << 'STATUS_SCRIPT'
+    cat > "${GTBI_RESUME_DIR}/check_status.sh" << 'STATUS_SCRIPT'
 #!/usr/bin/env bash
-# ACFS Upgrade Status Checker
+# GTBI Upgrade Status Checker
 
-STATE_FILE="/var/lib/acfs/state.json"
+STATE_FILE="/var/lib/gtbi/state.json"
 
 if [[ ! -f "$STATE_FILE" ]]; then
     echo "No upgrade in progress"
@@ -1247,7 +1247,7 @@ if ! command -v jq &>/dev/null; then
 fi
 
 echo "═══════════════════════════════════════════════════"
-echo "  ACFS Ubuntu Upgrade Status"
+echo "  GTBI Ubuntu Upgrade Status"
 echo "═══════════════════════════════════════════════════"
 
 jq -r '
@@ -1266,11 +1266,11 @@ if [[ "$completed" != "[]" ]]; then
 fi
 
 echo "═══════════════════════════════════════════════════"
-echo "  Logs: /var/log/acfs/upgrade_resume.log"
+echo "  Logs: /var/log/gtbi/upgrade_resume.log"
 echo "═══════════════════════════════════════════════════"
 STATUS_SCRIPT
 
-    chmod +x "${ACFS_RESUME_DIR}/check_status.sh"
+    chmod +x "${GTBI_RESUME_DIR}/check_status.sh"
 }
 
 # ============================================================
@@ -1279,15 +1279,15 @@ STATUS_SCRIPT
 
 # Setup complete resume infrastructure
 # This copies all necessary files and sets up systemd service
-# Usage: upgrade_setup_infrastructure <acfs_source_dir> [original_install_args...]
+# Usage: upgrade_setup_infrastructure <gtbi_source_dir> [original_install_args...]
 upgrade_setup_infrastructure() {
     local source_dir="$1"
     shift
     local install_args=("$@")
-    local service_template="${source_dir}/scripts/templates/acfs-upgrade-resume.service"
+    local service_template="${source_dir}/scripts/templates/gtbi-upgrade-resume.service"
     local resolved_target_home=""
-    local resolved_acfs_home=""
-    local resolved_acfs_state_file=""
+    local resolved_gtbi_home=""
+    local resolved_gtbi_state_file=""
 
     resolved_target_home="$(ubuntu_resolve_target_home "${TARGET_USER:-ubuntu}" 2>/dev/null || true)"
     if [[ -z "$resolved_target_home" ]]; then
@@ -1295,30 +1295,30 @@ upgrade_setup_infrastructure() {
         return 1
     fi
 
-    resolved_acfs_home="${ACFS_HOME:-${resolved_target_home}/.acfs}"
-    if [[ -z "$resolved_acfs_home" ]] || [[ "$resolved_acfs_home" != /* ]] || [[ "$resolved_acfs_home" == "/" ]]; then
-        log_error "Invalid ACFS_HOME for resume infrastructure: ${resolved_acfs_home:-<empty>}"
+    resolved_gtbi_home="${GTBI_HOME:-${resolved_target_home}/.gtbi}"
+    if [[ -z "$resolved_gtbi_home" ]] || [[ "$resolved_gtbi_home" != /* ]] || [[ "$resolved_gtbi_home" == "/" ]]; then
+        log_error "Invalid GTBI_HOME for resume infrastructure: ${resolved_gtbi_home:-<empty>}"
         return 1
     fi
 
-    resolved_acfs_state_file="${ACFS_STATE_FILE:-${resolved_acfs_home}/state.json}"
-    if [[ -z "$resolved_acfs_state_file" ]] || [[ "$resolved_acfs_state_file" != /* ]] || [[ "$resolved_acfs_state_file" == "/" ]]; then
-        log_error "Invalid ACFS_STATE_FILE for resume infrastructure: ${resolved_acfs_state_file:-<empty>}"
+    resolved_gtbi_state_file="${GTBI_STATE_FILE:-${resolved_gtbi_home}/state.json}"
+    if [[ -z "$resolved_gtbi_state_file" ]] || [[ "$resolved_gtbi_state_file" != /* ]] || [[ "$resolved_gtbi_state_file" == "/" ]]; then
+        log_error "Invalid GTBI_STATE_FILE for resume infrastructure: ${resolved_gtbi_state_file:-<empty>}"
         return 1
     fi
 
     log_step "Setting up upgrade resume infrastructure..."
 
     # Create directory structure
-    mkdir -p "${ACFS_RESUME_DIR}/lib"
-    mkdir -p /var/log/acfs
+    mkdir -p "${GTBI_RESUME_DIR}/lib"
+    mkdir -p /var/log/gtbi
 
     # Copy required library files
     log_detail "Copying library files..."
     local libs=(logging.sh state.sh ubuntu_upgrade.sh os_detect.sh)
     for lib in "${libs[@]}"; do
         if [[ -f "${source_dir}/scripts/lib/${lib}" ]]; then
-            cp "${source_dir}/scripts/lib/${lib}" "${ACFS_RESUME_DIR}/lib/"
+            cp "${source_dir}/scripts/lib/${lib}" "${GTBI_RESUME_DIR}/lib/"
         else
             log_warn "Library not found: ${lib}"
         fi
@@ -1330,16 +1330,16 @@ upgrade_setup_infrastructure() {
         log_error "Upgrade resume script not found: ${source_dir}/scripts/lib/upgrade_resume.sh"
         return 1
     fi
-    cp "${source_dir}/scripts/lib/upgrade_resume.sh" "${ACFS_RESUME_DIR}/"
-    chmod +x "${ACFS_RESUME_DIR}/upgrade_resume.sh"
+    cp "${source_dir}/scripts/lib/upgrade_resume.sh" "${GTBI_RESUME_DIR}/"
+    chmod +x "${GTBI_RESUME_DIR}/upgrade_resume.sh"
 
     # Create a user-facing status helper (referenced by README).
     upgrade_create_status_script
 
     # Copy current state file if exists
     local state_file
-    state_file="$(state_get_file 2>/dev/null || printf '%s\n' "$resolved_acfs_state_file")"
-    local dest_state_file="${ACFS_RESUME_DIR}/state.json"
+    state_file="$(state_get_file 2>/dev/null || printf '%s\n' "$resolved_gtbi_state_file")"
+    local dest_state_file="${GTBI_RESUME_DIR}/state.json"
     if [[ -f "$state_file" ]] && [[ "$state_file" != "$dest_state_file" ]]; then
         cp "$state_file" "$dest_state_file"
     fi
@@ -1362,22 +1362,22 @@ upgrade_setup_infrastructure() {
     fi
 
     # Create continue_install.sh script
-    # This runs after all upgrades complete to resume ACFS installation
+    # This runs after all upgrades complete to resume GTBI installation
     log_detail "Creating continuation script..."
     local repo_owner repo_name repo_ref
-    repo_owner="${ACFS_REPO_OWNER:-Dicklesworthstone}"
-    repo_name="${ACFS_REPO_NAME:-agentic_coding_flywheel_setup}"
-    repo_ref="${ACFS_COMMIT_SHA_FULL:-${ACFS_REF:-main}}"
+    repo_owner="${GTBI_REPO_OWNER:-Dicklesworthstone}"
+    repo_name="${GTBI_REPO_NAME:-gastown_batteries_included}"
+    repo_ref="${GTBI_COMMIT_SHA_FULL:-${GTBI_REF:-main}}"
     local source_dir_q repo_ref_q install_url install_url_q
-    local target_user_q target_home_q acfs_home_q acfs_state_file_q continue_home_q
+    local target_user_q target_home_q gtbi_home_q gtbi_state_file_q continue_home_q
     source_dir_q=$(printf '%q' "$source_dir")
     repo_ref_q=$(printf '%q' "$repo_ref")
     install_url="https://raw.githubusercontent.com/${repo_owner}/${repo_name}/${repo_ref}/install.sh"
     install_url_q=$(printf '%q' "$install_url")
     target_user_q=$(printf '%q' "${TARGET_USER:-ubuntu}")
     target_home_q=$(printf '%q' "$resolved_target_home")
-    acfs_home_q=$(printf '%q' "$resolved_acfs_home")
-    acfs_state_file_q=$(printf '%q' "$resolved_acfs_state_file")
+    gtbi_home_q=$(printf '%q' "$resolved_gtbi_home")
+    gtbi_state_file_q=$(printf '%q' "$resolved_gtbi_state_file")
     continue_home_q=$(printf '%q' "$resolved_target_home")
 
     local -a continue_args=("${install_args[@]}")
@@ -1391,34 +1391,34 @@ upgrade_setup_infrastructure() {
     done
     rendered_args="${rendered_args# }"
 
-    cat > "${ACFS_RESUME_DIR}/continue_context.env" << CONTINUE_CONTEXT
+    cat > "${GTBI_RESUME_DIR}/continue_context.env" << CONTINUE_CONTEXT
 CONTINUE_TARGET_USER=${target_user_q}
 CONTINUE_TARGET_HOME=${target_home_q}
-CONTINUE_ACFS_HOME=${acfs_home_q}
-CONTINUE_ACFS_STATE_FILE=${acfs_state_file_q}
-CONTINUE_ACFS_REF=${repo_ref_q}
+CONTINUE_GTBI_HOME=${gtbi_home_q}
+CONTINUE_GTBI_STATE_FILE=${gtbi_state_file_q}
+CONTINUE_GTBI_REF=${repo_ref_q}
 CONTINUE_INSTALL_URL=${install_url_q}
 CONTINUE_HOME=${continue_home_q}
 CONTINUE_INSTALL_ARGS=(${rendered_args})
 CONTINUE_CONTEXT
 
-    cat > "${ACFS_RESUME_DIR}/continue_install.sh" << CONTINUE_SCRIPT
+    cat > "${GTBI_RESUME_DIR}/continue_install.sh" << CONTINUE_SCRIPT
 #!/usr/bin/env bash
-# Auto-generated script to continue ACFS installation after Ubuntu upgrades
+# Auto-generated script to continue GTBI installation after Ubuntu upgrades
 set -euo pipefail
 
-# Restore the original ACFS target context before resuming.
+# Restore the original GTBI target context before resuming.
 export TARGET_USER=${target_user_q}
 export TARGET_HOME=${target_home_q}
-export ACFS_HOME=${acfs_home_q}
-export ACFS_STATE_FILE=${acfs_state_file_q}
+export GTBI_HOME=${gtbi_home_q}
+export GTBI_STATE_FILE=${gtbi_state_file_q}
 export HOME=${continue_home_q}
 
-echo "Ubuntu upgrade complete. Resuming ACFS installation..."
+echo "Ubuntu upgrade complete. Resuming GTBI installation..."
 
 # Prefer local source dir (only if it still exists), else fetch from GitHub.
 SOURCE_DIR=${source_dir_q}
-export ACFS_REF=${repo_ref_q}
+export GTBI_REF=${repo_ref_q}
 INSTALL_URL=${install_url_q}
 
 INSTALL_ARGS=(${rendered_args})
@@ -1437,26 +1437,26 @@ else
     curl "\${CURL_ARGS[@]}" "\${INSTALL_URL}" | bash -s -- "\${INSTALL_ARGS[@]}"
 fi
 
-echo "ACFS installation complete!"
+echo "GTBI installation complete!"
 CONTINUE_SCRIPT
-    chmod +x "${ACFS_RESUME_DIR}/continue_install.sh"
+    chmod +x "${GTBI_RESUME_DIR}/continue_install.sh"
 
     # Install systemd service
     log_detail "Installing systemd service..."
     if [[ -f "$service_template" ]]; then
-        cp "$service_template" /etc/systemd/system/acfs-upgrade-resume.service
+        cp "$service_template" /etc/systemd/system/gtbi-upgrade-resume.service
     else
         # Generate service file inline if template not found
-        cat > /etc/systemd/system/acfs-upgrade-resume.service << 'SERVICE'
+        cat > /etc/systemd/system/gtbi-upgrade-resume.service << 'SERVICE'
 [Unit]
-Description=ACFS Ubuntu Upgrade Resume Service
+Description=GTBI Ubuntu Upgrade Resume Service
 After=network-online.target
 Wants=network-online.target
-ConditionPathExists=/var/lib/acfs/upgrade_resume.sh
+ConditionPathExists=/var/lib/gtbi/upgrade_resume.sh
 
 [Service]
 Type=oneshot
-ExecStart=/bin/bash /var/lib/acfs/upgrade_resume.sh
+ExecStart=/bin/bash /var/lib/gtbi/upgrade_resume.sh
 TimeoutStartSec=7200
 Restart=no
 RemainAfterExit=no
@@ -1472,7 +1472,7 @@ SERVICE
 
     # Enable the service
     systemctl daemon-reload
-    systemctl enable acfs-upgrade-resume.service
+    systemctl enable gtbi-upgrade-resume.service
 
     log_success "Upgrade infrastructure setup complete"
     return 0
@@ -1484,25 +1484,25 @@ upgrade_teardown_infrastructure() {
     log_step "Tearing down upgrade infrastructure..."
 
     # Disable and remove systemd service
-    systemctl disable acfs-upgrade-resume.service 2>/dev/null || true
-    rm -f -- /etc/systemd/system/acfs-upgrade-resume.service
+    systemctl disable gtbi-upgrade-resume.service 2>/dev/null || true
+    rm -f -- /etc/systemd/system/gtbi-upgrade-resume.service
     systemctl daemon-reload
 
     # Remove MOTD notice
     upgrade_remove_motd
 
     # Remove temporary files (keep logs)
-    local expected_resume_dir="/var/lib/acfs"
-    if [[ "${ACFS_RESUME_DIR:-}" != "$expected_resume_dir" ]]; then
-        log_error "Refusing to tear down unexpected ACFS_RESUME_DIR: ${ACFS_RESUME_DIR:-<unset>} (expected: $expected_resume_dir)"
+    local expected_resume_dir="/var/lib/gtbi"
+    if [[ "${GTBI_RESUME_DIR:-}" != "$expected_resume_dir" ]]; then
+        log_error "Refusing to tear down unexpected GTBI_RESUME_DIR: ${GTBI_RESUME_DIR:-<unset>} (expected: $expected_resume_dir)"
         return 1
     fi
 
-    local lib_dir="${ACFS_RESUME_DIR}/lib"
-    local resume_script="${ACFS_RESUME_DIR}/upgrade_resume.sh"
-    local continue_script="${ACFS_RESUME_DIR}/continue_install.sh"
-    local continue_context_file="${ACFS_RESUME_DIR}/continue_context.env"
-    local state_file="${ACFS_RESUME_DIR}/state.json"
+    local lib_dir="${GTBI_RESUME_DIR}/lib"
+    local resume_script="${GTBI_RESUME_DIR}/upgrade_resume.sh"
+    local continue_script="${GTBI_RESUME_DIR}/continue_install.sh"
+    local continue_context_file="${GTBI_RESUME_DIR}/continue_context.env"
+    local state_file="${GTBI_RESUME_DIR}/state.json"
 
     rm -rf -- "$lib_dir"
     rm -f -- "$resume_script"
@@ -1511,7 +1511,7 @@ upgrade_teardown_infrastructure() {
     rm -f -- "$state_file"
 
     # Keep the directory for logs reference
-    # rm -rf "${ACFS_RESUME_DIR}"
+    # rm -rf "${GTBI_RESUME_DIR}"
 
     log_success "Upgrade infrastructure removed"
     return 0
@@ -1550,7 +1550,7 @@ ubuntu_start_upgrade_sequence() {
     log_step "Target:  Ubuntu $UBUNTU_TARGET_VERSION"
 
     # Ensure non-LTS upgrades are permitted (LTS defaults to Prompt=lts).
-    # ACFS targets interim releases (e.g. 25.04, 25.10) on the path to 25.10, skipping EOL releases when needed.
+    # GTBI targets interim releases (e.g. 25.04, 25.10) on the path to 25.10, skipping EOL releases when needed.
     ubuntu_enable_normal_releases || true
 
     # Calculate upgrade path
@@ -1611,8 +1611,8 @@ ubuntu_start_upgrade_sequence() {
     # Copy updated state to resume location
     local state_file
     state_file="$(state_get_file)"
-    if [[ -f "$state_file" ]] && [[ "$state_file" != "${ACFS_RESUME_DIR}/state.json" ]]; then
-        cp "$state_file" "${ACFS_RESUME_DIR}/state.json"
+    if [[ -f "$state_file" ]] && [[ "$state_file" != "${GTBI_RESUME_DIR}/state.json" ]]; then
+        cp "$state_file" "${GTBI_RESUME_DIR}/state.json"
     fi
 
     # Update MOTD before reboot
@@ -1657,7 +1657,7 @@ ubuntu_show_upgrade_warning() {
     cat << EOF
 
 ╔══════════════════════════════════════════════════════════════════╗
-║           ACFS Ubuntu Upgrade - READ CAREFULLY                   ║
+║           GTBI Ubuntu Upgrade - READ CAREFULLY                   ║
 ╠══════════════════════════════════════════════════════════════════╣
 ║                                                                  ║
 ║  Current version:  Ubuntu $current
@@ -1899,7 +1899,7 @@ ubuntu_recover_failed_upgrade() {
             log_error "Failed to restore ubuntu.sources"
         fi
         # Remove the temp legacy file if it exists
-        rm -f "/etc/apt/sources.list.d/ubuntu-acfs-temp.list"
+        rm -f "/etc/apt/sources.list.d/ubuntu-gtbi-temp.list"
         apt-get update -qq 2>/dev/null || true
     fi
 
@@ -1929,12 +1929,12 @@ ubuntu_recover_failed_upgrade() {
 # Create diagnostic dump on failure
 ubuntu_create_diagnostic_dump() {
     local dump_file
-    dump_file="/var/log/acfs/upgrade_diagnostic_$(date +%Y%m%d_%H%M%S).txt"
+    dump_file="/var/log/gtbi/upgrade_diagnostic_$(date +%Y%m%d_%H%M%S).txt"
 
-    mkdir -p /var/log/acfs
+    mkdir -p /var/log/gtbi
 
     {
-        echo "=== ACFS Upgrade Diagnostic Dump ==="
+        echo "=== GTBI Upgrade Diagnostic Dump ==="
         echo "Timestamp: $(date)"
         echo ""
         echo "=== Ubuntu Version ==="
@@ -1955,18 +1955,18 @@ ubuntu_create_diagnostic_dump() {
         echo "=== APT History (last 50 lines) ==="
         tail -50 /var/log/apt/history.log 2>/dev/null || echo "No apt history"
         echo ""
-        echo "=== ACFS Upgrade State ==="
-        cat "${ACFS_RESUME_DIR}/state.json" 2>/dev/null || echo "No state file"
+        echo "=== GTBI Upgrade State ==="
+        cat "${GTBI_RESUME_DIR}/state.json" 2>/dev/null || echo "No state file"
         echo ""
         echo "=== Last 100 lines of upgrade log ==="
-        tail -100 /var/log/acfs/upgrade_resume.log 2>/dev/null || echo "No upgrade log"
+        tail -100 /var/log/gtbi/upgrade_resume.log 2>/dev/null || echo "No upgrade log"
     } > "$dump_file"
 
     log_warn "Diagnostic dump saved to: $dump_file"
     echo "$dump_file"
 }
 
-# Graceful degradation - continue ACFS on current version if upgrade fails
+# Graceful degradation - continue GTBI on current version if upgrade fails
 ubuntu_upgrade_with_fallback() {
     if ubuntu_do_upgrade; then
         return 0
@@ -1987,17 +1987,17 @@ ubuntu_upgrade_with_fallback() {
 
     # Check if system is still functional
     if apt-get update &>/dev/null; then
-        log_warn "System is functional. Continuing ACFS on current Ubuntu version."
+        log_warn "System is functional. Continuing GTBI on current Ubuntu version."
         log_warn "Some features may not work optimally on older Ubuntu."
 
         # Mark upgrade as skipped, not failed
         state_upgrade_set_error "upgrade_failed_graceful_degradation"
 
-        # Return success to allow ACFS to continue
+        # Return success to allow GTBI to continue
         return 0
     else
         log_error "System may be in inconsistent state. Manual recovery needed."
-        log_error "Check diagnostic dump and /var/log/acfs/upgrade_resume.log"
+        log_error "Check diagnostic dump and /var/log/gtbi/upgrade_resume.log"
         return 1
     fi
 }

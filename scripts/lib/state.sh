@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-# ACFS State Management Library
+# GTBI State Management Library
 #
 # Provides phase-granular progress persistence with stable phase IDs.
 # Implements state.json v3 schema for robust resume capability.
@@ -11,21 +11,21 @@
 #   v3: Adds ubuntu_upgrade section for multi-reboot upgrade tracking
 #
 # Related beads:
-#   - agentic_coding_flywheel_setup-5zt: Design state.json v2 schema
-#   - agentic_coding_flywheel_setup-uxc: Implement init_state() and save_state()
-#   - agentic_coding_flywheel_setup-aa1: Implement atomic state file writes
+#   - gastown_batteries_included-5zt: Design state.json v2 schema
+#   - gastown_batteries_included-uxc: Implement init_state() and save_state()
+#   - gastown_batteries_included-aa1: Implement atomic state file writes
 # ============================================================
 
 # Prevent multiple sourcing
-if [[ -n "${_ACFS_STATE_SH_LOADED:-}" ]]; then
+if [[ -n "${_GTBI_STATE_SH_LOADED:-}" ]]; then
     return 0
 fi
-_ACFS_STATE_SH_LOADED=1
+_GTBI_STATE_SH_LOADED=1
 
-_ACFS_STATE_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-if ! type -t local_progress_record_installer_phase >/dev/null 2>&1 && [[ -f "$_ACFS_STATE_SCRIPT_DIR/progress.sh" ]]; then
+_GTBI_STATE_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if ! type -t local_progress_record_installer_phase >/dev/null 2>&1 && [[ -f "$_GTBI_STATE_SCRIPT_DIR/progress.sh" ]]; then
     # shellcheck source=progress.sh
-    source "$_ACFS_STATE_SCRIPT_DIR/progress.sh" 2>/dev/null || true
+    source "$_GTBI_STATE_SCRIPT_DIR/progress.sh" 2>/dev/null || true
 fi
 
 # ============================================================
@@ -54,7 +54,7 @@ fi
 #
 # {
 #   "schema_version": 3,                      # Schema version for compatibility
-#   "version": "0.1.0",                       # ACFS version that created this state
+#   "version": "0.1.0",                       # GTBI version that created this state
 #   "mode": "vibe",                           # Installation mode (vibe|safe)
 #   "started_at": "2025-01-15T10:30:00Z",     # When installation started
 #   "last_updated": "2025-01-15T10:42:00Z",   # Last state update timestamp
@@ -70,7 +70,7 @@ fi
 #     "user_setup": 12,
 #     "apt_packages": 45
 #   },
-#   "target_user": "ubuntu",                  # User ACFS is installing for
+#   "target_user": "ubuntu",                  # User GTBI is installing for
 #   "skip_postgres": false,                   # CLI flag values for reference
 #   "skip_vault": false,
 #   "skip_cloud": false
@@ -84,7 +84,7 @@ fi
 #
 # Design Decision: Track Phase IDs, Not Numbers
 # ---------------------------------------------
-# Problem: If we store completed_phases: [1, 2, 3, 4, 5] and later ACFS
+# Problem: If we store completed_phases: [1, 2, 3, 4, 5] and later GTBI
 # reorders phases or adds a new phase 3, the resume logic would skip
 # the wrong phases.
 #
@@ -111,7 +111,7 @@ fi
 #   Phase 9: Final wiring          → finalize
 
 # Canonical ordered list of phase IDs (defines execution order)
-readonly ACFS_PHASE_IDS=(
+readonly GTBI_PHASE_IDS=(
     "user_setup"
     "filesystem"
     "shell_setup"
@@ -125,7 +125,7 @@ readonly ACFS_PHASE_IDS=(
 
 # Human-readable phase names for display
 # Note: Must use -g for global scope when sourced from inside a function
-declare -gA ACFS_PHASE_NAMES=(
+declare -gA GTBI_PHASE_NAMES=(
     [user_setup]="User Normalization"
     [filesystem]="Filesystem Setup"
     [shell_setup]="Shell Setup"
@@ -140,13 +140,13 @@ declare -gA ACFS_PHASE_NAMES=(
 # Current schema version
 # v2: Stable phase IDs (original)
 # v3: Added ubuntu_upgrade section for multi-reboot upgrade tracking
-readonly ACFS_STATE_SCHEMA_VERSION=3
+readonly GTBI_STATE_SCHEMA_VERSION=3
 
 # ============================================================
 # State File Location
 # ============================================================
-# ACFS_STATE_FILE should be set by the caller (typically install.sh)
-# Default location: ~/.acfs/state.json
+# GTBI_STATE_FILE should be set by the caller (typically install.sh)
+# Default location: ~/.gtbi/state.json
 
 state_sanitize_abs_nonroot_path() {
     local path_value="${1:-}"
@@ -367,20 +367,20 @@ state_resolve_target_home() {
 }
 
 state_get_file() {
-    if [[ -n "${ACFS_STATE_FILE:-}" ]]; then
-        printf '%s\n' "$ACFS_STATE_FILE"
+    if [[ -n "${GTBI_STATE_FILE:-}" ]]; then
+        printf '%s\n' "$GTBI_STATE_FILE"
         return 0
     fi
 
-    if [[ -n "${ACFS_HOME:-}" ]]; then
-        printf '%s\n' "${ACFS_HOME}/state.json"
+    if [[ -n "${GTBI_HOME:-}" ]]; then
+        printf '%s\n' "${GTBI_HOME}/state.json"
         return 0
     fi
 
     local state_home
     state_home="$(state_resolve_target_home 2>/dev/null || true)"
     [[ -n "$state_home" ]] || return 1
-    printf '%s\n' "${state_home}/.acfs/state.json"
+    printf '%s\n' "${state_home}/.gtbi/state.json"
 }
 
 # ============================================================
@@ -409,8 +409,8 @@ state_init() {
 
     # Ensure directory exists
     if [[ ! -d "$state_dir" ]]; then
-        # Try without sudo first (works for user directories like ~/.acfs)
-        # Fall back to sudo for system directories like /var/lib/acfs
+        # Try without sudo first (works for user directories like ~/.gtbi)
+        # Fall back to sudo for system directories like /var/lib/gtbi
         local mkdir_bin=""
         mkdir_bin="$(state_system_binary_path mkdir 2>/dev/null || true)"
         [[ -n "$mkdir_bin" ]] || return 1
@@ -434,7 +434,7 @@ state_init() {
 
         # If running as root but targeting a non-root user, ensure the directory
         # is owned by the target user so they can access the state file later.
-        # This is critical for `acfs doctor` to work after a failed install.
+        # This is critical for `gtbi doctor` to work after a failed install.
         if [[ $EUID -eq 0 ]] && [[ -n "${TARGET_USER:-}" ]] && [[ "$TARGET_USER" != "root" ]]; then
             local target_home=""
             target_home="$(state_resolve_target_home 2>/dev/null || true)"
@@ -463,7 +463,7 @@ state_init() {
     local now
     now="$(date -Iseconds)"
 
-    local state_version="${ACFS_VERSION:-unknown}"
+    local state_version="${GTBI_VERSION:-unknown}"
     local state_target_user="${TARGET_USER:-}"
     if [[ -z "$state_target_user" ]]; then
         state_target_user="$(state_resolve_current_user 2>/dev/null || true)"
@@ -478,13 +478,13 @@ state_init() {
     local initial_state
     if command -v jq &>/dev/null; then
         initial_state=$(jq -n \
-            --argjson schema_version "$ACFS_STATE_SCHEMA_VERSION" \
+            --argjson schema_version "$GTBI_STATE_SCHEMA_VERSION" \
             --arg ver "$state_version" \
             --arg user "$state_target_user" \
             --arg home "$resolved_target_home" \
-            --arg bin_dir "${ACFS_BIN_DIR:-$resolved_target_home/.local/bin}" \
+            --arg bin_dir "${GTBI_BIN_DIR:-$resolved_target_home/.local/bin}" \
             --arg ts "$now" \
-            --arg mode "${MODE:-${ACFS_MODE:-vibe}}" \
+            --arg mode "${MODE:-${GTBI_MODE:-vibe}}" \
             --argjson skip_pg "$skip_pg" \
             --argjson skip_v "$skip_v" \
             --argjson skip_c "$skip_c" \
@@ -514,14 +514,14 @@ state_init() {
         # Fallback to heredoc if jq is not yet installed
         initial_state=$(cat <<EOF
 {
-  "schema_version": $ACFS_STATE_SCHEMA_VERSION,
+  "schema_version": $GTBI_STATE_SCHEMA_VERSION,
   "version": "$state_version",
   "target_user": "$state_target_user",
   "target_home": "$resolved_target_home",
-  "bin_dir": "${ACFS_BIN_DIR:-$resolved_target_home/.local/bin}",
+  "bin_dir": "${GTBI_BIN_DIR:-$resolved_target_home/.local/bin}",
   "started_at": "$now",
   "last_updated": "$now",
-  "mode": "${MODE:-${ACFS_MODE:-vibe}}",
+  "mode": "${MODE:-${GTBI_MODE:-vibe}}",
   "completed_phases": [],
   "failed_phase": null,
   "failed_step": null,
@@ -568,7 +568,7 @@ EOF
 #   2 - Permission denied
 #   3 - Invalid arguments
 #
-# Related: agentic_coding_flywheel_setup-aa1
+# Related: gastown_batteries_included-aa1
 state_write_atomic() {
     local file_path="$1"
     local content="$2"
@@ -662,7 +662,7 @@ state_write_atomic() {
     # This prevents a race window where the file is owned by root/600 and unreadable.
     #
     # Only do this for state files under TARGET_HOME (per-user state) and
-    # never for system state under /var/lib/acfs.
+    # never for system state under /var/lib/gtbi.
     if [[ $EUID -eq 0 ]] && [[ -n "${TARGET_USER:-}" ]] && [[ "$TARGET_USER" != "root" ]]; then
         local target_home=""
         target_home="$(state_resolve_target_home 2>/dev/null || true)"
@@ -705,7 +705,7 @@ state_write_atomic() {
 }
 
 state_durable_sync_enabled() {
-    case "${ACFS_STATE_DURABLE_SYNC:-false}" in
+    case "${GTBI_STATE_DURABLE_SYNC:-false}" in
         true|TRUE|1|yes|YES)
             return 0
             ;;
@@ -760,9 +760,9 @@ _state_acquire_lock() {
 
     # If already locked by this process, track nested callers so an inner
     # state_save cannot release the outer caller's lock early.
-    if [[ "${_ACFS_STATE_LOCKED:-}" == "true" ]]; then
-        [[ "${_ACFS_STATE_LOCK_FILE:-}" == "$lock_file" ]] || return 1
-        _ACFS_STATE_LOCK_DEPTH=$(( ${_ACFS_STATE_LOCK_DEPTH:-1} + 1 ))
+    if [[ "${_GTBI_STATE_LOCKED:-}" == "true" ]]; then
+        [[ "${_GTBI_STATE_LOCK_FILE:-}" == "$lock_file" ]] || return 1
+        _GTBI_STATE_LOCK_DEPTH=$(( ${_GTBI_STATE_LOCK_DEPTH:-1} + 1 ))
         return 0
     fi
 
@@ -775,48 +775,48 @@ _state_acquire_lock() {
 
     # If a stale descriptor is present for another state file, close it before
     # opening the descriptor for this lock. A freshly opened descriptor does not
-    # receive _ACFS_STATE_LOCK_FILE until after flock succeeds.
-    if [[ -n "${ACFS_LOCK_FD:-}" && "${_ACFS_STATE_LOCK_FILE:-}" != "$lock_file" ]]; then
+    # receive _GTBI_STATE_LOCK_FILE until after flock succeeds.
+    if [[ -n "${GTBI_LOCK_FD:-}" && "${_GTBI_STATE_LOCK_FILE:-}" != "$lock_file" ]]; then
         _state_close_lock_fd
     fi
 
     # Open lock file on FD 200 (same FD convention as autofix.sh)
     # Using >> to avoid truncating while opening for locking
-    if [[ -z "${ACFS_LOCK_FD:-}" ]]; then
+    if [[ -z "${GTBI_LOCK_FD:-}" ]]; then
         if (exec 200>>"$lock_file") 2>/dev/null; then
             exec 200>>"$lock_file"
-            ACFS_LOCK_FD=200
+            GTBI_LOCK_FD=200
         elif (exec 199>>"$lock_file") 2>/dev/null; then
             exec 199>>"$lock_file"
-            ACFS_LOCK_FD=199
+            GTBI_LOCK_FD=199
         else
             # Lock acquisition not possible, return failure
             return 1
         fi
     fi
 
-    [[ -n "${ACFS_LOCK_FD:-}" ]] || return 1
+    [[ -n "${GTBI_LOCK_FD:-}" ]] || return 1
 
-    local lock_timeout="${ACFS_STATE_LOCK_TIMEOUT:-30}"
+    local lock_timeout="${GTBI_STATE_LOCK_TIMEOUT:-30}"
     if [[ ! "$lock_timeout" =~ ^[0-9]+$ ]] || [[ "$lock_timeout" -lt 1 ]]; then
         lock_timeout=30
     fi
 
     # State writes can briefly queue behind durable atomic writes. Wait long
     # enough to preserve resume metadata instead of dropping contended updates.
-    if ! flock -w "$lock_timeout" "${ACFS_LOCK_FD}" 2>/dev/null; then
+    if ! flock -w "$lock_timeout" "${GTBI_LOCK_FD}" 2>/dev/null; then
         _state_close_lock_fd
         return 1
     fi
 
-    _ACFS_STATE_LOCKED=true
-    _ACFS_STATE_LOCK_DEPTH=1
-    _ACFS_STATE_LOCK_FILE="$lock_file"
+    _GTBI_STATE_LOCKED=true
+    _GTBI_STATE_LOCK_DEPTH=1
+    _GTBI_STATE_LOCK_FILE="$lock_file"
     return 0
 }
 
 _state_close_lock_fd() {
-    case "${ACFS_LOCK_FD:-}" in
+    case "${GTBI_LOCK_FD:-}" in
         199)
             { exec 199>&-; } 2>/dev/null || true
             ;;
@@ -824,25 +824,25 @@ _state_close_lock_fd() {
             { exec 200>&-; } 2>/dev/null || true
             ;;
     esac
-    unset ACFS_LOCK_FD
-    _ACFS_STATE_LOCK_FILE=""
+    unset GTBI_LOCK_FD
+    _GTBI_STATE_LOCK_FILE=""
 }
 
 # Release the lock
 # Usage: _state_release_lock
 _state_release_lock() {
-    local lock_depth="${_ACFS_STATE_LOCK_DEPTH:-0}"
+    local lock_depth="${_GTBI_STATE_LOCK_DEPTH:-0}"
     if [[ "$lock_depth" -gt 1 ]]; then
-        _ACFS_STATE_LOCK_DEPTH=$(( lock_depth - 1 ))
+        _GTBI_STATE_LOCK_DEPTH=$(( lock_depth - 1 ))
         return 0
     fi
 
-    if [[ -n "${ACFS_LOCK_FD:-}" ]]; then
-        flock -u "${ACFS_LOCK_FD}" 2>/dev/null || true
+    if [[ -n "${GTBI_LOCK_FD:-}" ]]; then
+        flock -u "${GTBI_LOCK_FD}" 2>/dev/null || true
     fi
     _state_close_lock_fd
-    _ACFS_STATE_LOCKED=false
-    _ACFS_STATE_LOCK_DEPTH=0
+    _GTBI_STATE_LOCKED=false
+    _GTBI_STATE_LOCK_DEPTH=0
 }
 
 # Mark state as interrupted by a signal (SIGTERM, SIGINT, SIGHUP).
@@ -998,7 +998,7 @@ is_resume_installation() {
 
 # Get the total number of phases
 get_total_phases() {
-    echo "${#ACFS_PHASE_IDS[@]}"
+    echo "${#GTBI_PHASE_IDS[@]}"
 }
 
 # Get the count of completed phases
@@ -1020,7 +1020,7 @@ get_completed_phase_count() {
 # Usage: get_next_pending_phase
 # Outputs: Phase ID or empty if all complete
 get_next_pending_phase() {
-    for phase_id in "${ACFS_PHASE_IDS[@]}"; do
+    for phase_id in "${GTBI_PHASE_IDS[@]}"; do
         if ! state_should_skip_phase "$phase_id"; then
             echo "$phase_id"
             return 0
@@ -1032,7 +1032,7 @@ get_next_pending_phase() {
 # ============================================================
 # Resume Confirmation (bead 4xi)
 # ============================================================
-# When ACFS detects a previous incomplete installation, this function
+# When GTBI detects a previous incomplete installation, this function
 # determines whether to resume, start fresh, or abort.
 #
 # Design Decision: Silent Resume by Default
@@ -1048,9 +1048,9 @@ get_next_pending_phase() {
 #   - --interactive flag + TTY: Show prompt for user choice
 #
 # CLI Flags (set these before calling confirm_resume):
-#   ACFS_FORCE_RESUME=true      - Force resume without prompts
-#   ACFS_FORCE_REINSTALL=true   - Force fresh install
-#   ACFS_INTERACTIVE=true       - Enable interactive prompts
+#   GTBI_FORCE_RESUME=true      - Force resume without prompts
+#   GTBI_FORCE_REINSTALL=true   - Force fresh install
+#   GTBI_INTERACTIVE=true       - Enable interactive prompts
 # ============================================================
 
 # Confirm whether to resume a previous installation
@@ -1066,7 +1066,7 @@ get_next_pending_phase() {
 #   - May move state file to a timestamped backup if fresh install chosen
 #   - Prints status messages to stderr
 #
-# Related: agentic_coding_flywheel_setup-4xi
+# Related: gastown_batteries_included-4xi
 confirm_resume() {
     local state_file
     state_file="$(state_get_file)"
@@ -1106,7 +1106,7 @@ confirm_resume() {
     fi
 
     # Handle explicit CLI flags first (these override everything)
-    if [[ "${ACFS_FORCE_REINSTALL:-}" == "true" ]]; then
+    if [[ "${GTBI_FORCE_REINSTALL:-}" == "true" ]]; then
         _confirm_resume_log_info "Force reinstall requested. Wiping state..."
         if ! state_backup_and_remove; then
             _confirm_resume_log_warn "Failed to move state file out of the way. Aborting."
@@ -1116,7 +1116,7 @@ confirm_resume() {
     fi
 
     local force_resume_requested=false
-    if [[ "${ACFS_FORCE_RESUME:-}" == "true" ]]; then
+    if [[ "${GTBI_FORCE_RESUME:-}" == "true" ]]; then
         force_resume_requested=true
     fi
 
@@ -1125,22 +1125,22 @@ confirm_resume() {
         return 1
     fi
 
-    local last_phase_name="${ACFS_PHASE_NAMES[$last_phase]:-$last_phase}"
+    local last_phase_name="${GTBI_PHASE_NAMES[$last_phase]:-$last_phase}"
     if [[ "$completed_count" -eq 0 && -n "$failed_phase" && "$failed_phase" != "null" ]]; then
-        last_phase_name="${ACFS_PHASE_NAMES[$failed_phase]:-$failed_phase}"
+        last_phase_name="${GTBI_PHASE_NAMES[$failed_phase]:-$failed_phase}"
     fi
-    local total_phases="${#ACFS_PHASE_IDS[@]}"
+    local total_phases="${#GTBI_PHASE_IDS[@]}"
 
     local resume_state=""
     local state_version=""
     if command -v jq &>/dev/null; then
         state_version=$(echo "$state" | jq -r '.version // "unknown"')
     fi
-    if [[ -n "${ACFS_VERSION:-}" && -n "$state_version" && "$state_version" != "unknown" ]]; then
-        if [[ "$ACFS_VERSION" != "$state_version" ]] && command -v jq &>/dev/null; then
-            _confirm_resume_log_warn "Version mismatch: state=$state_version, running=$ACFS_VERSION"
+    if [[ -n "${GTBI_VERSION:-}" && -n "$state_version" && "$state_version" != "unknown" ]]; then
+        if [[ "$GTBI_VERSION" != "$state_version" ]] && command -v jq &>/dev/null; then
+            _confirm_resume_log_warn "Version mismatch: state=$state_version, running=$GTBI_VERSION"
             _confirm_resume_log_info "Finalize will be re-run on resume to deploy updated scripts"
-            resume_state=$(echo "$state" | jq --arg ver "$ACFS_VERSION" '
+            resume_state=$(echo "$state" | jq --arg ver "$GTBI_VERSION" '
                 .completed_phases = (.completed_phases | map(select(. != "finalize"))) |
                 .version = $ver
             ')
@@ -1157,9 +1157,9 @@ confirm_resume() {
             ')
             IFS=$'\x1f' read -r completed_count last_phase started_at failed_phase mode <<< "$extracted"
 
-            last_phase_name="${ACFS_PHASE_NAMES[$last_phase]:-$last_phase}"
+            last_phase_name="${GTBI_PHASE_NAMES[$last_phase]:-$last_phase}"
             if [[ "$completed_count" -eq 0 && -n "$failed_phase" && "$failed_phase" != "null" ]]; then
-                last_phase_name="${ACFS_PHASE_NAMES[$failed_phase]:-$failed_phase}"
+                last_phase_name="${GTBI_PHASE_NAMES[$failed_phase]:-$failed_phase}"
             fi
         fi
     fi
@@ -1188,12 +1188,12 @@ confirm_resume() {
     _confirm_resume_log_info "  Last completed: $last_phase_name"
 
     if [[ -n "$failed_phase" && "$failed_phase" != "null" ]]; then
-        local failed_name="${ACFS_PHASE_NAMES[$failed_phase]:-$failed_phase}"
+        local failed_name="${GTBI_PHASE_NAMES[$failed_phase]:-$failed_phase}"
         _confirm_resume_log_warn "  Previous failure at: $failed_name"
     fi
 
     # Only prompt if --interactive was requested and we have a controlling TTY.
-    if [[ "${ACFS_INTERACTIVE:-}" == "true" ]] && (exec 3<>/dev/tty) 2>/dev/null; then
+    if [[ "${GTBI_INTERACTIVE:-}" == "true" ]] && (exec 3<>/dev/tty) 2>/dev/null; then
         echo "" >&2
         echo "Options:" >&2
         echo "  [R] Resume from $last_phase_name (default)" >&2
@@ -1289,7 +1289,7 @@ _confirm_resume_log_warn() {
 
 # Parse CLI flags and set resume/reinstall globals
 # Usage: parse_resume_flags "$@"
-# Sets: ACFS_FORCE_RESUME, ACFS_FORCE_REINSTALL, ACFS_INTERACTIVE
+# Sets: GTBI_FORCE_RESUME, GTBI_FORCE_REINSTALL, GTBI_INTERACTIVE
 #
 # Flags recognized:
 #   --resume           Force resume without prompts
@@ -1299,13 +1299,13 @@ parse_resume_flags() {
     while [[ $# -gt 0 ]]; do
         case "$1" in
             --resume)
-                export ACFS_FORCE_RESUME=true
+                export GTBI_FORCE_RESUME=true
                 ;;
             --force-reinstall)
-                export ACFS_FORCE_REINSTALL=true
+                export GTBI_FORCE_REINSTALL=true
                 ;;
             --interactive)
-                export ACFS_INTERACTIVE=true
+                export GTBI_INTERACTIVE=true
                 ;;
         esac
         shift
@@ -1338,7 +1338,7 @@ parse_resume_flags() {
 #   }
 # }
 #
-# Related beads: agentic_coding_flywheel_setup-2yd
+# Related beads: gastown_batteries_included-2yd
 # ============================================================
 
 # Initialize upgrade state when starting an upgrade sequence
@@ -2130,10 +2130,10 @@ state_selection_includes_phase() {
     local target_phase=""
     local target_phase_name=""
 
-    if [[ "${ACFS_EFFECTIVE_PLAN+x}" == "x" ]]; then
-        if [[ ${#ACFS_EFFECTIVE_PLAN[@]} -gt 0 ]]; then
-            for module in "${ACFS_EFFECTIVE_PLAN[@]}"; do
-                module_phase_num="${ACFS_MODULE_PHASE[$module]:-}"
+    if [[ "${GTBI_EFFECTIVE_PLAN+x}" == "x" ]]; then
+        if [[ ${#GTBI_EFFECTIVE_PLAN[@]} -gt 0 ]]; then
+            for module in "${GTBI_EFFECTIVE_PLAN[@]}"; do
+                module_phase_num="${GTBI_MODULE_PHASE[$module]:-}"
                 module_phase_name="$(state_manifest_phase_to_id "$module_phase_num" 2>/dev/null || true)"
                 if [[ "$module_phase_name" == "$phase_id" ]]; then
                     return 0
@@ -2145,7 +2145,7 @@ state_selection_includes_phase() {
 
     if [[ "${ONLY_MODULES+x}" == "x" ]] && [[ ${#ONLY_MODULES[@]} -gt 0 ]]; then
         for module in "${ONLY_MODULES[@]}"; do
-            module_phase_num="${ACFS_MODULE_PHASE[$module]:-}"
+            module_phase_num="${GTBI_MODULE_PHASE[$module]:-}"
             module_phase_name="$(state_manifest_phase_to_id "$module_phase_num" 2>/dev/null || true)"
             if [[ "$module_phase_name" == "$phase_id" ]]; then
                 return 0
@@ -2216,7 +2216,7 @@ state_should_skip_phase() {
 # Usage: state_get_pending_phases
 # Outputs: One phase ID per line
 state_get_pending_phases() {
-    for phase_id in "${ACFS_PHASE_IDS[@]}"; do
+    for phase_id in "${GTBI_PHASE_IDS[@]}"; do
         if ! state_should_skip_phase "$phase_id"; then
             echo "$phase_id"
         fi
@@ -2234,7 +2234,7 @@ state_get_failed_phase() {
 # State Validation
 # ============================================================
 # Validates state files to handle corruption and incompatibility.
-# Related beads: agentic_coding_flywheel_setup-d09
+# Related beads: gastown_batteries_included-d09
 
 # Validate state file structure and content
 # Usage: state_validate
@@ -2286,8 +2286,8 @@ state_validate() {
         fi
 
         # Case 4: Future schema version
-        if [[ "$version" -gt "$ACFS_STATE_SCHEMA_VERSION" ]]; then
-            echo "State file has newer schema (v$version) than supported (v$ACFS_STATE_SCHEMA_VERSION)" >&2
+        if [[ "$version" -gt "$GTBI_STATE_SCHEMA_VERSION" ]]; then
+            echo "State file has newer schema (v$version) than supported (v$GTBI_STATE_SCHEMA_VERSION)" >&2
             return 4
         fi
 
@@ -2335,7 +2335,7 @@ state_validate() {
         if [[ -z "$version" ]] || [[ "$version" == "1" ]]; then
             return 5
         fi
-        if [[ "$version" -gt "$ACFS_STATE_SCHEMA_VERSION" ]]; then
+        if [[ "$version" -gt "$GTBI_STATE_SCHEMA_VERSION" ]]; then
             return 4
         fi
     fi
@@ -2437,8 +2437,8 @@ state_handle_invalid() {
             echo "WARNING: State file uses a newer schema version."
             echo "File: $state_file"
             echo ""
-            echo "This ACFS version may be older than the one that created this state."
-            echo "Consider upgrading ACFS or starting fresh."
+            echo "This GTBI version may be older than the one that created this state."
+            echo "Consider upgrading GTBI or starting fresh."
             echo ""
 
             if [[ "${YES_MODE:-false}" == "true" ]]; then
@@ -2471,7 +2471,7 @@ state_handle_invalid() {
         5)
             # Legacy v1 schema
             echo ""
-            echo "Found state file from previous ACFS version (v1 schema)."
+            echo "Found state file from previous GTBI version (v1 schema)."
             echo "File: $state_file"
             echo ""
 
@@ -2530,8 +2530,8 @@ state_backup_and_remove() {
 
     if [[ -f "$state_file" ]]; then
         local expected_user_state=""
-        if [[ -n "${ACFS_HOME:-}" ]]; then
-            expected_user_state="${ACFS_HOME}/state.json"
+        if [[ -n "${GTBI_HOME:-}" ]]; then
+            expected_user_state="${GTBI_HOME}/state.json"
         else
             local expected_target_home=""
             expected_target_home="$(state_resolve_target_home 2>/dev/null || true)"
@@ -2539,9 +2539,9 @@ state_backup_and_remove() {
                 declare -f log_error &>/dev/null && log_error "state_backup_and_remove: unable to resolve target home"
                 return 1
             fi
-            expected_user_state="${expected_target_home}/.acfs/state.json"
+            expected_user_state="${expected_target_home}/.gtbi/state.json"
         fi
-        local expected_system_state="/var/lib/acfs/state.json"
+        local expected_system_state="/var/lib/gtbi/state.json"
 
         case "$state_file" in
             "$expected_user_state"|"$expected_system_state") ;;
@@ -2717,10 +2717,10 @@ state_print_summary() {
     current=$(echo "$state" | jq -r '.current_phase // "none"')
     failed=$(echo "$state" | jq -r '.failed_phase // "none"')
 
-    echo "=== ACFS Installation State ==="
+    echo "=== GTBI Installation State ==="
     echo "Version: $version (mode: $mode)"
     echo "Started: $started"
-    echo "Completed phases: $completed/${#ACFS_PHASE_IDS[@]}"
+    echo "Completed phases: $completed/${#GTBI_PHASE_IDS[@]}"
 
     if [[ "$failed" != "none" && "$failed" != "null" ]]; then
         local failed_step failed_error
@@ -2735,7 +2735,7 @@ state_print_summary() {
     echo ""
     echo "Completed:"
     echo "$state" | jq -r '.completed_phases[]' 2>/dev/null | while read -r phase; do
-        local name="${ACFS_PHASE_NAMES[$phase]:-$phase}"
+        local name="${GTBI_PHASE_NAMES[$phase]:-$phase}"
         local dur
         dur=$(echo "$state" | jq -r --arg p "$phase" '.phase_durations[$p] // 0')
         if [[ "$dur" -gt 0 ]]; then
@@ -2747,9 +2747,9 @@ state_print_summary() {
 
     echo ""
     echo "Pending:"
-    for phase in "${ACFS_PHASE_IDS[@]}"; do
+    for phase in "${GTBI_PHASE_IDS[@]}"; do
         if ! state_is_phase_completed "$phase"; then
-            local name="${ACFS_PHASE_NAMES[$phase]:-$phase}"
+            local name="${GTBI_PHASE_NAMES[$phase]:-$phase}"
             echo "  [ ] $name"
         fi
     done
@@ -2762,7 +2762,7 @@ state_print_summary() {
 # It handles skip logic, state tracking, timing, and error capture.
 #
 # Related beads:
-#   - agentic_coding_flywheel_setup-yaj: Implement run_phase() wrapper
+#   - gastown_batteries_included-yaj: Implement run_phase() wrapper
 
 # Run a phase with state tracking and skip logic
 # Usage: run_phase <phase_id> <display_name> <function_name> [args...]
@@ -2776,7 +2776,7 @@ run_phase() {
 
     # Validate phase_id is known
     local valid_phase=false
-    for p in "${ACFS_PHASE_IDS[@]}"; do
+    for p in "${GTBI_PHASE_IDS[@]}"; do
         if [[ "$p" == "$phase_id" ]]; then
             valid_phase=true
             break
@@ -2788,7 +2788,7 @@ run_phase() {
     fi
 
     # Get human-readable name for logging
-    local human_name="${ACFS_PHASE_NAMES[$phase_id]:-$phase_id}"
+    local human_name="${GTBI_PHASE_NAMES[$phase_id]:-$phase_id}"
 
     # Check if phase should be skipped (already completed or user-skipped)
     if state_should_skip_phase "$phase_id"; then

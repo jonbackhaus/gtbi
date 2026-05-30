@@ -17,16 +17,16 @@ import {
   TOTAL_STEPS,
 } from "./wizardSteps";
 import {
-  ACFS_REF_KEY,
+  GTBI_REF_KEY,
   CREATE_VPS_CHECKLIST_KEY,
-  getACFSRef,
+  getGTBIRef,
   getCreateVPSChecklist,
   getSSHUsername,
   getVPSReadinessSelection,
   getVPSIP,
   isCreateVPSChecklistComplete,
   normalizeSSHUsername,
-  setACFSRef,
+  setGTBIRef,
   setCreateVPSChecklist,
   setSSHUsername,
   setVPSReadinessSelection,
@@ -309,26 +309,26 @@ describe("progress persistence guards", () => {
     expect(browser.dispatchCalls).toHaveLength(1);
   });
 
-  test("ACFS ref persistence rejects invalid refs without clearing the saved ref", () => {
+  test("GTBI ref persistence rejects invalid refs without clearing the saved ref", () => {
     const browser = installMockBrowser({
       initialValues: {
-        [ACFS_REF_KEY]: "v1.2.3",
+        [GTBI_REF_KEY]: "v1.2.3",
       },
     });
 
-    expect(getACFSRef()).toBe("v1.2.3");
-    expect(setACFSRef("bad ref")).toBe(false);
-    expect(getACFSRef()).toBe("v1.2.3");
-    expect(browser.getStoredValue(ACFS_REF_KEY)).toBe("v1.2.3");
+    expect(getGTBIRef()).toBe("v1.2.3");
+    expect(setGTBIRef("bad ref")).toBe(false);
+    expect(getGTBIRef()).toBe("v1.2.3");
+    expect(browser.getStoredValue(GTBI_REF_KEY)).toBe("v1.2.3");
     expect(browser.dispatchCalls).toHaveLength(0);
 
-    expect(setACFSRef(null)).toBe(true);
-    expect(getACFSRef()).toBeNull();
-    expect(browser.getStoredValue(ACFS_REF_KEY)).toBe("");
+    expect(setGTBIRef(null)).toBe(true);
+    expect(getGTBIRef()).toBeNull();
+    expect(browser.getStoredValue(GTBI_REF_KEY)).toBe("");
     expect(browser.dispatchCalls).toHaveLength(1);
   });
 
-  test("SSH username persistence rejects root as an ACFS target user", () => {
+  test("SSH username persistence rejects root as an GTBI target user", () => {
     expect(normalizeSSHUsername("root")).toBeNull();
 
     const queryBrowser = installMockBrowser({

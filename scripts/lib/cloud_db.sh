@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # shellcheck disable=SC1091
 # ============================================================
-# ACFS Installer - Cloud & Database Tools Library
+# GTBI Installer - Cloud & Database Tools Library
 # Installs PostgreSQL, HashiCorp Vault, and Cloud CLIs
 # ============================================================
 
 # Ensure we have logging functions available
-if [[ -z "${ACFS_BLUE:-}" ]]; then
+if [[ -z "${GTBI_BLUE:-}" ]]; then
     CLOUD_DB_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
     # shellcheck source=logging.sh
     source "$CLOUD_DB_SCRIPT_DIR/logging.sh"
@@ -259,7 +259,7 @@ _cloud_validate_bin_dir_for_home() {
 
     case "$bin_dir" in
         */.local/bin) hinted_home="${bin_dir%/.local/bin}" ;;
-        */.acfs/bin) hinted_home="${bin_dir%/.acfs/bin}" ;;
+        */.gtbi/bin) hinted_home="${bin_dir%/.gtbi/bin}" ;;
         */.bun/bin) hinted_home="${bin_dir%/.bun/bin}" ;;
         */.cargo/bin) hinted_home="${bin_dir%/.cargo/bin}" ;;
         */.atuin/bin) hinted_home="${bin_dir%/.atuin/bin}" ;;
@@ -292,7 +292,7 @@ _cloud_preferred_bin_dir() {
 
     [[ -n "$target_home" ]] || return 1
 
-    candidate="$(_cloud_validate_bin_dir_for_home "${ACFS_BIN_DIR:-}" "$target_home" 2>/dev/null || true)"
+    candidate="$(_cloud_validate_bin_dir_for_home "${GTBI_BIN_DIR:-}" "$target_home" 2>/dev/null || true)"
     if [[ -n "$candidate" ]]; then
         printf '%s\n' "$candidate"
         return 0
@@ -311,8 +311,8 @@ _cloud_run_as_user() {
     local target_user_q=""
     local target_home_q=""
     local target_path_prefix_q=""
-    local acfs_home_q=""
-    local acfs_bin_dir_q=""
+    local gtbi_home_q=""
+    local gtbi_bin_dir_q=""
     local wrapped_cmd=""
     local bash_bin=""
     local sudo_bin=""
@@ -332,28 +332,28 @@ _cloud_run_as_user() {
         return 1
     fi
 
-    if [[ -n "${ACFS_BIN_DIR:-}" ]] && { [[ "${ACFS_BIN_DIR}" == "/" ]] || [[ "${ACFS_BIN_DIR}" != /* ]]; }; then
-        log_error "ACFS_BIN_DIR must be an absolute path and cannot be '/' (got: ${ACFS_BIN_DIR:-<empty>})"
+    if [[ -n "${GTBI_BIN_DIR:-}" ]] && { [[ "${GTBI_BIN_DIR}" == "/" ]] || [[ "${GTBI_BIN_DIR}" != /* ]]; }; then
+        log_error "GTBI_BIN_DIR must be an absolute path and cannot be '/' (got: ${GTBI_BIN_DIR:-<empty>})"
         return 1
     fi
 
     preferred_bin_dir="$(_cloud_preferred_bin_dir "$target_home" 2>/dev/null || true)"
     [[ -n "$preferred_bin_dir" ]] || preferred_bin_dir="$target_home/.local/bin"
-    target_path_prefix="$preferred_bin_dir:$target_home/.local/bin:$target_home/.acfs/bin:$target_home/.cargo/bin:$target_home/.bun/bin:$target_home/.atuin/bin:$target_home/go/bin"
+    target_path_prefix="$preferred_bin_dir:$target_home/.local/bin:$target_home/.gtbi/bin:$target_home/.cargo/bin:$target_home/.bun/bin:$target_home/.atuin/bin:$target_home/go/bin"
 
     printf -v target_user_q '%q' "$target_user"
     printf -v target_home_q '%q' "$target_home"
     printf -v target_path_prefix_q '%q' "$target_path_prefix"
-    if [[ -n "${ACFS_HOME:-}" ]]; then
-        printf -v acfs_home_q '%q' "$ACFS_HOME"
+    if [[ -n "${GTBI_HOME:-}" ]]; then
+        printf -v gtbi_home_q '%q' "$GTBI_HOME"
     fi
-    printf -v acfs_bin_dir_q '%q' "$preferred_bin_dir"
+    printf -v gtbi_bin_dir_q '%q' "$preferred_bin_dir"
 
     wrapped_cmd="export TARGET_USER=$target_user_q TARGET_HOME=$target_home_q HOME=$target_home_q;"
-    if [[ -n "$acfs_home_q" ]]; then
-        wrapped_cmd+=" export ACFS_HOME=$acfs_home_q;"
+    if [[ -n "$gtbi_home_q" ]]; then
+        wrapped_cmd+=" export GTBI_HOME=$gtbi_home_q;"
     fi
-    wrapped_cmd+=" export ACFS_BIN_DIR=$acfs_bin_dir_q;"
+    wrapped_cmd+=" export GTBI_BIN_DIR=$gtbi_bin_dir_q;"
     wrapped_cmd+=" export PATH=$target_path_prefix_q:\$PATH; set -o pipefail; cd \"\$HOME\" || exit 1; $cmd"
 
     if [[ "$(_cloud_resolve_current_user 2>/dev/null || true)" == "$target_user" ]]; then

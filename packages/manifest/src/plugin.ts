@@ -3,7 +3,7 @@ import { ModuleWebMetadataSchema } from './schema.js';
 import type { InstallerChecksumEntry } from './validate.js';
 import type { Manifest, Module, ModuleCategory, RunAs } from './types.js';
 
-const PLUGIN_SCHEMA = 'acfs.plugin-package.v1';
+const PLUGIN_SCHEMA = 'gtbi.plugin-package.v1';
 const SUPPORTED_SCHEMA_VERSION = 1;
 const SHA256_HEX_PATTERN = /^[a-f0-9]{64}$/i;
 const MODULE_ID_PATTERN =
@@ -29,7 +29,7 @@ const ALLOWED_CATEGORIES = new Set<ModuleCategory>([
   'cloud',
   'agents',
   'stack',
-  'acfs',
+  'gtbi',
 ]);
 const ALLOWED_TOP_LEVEL_FIELDS = new Set([
   'schema',
@@ -125,7 +125,7 @@ const PluginPackageSchema = z
         sourceRef: z.string().min(1),
         sourceCommit: z.string().regex(/^[a-f0-9]{40}$/i),
         pluginSha256: z.string().regex(SHA256_HEX_PATTERN),
-        acfsManifestVersion: z.number().int().positive(),
+        gtbiManifestVersion: z.number().int().positive(),
       })
       .passthrough(),
     targets: z.array(PluginTargetSchema).min(1),
@@ -717,7 +717,7 @@ function validateCategories(plugin: PluginPackage, diagnostics: PluginDiagnostic
     if (!ALLOWED_CATEGORIES.has(module.category as ModuleCategory)) {
       addDiagnostic(diagnostics, {
         code: 'plugin_missing_required_field',
-        message: `Plugin module "${module.id}" category "${module.category}" is not a known ACFS category`,
+        message: `Plugin module "${module.id}" category "${module.category}" is not a known GTBI category`,
         path: `modules[${index}].category`,
         severity: 'error',
         moduleId: module.id,

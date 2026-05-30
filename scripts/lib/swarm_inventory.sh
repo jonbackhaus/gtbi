@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-# ACFS Swarm Inventory - advisory local host inventory
+# GTBI Swarm Inventory - advisory local host inventory
 #
 # Implements the v1 local-first swarm capacity inventory contract.
 # Commands read or explicitly write JSON files only; they never launch NTM,
@@ -15,17 +15,17 @@ SWARM_INV_FORMAT="json"
 SWARM_INV_INPUT=""
 SWARM_INV_OUTPUT=""
 SWARM_INV_ARTIFACT_DIR=""
-SWARM_INV_INVENTORY_FILE="${ACFS_SWARM_INVENTORY_FILE:-${HOME:-/tmp}/.acfs/swarm/hosts.inventory.json}"
+SWARM_INV_INVENTORY_FILE="${GTBI_SWARM_INVENTORY_FILE:-${HOME:-/tmp}/.gtbi/swarm/hosts.inventory.json}"
 SWARM_INV_GENERATED_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date)"
 
 swarm_inventory_usage() {
     cat <<'EOF'
-Usage: acfs swarm inventory <report|import|export|validate> [OPTIONS]
+Usage: gtbi swarm inventory <report|import|export|validate> [OPTIONS]
 
 Options:
   --json                Emit machine-readable JSON
   --markdown            Emit human output (default)
-  --inventory FILE      Inventory file (default: ~/.acfs/swarm/hosts.inventory.json)
+  --inventory FILE      Inventory file (default: ~/.gtbi/swarm/hosts.inventory.json)
   --input FILE          Input file for import
   --output FILE         Output file for import/export
   --format json         Export format (json only for v1)
@@ -97,7 +97,7 @@ swarm_inventory_parse_args() {
                 ;;
             *)
                 echo "Error: unknown option: $1" >&2
-                echo "Run 'acfs swarm inventory --help' for usage." >&2
+                echo "Run 'gtbi swarm inventory --help' for usage." >&2
                 return 2
                 ;;
         esac
@@ -409,9 +409,9 @@ swarm_inventory_report_json() {
             warnings: $warnings,
             next_commands: (
               if ($hosts | length) == 0 then
-                ["acfs swarm inventory import --input hosts.inventory.json", "acfs capacity --json --recommend-ntm"]
+                ["gtbi swarm inventory import --input hosts.inventory.json", "gtbi capacity --json --recommend-ntm"]
               else
-                ["acfs capacity --json --recommend-ntm", "rch status --json", "acfs swarm plan --agents 25"]
+                ["gtbi capacity --json --recommend-ntm", "rch status --json", "gtbi swarm plan --agents 25"]
               end
             )
           }
@@ -423,7 +423,7 @@ swarm_inventory_emit_report_human() {
     local jq_bin="$2"
 
     "$jq_bin" -r '
-      "ACFS Swarm Host Inventory",
+      "GTBI Swarm Host Inventory",
       "Status: \(.status)",
       "Hosts: \(.summary.active) active, \(.summary.stale) stale, \(.summary.disabled) disabled",
       "",
@@ -448,7 +448,7 @@ swarm_inventory_emit_action_human() {
     local jq_bin="$2"
 
     "$jq_bin" -r '
-      "ACFS Swarm Inventory \(.operation)",
+      "GTBI Swarm Inventory \(.operation)",
       "Status: \(.status)",
       (if .input_file then "Input: \(.input_file)" else empty end),
       (if .output_file then "Output: \(.output_file)" else empty end),
@@ -464,7 +464,7 @@ swarm_inventory_read_inventory_or_fail() {
     local operation="$3"
     local path="$4"
     local loaded_json=""
-    local next_commands_json='["acfs swarm inventory import --input hosts.inventory.json"]'
+    local next_commands_json='["gtbi swarm inventory import --input hosts.inventory.json"]'
 
     if [[ ! -f "$path" ]]; then
         swarm_inventory_fail "$jq_bin" "$operation" "inventory_missing" "Inventory file not found: $path" "[]" "$next_commands_json"
@@ -488,7 +488,7 @@ swarm_inventory_validate_or_fail() {
     local validation_result_json=""
     local forbidden_paths_json=""
     local first_message=""
-    local next_commands_json='["acfs swarm inventory validate --json"]'
+    local next_commands_json='["gtbi swarm inventory validate --json"]'
 
     validation_result_json="$(swarm_inventory_validation_json "$jq_bin" "$inventory_json" "$source_file")"
     if [[ "$("$jq_bin" -r '.status' <<< "$validation_result_json")" != "pass" ]]; then
@@ -529,7 +529,7 @@ swarm_inventory_command_validate() {
     validation_json="$(swarm_inventory_validation_json "$jq_bin" "$inventory_json" "$SWARM_INV_INVENTORY_FILE")"
 
     if [[ "$("$jq_bin" -r '.status' <<< "$validation_json")" != "pass" ]]; then
-        swarm_inventory_write_error_artifacts "validate" "$(swarm_inventory_error_json "$jq_bin" "validate" "$("$jq_bin" -r '.errors[0].code // "validation_failed"' <<< "$validation_json")" "$("$jq_bin" -r '.errors[0].message // "Inventory validation failed"' <<< "$validation_json")" "$("$jq_bin" -c '.forbidden_sensitive_field_paths // []' <<< "$validation_json")" '["acfs swarm inventory validate --json"]')"
+        swarm_inventory_write_error_artifacts "validate" "$(swarm_inventory_error_json "$jq_bin" "validate" "$("$jq_bin" -r '.errors[0].code // "validation_failed"' <<< "$validation_json")" "$("$jq_bin" -r '.errors[0].message // "Inventory validation failed"' <<< "$validation_json")" "$("$jq_bin" -c '.forbidden_sensitive_field_paths // []' <<< "$validation_json")" '["gtbi swarm inventory validate --json"]')"
     fi
 
     if [[ "$SWARM_INV_JSON" == true ]]; then
@@ -551,7 +551,7 @@ swarm_inventory_command_import() {
     local action_json=""
 
     if [[ -z "$input_file" ]]; then
-        swarm_inventory_fail "$jq_bin" "import" "missing_input" "import requires --input FILE" "[]" '["acfs swarm inventory import --input hosts.inventory.json"]'
+        swarm_inventory_fail "$jq_bin" "import" "missing_input" "import requires --input FILE" "[]" '["gtbi swarm inventory import --input hosts.inventory.json"]'
         return 2
     fi
 

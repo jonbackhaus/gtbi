@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
 # ============================================================
-# ACFS Info Library
+# GTBI Info Library
 #
 # Provides lightning-fast system and installation status display.
 # Reads from state files only - NO verification checks (that's doctor's job).
 #
 # Usage:
-#   acfs info            # Terminal output (default)
-#   acfs info --json     # JSON output for scripting
-#   acfs info --html     # Self-contained HTML page
-#   acfs info --minimal  # Just essentials (IP, key commands)
+#   gtbi info            # Terminal output (default)
+#   gtbi info --json     # JSON output for scripting
+#   gtbi info --html     # Self-contained HTML page
+#   gtbi info --minimal  # Just essentials (IP, key commands)
 #
 # Design Philosophy:
 #   - Speed: Must complete in <1 second
@@ -18,19 +18,19 @@
 #   - Fallback: Graceful degradation if data missing
 #
 # Related beads:
-#   - agentic_coding_flywheel_setup-bags: FEATURE: acfs info Quick Reference Command
-#   - agentic_coding_flywheel_setup-cxz3: TASK: Design acfs info output format
-#   - agentic_coding_flywheel_setup-3dkg: TASK: Implement info.sh core data gathering
+#   - gastown_batteries_included-bags: FEATURE: gtbi info Quick Reference Command
+#   - gastown_batteries_included-cxz3: TASK: Design gtbi info output format
+#   - gastown_batteries_included-3dkg: TASK: Implement info.sh core data gathering
 # ============================================================
 
 # Prevent multiple sourcing
-if [[ -n "${_ACFS_INFO_SH_LOADED:-}" ]]; then
+if [[ -n "${_GTBI_INFO_SH_LOADED:-}" ]]; then
     if [[ "${BASH_SOURCE[0]}" != "${0}" ]]; then
         return 0
     fi
     exit 0
 fi
-_ACFS_INFO_SH_LOADED=1
+_GTBI_INFO_SH_LOADED=1
 
 _INFO_WAS_SOURCED=false
 _INFO_ORIGINAL_HOME=""
@@ -219,7 +219,7 @@ info_initial_current_home() {
     local cached_home=""
     local resolved_home=""
 
-    if [[ "${_INFO_WAS_SOURCED:-false}" == "true" ]] && [[ -z "${TARGET_HOME:-}${TARGET_USER:-}${ACFS_HOME:-}${ACFS_STATE_FILE:-}${ACFS_SYSTEM_STATE_FILE:-}" ]]; then
+    if [[ "${_INFO_WAS_SOURCED:-false}" == "true" ]] && [[ -z "${TARGET_HOME:-}${TARGET_USER:-}${GTBI_HOME:-}${GTBI_STATE_FILE:-}${GTBI_SYSTEM_STATE_FILE:-}" ]]; then
         cached_home="$(info_sanitize_abs_nonroot_path "${_INFO_ORIGINAL_HOME:-${HOME:-}}" 2>/dev/null || true)"
         if [[ -n "$cached_home" ]]; then
             printf '%s\n' "$cached_home"
@@ -249,21 +249,21 @@ if [[ -n "$_INFO_CURRENT_HOME" ]]; then
     export HOME
 fi
 
-# ACFS home directory
-_INFO_EXPLICIT_ACFS_HOME="$(info_sanitize_abs_nonroot_path "${ACFS_HOME:-}" 2>/dev/null || true)"
-_INFO_DEFAULT_ACFS_HOME=""
-[[ -n "$_INFO_CURRENT_HOME" ]] && _INFO_DEFAULT_ACFS_HOME="${_INFO_CURRENT_HOME}/.acfs"
-_INFO_ACFS_HOME="${_INFO_EXPLICIT_ACFS_HOME:-$_INFO_DEFAULT_ACFS_HOME}"
+# GTBI home directory
+_INFO_EXPLICIT_GTBI_HOME="$(info_sanitize_abs_nonroot_path "${GTBI_HOME:-}" 2>/dev/null || true)"
+_INFO_DEFAULT_GTBI_HOME=""
+[[ -n "$_INFO_CURRENT_HOME" ]] && _INFO_DEFAULT_GTBI_HOME="${_INFO_CURRENT_HOME}/.gtbi"
+_INFO_GTBI_HOME="${_INFO_EXPLICIT_GTBI_HOME:-$_INFO_DEFAULT_GTBI_HOME}"
 _INFO_SYSTEM_STATE_WAS_EXPLICIT=false
-[[ -n "${ACFS_SYSTEM_STATE_FILE:-}" ]] && [[ "${ACFS_SYSTEM_STATE_FILE%/}" != "/var/lib/acfs/state.json" ]] && _INFO_SYSTEM_STATE_WAS_EXPLICIT=true
-_INFO_SYSTEM_STATE_FILE="$(info_sanitize_abs_nonroot_path "${ACFS_SYSTEM_STATE_FILE:-/var/lib/acfs/state.json}" 2>/dev/null || true)"
+[[ -n "${GTBI_SYSTEM_STATE_FILE:-}" ]] && [[ "${GTBI_SYSTEM_STATE_FILE%/}" != "/var/lib/gtbi/state.json" ]] && _INFO_SYSTEM_STATE_WAS_EXPLICIT=true
+_INFO_SYSTEM_STATE_FILE="$(info_sanitize_abs_nonroot_path "${GTBI_SYSTEM_STATE_FILE:-/var/lib/gtbi/state.json}" 2>/dev/null || true)"
 if [[ -z "$_INFO_SYSTEM_STATE_FILE" ]]; then
-    _INFO_SYSTEM_STATE_FILE="/var/lib/acfs/state.json"
+    _INFO_SYSTEM_STATE_FILE="/var/lib/gtbi/state.json"
 fi
 _INFO_EXPLICIT_TARGET_HOME_RAW="${TARGET_HOME:-}"
 _INFO_EXPLICIT_TARGET_USER_RAW="${TARGET_USER:-}"
 _INFO_EXPLICIT_TARGET_HOME="$(info_existing_abs_home "${TARGET_HOME:-}" 2>/dev/null || true)"
-_INFO_RESOLVED_ACFS_HOME=""
+_INFO_RESOLVED_GTBI_HOME=""
 
 # Source output formatting library (for TOON support)
 _INFO_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -363,7 +363,7 @@ info_resolve_explicit_target_home() {
             return 0
         fi
         target_home="$_INFO_EXPLICIT_TARGET_HOME"
-        if [[ -n "$target_home" ]] && [[ "$target_home" != "${_INFO_CURRENT_HOME:-}" ]] && info_candidate_has_acfs_data "$target_home/.acfs"; then
+        if [[ -n "$target_home" ]] && [[ "$target_home" != "${_INFO_CURRENT_HOME:-}" ]] && info_candidate_has_gtbi_data "$target_home/.gtbi"; then
             printf '%s\n' "${target_home%/}"
             return 0
         fi
@@ -379,21 +379,21 @@ info_resolve_explicit_target_home() {
     return 1
 }
 
-info_candidate_has_acfs_data() {
+info_candidate_has_gtbi_data() {
     local candidate="$1"
     [[ -n "$candidate" ]] || return 1
     [[ -e "$candidate/state.json" || -e "$candidate/onboard_progress.json" || -d "$candidate/onboard" || -e "$candidate/VERSION" || -e "$candidate/scripts/lib/info.sh" ]]
 }
 
-info_script_acfs_home() {
+info_script_gtbi_home() {
     local candidate=""
     candidate=$(cd "$_INFO_SCRIPT_DIR/../.." 2>/dev/null && pwd) || return 1
-    [[ "$(basename "$candidate")" == ".acfs" ]] || return 1
+    [[ "$(basename "$candidate")" == ".gtbi" ]] || return 1
     printf '%s\n' "$candidate"
 }
 
-info_current_home_acfs_candidate() {
-    local candidate="$_INFO_DEFAULT_ACFS_HOME"
+info_current_home_gtbi_candidate() {
+    local candidate="$_INFO_DEFAULT_GTBI_HOME"
     local current_home="$_INFO_CURRENT_HOME"
     local current_user=""
     local original_home=""
@@ -403,7 +403,7 @@ info_current_home_acfs_candidate() {
 
     [[ -n "$candidate" && -n "$current_home" ]] || return 1
     [[ "$current_home" != "/root" ]] || return 1
-    info_candidate_has_acfs_data "$candidate" || return 1
+    info_candidate_has_gtbi_data "$candidate" || return 1
 
     if [[ "${_INFO_ORIGINAL_HOME_WAS_SET:-false}" == true ]]; then
         original_home="$(info_sanitize_abs_nonroot_path "$_INFO_ORIGINAL_HOME" 2>/dev/null || true)"
@@ -497,7 +497,7 @@ info_validate_bin_dir_for_home() {
 
     case "$bin_dir" in
         */.local/bin) hinted_home="${bin_dir%/.local/bin}" ;;
-        */.acfs/bin) hinted_home="${bin_dir%/.acfs/bin}" ;;
+        */.gtbi/bin) hinted_home="${bin_dir%/.gtbi/bin}" ;;
         */.bun/bin) hinted_home="${bin_dir%/.bun/bin}" ;;
         */.cargo/bin) hinted_home="${bin_dir%/.cargo/bin}" ;;
         */.atuin/bin) hinted_home="${bin_dir%/.atuin/bin}" ;;
@@ -528,11 +528,11 @@ info_state_file_path_target_home() {
     local state_home=""
     local candidate_user=""
 
-    [[ "$state_file" == */.acfs/state.json ]] || return 1
+    [[ "$state_file" == */.gtbi/state.json ]] || return 1
     data_home="${state_file%/state.json}"
     data_home="$(info_sanitize_abs_nonroot_path "$data_home" 2>/dev/null || true)"
     [[ -n "$data_home" ]] || return 1
-    path_home="${data_home%/.acfs}"
+    path_home="${data_home%/.gtbi}"
 
     candidate_user="$(info_read_user_for_home "$path_home" 2>/dev/null || true)"
     if [[ -n "$candidate_user" ]]; then
@@ -546,7 +546,7 @@ info_state_file_path_target_home() {
         return 0
     fi
 
-    if [[ -n "$_INFO_EXPLICIT_ACFS_HOME" ]] && [[ "$data_home" == "$_INFO_EXPLICIT_ACFS_HOME" ]] && info_path_looks_like_user_home "$path_home"; then
+    if [[ -n "$_INFO_EXPLICIT_GTBI_HOME" ]] && [[ "$data_home" == "$_INFO_EXPLICIT_GTBI_HOME" ]] && info_path_looks_like_user_home "$path_home"; then
         printf '%s\n' "$path_home"
         return 0
     fi
@@ -592,7 +592,7 @@ info_read_user_for_home() {
         return 0
     fi
 
-    state_file="$user_home/.acfs/state.json"
+    state_file="$user_home/.gtbi/state.json"
     candidate_user="$(info_read_target_user_from_state "$state_file" 2>/dev/null || true)"
     if [[ -n "$candidate_user" ]]; then
         candidate_home="$(info_home_for_user "$candidate_user" 2>/dev/null || true)"
@@ -628,7 +628,7 @@ info_resolve_target_user() {
     fi
 
     if [[ -n "$system_user" ]] && [[ -n "$system_home" ]] && { [[ -z "$path_home" ]] || [[ "$path_home" == "$system_home" ]]; }; then
-        if [[ -n "$path_home" ]] || [[ -z "$state_home" ]] || [[ "$state_home" == "$system_home" ]] || [[ -z "$_INFO_EXPLICIT_ACFS_HOME" ]] || [[ "$state_file" != "$_INFO_EXPLICIT_ACFS_HOME/state.json" ]]; then
+        if [[ -n "$path_home" ]] || [[ -z "$state_home" ]] || [[ "$state_home" == "$system_home" ]] || [[ -z "$_INFO_EXPLICIT_GTBI_HOME" ]] || [[ "$state_file" != "$_INFO_EXPLICIT_GTBI_HOME/state.json" ]]; then
             printf '%s\n' "$system_user"
             return 0
         fi
@@ -663,12 +663,12 @@ info_resolve_target_user() {
             printf '%s\n' "$candidate_user"
             return 0
         fi
-        if [[ -z "$path_home" ]] && [[ -n "$state_home" ]] && { [[ -z "$system_home" ]] || [[ "$state_home" == "$system_home" ]] || { [[ -n "$_INFO_EXPLICIT_ACFS_HOME" ]] && [[ "$state_file" == "$_INFO_EXPLICIT_ACFS_HOME/state.json" ]]; }; }; then
+        if [[ -z "$path_home" ]] && [[ -n "$state_home" ]] && { [[ -z "$system_home" ]] || [[ "$state_home" == "$system_home" ]] || { [[ -n "$_INFO_EXPLICIT_GTBI_HOME" ]] && [[ "$state_file" == "$_INFO_EXPLICIT_GTBI_HOME/state.json" ]]; }; }; then
             printf '%s\n' "$candidate_user"
             return 0
         fi
 
-        if [[ -n "$_INFO_EXPLICIT_ACFS_HOME" ]] && [[ "$state_file" == "$_INFO_EXPLICIT_ACFS_HOME/state.json" ]] && [[ -z "$path_home" ]]; then
+        if [[ -n "$_INFO_EXPLICIT_GTBI_HOME" ]] && [[ "$state_file" == "$_INFO_EXPLICIT_GTBI_HOME/state.json" ]] && [[ -z "$path_home" ]]; then
             printf '%s\n' "$candidate_user"
             return 0
         fi
@@ -713,7 +713,7 @@ info_resolve_target_home() {
             printf '%s\n' "$state_home"
             return 0
         fi
-        if [[ -n "$_INFO_EXPLICIT_ACFS_HOME" ]] && [[ "$state_file" == "$_INFO_EXPLICIT_ACFS_HOME/state.json" ]]; then
+        if [[ -n "$_INFO_EXPLICIT_GTBI_HOME" ]] && [[ "$state_file" == "$_INFO_EXPLICIT_GTBI_HOME/state.json" ]]; then
             printf '%s\n' "$state_home"
             return 0
         fi
@@ -746,7 +746,7 @@ info_preferred_bin_dir() {
         return 0
     fi
 
-    candidate="$(info_validate_bin_dir_for_home "${ACFS_BIN_DIR:-}" "$base_home" 2>/dev/null || true)"
+    candidate="$(info_validate_bin_dir_for_home "${GTBI_BIN_DIR:-}" "$base_home" 2>/dev/null || true)"
     if [[ -n "$candidate" ]]; then
         printf '%s\n' "$candidate"
         return 0
@@ -757,8 +757,8 @@ info_preferred_bin_dir() {
 }
 
 info_get_data_home() {
-    if [[ -n "$_INFO_RESOLVED_ACFS_HOME" ]]; then
-        echo "$_INFO_RESOLVED_ACFS_HOME"
+    if [[ -n "$_INFO_RESOLVED_GTBI_HOME" ]]; then
+        echo "$_INFO_RESOLVED_GTBI_HOME"
         return 0
     fi
 
@@ -767,43 +767,43 @@ info_get_data_home() {
     local target_user=""
     local explicit_target_home=""
 
-    candidate=$(info_script_acfs_home 2>/dev/null || true)
-    if info_candidate_has_acfs_data "$candidate"; then
-        _INFO_RESOLVED_ACFS_HOME="$candidate"
-        echo "$_INFO_RESOLVED_ACFS_HOME"
+    candidate=$(info_script_gtbi_home 2>/dev/null || true)
+    if info_candidate_has_gtbi_data "$candidate"; then
+        _INFO_RESOLVED_GTBI_HOME="$candidate"
+        echo "$_INFO_RESOLVED_GTBI_HOME"
         return 0
     fi
 
     explicit_target_home="$(info_resolve_explicit_target_home 2>/dev/null || true)"
     if [[ -n "$explicit_target_home" ]]; then
-        candidate="${explicit_target_home}/.acfs"
-        if info_candidate_has_acfs_data "$candidate"; then
-            _INFO_RESOLVED_ACFS_HOME="$candidate"
-            echo "$_INFO_RESOLVED_ACFS_HOME"
+        candidate="${explicit_target_home}/.gtbi"
+        if info_candidate_has_gtbi_data "$candidate"; then
+            _INFO_RESOLVED_GTBI_HOME="$candidate"
+            echo "$_INFO_RESOLVED_GTBI_HOME"
             return 0
         fi
     fi
 
-    if [[ ! -f "$_INFO_SYSTEM_STATE_FILE" ]] && [[ -n "$_INFO_EXPLICIT_ACFS_HOME" ]] && info_candidate_has_acfs_data "$_INFO_EXPLICIT_ACFS_HOME"; then
-        _INFO_RESOLVED_ACFS_HOME="$_INFO_EXPLICIT_ACFS_HOME"
-        echo "$_INFO_RESOLVED_ACFS_HOME"
+    if [[ ! -f "$_INFO_SYSTEM_STATE_FILE" ]] && [[ -n "$_INFO_EXPLICIT_GTBI_HOME" ]] && info_candidate_has_gtbi_data "$_INFO_EXPLICIT_GTBI_HOME"; then
+        _INFO_RESOLVED_GTBI_HOME="$_INFO_EXPLICIT_GTBI_HOME"
+        echo "$_INFO_RESOLVED_GTBI_HOME"
         return 0
     fi
 
-    candidate="$(info_current_home_acfs_candidate 2>/dev/null || true)"
+    candidate="$(info_current_home_gtbi_candidate 2>/dev/null || true)"
     if [[ -n "$candidate" ]]; then
-        _INFO_RESOLVED_ACFS_HOME="$candidate"
-        echo "$_INFO_RESOLVED_ACFS_HOME"
+        _INFO_RESOLVED_GTBI_HOME="$candidate"
+        echo "$_INFO_RESOLVED_GTBI_HOME"
         return 0
     fi
 
     if [[ "$_INFO_SYSTEM_STATE_WAS_EXPLICIT" == true ]]; then
         target_home=$(info_read_target_home_from_state || true)
         if [[ -n "$target_home" ]]; then
-            candidate="${target_home}/.acfs"
-            if info_candidate_has_acfs_data "$candidate"; then
-                _INFO_RESOLVED_ACFS_HOME="$candidate"
-                echo "$_INFO_RESOLVED_ACFS_HOME"
+            candidate="${target_home}/.gtbi"
+            if info_candidate_has_gtbi_data "$candidate"; then
+                _INFO_RESOLVED_GTBI_HOME="$candidate"
+                echo "$_INFO_RESOLVED_GTBI_HOME"
                 return 0
             fi
         fi
@@ -811,43 +811,43 @@ info_get_data_home() {
         target_user=$(info_read_target_user_from_state || true)
         if [[ -n "$target_user" ]]; then
             target_home=$(info_home_for_user "$target_user" || true)
-            candidate="${target_home}/.acfs"
-            if [[ -n "$target_home" ]] && info_candidate_has_acfs_data "$candidate"; then
-                _INFO_RESOLVED_ACFS_HOME="$candidate"
-                echo "$_INFO_RESOLVED_ACFS_HOME"
+            candidate="${target_home}/.gtbi"
+            if [[ -n "$target_home" ]] && info_candidate_has_gtbi_data "$candidate"; then
+                _INFO_RESOLVED_GTBI_HOME="$candidate"
+                echo "$_INFO_RESOLVED_GTBI_HOME"
                 return 0
             fi
         fi
     fi
 
-    if [[ -n "$_INFO_EXPLICIT_ACFS_HOME" ]] && info_candidate_has_acfs_data "$_INFO_EXPLICIT_ACFS_HOME"; then
-        _INFO_RESOLVED_ACFS_HOME="$_INFO_EXPLICIT_ACFS_HOME"
-        echo "$_INFO_RESOLVED_ACFS_HOME"
+    if [[ -n "$_INFO_EXPLICIT_GTBI_HOME" ]] && info_candidate_has_gtbi_data "$_INFO_EXPLICIT_GTBI_HOME"; then
+        _INFO_RESOLVED_GTBI_HOME="$_INFO_EXPLICIT_GTBI_HOME"
+        echo "$_INFO_RESOLVED_GTBI_HOME"
         return 0
     fi
 
     if [[ -n "$_INFO_EXPLICIT_TARGET_HOME_RAW" ]] || [[ -n "$_INFO_EXPLICIT_TARGET_USER_RAW" ]]; then
-        _INFO_RESOLVED_ACFS_HOME=""
+        _INFO_RESOLVED_GTBI_HOME=""
         echo ""
         return 0
     fi
 
     if [[ -n "${SUDO_USER:-}" ]]; then
         target_home=$(info_home_for_user "$SUDO_USER" || true)
-        candidate="${target_home}/.acfs"
-        if [[ -n "$target_home" ]] && info_candidate_has_acfs_data "$candidate"; then
-            _INFO_RESOLVED_ACFS_HOME="$candidate"
-            echo "$_INFO_RESOLVED_ACFS_HOME"
+        candidate="${target_home}/.gtbi"
+        if [[ -n "$target_home" ]] && info_candidate_has_gtbi_data "$candidate"; then
+            _INFO_RESOLVED_GTBI_HOME="$candidate"
+            echo "$_INFO_RESOLVED_GTBI_HOME"
             return 0
         fi
     fi
 
     target_home=$(info_read_target_home_from_state || true)
     if [[ -n "$target_home" ]]; then
-        candidate="${target_home}/.acfs"
-        if info_candidate_has_acfs_data "$candidate"; then
-            _INFO_RESOLVED_ACFS_HOME="$candidate"
-            echo "$_INFO_RESOLVED_ACFS_HOME"
+        candidate="${target_home}/.gtbi"
+        if info_candidate_has_gtbi_data "$candidate"; then
+            _INFO_RESOLVED_GTBI_HOME="$candidate"
+            echo "$_INFO_RESOLVED_GTBI_HOME"
             return 0
         fi
     fi
@@ -855,22 +855,22 @@ info_get_data_home() {
     target_user=$(info_read_target_user_from_state || true)
     if [[ -n "$target_user" ]]; then
         target_home=$(info_home_for_user "$target_user" || true)
-        candidate="${target_home}/.acfs"
-        if [[ -n "$target_home" ]] && info_candidate_has_acfs_data "$candidate"; then
-            _INFO_RESOLVED_ACFS_HOME="$candidate"
-            echo "$_INFO_RESOLVED_ACFS_HOME"
+        candidate="${target_home}/.gtbi"
+        if [[ -n "$target_home" ]] && info_candidate_has_gtbi_data "$candidate"; then
+            _INFO_RESOLVED_GTBI_HOME="$candidate"
+            echo "$_INFO_RESOLVED_GTBI_HOME"
             return 0
         fi
     fi
 
-    if [[ -n "$_INFO_DEFAULT_ACFS_HOME" ]] && info_candidate_has_acfs_data "$_INFO_DEFAULT_ACFS_HOME"; then
-        _INFO_RESOLVED_ACFS_HOME="$_INFO_DEFAULT_ACFS_HOME"
-        echo "$_INFO_RESOLVED_ACFS_HOME"
+    if [[ -n "$_INFO_DEFAULT_GTBI_HOME" ]] && info_candidate_has_gtbi_data "$_INFO_DEFAULT_GTBI_HOME"; then
+        _INFO_RESOLVED_GTBI_HOME="$_INFO_DEFAULT_GTBI_HOME"
+        echo "$_INFO_RESOLVED_GTBI_HOME"
         return 0
     fi
 
-    _INFO_RESOLVED_ACFS_HOME="$_INFO_DEFAULT_ACFS_HOME"
-    echo "$_INFO_RESOLVED_ACFS_HOME"
+    _INFO_RESOLVED_GTBI_HOME="$_INFO_DEFAULT_GTBI_HOME"
+    echo "$_INFO_RESOLVED_GTBI_HOME"
 }
 
 info_get_install_state_file() {
@@ -915,7 +915,7 @@ info_prepend_user_paths() {
     for dir in \
         "$primary_bin_dir" \
         "$base_home/.local/bin" \
-        "$base_home/.acfs/bin" \
+        "$base_home/.gtbi/bin" \
         "$base_home/.bun/bin" \
         "$base_home/.cargo/bin" \
         "$base_home/go/bin" \
@@ -956,7 +956,7 @@ info_binary_path() {
     for candidate in \
         "$primary_bin_dir/$name" \
         "$base_home/.local/bin/$name" \
-        "$base_home/.acfs/bin/$name" \
+        "$base_home/.gtbi/bin/$name" \
         "$base_home/.bun/bin/$name" \
         "$base_home/.cargo/bin/$name" \
         "$base_home/.atuin/bin/$name" \
@@ -989,7 +989,7 @@ info_prepare_context() {
     local resolved_target_home=""
 
     data_home=$(info_get_data_home)
-    _INFO_RESOLVED_ACFS_HOME="$data_home"
+    _INFO_RESOLVED_GTBI_HOME="$data_home"
     state_file=$(info_get_install_state_file)
 
     if [[ -z "${TARGET_USER:-}" ]]; then
@@ -1010,8 +1010,8 @@ info_prepare_context() {
         if [[ -n "${TARGET_USER:-}" ]]; then
             [[ -n "$target_home" ]] || target_home=$(info_home_for_user "$TARGET_USER" 2>/dev/null || true)
         fi
-        if [[ -z "$target_home" ]] && [[ "$data_home" == */.acfs ]]; then
-            target_home="${data_home%/.acfs}"
+        if [[ -z "$target_home" ]] && [[ "$data_home" == */.gtbi ]]; then
+            target_home="${data_home%/.gtbi}"
         fi
         if [[ -n "$target_home" ]]; then
             TARGET_HOME="$target_home"
@@ -1197,7 +1197,7 @@ info_get_completed_phases() {
 
 # Get total phases count
 info_get_total_phases() {
-    echo "9"  # Fixed in ACFS
+    echo "9"  # Fixed in GTBI
 }
 
 # Get skipped tools
@@ -1320,8 +1320,8 @@ info_get_install_date() {
 info_get_onboard_lessons_dir() {
     local data_home=""
     data_home=$(info_get_data_home)
-    if [[ -n "${ACFS_LESSONS_DIR:-}" ]]; then
-        echo "$ACFS_LESSONS_DIR"
+    if [[ -n "${GTBI_LESSONS_DIR:-}" ]]; then
+        echo "$GTBI_LESSONS_DIR"
     elif [[ -n "$data_home" ]]; then
         echo "${data_home}/onboard/lessons"
     else
@@ -1332,8 +1332,8 @@ info_get_onboard_lessons_dir() {
 info_get_onboard_progress_file() {
     local data_home=""
     data_home=$(info_get_data_home)
-    if [[ -n "${ACFS_PROGRESS_FILE:-}" ]]; then
-        echo "$ACFS_PROGRESS_FILE"
+    if [[ -n "${GTBI_PROGRESS_FILE:-}" ]]; then
+        echo "$GTBI_PROGRESS_FILE"
     elif [[ -n "$data_home" ]]; then
         echo "${data_home}/onboard_progress.json"
     else
@@ -1644,11 +1644,11 @@ info_swarm_summary_fallback() {
 }
 
 info_collect_swarm_status_json() {
-    local status_script="${ACFS_INFO_SWARM_STATUS_SCRIPT:-${_INFO_SCRIPT_DIR}/swarm_status.sh}"
+    local status_script="${GTBI_INFO_SWARM_STATUS_SCRIPT:-${_INFO_SCRIPT_DIR}/swarm_status.sh}"
     local bash_bin=""
     local timeout_bin=""
-    local deadline="${ACFS_INFO_SWARM_STATUS_DEADLINE:-2}"
-    local per_tool_timeout="${ACFS_INFO_SWARM_STATUS_TIMEOUT:-0.2}"
+    local deadline="${GTBI_INFO_SWARM_STATUS_DEADLINE:-2}"
+    local per_tool_timeout="${GTBI_INFO_SWARM_STATUS_TIMEOUT:-0.2}"
     local output=""
     local exit_status=0
 
@@ -1659,9 +1659,9 @@ info_collect_swarm_status_json() {
     timeout_bin="$(info_system_binary_path timeout 2>/dev/null || true)"
     set +e
     if [[ -n "$timeout_bin" ]]; then
-        output="$(ACFS_SWARM_STATUS_TIMEOUT="$per_tool_timeout" "$timeout_bin" "$deadline" "$bash_bin" "$status_script" --json 2>/dev/null)"
+        output="$(GTBI_SWARM_STATUS_TIMEOUT="$per_tool_timeout" "$timeout_bin" "$deadline" "$bash_bin" "$status_script" --json 2>/dev/null)"
     else
-        output="$(ACFS_SWARM_STATUS_TIMEOUT="$per_tool_timeout" "$bash_bin" "$status_script" --json 2>/dev/null)"
+        output="$(GTBI_SWARM_STATUS_TIMEOUT="$per_tool_timeout" "$bash_bin" "$status_script" --json 2>/dev/null)"
     fi
     exit_status=$?
     set -e
@@ -1677,7 +1677,7 @@ info_get_swarm_summary() {
 
     jq_bin="$(info_binary_path jq 2>/dev/null || true)"
     [[ -n "$jq_bin" ]] || {
-        info_swarm_summary_fallback "jq unavailable; run acfs swarm status --json"
+        info_swarm_summary_fallback "jq unavailable; run gtbi swarm status --json"
         return 0
     }
 
@@ -1706,7 +1706,7 @@ info_get_swarm_summary() {
            else (((($host.disk_available_kb) / 1048576) | floor | tostring) + " GiB disk")
            end) as $disk_resource
         | ($mem_resource + ", " + $disk_resource) as $resource
-        | (if $status == "fail" then "Run acfs swarm doctor --json"
+        | (if $status == "fail" then "Run gtbi swarm doctor --json"
            elif (($in_progress | type) == "number" and $in_progress > 0) then "Review active Beads before launching more agents"
            elif (($ready | type) == "number" and $ready == 0) then "No ready Beads; refine task graph"
            elif $status == "pass" then "Safe to launch or scale a swarm"
@@ -1764,7 +1764,7 @@ info_render_terminal() {
 
     # Header
     echo -e "${C_CYAN}╭─────────────────────────────────────────────────────────────╮${C_RESET}"
-    echo -e "${C_CYAN}│${C_RESET}  ${C_BOLD}ACFS Environment Info${C_RESET}                                      ${C_CYAN}│${C_RESET}"
+    echo -e "${C_CYAN}│${C_RESET}  ${C_BOLD}GTBI Environment Info${C_RESET}                                      ${C_CYAN}│${C_RESET}"
     echo -e "${C_CYAN}╰─────────────────────────────────────────────────────────────╯${C_RESET}"
     echo ""
 
@@ -1828,7 +1828,7 @@ info_render_terminal() {
     echo -e "${C_BOLD}Onboard Progress${C_RESET}"
     if [[ "$lessons_total" =~ ^[0-9]+$ ]] && (( lessons_total == 0 )); then
         echo -e "  No lessons available"
-        echo -e "  ${C_DIM}Re-run the installer or set ACFS_LESSONS_DIR to a directory with onboarding lessons.${C_RESET}"
+        echo -e "  ${C_DIM}Re-run the installer or set GTBI_LESSONS_DIR to a directory with onboarding lessons.${C_RESET}"
     else
         local percent=0
         local display_completed="$lessons_completed"
@@ -1849,7 +1849,7 @@ info_render_terminal() {
     echo ""
 
     # Footer
-    echo -e "${C_DIM}Run 'acfs doctor' for health verification${C_RESET}"
+    echo -e "${C_DIM}Run 'gtbi doctor' for health verification${C_RESET}"
     if [[ "$lessons_total" =~ ^[0-9]+$ ]] && (( lessons_total > 0 )); then
         echo -e "${C_DIM}Run 'onboard' to continue learning${C_RESET}"
     fi
@@ -1864,10 +1864,10 @@ info_render_minimal() {
     ip=$(info_get_ip)
     hostname=$(info_get_hostname)
 
-    echo "ACFS @ $hostname ($ip)"
+    echo "GTBI @ $hostname ($ip)"
     echo ""
     echo "Quick commands: cc (Claude), cod (Codex), ntm (sessions)"
-    echo "Run 'acfs info' for full details"
+    echo "Run 'gtbi info' for full details"
 }
 
 # ============================================================
@@ -1970,10 +1970,10 @@ EOF
 )
 
     # Use output formatting library if available
-    if type -t acfs_format_output &>/dev/null; then
+    if type -t gtbi_format_output &>/dev/null; then
         local resolved_format
-        resolved_format=$(acfs_resolve_format "$_INFO_OUTPUT_FORMAT")
-        acfs_format_output "$json_output" "$resolved_format" "$_INFO_SHOW_STATS"
+        resolved_format=$(gtbi_resolve_format "$_INFO_OUTPUT_FORMAT")
+        gtbi_format_output "$json_output" "$resolved_format" "$_INFO_SHOW_STATS"
     else
         # Fallback: direct JSON output
         printf '%s\n' "$json_output"
@@ -1999,7 +1999,7 @@ info_render_html() {
     fi
 
     # Escape values for safe HTML rendering (prevent broken markup if hostname/etc contain
-    # special characters). This output may be served via `acfs dashboard serve`.
+    # special characters). This output may be served via `gtbi dashboard serve`.
     _info_html_escape() {
         local s="$1"
         s="${s//&/&amp;}"
@@ -2050,7 +2050,7 @@ info_render_html() {
         <div class="card">
             <h2>Onboard Progress</h2>
             <p class="label">No lessons available.</p>
-            <p class="label">Re-run the installer or set ACFS_LESSONS_DIR to a directory with onboarding lessons.</p>
+            <p class="label">Re-run the installer or set GTBI_LESSONS_DIR to a directory with onboarding lessons.</p>
         </div>
 EOF
 )
@@ -2072,7 +2072,7 @@ EOF
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ACFS Dashboard - $hostname_html</title>
+    <title>GTBI Dashboard - $hostname_html</title>
     <style>
         :root {
             --bg: #1e1e2e;
@@ -2126,7 +2126,7 @@ EOF
 </head>
 <body>
     <div class="container">
-        <h1>ACFS Dashboard</h1>
+        <h1>GTBI Dashboard</h1>
 
         <div class="card">
             <h2>System</h2>
@@ -2164,7 +2164,7 @@ $onboard_card
 
         <div class="footer">
             Generated: $generated_at<br>
-            Run <code>acfs doctor</code> for health verification
+            Run <code>gtbi doctor</code> for health verification
         </div>
     </div>
 </body>
@@ -2226,13 +2226,13 @@ info_main() {
                 output_mode="minimal"
                 ;;
             --help|-h)
-                echo "Usage: acfs info [OPTIONS]"
+                echo "Usage: gtbi info [OPTIONS]"
                 echo ""
-                echo "Display ACFS environment information."
+                echo "Display GTBI environment information."
                 echo ""
                 echo "Options:"
                 echo "  --json, -j         Output as JSON"
-                echo "  --format <fmt>     Output format: json or toon (env: ACFS_OUTPUT_FORMAT, TOON_DEFAULT_FORMAT)"
+                echo "  --format <fmt>     Output format: json or toon (env: GTBI_OUTPUT_FORMAT, TOON_DEFAULT_FORMAT)"
                 echo "  --toon, -t         Shorthand for --format toon"
                 echo "  --stats            Show token savings statistics (JSON vs TOON bytes)"
                 echo "  --html, -H         Output as self-contained HTML"
@@ -2242,7 +2242,7 @@ info_main() {
                 ;;
             *)
                 echo "Unknown option: $1" >&2
-                echo "Run 'acfs info --help' for usage" >&2
+                echo "Run 'gtbi info --help' for usage" >&2
                 return 1
                 ;;
         esac

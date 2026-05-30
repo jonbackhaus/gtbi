@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-# Unit tests for acfs swarm doctor preflight
+# Unit tests for gtbi swarm doctor preflight
 # ============================================================
 
 set -euo pipefail
@@ -10,7 +10,7 @@ SWARM_DOCTOR_SH="$REPO_ROOT/scripts/lib/swarm_doctor.sh"
 
 TESTS_PASSED=0
 TESTS_FAILED=0
-ARTIFACT_DIR="${ACFS_SWARM_DOCTOR_TEST_ARTIFACTS_DIR:-${TMPDIR:-/tmp}/acfs-swarm-doctor-test-artifacts-$(date +%Y%m%d-%H%M%S)-$$}"
+ARTIFACT_DIR="${GTBI_SWARM_DOCTOR_TEST_ARTIFACTS_DIR:-${TMPDIR:-/tmp}/gtbi-swarm-doctor-test-artifacts-$(date +%Y%m%d-%H%M%S)-$$}"
 
 mkdir -p "$ARTIFACT_DIR"
 
@@ -333,7 +333,7 @@ JSON
     printf '%s\n' "$output" > "$ARTIFACT_DIR/human_fail.output.txt"
 
     [[ "$status" -eq 2 ]] || return 1
-    grep -Fq "ACFS Swarm Doctor" <<<"$output" || return 1
+    grep -Fq "GTBI Swarm Doctor" <<<"$output" || return 1
     grep -Fq "Next commands:" <<<"$output" || return 1
     grep -Fq "mcp-agent-mail doctor check --json" <<<"$output" || return 1
 

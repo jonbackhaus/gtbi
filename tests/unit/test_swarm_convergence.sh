@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-# Unit tests for acfs swarm convergence audit
+# Unit tests for gtbi swarm convergence audit
 # ============================================================
 
 set -euo pipefail
@@ -10,7 +10,7 @@ SWARM_CONVERGENCE_SH="$REPO_ROOT/scripts/lib/swarm_convergence.sh"
 
 TESTS_PASSED=0
 TESTS_FAILED=0
-ARTIFACT_DIR="${ACFS_SWARM_CONVERGENCE_TEST_ARTIFACTS_DIR:-${TMPDIR:-/tmp}/acfs-swarm-convergence-test-artifacts-$(date +%Y%m%d-%H%M%S)-$$}"
+ARTIFACT_DIR="${GTBI_SWARM_CONVERGENCE_TEST_ARTIFACTS_DIR:-${TMPDIR:-/tmp}/gtbi-swarm-convergence-test-artifacts-$(date +%Y%m%d-%H%M%S)-$$}"
 
 mkdir -p "$ARTIFACT_DIR"
 

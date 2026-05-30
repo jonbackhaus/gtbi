@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # ============================================================
-# ACFS Doctor --fix Implementation
+# GTBI Doctor --fix Implementation
 # Safe, deterministic fixers with logging and undo capability
 #
 # Implements bd-31ps.6.2 based on spec in doctor_fix_spec.md
 # ============================================================
 
 # Prevent multiple sourcing
-[[ -n "${_ACFS_DOCTOR_FIX_LOADED:-}" ]] && return 0
-_ACFS_DOCTOR_FIX_LOADED=1
+[[ -n "${_GTBI_DOCTOR_FIX_LOADED:-}" ]] && return 0
+_GTBI_DOCTOR_FIX_LOADED=1
 
 doctor_fix_sanitize_abs_nonroot_path() {
     local path_value="${1:-}"
@@ -255,7 +255,7 @@ doctor_fix_validate_bin_dir_for_home() {
 
     case "$bin_dir" in
         */.local/bin) hinted_home="${bin_dir%/.local/bin}" ;;
-        */.acfs/bin) hinted_home="${bin_dir%/.acfs/bin}" ;;
+        */.gtbi/bin) hinted_home="${bin_dir%/.gtbi/bin}" ;;
         */.bun/bin) hinted_home="${bin_dir%/.bun/bin}" ;;
         */.cargo/bin) hinted_home="${bin_dir%/.cargo/bin}" ;;
         */.atuin/bin) hinted_home="${bin_dir%/.atuin/bin}" ;;
@@ -332,30 +332,30 @@ doctor_fix_runtime_home() {
     printf '%s\n' "${resolved_home%/}"
 }
 
-doctor_fix_runtime_acfs_home() {
+doctor_fix_runtime_gtbi_home() {
     local runtime_home=""
-    local resolved_acfs_home=""
+    local resolved_gtbi_home=""
 
     runtime_home="$(doctor_fix_runtime_home 2>/dev/null || true)"
     [[ -n "$runtime_home" ]] || return 1
-    resolved_acfs_home="$(doctor_fix_sanitize_abs_nonroot_path "${ACFS_HOME:-}" 2>/dev/null || true)"
+    resolved_gtbi_home="$(doctor_fix_sanitize_abs_nonroot_path "${GTBI_HOME:-}" 2>/dev/null || true)"
 
     if [[ -n "${TARGET_HOME:-}" ]] || [[ -n "${TARGET_USER:-}" ]]; then
-        printf '%s/.acfs\n' "$runtime_home"
+        printf '%s/.gtbi\n' "$runtime_home"
         return 0
     fi
 
-    if [[ "$resolved_acfs_home" == "$runtime_home/.acfs" ]]; then
-        printf '%s\n' "$resolved_acfs_home"
+    if [[ "$resolved_gtbi_home" == "$runtime_home/.gtbi" ]]; then
+        printf '%s\n' "$resolved_gtbi_home"
         return 0
     fi
 
-    if [[ -n "$resolved_acfs_home" ]]; then
-        printf '%s\n' "$resolved_acfs_home"
+    if [[ -n "$resolved_gtbi_home" ]]; then
+        printf '%s\n' "$resolved_gtbi_home"
         return 0
     fi
 
-    printf '%s/.acfs\n' "$runtime_home"
+    printf '%s/.gtbi\n' "$runtime_home"
 }
 
 doctor_fix_runtime_user() {
@@ -382,7 +382,7 @@ doctor_fix_runtime_bin_dir() {
     runtime_home="$(doctor_fix_runtime_home 2>/dev/null || true)"
     [[ -n "$runtime_home" ]] || return 1
 
-    configured_bin="$(doctor_fix_validate_bin_dir_for_home "${ACFS_BIN_DIR:-}" "$runtime_home" 2>/dev/null || true)"
+    configured_bin="$(doctor_fix_validate_bin_dir_for_home "${GTBI_BIN_DIR:-}" "$runtime_home" 2>/dev/null || true)"
     if [[ -n "$configured_bin" ]]; then
         printf '%s\n' "$configured_bin"
         return 0
@@ -406,7 +406,7 @@ doctor_fix_binary_path() {
     for candidate in \
         "$primary_bin/$tool" \
         "$runtime_home/.local/bin/$tool" \
-        "$runtime_home/.acfs/bin/$tool" \
+        "$runtime_home/.gtbi/bin/$tool" \
         "$runtime_home/.cargo/bin/$tool" \
         "$runtime_home/.bun/bin/$tool" \
         "$runtime_home/.atuin/bin/$tool" \
@@ -441,7 +441,7 @@ doctor_fix_runtime_path() {
     primary_bin="$(doctor_fix_runtime_bin_dir)"
     current_path="${PATH:-/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin}"
 
-    printf '%s\n' "$primary_bin:$runtime_home/.local/bin:$runtime_home/.acfs/bin:$runtime_home/.cargo/bin:$runtime_home/.bun/bin:$runtime_home/.atuin/bin:$runtime_home/go/bin:$runtime_home/google-cloud-sdk/bin:$system_path_prefix:$current_path"
+    printf '%s\n' "$primary_bin:$runtime_home/.local/bin:$runtime_home/.gtbi/bin:$runtime_home/.cargo/bin:$runtime_home/.bun/bin:$runtime_home/.atuin/bin:$runtime_home/go/bin:$runtime_home/google-cloud-sdk/bin:$system_path_prefix:$current_path"
 }
 
 doctor_fix_curl() {
@@ -488,15 +488,15 @@ doctor_fix_source_stack_lib() {
 
     candidates+=("$SCRIPT_DIR/stack.sh")
 
-    runtime_stack_lib="$(doctor_fix_runtime_acfs_home)/scripts/lib/stack.sh"
-    if [[ -n "${ACFS_REPO_ROOT:-}" ]]; then
-        repo_stack_lib="${ACFS_REPO_ROOT%/}/scripts/lib/stack.sh"
+    runtime_stack_lib="$(doctor_fix_runtime_gtbi_home)/scripts/lib/stack.sh"
+    if [[ -n "${GTBI_REPO_ROOT:-}" ]]; then
+        repo_stack_lib="${GTBI_REPO_ROOT%/}/scripts/lib/stack.sh"
     fi
     candidates+=(
         "$runtime_stack_lib"
         "$repo_stack_lib"
-        "/data/projects/agentic_coding_flywheel_setup/scripts/lib/stack.sh"
-        "/dp/agentic_coding_flywheel_setup/scripts/lib/stack.sh"
+        "/data/projects/gastown_batteries_included/scripts/lib/stack.sh"
+        "/dp/gastown_batteries_included/scripts/lib/stack.sh"
     )
 
     for candidate in "${candidates[@]}"; do
@@ -518,30 +518,30 @@ doctor_fix_log_file_path() {
         return 0
     fi
 
-    printf '%s/.local/share/acfs/doctor.log\n' "$(doctor_fix_runtime_home)"
+    printf '%s/.local/share/gtbi/doctor.log\n' "$(doctor_fix_runtime_home)"
 }
 
-# Seed autofix state paths from the resolved ACFS home before sourcing
+# Seed autofix state paths from the resolved GTBI home before sourcing
 # autofix.sh so direct root-home-mismatch invocations do not record changes in
 # the caller HOME by accident.
-if [[ -z "${ACFS_STATE_DIR:-}" ]]; then
-    ACFS_STATE_DIR="$(doctor_fix_runtime_acfs_home)/autofix"
+if [[ -z "${GTBI_STATE_DIR:-}" ]]; then
+    GTBI_STATE_DIR="$(doctor_fix_runtime_gtbi_home)/autofix"
 fi
-ACFS_CHANGES_FILE="${ACFS_CHANGES_FILE:-${ACFS_STATE_DIR}/changes.jsonl}"
-ACFS_UNDOS_FILE="${ACFS_UNDOS_FILE:-${ACFS_STATE_DIR}/undos.jsonl}"
-ACFS_BACKUPS_DIR="${ACFS_BACKUPS_DIR:-${ACFS_STATE_DIR}/backups}"
-ACFS_LOCK_FILE="${ACFS_LOCK_FILE:-${ACFS_STATE_DIR}/.lock}"
-ACFS_INTEGRITY_FILE="${ACFS_INTEGRITY_FILE:-${ACFS_STATE_DIR}/.integrity}"
-export ACFS_STATE_DIR ACFS_CHANGES_FILE ACFS_UNDOS_FILE ACFS_BACKUPS_DIR ACFS_LOCK_FILE ACFS_INTEGRITY_FILE
+GTBI_CHANGES_FILE="${GTBI_CHANGES_FILE:-${GTBI_STATE_DIR}/changes.jsonl}"
+GTBI_UNDOS_FILE="${GTBI_UNDOS_FILE:-${GTBI_STATE_DIR}/undos.jsonl}"
+GTBI_BACKUPS_DIR="${GTBI_BACKUPS_DIR:-${GTBI_STATE_DIR}/backups}"
+GTBI_LOCK_FILE="${GTBI_LOCK_FILE:-${GTBI_STATE_DIR}/.lock}"
+GTBI_INTEGRITY_FILE="${GTBI_INTEGRITY_FILE:-${GTBI_STATE_DIR}/.integrity}"
+export GTBI_STATE_DIR GTBI_CHANGES_FILE GTBI_UNDOS_FILE GTBI_BACKUPS_DIR GTBI_LOCK_FILE GTBI_INTEGRITY_FILE
 
 # Source autofix library for change tracking
 SCRIPT_DIR="${SCRIPT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}"
 if [[ -f "$SCRIPT_DIR/autofix.sh" ]]; then
     # shellcheck source=autofix.sh
     source "$SCRIPT_DIR/autofix.sh"
-elif [[ -f "$(doctor_fix_runtime_acfs_home)/scripts/lib/autofix.sh" ]]; then
+elif [[ -f "$(doctor_fix_runtime_gtbi_home)/scripts/lib/autofix.sh" ]]; then
     # shellcheck source=autofix.sh
-    source "$(doctor_fix_runtime_acfs_home)/scripts/lib/autofix.sh"
+    source "$(doctor_fix_runtime_gtbi_home)/scripts/lib/autofix.sh"
 fi
 
 # ============================================================
@@ -629,13 +629,13 @@ doctor_fix_remove_exact_line_and_next() {
     sed -i "\\|^${escaped_line}$|,+1d" "$file"
 }
 
-doctor_fix_file_has_active_acfs_zshrc_source() {
+doctor_fix_file_has_active_gtbi_zshrc_source() {
     local file="${1:-}"
 
     [[ -f "$file" ]] || return 1
     awk '
         /^[[:space:]]*#/ { next }
-        /(^|[[:space:];&|])(source|\.)[[:space:]]+.*\.acfs\/zsh\/acfs\.zshrc/ { found=1; exit }
+        /(^|[[:space:];&|])(source|\.)[[:space:]]+.*\.gtbi\/zsh\/gtbi\.zshrc/ { found=1; exit }
         END { exit(found ? 0 : 1) }
     ' "$file" 2>/dev/null
 }
@@ -808,7 +808,7 @@ doctor_fix_require_security() {
 
     local security_script="$SCRIPT_DIR/security.sh"
     if [[ ! -r "$security_script" ]]; then
-        security_script="$(doctor_fix_runtime_acfs_home)/scripts/lib/security.sh"
+        security_script="$(doctor_fix_runtime_gtbi_home)/scripts/lib/security.sh"
     fi
 
     if [[ ! -r "$security_script" ]]; then
@@ -972,7 +972,7 @@ doctor_fix_run_verified_installer_with_env() {
         return 1
     fi
 
-    bash_bin="$(acfs_security_required_binary_path bash)" || return $?
+    bash_bin="$(gtbi_security_required_binary_path bash)" || return $?
 
     (
         set -o pipefail
@@ -1017,7 +1017,7 @@ doctor_fix_prepare_target_installer_tmpdir() {
         return 1
     fi
 
-    tmpdir_parent="$runtime_home/.cache/acfs/installer-tmp"
+    tmpdir_parent="$runtime_home/.cache/gtbi/installer-tmp"
     tmpdir_template="$tmpdir_parent/${tool}.XXXXXX"
     case "$tmpdir_template" in
         *[[:space:]]*)
@@ -1046,7 +1046,7 @@ doctor_fix_prepare_target_installer_tmpdir() {
 # ============================================================
 
 # Fix PATH ordering in shell config
-# Ensures ~/.local/bin and other ACFS dirs are at front of PATH
+# Ensures ~/.local/bin and other GTBI dirs are at front of PATH
 fix_path_ordering() {
     local check_id="$1"
     local runtime_home=""
@@ -1066,7 +1066,7 @@ fix_path_ordering() {
     local path_string
     path_string=$(IFS=:; echo "${path_dirs[*]}")
     local export_line="export PATH=\"${path_string}:\$PATH\""
-    local marker="# ACFS PATH ordering (added by doctor --fix)"
+    local marker="# GTBI PATH ordering (added by doctor --fix)"
     local marker_present=false
 
     # Guard: the marker alone is not enough; older fixes may lack newer paths.
@@ -1140,7 +1140,7 @@ fix_path_ordering() {
 # Fixer: Config Copy (fix.config.copy)
 # ============================================================
 
-# Copy missing ACFS config files
+# Copy missing GTBI config files
 fix_config_copy() {
     local check_id="$1"
     local src="$2"
@@ -1444,36 +1444,36 @@ fix_plugin_clone() {
 }
 
 # ============================================================
-# Fixer: ACFS Sourcing (fix.acfs.sourcing)
+# Fixer: GTBI Sourcing (fix.gtbi.sourcing)
 # ============================================================
 
-# Add ACFS config sourcing to .zshrc
-fix_acfs_sourcing() {
+# Add GTBI config sourcing to .zshrc
+fix_gtbi_sourcing() {
     local check_id="$1"
     local runtime_home=""
-    local runtime_acfs_home=""
+    local runtime_gtbi_home=""
     runtime_home="$(doctor_fix_runtime_home)"
-    runtime_acfs_home="$(doctor_fix_runtime_acfs_home)"
+    runtime_gtbi_home="$(doctor_fix_runtime_gtbi_home)"
     local zshrc="$runtime_home/.zshrc"
-    local source_line='[[ -f ~/.acfs/zsh/acfs.zshrc ]] && source ~/.acfs/zsh/acfs.zshrc'
-    local marker="# ACFS configuration (added by doctor --fix)"
+    local source_line='[[ -f ~/.gtbi/zsh/gtbi.zshrc ]] && source ~/.gtbi/zsh/gtbi.zshrc'
+    local marker="# GTBI configuration (added by doctor --fix)"
 
-    # Guard: comments mentioning acfs.zshrc do not mean the loader is active.
-    if doctor_fix_file_has_active_acfs_zshrc_source "$zshrc"; then
-        doctor_fix_log INFO "ACFS already sourced in .zshrc"
+    # Guard: comments mentioning gtbi.zshrc do not mean the loader is active.
+    if doctor_fix_file_has_active_gtbi_zshrc_source "$zshrc"; then
+        doctor_fix_log INFO "GTBI already sourced in .zshrc"
         return 0
     fi
 
-    # Guard: Check if acfs.zshrc exists
-    if [[ ! -f "$runtime_acfs_home/zsh/acfs.zshrc" ]]; then
-        doctor_fix_log WARN "ACFS config not found at ~/.acfs/zsh/acfs.zshrc"
+    # Guard: Check if gtbi.zshrc exists
+    if [[ ! -f "$runtime_gtbi_home/zsh/gtbi.zshrc" ]]; then
+        doctor_fix_log WARN "GTBI config not found at ~/.gtbi/zsh/gtbi.zshrc"
         return 1
     fi
 
     # Dry-run mode
     if [[ "$DOCTOR_FIX_DRY_RUN" == "true" ]]; then
-        FIXES_DRY_RUN+=("fix.acfs.sourcing|Add ACFS sourcing to .zshrc|$zshrc|$source_line")
-        doctor_fix_log DRY "Add ACFS sourcing to .zshrc"
+        FIXES_DRY_RUN+=("fix.gtbi.sourcing|Add GTBI sourcing to .zshrc|$zshrc|$source_line")
+        doctor_fix_log DRY "Add GTBI sourcing to .zshrc"
         return 0
     fi
 
@@ -1481,7 +1481,7 @@ fix_acfs_sourcing() {
     local backup_json=""
     local restore_command=""
     if [[ -f "$zshrc" ]]; then
-        backup_json=$(create_backup "$zshrc" "acfs-sourcing")
+        backup_json=$(create_backup "$zshrc" "gtbi-sourcing")
         restore_command="$(autofix_backup_restore_command "$backup_json" 2>/dev/null || true)"
     else
         restore_command="if [[ -f '$zshrc' ]]; then sed -i '/$marker/,+1d' '$zshrc' && if ! grep -q '[^[:space:]]' '$zshrc'; then rm -f '$zshrc'; fi; fi"
@@ -1493,7 +1493,7 @@ fix_acfs_sourcing() {
         echo "$marker"
         echo "$source_line"
     } >> "$zshrc"; then
-        doctor_fix_log ERROR "Failed to append ACFS sourcing to $zshrc"
+        doctor_fix_log ERROR "Failed to append GTBI sourcing to $zshrc"
         FIX_FAILED=$((FIX_FAILED + 1))
         return 1
     fi
@@ -1502,15 +1502,15 @@ fix_acfs_sourcing() {
     if ! doctor_fix_record_change_or_rollback \
         "${restore_command:-if [[ -f '$zshrc' ]]; then sed -i '/$marker/,+1d' '$zshrc'; fi}" \
         false \
-        "config" "Added ACFS sourcing to .zshrc" \
+        "config" "Added GTBI sourcing to .zshrc" \
         "${restore_command:-if [[ -f '$zshrc' ]]; then sed -i '/$marker/,+1d' '$zshrc'; fi}" \
         false "info" "$(doctor_fix_files_json "$zshrc")" "$(doctor_fix_backups_json_array "${backup_json:-[]}")" "[]"; then
         FIX_FAILED=$((FIX_FAILED + 1))
         return 1
     fi
 
-    doctor_fix_log INFO "Added ACFS sourcing to .zshrc"
-    FIXES_APPLIED+=("fix.acfs.sourcing|Added ACFS sourcing to .zshrc")
+    doctor_fix_log INFO "Added GTBI sourcing to .zshrc"
+    FIXES_APPLIED+=("fix.gtbi.sourcing|Added GTBI sourcing to .zshrc")
     FIX_APPLIED=$((FIX_APPLIED + 1))
 
     return 0
@@ -1540,15 +1540,15 @@ dispatch_fix() {
             ;;
 
         # Config file copies
-        config.acfs_zshrc)
+        config.gtbi_zshrc)
             fix_config_copy "$check_id" \
-                "$SCRIPT_DIR/../../acfs/zsh/acfs.zshrc" \
-                "$(doctor_fix_runtime_acfs_home)/zsh/acfs.zshrc"
+                "$SCRIPT_DIR/../../gtbi/zsh/gtbi.zshrc" \
+                "$(doctor_fix_runtime_gtbi_home)/zsh/gtbi.zshrc"
             ;;
         config.tmux)
             fix_config_copy "$check_id" \
-                "$SCRIPT_DIR/../../acfs/tmux/tmux.conf" \
-                "$(doctor_fix_runtime_acfs_home)/tmux/tmux.conf"
+                "$SCRIPT_DIR/../../gtbi/tmux/tmux.conf" \
+                "$(doctor_fix_runtime_gtbi_home)/tmux/tmux.conf"
             ;;
 
         # DCG hook
@@ -1591,7 +1591,7 @@ dispatch_fix() {
             fix_verified_install "$check_id" "rch" "rch" --easy-mode
             ;;
         stack.dcg|stack.dcg.*)
-            local claude_fix_hint="Install Claude Code first, then re-run acfs doctor --fix"
+            local claude_fix_hint="Install Claude Code first, then re-run gtbi doctor --fix"
             if ! doctor_fix_binary_path dcg >/dev/null 2>&1; then
                 fix_verified_install "$check_id" "dcg" "dcg" --easy-mode || return $?
             fi
@@ -1628,9 +1628,9 @@ dispatch_fix() {
                 "https://github.com/zsh-users/zsh-syntax-highlighting"
             ;;
 
-        # ACFS sourcing
-        shell.acfs_sourced)
-            fix_acfs_sourcing "$check_id"
+        # GTBI sourcing
+        shell.gtbi_sourced)
+            fix_gtbi_sourcing "$check_id"
             ;;
 
         # SSH server (fixes #161/#162)
@@ -1658,7 +1658,7 @@ dispatch_fix() {
 
         # Agent aliases/functions (fixes #163)
         agent.alias.*)
-            fix_acfs_sourcing "$check_id"
+            fix_gtbi_sourcing "$check_id"
             ;;
 
         # Manual fixes (log suggestion only)
@@ -1816,7 +1816,7 @@ fix_verified_install_with_target_tmpdir() {
     local installer_tmpdir=""
 
     if [[ "$DOCTOR_FIX_DRY_RUN" == "true" ]]; then
-        installer_tmpdir="$(doctor_fix_runtime_home)/.cache/acfs/installer-tmp/${tool}.XXXXXX"
+        installer_tmpdir="$(doctor_fix_runtime_home)/.cache/gtbi/installer-tmp/${tool}.XXXXXX"
     else
         installer_tmpdir="$(doctor_fix_prepare_target_installer_tmpdir "$tool")" || {
             doctor_fix_log ERROR "Failed to prepare installer TMPDIR for $binary_name"
@@ -2005,7 +2005,7 @@ fix_ssh_server() {
 fix_ssh_keepalive() {
     local check_id="$1"
     local sshd_config="${DOCTOR_FIX_SSHD_CONFIG:-/etc/ssh/sshd_config}"
-    local marker="# ACFS: SSH keepalive settings (added by doctor --fix)"
+    local marker="# GTBI: SSH keepalive settings (added by doctor --fix)"
     local fallback_restore_command=""
     local root_display=""
     local systemctl_bin=""
@@ -2115,7 +2115,7 @@ doctor_fix_agent_mail_cli_path() {
     for candidate in \
         "$primary_bin/am" \
         "$runtime_home/.local/bin/am" \
-        "$runtime_home/.acfs/bin/am" \
+        "$runtime_home/.gtbi/bin/am" \
         "$runtime_home/.cargo/bin/am" \
         "$runtime_home/.bun/bin/am" \
         "$runtime_home/.atuin/bin/am" \
@@ -2170,7 +2170,7 @@ doctor_fix_agent_mail_bin() {
     fi
 
     if doctor_fix_source_stack_lib >/dev/null 2>&1; then
-        resolved="$(ACFS_STACK_TRUST_TARGET_HOME=true TARGET_USER="$runtime_user" TARGET_HOME="$runtime_home" _stack_agent_mail_cli_path 2>/dev/null || true)"
+        resolved="$(GTBI_STACK_TRUST_TARGET_HOME=true TARGET_USER="$runtime_user" TARGET_HOME="$runtime_home" _stack_agent_mail_cli_path 2>/dev/null || true)"
         if [[ -n "$resolved" ]]; then
             printf '%s\n' "$resolved"
             return 0
@@ -2182,7 +2182,7 @@ doctor_fix_agent_mail_bin() {
         "$runtime_home/mcp_agent_mail/am" \
         "$primary_bin/am" \
         "$runtime_home/.local/bin/am" \
-        "$runtime_home/.acfs/bin/am" \
+        "$runtime_home/.gtbi/bin/am" \
         "$runtime_home/.cargo/bin/am" \
         "$runtime_home/.bun/bin/am" \
         "$runtime_home/.atuin/bin/am" \
@@ -2245,7 +2245,7 @@ agent_mail_fix_doctor_healthy() {
 
 agent_mail_fix_wait_for_health() {
     doctor_fix_source_stack_lib || return 1
-    ACFS_STACK_TRUST_TARGET_HOME=true TARGET_USER="$(doctor_fix_runtime_user)" TARGET_HOME="$(doctor_fix_runtime_home)" _stack_wait_for_agent_mail_health
+    GTBI_STACK_TRUST_TARGET_HOME=true TARGET_USER="$(doctor_fix_runtime_user)" TARGET_HOME="$(doctor_fix_runtime_home)" _stack_wait_for_agent_mail_health
 }
 
 agent_mail_fix_write_unit() {
@@ -2418,7 +2418,7 @@ fix_mcp_agent_mail() {
             if [[ "$DOCTOR_FIX_DRY_RUN" == "true" ]]; then
                 FIXES_DRY_RUN+=("fix.stack.mcp_agent_mail.symlink|Ensure am symlink points at installed Rust CLI|$am_dst|ln -sf $am_src $am_dst")
                 doctor_fix_log DRY "Ensure am symlink points at $am_src"
-            elif ACFS_STACK_TRUST_TARGET_HOME=true TARGET_USER="$runtime_user" TARGET_HOME="$runtime_home" _stack_repair_agent_mail_cli_symlink; then
+            elif GTBI_STACK_TRUST_TARGET_HOME=true TARGET_USER="$runtime_user" TARGET_HOME="$runtime_home" _stack_repair_agent_mail_cli_symlink; then
                 hash -r
                 resolved_am_cli="$(doctor_fix_agent_mail_cli_path 2>/dev/null || true)"
                 resolved_am_target="$(doctor_fix_resolve_path_target "$resolved_am_cli" 2>/dev/null || true)"
@@ -2466,7 +2466,7 @@ fix_mcp_agent_mail() {
             local installed_cli_target=""
             local am_src_target=""
             hash -r
-            if ACFS_STACK_TRUST_TARGET_HOME=true TARGET_USER="$runtime_user" TARGET_HOME="$runtime_home" _stack_repair_agent_mail_cli_symlink; then
+            if GTBI_STACK_TRUST_TARGET_HOME=true TARGET_USER="$runtime_user" TARGET_HOME="$runtime_home" _stack_repair_agent_mail_cli_symlink; then
                 hash -r
             fi
             installed_cli="$(doctor_fix_agent_mail_cli_path 2>/dev/null || true)"
@@ -2559,7 +2559,7 @@ fix_mcp_agent_mail() {
         service_healthy=true
     fi
 
-    if ACFS_STACK_TRUST_TARGET_HOME=true TARGET_USER="$runtime_user" TARGET_HOME="$runtime_home" _stack_configure_agent_mail_service; then
+    if GTBI_STACK_TRUST_TARGET_HOME=true TARGET_USER="$runtime_user" TARGET_HOME="$runtime_home" _stack_configure_agent_mail_service; then
         if ! doctor_fix_record_change_or_rollback \
             "" \
             false \
@@ -2670,7 +2670,7 @@ print_fix_summary() {
     # Show undo hint if changes were made
     if [[ "$DOCTOR_FIX_DRY_RUN" != "true" ]] && [[ $FIX_APPLIED -gt 0 ]]; then
         echo ""
-        echo "  To undo changes: acfs undo --list"
+        echo "  To undo changes: gtbi undo --list"
         echo ""
     fi
 }
@@ -2721,10 +2721,10 @@ run_doctor_fix() {
 
     echo ""
     if [[ "$DOCTOR_FIX_DRY_RUN" == "true" ]]; then
-        echo "DRY-RUN: acfs doctor --fix"
+        echo "DRY-RUN: gtbi doctor --fix"
         echo "Scanning for fixable issues..."
     else
-        echo "Running: acfs doctor --fix"
+        echo "Running: gtbi doctor --fix"
         echo "Applying safe fixes..."
     fi
     echo ""

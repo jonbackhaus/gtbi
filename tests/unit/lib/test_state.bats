@@ -8,8 +8,8 @@ setup() {
     source_lib "state"
     
     # Setup a temp state file
-    export ACFS_HOME=$(create_temp_dir)
-    export ACFS_STATE_FILE="$ACFS_HOME/state.json"
+    export GTBI_HOME=$(create_temp_dir)
+    export GTBI_STATE_FILE="$GTBI_HOME/state.json"
 }
 
 teardown() {
@@ -20,20 +20,20 @@ teardown() {
     run state_init
     assert_success
     
-    run cat "$ACFS_STATE_FILE"
+    run cat "$GTBI_STATE_FILE"
     assert_output --partial '"version":'
     assert_output --partial '"completed_phases": []'
 }
 
-@test "state: init tolerates missing ACFS_VERSION under nounset" {
+@test "state: init tolerates missing GTBI_VERSION under nounset" {
     local state_root
     state_root=$(create_temp_dir)
 
-    run env -i PATH="$PATH" HOME="$state_root/home" ACFS_HOME="$state_root/acfs" ACFS_STATE_FILE="$state_root/acfs/state.json" bash -u -c '
-        mkdir -p "$HOME" "$ACFS_HOME"
+    run env -i PATH="$PATH" HOME="$state_root/home" GTBI_HOME="$state_root/gtbi" GTBI_STATE_FILE="$state_root/gtbi/state.json" bash -u -c '
+        mkdir -p "$HOME" "$GTBI_HOME"
         source "$1"
         state_init
-        jq -r .version "$ACFS_STATE_FILE"
+        jq -r .version "$GTBI_STATE_FILE"
     ' _ "$PROJECT_ROOT/scripts/lib/state.sh"
     assert_success
     assert_output "unknown"
@@ -67,50 +67,50 @@ teardown() {
     state_root="$BATS_TEST_TMPDIR/state-sudo-fallback"
     sudo_log="$BATS_TEST_TMPDIR/state-sudo-argv.txt"
 
-    export ACFS_FAKE_CHOWN="$fake_bin/chown"
-    export ACFS_FAKE_MKDIR="$fake_bin/mkdir"
-    export ACFS_FAKE_SUDO="$fake_bin/sudo"
-    export ACFS_FAKE_SUDO_LOG="$sudo_log"
-    export ACFS_REAL_ID="$real_id"
-    export ACFS_REAL_MKDIR="$real_mkdir"
-    export ACFS_STATE_FILE="$state_root/state.json"
+    export GTBI_FAKE_CHOWN="$fake_bin/chown"
+    export GTBI_FAKE_MKDIR="$fake_bin/mkdir"
+    export GTBI_FAKE_SUDO="$fake_bin/sudo"
+    export GTBI_FAKE_SUDO_LOG="$sudo_log"
+    export GTBI_REAL_ID="$real_id"
+    export GTBI_REAL_MKDIR="$real_mkdir"
+    export GTBI_STATE_FILE="$state_root/state.json"
 
-    cat > "$ACFS_FAKE_MKDIR" <<'EOF'
+    cat > "$GTBI_FAKE_MKDIR" <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
-if [[ "${ACFS_FAKE_SUDO_ACTIVE:-}" != "1" ]]; then
+if [[ "${GTBI_FAKE_SUDO_ACTIVE:-}" != "1" ]]; then
     exit 73
 fi
-exec "$ACFS_REAL_MKDIR" "$@"
+exec "$GTBI_REAL_MKDIR" "$@"
 EOF
-    chmod +x "$ACFS_FAKE_MKDIR"
+    chmod +x "$GTBI_FAKE_MKDIR"
 
-    cat > "$ACFS_FAKE_SUDO" <<'EOF'
+    cat > "$GTBI_FAKE_SUDO" <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
 if [[ "${1:-}" != "-n" ]]; then
-    printf 'missing -n\n' >> "$ACFS_FAKE_SUDO_LOG"
+    printf 'missing -n\n' >> "$GTBI_FAKE_SUDO_LOG"
     exit 91
 fi
-printf '%s\n' "$@" >> "$ACFS_FAKE_SUDO_LOG"
+printf '%s\n' "$@" >> "$GTBI_FAKE_SUDO_LOG"
 shift
-ACFS_FAKE_SUDO_ACTIVE=1 exec "$@"
+GTBI_FAKE_SUDO_ACTIVE=1 exec "$@"
 EOF
-    chmod +x "$ACFS_FAKE_SUDO"
+    chmod +x "$GTBI_FAKE_SUDO"
 
-    cat > "$ACFS_FAKE_CHOWN" <<'EOF'
+    cat > "$GTBI_FAKE_CHOWN" <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
 exit 0
 EOF
-    chmod +x "$ACFS_FAKE_CHOWN"
+    chmod +x "$GTBI_FAKE_CHOWN"
 
     state_system_binary_path() {
         case "${1:-}" in
-            chown) printf '%s\n' "$ACFS_FAKE_CHOWN" ;;
-            id) printf '%s\n' "$ACFS_REAL_ID" ;;
-            mkdir) printf '%s\n' "$ACFS_FAKE_MKDIR" ;;
-            sudo) printf '%s\n' "$ACFS_FAKE_SUDO" ;;
+            chown) printf '%s\n' "$GTBI_FAKE_CHOWN" ;;
+            id) printf '%s\n' "$GTBI_REAL_ID" ;;
+            mkdir) printf '%s\n' "$GTBI_FAKE_MKDIR" ;;
+            sudo) printf '%s\n' "$GTBI_FAKE_SUDO" ;;
             *) command -v "${1:-}" ;;
         esac
     }
@@ -118,11 +118,11 @@ EOF
     run state_init
     assert_success
 
-    run test -f "$ACFS_STATE_FILE"
+    run test -f "$GTBI_STATE_FILE"
     assert_success
-    run grep -Fx -- "$ACFS_FAKE_MKDIR" "$sudo_log"
+    run grep -Fx -- "$GTBI_FAKE_MKDIR" "$sudo_log"
     assert_success
-    run grep -Fx -- "$ACFS_FAKE_CHOWN" "$sudo_log"
+    run grep -Fx -- "$GTBI_FAKE_CHOWN" "$sudo_log"
     assert_success
 }
 
@@ -200,7 +200,7 @@ EOF
 
     # shellcheck source=../../../scripts/generated/manifest_index.sh
     source "$PROJECT_ROOT/scripts/generated/manifest_index.sh"
-    ACFS_MANIFEST_INDEX_LOADED=true
+    GTBI_MANIFEST_INDEX_LOADED=true
     source_lib "install_helpers"
 
     ONLY_MODULES=("stack.ntm")
@@ -208,19 +208,19 @@ EOF
     SKIP_MODULES=()
     NO_DEPS=false
 
-    acfs_resolve_selection || {
-        echo "acfs_resolve_selection failed"
+    gtbi_resolve_selection || {
+        echo "gtbi_resolve_selection failed"
         return 1
     }
-    [[ " ${ACFS_EFFECTIVE_PLAN[*]} " == *" base.system "* ]] || {
+    [[ " ${GTBI_EFFECTIVE_PLAN[*]} " == *" base.system "* ]] || {
         echo "base.system missing from effective plan"
         return 1
     }
-    [[ " ${ACFS_EFFECTIVE_PLAN[*]} " == *" cli.modern "* ]] || {
+    [[ " ${GTBI_EFFECTIVE_PLAN[*]} " == *" cli.modern "* ]] || {
         echo "cli.modern missing from effective plan"
         return 1
     }
-    [[ " ${ACFS_EFFECTIVE_PLAN[*]} " == *" stack.ntm "* ]] || {
+    [[ " ${GTBI_EFFECTIVE_PLAN[*]} " == *" stack.ntm "* ]] || {
         echo "stack.ntm missing from effective plan"
         return 1
     }
@@ -243,7 +243,7 @@ EOF
 
     # shellcheck source=../../../scripts/generated/manifest_index.sh
     source "$PROJECT_ROOT/scripts/generated/manifest_index.sh"
-    ACFS_MANIFEST_INDEX_LOADED=true
+    GTBI_MANIFEST_INDEX_LOADED=true
     source_lib "install_helpers"
 
     ONLY_MODULES=()
@@ -251,19 +251,19 @@ EOF
     SKIP_MODULES=()
     NO_DEPS=false
 
-    acfs_resolve_selection || {
-        echo "acfs_resolve_selection failed"
+    gtbi_resolve_selection || {
+        echo "gtbi_resolve_selection failed"
         return 1
     }
-    [[ " ${ACFS_EFFECTIVE_PLAN[*]} " == *" stack.ntm "* ]] || {
+    [[ " ${GTBI_EFFECTIVE_PLAN[*]} " == *" stack.ntm "* ]] || {
         echo "stack.ntm missing from effective plan"
         return 1
     }
-    [[ " ${ACFS_EFFECTIVE_PLAN[*]} " == *" lang.bun "* ]] || {
+    [[ " ${GTBI_EFFECTIVE_PLAN[*]} " == *" lang.bun "* ]] || {
         echo "lang.bun missing from effective plan"
         return 1
     }
-    [[ " ${ACFS_EFFECTIVE_PLAN[*]} " == *" agents.claude "* ]] || {
+    [[ " ${GTBI_EFFECTIVE_PLAN[*]} " == *" agents.claude "* ]] || {
         echo "agents.claude missing from effective plan"
         return 1
     }
@@ -287,7 +287,7 @@ EOF
 
     # shellcheck source=../../../scripts/generated/manifest_index.sh
     source "$PROJECT_ROOT/scripts/generated/manifest_index.sh"
-    ACFS_MANIFEST_INDEX_LOADED=true
+    GTBI_MANIFEST_INDEX_LOADED=true
     source_lib "install_helpers"
 
     ONLY_MODULES=("stack.ntm")
@@ -295,8 +295,8 @@ EOF
     SKIP_MODULES=()
     NO_DEPS=false
 
-    acfs_resolve_selection || {
-        echo "acfs_resolve_selection failed"
+    gtbi_resolve_selection || {
+        echo "gtbi_resolve_selection failed"
         return 1
     }
 
@@ -312,7 +312,7 @@ EOF
     # must not force completed phases to run unless --only/--only-phase is active.
     # shellcheck source=../../../scripts/generated/manifest_index.sh
     source "$PROJECT_ROOT/scripts/generated/manifest_index.sh"
-    ACFS_MANIFEST_INDEX_LOADED=true
+    GTBI_MANIFEST_INDEX_LOADED=true
     source_lib "install_helpers"
 
     ONLY_MODULES=()
@@ -320,8 +320,8 @@ EOF
     SKIP_MODULES=()
     NO_DEPS=false
 
-    acfs_resolve_selection || {
-        echo "acfs_resolve_selection failed"
+    gtbi_resolve_selection || {
+        echo "gtbi_resolve_selection failed"
         return 1
     }
 
@@ -355,12 +355,12 @@ EOF
     _state_acquire_lock
     state_save '{"nested": "value"}'
 
-    [[ "${_ACFS_STATE_LOCKED:-}" == "true" ]]
-    [[ "${_ACFS_STATE_LOCK_DEPTH:-0}" -eq 1 ]]
+    [[ "${_GTBI_STATE_LOCKED:-}" == "true" ]]
+    [[ "${_GTBI_STATE_LOCK_DEPTH:-0}" -eq 1 ]]
 
     _state_release_lock
-    [[ "${_ACFS_STATE_LOCKED:-}" == "false" ]]
-    [[ "${_ACFS_STATE_LOCK_DEPTH:-0}" -eq 0 ]]
+    [[ "${_GTBI_STATE_LOCKED:-}" == "false" ]]
+    [[ "${_GTBI_STATE_LOCK_DEPTH:-0}" -eq 0 ]]
 
     run state_get ".nested"
     assert_output "value"
@@ -370,11 +370,11 @@ EOF
     local state_root
     state_root=$(create_temp_dir)
 
-    run env -i PATH="$PATH" HOME="$state_root/home" ACFS_HOME="$state_root/acfs" ACFS_STATE_FILE="$state_root/acfs/state.json" bash -u -c '
-        mkdir -p "$HOME" "$ACFS_HOME"
+    run env -i PATH="$PATH" HOME="$state_root/home" GTBI_HOME="$state_root/gtbi" GTBI_STATE_FILE="$state_root/gtbi/state.json" bash -u -c '
+        mkdir -p "$HOME" "$GTBI_HOME"
         source "$1"
         _state_acquire_lock
-        printf "locked=%s fd=%s\n" "${_ACFS_STATE_LOCKED:-}" "${ACFS_LOCK_FD:-}"
+        printf "locked=%s fd=%s\n" "${_GTBI_STATE_LOCKED:-}" "${GTBI_LOCK_FD:-}"
         _state_release_lock
     ' _ "$PROJECT_ROOT/scripts/lib/state.sh"
     assert_success
@@ -446,12 +446,12 @@ EOF
     [[ -n "$output" ]]
 }
 
-@test "state: get file prefers passwd-resolved target home when ACFS_HOME unset" {
+@test "state: get file prefers passwd-resolved target home when GTBI_HOME unset" {
     local stub_home
     stub_home=$(create_temp_dir)
 
-    unset ACFS_HOME
-    unset ACFS_STATE_FILE
+    unset GTBI_HOME
+    unset GTBI_STATE_FILE
     export TARGET_USER="dummy"
     export TARGET_HOME=""
     export HOME="/tmp/not-the-target-home"
@@ -466,15 +466,15 @@ EOF
 
     run state_get_file
     assert_success
-    assert_output "$stub_home/.acfs/state.json"
+    assert_output "$stub_home/.gtbi/state.json"
 }
 
-@test "state: init uses passwd-resolved target home when ACFS_HOME unset" {
+@test "state: init uses passwd-resolved target home when GTBI_HOME unset" {
     local stub_home
     stub_home=$(create_temp_dir)
 
-    unset ACFS_HOME
-    unset ACFS_STATE_FILE
+    unset GTBI_HOME
+    unset GTBI_STATE_FILE
     export TARGET_USER="dummy"
     export TARGET_HOME=""
     export HOME="/tmp/not-the-target-home"
@@ -490,7 +490,7 @@ EOF
     run state_init
     assert_success
 
-    run test -f "$stub_home/.acfs/state.json"
+    run test -f "$stub_home/.gtbi/state.json"
     assert_success
 }
 
@@ -498,8 +498,8 @@ EOF
     local stub_home
     stub_home=$(create_temp_dir)
 
-    unset ACFS_HOME
-    unset ACFS_STATE_FILE
+    unset GTBI_HOME
+    unset GTBI_STATE_FILE
     export TARGET_USER="dummy"
     export TARGET_HOME=""
     export HOME="/tmp/not-the-target-home"
@@ -524,8 +524,8 @@ EOF
     local stub_home
     stub_home=$(create_temp_dir)
 
-    unset ACFS_HOME
-    unset ACFS_STATE_FILE
+    unset GTBI_HOME
+    unset GTBI_STATE_FILE
     export TARGET_USER="dummy"
     export TARGET_HOME=""
     export HOME="/tmp/not-the-target-home"
@@ -538,22 +538,22 @@ EOF
         return 1
     }
 
-    mkdir -p "$stub_home/.acfs"
-    printf '{"schema_version":3}\n' > "$stub_home/.acfs/state.json"
+    mkdir -p "$stub_home/.gtbi"
+    printf '{"schema_version":3}\n' > "$stub_home/.gtbi/state.json"
 
     run state_backup_and_remove
     assert_success
 
-    run test ! -f "$stub_home/.acfs/state.json"
+    run test ! -f "$stub_home/.gtbi/state.json"
     assert_success
 
-    run bash -lc "shopt -s nullglob; files=(\"$stub_home/.acfs/state.json.backup.\"*); [[ \${#files[@]} -eq 1 ]]"
+    run bash -lc "shopt -s nullglob; files=(\"$stub_home/.gtbi/state.json.backup.\"*); [[ \${#files[@]} -eq 1 ]]"
     assert_success
 }
 
 @test "state: resolve target home rejects invalid fallback usernames" {
-    unset ACFS_HOME
-    unset ACFS_STATE_FILE
+    unset GTBI_HOME
+    unset GTBI_STATE_FILE
     export TARGET_HOME=""
     export TARGET_USER="../bad-user"
     export HOME="/"
@@ -567,8 +567,8 @@ EOF
 }
 
 @test "state: resolve target home accepts dotted usernames but fails closed when unresolved" {
-    unset ACFS_HOME
-    unset ACFS_STATE_FILE
+    unset GTBI_HOME
+    unset GTBI_STATE_FILE
     export TARGET_HOME=""
     export TARGET_USER="john.doe"
     export HOME="/"
@@ -587,8 +587,8 @@ EOF
     stale_home="$(create_temp_dir)"
     passwd_home="$(create_temp_dir)"
 
-    unset ACFS_HOME
-    unset ACFS_STATE_FILE
+    unset GTBI_HOME
+    unset GTBI_STATE_FILE
     export TARGET_HOME="$stale_home"
     export TARGET_USER="targetuser"
     export HOME="$stale_home"
@@ -614,8 +614,8 @@ EOF
     local target_home
     target_home="$(create_temp_dir)"
 
-    unset ACFS_HOME
-    unset ACFS_STATE_FILE
+    unset GTBI_HOME
+    unset GTBI_STATE_FILE
     export TARGET_HOME="$target_home"
     export TARGET_USER="../bad-user"
     export HOME="$target_home"
@@ -628,8 +628,8 @@ EOF
     local stale_home
     stale_home="$(create_temp_dir)"
 
-    unset ACFS_HOME
-    unset ACFS_STATE_FILE
+    unset GTBI_HOME
+    unset GTBI_STATE_FILE
     export TARGET_HOME="$stale_home"
     export TARGET_USER="missinguser"
     export HOME="$stale_home"

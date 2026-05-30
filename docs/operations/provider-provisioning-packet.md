@@ -6,14 +6,14 @@ implementations; it does not perform hosted provisioning by itself.
 
 ## Purpose
 
-ACFS currently guides beginners through provider choice, VPS sizing, SSH setup,
+GTBI currently guides beginners through provider choice, VPS sizing, SSH setup,
 installer command generation, and support-bundle collection. Provider-specific
 automation needs a stable handoff format before any hosted or API-driven
 execution is added.
 
 The provisioning packet answers:
 
-> What should be provisioned, how should ACFS be bootstrapped on it, and which
+> What should be provisioned, how should GTBI be bootstrapped on it, and which
 > metadata can support safely inspect without provider secrets?
 
 The packet must remain portable across providers. It must never require storing
@@ -52,7 +52,7 @@ apps/web/lib/providerProvisioningPacket.ts
 The schema id is:
 
 ```text
-acfs.provider-provisioning-packet.v1
+gtbi.provider-provisioning-packet.v1
 ```
 
 Required top-level sections:
@@ -62,14 +62,14 @@ Required top-level sections:
 | `schema`, `schemaVersion` | Breaking-change boundary. |
 | `stage` | Lifecycle status such as `draft`, `installer_ready`, or `verified`. |
 | `privacy` | Redaction and support-bundle safety contract. |
-| `provenance` | Where the packet came from and which ACFS data models were used. |
+| `provenance` | Where the packet came from and which GTBI data models were used. |
 | `provider` | Provider identity, product URL, automation level, and manual steps. |
 | `region` | Provider region id/label and readiness status. |
 | `size` | Plan name, RAM, vCPU, storage, and optional price. |
 | `osImage` | Ubuntu version, minimum/preferred versions, and optional provider image id. |
 | `access` | Target username and public SSH key metadata. |
 | `cloudInit` | Whether user-data is used, plus hash/template metadata. |
-| `install` | Exact ACFS installer command, mode, ref, and module selection. |
+| `install` | Exact GTBI installer command, mode, ref, and module selection. |
 | `compatibility` | Workload, target agent count, specs, readiness, and capacity status. |
 | `verificationCommands` | Commands expected before marking the packet verified. |
 | `expectedArtifacts` | Provider, installer, and support artifacts to expect. |
@@ -81,9 +81,9 @@ Required top-level sections:
 | `draft` | Wizard has enough intent to describe the desired VPS. | Web wizard |
 | `ready_for_manual_provider_checkout` | Operator can follow provider console steps. | Web wizard |
 | `ready_for_api_provisioning` | Future adapter has enough non-secret intent to call a provider API. | Provider adapter |
-| `provider_server_created` | A VPS exists, but ACFS install has not been verified. | Operator or adapter |
+| `provider_server_created` | A VPS exists, but GTBI install has not been verified. | Operator or adapter |
 | `installer_ready` | SSH/cloud-init path is ready for the exact install command. | Operator or adapter |
-| `verified` | ACFS doctor and support-bundle checks completed. | Installer or operator |
+| `verified` | GTBI doctor and support-bundle checks completed. | Installer or operator |
 | `blocked` | Readiness, capacity, provider, or artifact checks failed. | Any actor |
 
 State transitions must be append-only in future audit logs. A later
@@ -161,7 +161,7 @@ and a redacted preview. They must not include raw rendered user-data.
 
 ## Install And Verification
 
-The packet keeps the exact install command because retrying or auditing ACFS
+The packet keeps the exact install command because retrying or auditing GTBI
 setup requires copy-paste fidelity:
 
 ```json
@@ -169,7 +169,7 @@ setup requires copy-paste fidelity:
   "install": {
     "mode": "vibe",
     "sourceRef": "main",
-    "command": "curl -fsSL \"https://raw.githubusercontent.com/Dicklesworthstone/agentic_coding_flywheel_setup/main/install.sh?$(date +%s)\" | bash -s -- --yes --mode vibe",
+    "command": "curl -fsSL \"https://raw.githubusercontent.com/jonbackhaus/gtbi/main/install.sh?$(date +%s)\" | bash -s -- --yes --mode vibe",
     "commandRunLocation": "vps-root-shell"
   }
 }
@@ -181,7 +181,7 @@ The base verification commands are:
 | --- | --- | --- | --- |
 | `ssh-root` | local | no | Confirms the new VPS is reachable. |
 | `installer` | VPS | yes | Confirms the exact installer command ran. |
-| `doctor` | VPS | yes | Confirms `acfs doctor` health. |
+| `doctor` | VPS | yes | Confirms `gtbi doctor` health. |
 | `support-bundle` | VPS | yes | Confirms redacted diagnostics can be produced. |
 
 Provider adapters may add provider-specific checks, but they must not remove
@@ -242,7 +242,7 @@ The current wizard providers remain manual in v1.
 
 ### Contabo
 
-- Choose the ACFS-recommended VPS product in the provider console.
+- Choose the GTBI-recommended VPS product in the provider console.
 - Select region and Ubuntu image manually.
 - Paste or select the public SSH key manually.
 - Complete checkout and payment manually.
@@ -251,9 +251,9 @@ The current wizard providers remain manual in v1.
 
 ### OVH
 
-- Choose the ACFS-recommended VPS product in the provider console.
+- Choose the GTBI-recommended VPS product in the provider console.
 - Select region and Ubuntu image manually.
-- Attach the public SSH key or use the provider password flow until ACFS
+- Attach the public SSH key or use the provider password flow until GTBI
   installs keys.
 - Complete checkout and payment manually.
 - Copy the assigned host address into the wizard or password manager; keep it
@@ -272,7 +272,7 @@ true:
 
 - provider is unknown and the operator has not accepted manual verification
 - selected plan is undersized
-- Ubuntu image is below the ACFS minimum
+- Ubuntu image is below the GTBI minimum
 - region is unsupported by the provider adapter
 - SSH public key metadata is missing before provisioning
 - exact installer command cannot be built
@@ -283,7 +283,7 @@ rather than raw provider errors that may contain private account details.
 
 ## CLI Validator
 
-`acfs provisioning-packet --file <packet.json>` validates a packet without
+`gtbi provisioning-packet --file <packet.json>` validates a packet without
 contacting a provider API. It renders human-readable output by default and
 emits machine-readable checks with `--json`.
 

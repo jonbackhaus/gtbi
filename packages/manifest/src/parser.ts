@@ -1,5 +1,5 @@
 /**
- * ACFS Manifest Parser
+ * GTBI Manifest Parser
  * Parses and validates YAML manifest files
  */
 
@@ -89,7 +89,7 @@ function looksLikeDescriptionOnlyInstallEntry(raw: string): boolean {
  *
  * @example
  * ```ts
- * const result = parseManifestFile('./acfs.manifest.yaml');
+ * const result = parseManifestFile('./gtbi.manifest.yaml');
  * if (result.success) {
  *   console.log(result.data.modules.length);
  * }

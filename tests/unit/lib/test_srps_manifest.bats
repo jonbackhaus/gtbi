@@ -14,13 +14,13 @@ teardown() {
 # MANIFEST TESTS
 # ============================================================
 
-@test "acfs.manifest.yaml contains stack.srps module" {
-    run grep -q "^  - id: stack.srps" "$PROJECT_ROOT/acfs.manifest.yaml"
+@test "gtbi.manifest.yaml contains stack.srps module" {
+    run grep -q "^  - id: stack.srps" "$PROJECT_ROOT/gtbi.manifest.yaml"
     assert_success
 }
 
 @test "SRPS manifest entry has required fields" {
-    local manifest="$PROJECT_ROOT/acfs.manifest.yaml"
+    local manifest="$PROJECT_ROOT/gtbi.manifest.yaml"
     local block
 
     block=$(awk '
@@ -36,7 +36,7 @@ teardown() {
 }
 
 @test "SRPS installed_check command references sysmoni" {
-    local manifest="$PROJECT_ROOT/acfs.manifest.yaml"
+    local manifest="$PROJECT_ROOT/gtbi.manifest.yaml"
     local check_cmd
 
     check_cmd=$(awk '
@@ -67,8 +67,8 @@ teardown() {
 }
 
 @test "SRPS installer URL is reachable (optional)" {
-    if [[ -z "${ACFS_TEST_ALLOW_NET:-}" ]]; then
-        skip "Network checks disabled (set ACFS_TEST_ALLOW_NET=1 to enable)"
+    if [[ -z "${GTBI_TEST_ALLOW_NET:-}" ]]; then
+        skip "Network checks disabled (set GTBI_TEST_ALLOW_NET=1 to enable)"
     fi
 
     local url
@@ -127,8 +127,8 @@ teardown() {
 # ============================================================
 
 @test "Doctor command runs (optional)" {
-    if [[ -z "${ACFS_RUN_DOCTOR_TESTS:-}" ]]; then
-        skip "Doctor tests disabled (set ACFS_RUN_DOCTOR_TESTS=1 to enable)"
+    if [[ -z "${GTBI_RUN_DOCTOR_TESTS:-}" ]]; then
+        skip "Doctor tests disabled (set GTBI_RUN_DOCTOR_TESTS=1 to enable)"
     fi
 
     run bash -lc "cd '$PROJECT_ROOT' && scripts/lib/doctor.sh --json"
@@ -136,8 +136,8 @@ teardown() {
 }
 
 @test "Doctor command output references SRPS (optional)" {
-    if [[ -z "${ACFS_RUN_DOCTOR_TESTS:-}" ]]; then
-        skip "Doctor tests disabled (set ACFS_RUN_DOCTOR_TESTS=1 to enable)"
+    if [[ -z "${GTBI_RUN_DOCTOR_TESTS:-}" ]]; then
+        skip "Doctor tests disabled (set GTBI_RUN_DOCTOR_TESTS=1 to enable)"
     fi
 
     run bash -lc "cd '$PROJECT_ROOT' && scripts/lib/doctor.sh --json"

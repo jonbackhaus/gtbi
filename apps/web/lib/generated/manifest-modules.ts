@@ -1,5 +1,5 @@
 // ============================================================
-// AUTO-GENERATED FROM acfs.manifest.yaml — DO NOT EDIT
+// AUTO-GENERATED FROM gtbi.manifest.yaml — DO NOT EDIT
 // Regenerate: bun run generate (from packages/manifest)
 // ============================================================
 
@@ -25,13 +25,13 @@ export interface ManifestSelectionProfile {
 }
 
 export interface ManifestProvenanceMetadata {
-  acfsVersion: string;
+  gtbiVersion: string;
   manifestSha256: string;
   checksumsYamlSha256: string;
 }
 
 export const manifestProvenance = {
-  acfsVersion: "0.7.0",
+  gtbiVersion: "0.7.0",
   manifestSha256: "9c7942e59373987ab7346d88d78160a4b8fff97b00f441461bba305306860503",
   checksumsYamlSha256: "d89d8c65965ed728c6dd1a7e120138ce43b1244eafe71ce2243d40e8ddc7cac5",
 } as const satisfies ManifestProvenanceMetadata;
@@ -64,7 +64,7 @@ export const manifestModules: ManifestModuleMetadata[] = [
   },
   {
     id: "base.filesystem",
-    description: "Create workspace and ACFS directories",
+    description: "Create workspace and GTBI directories",
     category: "filesystem",
     phase: 3,
     dependencies: [
@@ -94,7 +94,7 @@ export const manifestModules: ManifestModuleMetadata[] = [
   },
   {
     id: "shell.omz",
-    description: "Oh My Zsh + Powerlevel10k + plugins + ACFS config",
+    description: "Oh My Zsh + Powerlevel10k + plugins + GTBI config",
     category: "shell",
     phase: 4,
     dependencies: [
@@ -968,9 +968,9 @@ export const manifestModules: ManifestModuleMetadata[] = [
     optional: true,
   },
   {
-    id: "acfs.workspace",
+    id: "gtbi.workspace",
     description: "Agent workspace with tmux session and project folder",
-    category: "acfs",
+    category: "gtbi",
     phase: 10,
     dependencies: [
       "agents.claude",
@@ -986,9 +986,9 @@ export const manifestModules: ManifestModuleMetadata[] = [
     optional: true,
   },
   {
-    id: "acfs.onboard",
+    id: "gtbi.onboard",
     description: "Onboarding TUI tutorial",
-    category: "acfs",
+    category: "gtbi",
     phase: 10,
     dependencies: [],
     tags: [
@@ -998,9 +998,9 @@ export const manifestModules: ManifestModuleMetadata[] = [
     optional: false,
   },
   {
-    id: "acfs.update",
-    description: "ACFS update command wrapper",
-    category: "acfs",
+    id: "gtbi.update",
+    description: "GTBI update command wrapper",
+    category: "gtbi",
     phase: 10,
     dependencies: [],
     tags: [
@@ -1010,12 +1010,12 @@ export const manifestModules: ManifestModuleMetadata[] = [
     optional: false,
   },
   {
-    id: "acfs.nightly",
+    id: "gtbi.nightly",
     description: "Nightly auto-update timer (systemd)",
-    category: "acfs",
+    category: "gtbi",
     phase: 10,
     dependencies: [
-      "acfs.update",
+      "gtbi.update",
     ],
     tags: [
       "orchestration",
@@ -1025,9 +1025,9 @@ export const manifestModules: ManifestModuleMetadata[] = [
     optional: true,
   },
   {
-    id: "acfs.doctor",
-    description: "ACFS doctor command for health checks",
-    category: "acfs",
+    id: "gtbi.doctor",
+    description: "GTBI doctor command for health checks",
+    category: "gtbi",
     phase: 10,
     dependencies: [],
     tags: [
@@ -1080,10 +1080,10 @@ export const manifestSelectionProfiles: ManifestSelectionProfile[] = [
       "stack.dcg",
       "stack.ru",
       "stack.rch",
-      "acfs.workspace",
-      "acfs.onboard",
-      "acfs.update",
-      "acfs.doctor",
+      "gtbi.workspace",
+      "gtbi.onboard",
+      "gtbi.update",
+      "gtbi.doctor",
     ],
     onlyPhases: [],
   },

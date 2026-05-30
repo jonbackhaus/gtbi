@@ -1,10 +1,10 @@
 /**
- * ACFS Manifest Types
- * Type definitions for the acfs.manifest.yaml schema
+ * GTBI Manifest Types
+ * Type definitions for the gtbi.manifest.yaml schema
  */
 
 /**
- * Default configuration for ACFS installation
+ * Default configuration for GTBI installation
  */
 export interface ManifestDefaults {
   /** Target user for installation (default: ubuntu) */
@@ -117,7 +117,7 @@ export interface ModuleWebMetadata {
 }
 
 /**
- * Provenance for modules supplied by a validated ACFS plugin package.
+ * Provenance for modules supplied by a validated GTBI plugin package.
  */
 export interface ModulePluginProvenance {
   /** Plugin package identifier */
@@ -182,7 +182,7 @@ export interface Module {
 }
 
 /**
- * The complete ACFS manifest
+ * The complete GTBI manifest
  */
 export interface Manifest {
   /** Schema version number */
@@ -247,7 +247,7 @@ export type ModuleCategory =
   | 'cloud'
   | 'agents'
   | 'stack'
-  | 'acfs';
+  | 'gtbi';
 
 /**
  * Parse result from YAML parsing

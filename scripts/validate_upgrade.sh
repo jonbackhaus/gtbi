@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # ============================================================
-# ACFS Ubuntu Upgrade Validation Script
+# GTBI Ubuntu Upgrade Validation Script
 # Manual QA helper for verifying upgrade functionality
 #
 # Usage: ./scripts/validate_upgrade.sh
-# Related beads: agentic_coding_flywheel_setup-dwh (ubu.7)
+# Related beads: gastown_batteries_included-dwh (ubu.7)
 # ============================================================
 
 set -euo pipefail
@@ -28,7 +28,7 @@ NC='\033[0m'
 print_header() {
     echo ""
     echo -e "${BLUE}═══════════════════════════════════════════════════════════════${NC}"
-    echo -e "${BLUE}  ACFS Ubuntu Upgrade Validation${NC}"
+    echo -e "${BLUE}  GTBI Ubuntu Upgrade Validation${NC}"
     echo -e "${BLUE}═══════════════════════════════════════════════════════════════${NC}"
     echo ""
 }
@@ -245,7 +245,7 @@ check_upgrade_state() {
 check_systemd_service() {
     print_section "6. Systemd Resume Service"
 
-    local service_template="$PROJECT_ROOT/scripts/templates/acfs-upgrade-resume.service"
+    local service_template="$PROJECT_ROOT/scripts/templates/gtbi-upgrade-resume.service"
     if [[ -f "$service_template" ]]; then
         print_ok "Service template exists: $service_template"
     else
@@ -272,7 +272,7 @@ check_systemd_service() {
 
     # Check if service is installed (only on Ubuntu)
     if command -v systemctl &>/dev/null; then
-        if systemctl is-enabled acfs-upgrade-resume &>/dev/null; then
+        if systemctl is-enabled gtbi-upgrade-resume &>/dev/null; then
             print_warn "Resume service is enabled (upgrade may be in progress)"
         else
             print_info "Resume service is not enabled (normal state)"
@@ -330,7 +330,7 @@ print_summary() {
     echo -e "  ${GRAY}   Provision fresh Ubuntu 24.04 VPS and run:${NC}"
     echo -e "  ${GRAY}   tests/vm/test_factory_install_ubuntu.sh --ssh-target root@HOST --expect-ubuntu 24.04 --expect-final-ubuntu 25.10 --allow-install-reboot${NC}"
     echo -e "  ${GRAY}3. Observe upgrade from 24.04 → 25.10 and post-reboot resume${NC}"
-    echo -e "  ${GRAY}4. Verify ACFS installation continues after upgrade and acfs doctor passes${NC}"
+    echo -e "  ${GRAY}4. Verify GTBI installation continues after upgrade and gtbi doctor passes${NC}"
     echo ""
 }
 

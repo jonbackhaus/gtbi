@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# check-manifest-drift.sh - Detect and auto-fix ACFS manifest/script/config drift
+# check-manifest-drift.sh - Detect and auto-fix GTBI manifest/script/config drift
 #
 # This script verifies that scripts/generated/manifest_index.sh has the correct
-# SHA256 hash for acfs.manifest.yaml, that internal library scripts match
+# SHA256 hash for gtbi.manifest.yaml, that internal library scripts match
 # their recorded checksums in scripts/generated/internal_checksums.sh, that the
 # full set of generated artifacts still matches `bun run generate:diff`, that
 # manifest-derived website, onboarding, doctor, README, and checksum surfaces
@@ -124,7 +124,7 @@ parse_internal_checksums_file() {
     INTERNAL_CHECKSUMS_EXPECTED_COUNT=0
 
     INTERNAL_CHECKSUMS_EXPECTED_COUNT=$(
-        grep -E '^ACFS_INTERNAL_CHECKSUMS_COUNT=' "$file" | head -n 1 | cut -d'=' -f2 | tr -d '"[:space:]\r' || true
+        grep -E '^GTBI_INTERNAL_CHECKSUMS_COUNT=' "$file" | head -n 1 | cut -d'=' -f2 | tr -d '"[:space:]\r' || true
     )
 
     while IFS= read -r line; do
@@ -345,7 +345,7 @@ check_repo_mcp_config_drift() {
 }
 
 # Verify prerequisites
-MANIFEST="$REPO_ROOT/acfs.manifest.yaml"
+MANIFEST="$REPO_ROOT/gtbi.manifest.yaml"
 INDEX="$REPO_ROOT/scripts/generated/manifest_index.sh"
 
 if [[ ! -f "$MANIFEST" ]]; then
@@ -363,21 +363,21 @@ if ! ACTUAL_SHA256="$(sha256_file "$MANIFEST" "Manifest")"; then
 fi
 
 # Extract recorded hash from generated index
-if ! RECORDED_SHA256="$(extract_assignment_value "$INDEX" "ACFS_MANIFEST_SHA256" "Generated manifest index")"; then
+if ! RECORDED_SHA256="$(extract_assignment_value "$INDEX" "GTBI_MANIFEST_SHA256" "Generated manifest index")"; then
     exit 3
 fi
 
 if [[ -z "$RECORDED_SHA256" ]]; then
-    log_error "Could not extract ACFS_MANIFEST_SHA256 from $INDEX"
+    log_error "Could not extract GTBI_MANIFEST_SHA256 from $INDEX"
     exit 3
 fi
 
 # Count SHA256 lines (detect duplicate)
-SHA_LINE_COUNT=$(grep -c 'ACFS_MANIFEST_SHA256=' "$INDEX" || true)
+SHA_LINE_COUNT=$(grep -c 'GTBI_MANIFEST_SHA256=' "$INDEX" || true)
 
 # Count modules in manifest vs generated index
 MANIFEST_MODULE_COUNT=$(grep -c '^[[:space:]]*- id:' "$MANIFEST" || true)
-INDEX_MODULE_COUNT=$(awk '/^ACFS_MODULES_IN_ORDER=/,/^\)/' "$INDEX" | grep -c '"' || true)
+INDEX_MODULE_COUNT=$(awk '/^GTBI_MODULES_IN_ORDER=/,/^\)/' "$INDEX" | grep -c '"' || true)
 
 DRIFT_DETECTED=false
 DRIFT_REASONS=()
@@ -389,7 +389,7 @@ fi
 
 if [[ "$SHA_LINE_COUNT" -gt 1 ]]; then
     DRIFT_DETECTED=true
-    DRIFT_REASONS+=("Duplicate ACFS_MANIFEST_SHA256 lines: $SHA_LINE_COUNT found")
+    DRIFT_REASONS+=("Duplicate GTBI_MANIFEST_SHA256 lines: $SHA_LINE_COUNT found")
 fi
 
 if [[ "$MANIFEST_MODULE_COUNT" -ne "$INDEX_MODULE_COUNT" ]]; then
@@ -579,7 +579,7 @@ if ! command -v bun &>/dev/null; then
 fi
 
 # Refuse to fix if any tracked source file (anything contributing to
-# ACFS_INTERNAL_CHECKSUMS, verified-installer checksum validation, or the
+# GTBI_INTERNAL_CHECKSUMS, verified-installer checksum validation, or the
 # generated installer scripts) has uncommitted changes. Otherwise
 # `bun run generate` would validate or hash dirty working-tree contents and
 # we'd push generated artifacts that don't match what's actually committed,
@@ -587,12 +587,12 @@ fi
 # bootstrap installer tests on c55a89eb.
 DIRTY_SOURCES="$(cd "$REPO_ROOT" && git status --porcelain -- \
     scripts/lib \
-    scripts/acfs-global \
-    scripts/acfs-update \
-    acfs.manifest.yaml \
+    scripts/gtbi-global \
+    scripts/gtbi-update \
+    gtbi.manifest.yaml \
     checksums.yaml \
     README.md \
-    acfs/onboard/lessons \
+    gtbi/onboard/lessons \
     packages/manifest 2>/dev/null \
     | grep -v '^[?][?]' || true)"
 if [[ -n "$DIRTY_SOURCES" ]]; then
@@ -614,7 +614,7 @@ if ! bun run generate >&2; then
 fi
 
 # Verify manifest fix
-if ! NEW_RECORDED="$(extract_assignment_value "$INDEX" "ACFS_MANIFEST_SHA256" "Generated manifest index")"; then
+if ! NEW_RECORDED="$(extract_assignment_value "$INDEX" "GTBI_MANIFEST_SHA256" "Generated manifest index")"; then
     exit 2
 fi
 if ! ACTUAL_NOW="$(sha256_file "$MANIFEST" "Manifest")"; then
@@ -622,7 +622,7 @@ if ! ACTUAL_NOW="$(sha256_file "$MANIFEST" "Manifest")"; then
 fi
 
 if [[ -z "$NEW_RECORDED" ]]; then
-    log_error "Could not extract ACFS_MANIFEST_SHA256 from $INDEX after regeneration"
+    log_error "Could not extract GTBI_MANIFEST_SHA256 from $INDEX after regeneration"
     exit 2
 fi
 
@@ -699,7 +699,7 @@ fix(manifest): auto-fix generated artifact checksum drift
 
 Detected by check-manifest-drift.sh.
 Regenerated installer and web generated artifacts via `bun run generate`
-to sync ACFS_MANIFEST_SHA256 and internal checksums with source files.
+to sync GTBI_MANIFEST_SHA256 and internal checksums with source files.
 COMMIT_MSG
 )"
 

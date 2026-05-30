@@ -47,7 +47,7 @@ echo "=== E2E: Resume After Failure ==="
 echo ""
 
 WORK_DIR="$(mktemp -d)"
-STATE_DIR="$WORK_DIR/.acfs"
+STATE_DIR="$WORK_DIR/.gtbi"
 STATE_FILE="$STATE_DIR/state.json"
 LOG_DIR="$WORK_DIR/logs"
 mkdir -p "$STATE_DIR" "$LOG_DIR"
@@ -59,10 +59,10 @@ echo "Step 1: Running installer with --only-phase user_setup..."
 
 LOG1="$LOG_DIR/run1.log"
 
-ACFS_CI=true \
-ACFS_HOME="$STATE_DIR" \
-ACFS_STATE_FILE="$STATE_FILE" \
-ACFS_LOG_DIR="$LOG_DIR" \
+GTBI_CI=true \
+GTBI_HOME="$STATE_DIR" \
+GTBI_STATE_FILE="$STATE_FILE" \
+GTBI_LOG_DIR="$LOG_DIR" \
     bash "$REPO_ROOT/install.sh" \
         --yes \
         --skip-preflight \
@@ -118,10 +118,10 @@ echo "Step 3: Running installer with --resume..."
 
 LOG2="$LOG_DIR/run2.log"
 
-ACFS_CI=true \
-ACFS_HOME="$STATE_DIR" \
-ACFS_STATE_FILE="$STATE_FILE" \
-ACFS_LOG_DIR="$LOG_DIR" \
+GTBI_CI=true \
+GTBI_HOME="$STATE_DIR" \
+GTBI_STATE_FILE="$STATE_FILE" \
+GTBI_LOG_DIR="$LOG_DIR" \
     bash "$REPO_ROOT/install.sh" \
         --yes \
         --resume \

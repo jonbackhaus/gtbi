@@ -1288,7 +1288,7 @@ export default function WorkflowPage() {
           </p>
 
           <CommandCard
-            command="acfs services-setup"
+            command="gtbi services-setup"
             description="Run the cloud services setup wizard"
           />
 

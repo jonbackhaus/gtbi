@@ -9,7 +9,7 @@ on:
       - main
     paths:
       - 'install.sh'
-      - 'acfs.manifest.yaml'
+      - 'gtbi.manifest.yaml'
       - 'checksums.yaml'
       - 'packages/manifest/**'
       - 'scripts/lib/**'

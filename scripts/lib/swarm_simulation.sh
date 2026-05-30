@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-# ACFS Swarm Simulation - dry-run fleet-scale harness
+# GTBI Swarm Simulation - dry-run fleet-scale harness
 #
 # Runs deterministic 10/25/50 logical-agent simulations without
 # launching tmux sessions, model CLIs, or CPU-heavy build commands.
@@ -12,23 +12,23 @@ SWARM_SIM_JSON=false
 SWARM_SIM_COUNTS_RAW="10,25,50"
 SWARM_SIM_COUNTS_EXPLICIT=false
 SWARM_SIM_WORKLOAD="standard"
-SWARM_SIM_ARTIFACT_DIR="${ACFS_SWARM_SIM_ARTIFACT_DIR:-}"
+SWARM_SIM_ARTIFACT_DIR="${GTBI_SWARM_SIM_ARTIFACT_DIR:-}"
 SWARM_SIM_STATUS_FILE=""
 SWARM_SIM_MOCK_REHEARSAL=false
 SWARM_SIM_MOCK_DURATION=1
 SWARM_SIM_ALLOW_HIGH_COUNTS=false
 SWARM_SIM_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SWARM_STATUS_SCRIPT="${ACFS_SWARM_STATUS_SCRIPT:-$SWARM_SIM_SCRIPT_DIR/swarm_status.sh}"
-SWARM_CAPACITY_SCRIPT="${ACFS_SWARM_CAPACITY_SCRIPT:-$SWARM_SIM_SCRIPT_DIR/capacity.sh}"
+SWARM_STATUS_SCRIPT="${GTBI_SWARM_STATUS_SCRIPT:-$SWARM_SIM_SCRIPT_DIR/swarm_status.sh}"
+SWARM_CAPACITY_SCRIPT="${GTBI_SWARM_CAPACITY_SCRIPT:-$SWARM_SIM_SCRIPT_DIR/capacity.sh}"
 SWARM_SIM_GENERATED_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date)"
 SWARM_SIM_COUNTS=()
 SWARM_SIM_MOCK_PIDS=()
 
 swarm_sim_usage() {
     cat <<'EOF'
-Usage: acfs swarm simulate [OPTIONS]
+Usage: gtbi swarm simulate [OPTIONS]
 
-Dry-run-only simulation harness for 10/25/50 logical ACFS agents.
+Dry-run-only simulation harness for 10/25/50 logical GTBI agents.
 No tmux sessions, model CLIs, Agent Mail mutations, Beads updates, or
 CPU-heavy build commands are executed.
 
@@ -37,7 +37,7 @@ Options:
   --counts LIST         Comma-separated agent counts (default: 10,25,50)
   --workload NAME       light, standard, or heavy (default: standard)
   --artifact-dir DIR    Directory for timing, plan, telemetry, and summaries
-  --status-file FILE    Use an existing acfs swarm status JSON snapshot
+  --status-file FILE    Use an existing gtbi swarm status JSON snapshot
   --mock-rehearsal      Launch inert local shell workers and collect artifacts
   --mock-duration SEC   Sleep duration for each mock worker (default: 1)
   --allow-high-counts   Permit mock rehearsals above 10 workers
@@ -180,7 +180,7 @@ swarm_sim_parse_args() {
                 ;;
             *)
                 echo "Error: unknown option: $1" >&2
-                echo "Run 'acfs swarm simulate --help' for usage." >&2
+                echo "Run 'gtbi swarm simulate --help' for usage." >&2
                 return 2
                 ;;
         esac
@@ -216,7 +216,7 @@ swarm_sim_prepare_artifact_dir() {
     local timestamp=""
 
     if [[ -z "$SWARM_SIM_ARTIFACT_DIR" ]]; then
-        base_dir="${ACFS_SWARM_SIM_BASE_DIR:-${HOME:-/tmp}/.acfs/logs/swarm-simulations}"
+        base_dir="${GTBI_SWARM_SIM_BASE_DIR:-${HOME:-/tmp}/.gtbi/logs/swarm-simulations}"
         timestamp="$(date -u +%Y%m%dT%H%M%SZ 2>/dev/null || date +%s)"
         SWARM_SIM_ARTIFACT_DIR="$base_dir/$timestamp-$$"
     fi
@@ -534,7 +534,7 @@ swarm_sim_launch_plan_json() {
             },
             launch: {
                 dry_run: true,
-                command: ("ntm spawn acfs-sim --count " + ($count | tostring) + " --label swarm-" + ($count | tostring) + " --dry-run"),
+                command: ("ntm spawn gtbi-sim --count " + ($count | tostring) + " --label swarm-" + ($count | tostring) + " --dry-run"),
                 not_executed: true
             },
             coordination: {
@@ -779,7 +779,7 @@ swarm_sim_emit_human() {
     local jq_bin="$1"
     local summary_file="$2"
 
-    echo "ACFS Swarm Simulation"
+    echo "GTBI Swarm Simulation"
     echo "Status: $("$jq_bin" -r '.status' "$summary_file")"
     echo "Artifacts: $("$jq_bin" -r '.artifact_dir' "$summary_file")"
     echo "Simulation only: no agents, tmux sessions, model CLIs, Beads updates, or CPU-heavy commands were executed."

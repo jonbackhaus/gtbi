@@ -119,23 +119,23 @@ test_state_integrity_valid() {
     local test_dir="/tmp/test_autofix_${test_id}"
     mkdir -p "$test_dir"
     
-    ACFS_STATE_DIR="$test_dir"
-    ACFS_CHANGES_FILE="$test_dir/changes.jsonl"
-    ACFS_UNDOS_FILE="$test_dir/undos.jsonl"
+    GTBI_STATE_DIR="$test_dir"
+    GTBI_CHANGES_FILE="$test_dir/changes.jsonl"
+    GTBI_UNDOS_FILE="$test_dir/undos.jsonl"
     
     # Create valid records
-    echo '{"id":"chg_001","description":"test1"}' > "$ACFS_CHANGES_FILE"
-    echo '{"id":"chg_002","description":"test2"}' >> "$ACFS_CHANGES_FILE"
-    touch "$ACFS_UNDOS_FILE"
+    echo '{"id":"chg_001","description":"test1"}' > "$GTBI_CHANGES_FILE"
+    echo '{"id":"chg_002","description":"test2"}' >> "$GTBI_CHANGES_FILE"
+    touch "$GTBI_UNDOS_FILE"
     
     if ! verify_state_integrity 2>/dev/null; then
         test_fail "state_integrity_valid" "Valid state rejected"
-        rm -f "$ACFS_CHANGES_FILE" "$ACFS_UNDOS_FILE"
+        rm -f "$GTBI_CHANGES_FILE" "$GTBI_UNDOS_FILE"
         rmdir "$test_dir" 2>/dev/null || true
         return
     fi
     
-    rm -f "$ACFS_CHANGES_FILE" "$ACFS_UNDOS_FILE"
+    rm -f "$GTBI_CHANGES_FILE" "$GTBI_UNDOS_FILE"
     rmdir "$test_dir" 2>/dev/null || true
     test_pass "state_integrity_valid"
 }
@@ -146,22 +146,22 @@ test_state_integrity_invalid() {
     local test_dir="/tmp/test_autofix_${test_id}"
     mkdir -p "$test_dir"
     
-    ACFS_STATE_DIR="$test_dir"
-    ACFS_CHANGES_FILE="$test_dir/changes.jsonl"
-    ACFS_UNDOS_FILE="$test_dir/undos.jsonl"
+    GTBI_STATE_DIR="$test_dir"
+    GTBI_CHANGES_FILE="$test_dir/changes.jsonl"
+    GTBI_UNDOS_FILE="$test_dir/undos.jsonl"
     
     # Create invalid JSON
-    echo 'not valid json' > "$ACFS_CHANGES_FILE"
-    touch "$ACFS_UNDOS_FILE"
+    echo 'not valid json' > "$GTBI_CHANGES_FILE"
+    touch "$GTBI_UNDOS_FILE"
     
     if verify_state_integrity 2>/dev/null; then
         test_fail "state_integrity_invalid" "Invalid state accepted"
-        rm -f "$ACFS_CHANGES_FILE" "$ACFS_UNDOS_FILE"
+        rm -f "$GTBI_CHANGES_FILE" "$GTBI_UNDOS_FILE"
         rmdir "$test_dir" 2>/dev/null || true
         return
     fi
     
-    rm -f "$ACFS_CHANGES_FILE" "$ACFS_UNDOS_FILE"
+    rm -f "$GTBI_CHANGES_FILE" "$GTBI_UNDOS_FILE"
     rmdir "$test_dir" 2>/dev/null || true
     test_pass "state_integrity_invalid"
 }
@@ -172,29 +172,29 @@ test_state_repair() {
     local test_dir="/tmp/test_autofix_${test_id}"
     mkdir -p "$test_dir"
     
-    ACFS_STATE_DIR="$test_dir"
-    ACFS_CHANGES_FILE="$test_dir/changes.jsonl"
-    ACFS_UNDOS_FILE="$test_dir/undos.jsonl"
+    GTBI_STATE_DIR="$test_dir"
+    GTBI_CHANGES_FILE="$test_dir/changes.jsonl"
+    GTBI_UNDOS_FILE="$test_dir/undos.jsonl"
     
     # Create mixed valid/invalid records
-    echo '{"id":"chg_001","description":"valid"}' > "$ACFS_CHANGES_FILE"
-    echo 'invalid json line' >> "$ACFS_CHANGES_FILE"
-    echo '{"id":"chg_002","description":"also valid"}' >> "$ACFS_CHANGES_FILE"
-    touch "$ACFS_UNDOS_FILE"
+    echo '{"id":"chg_001","description":"valid"}' > "$GTBI_CHANGES_FILE"
+    echo 'invalid json line' >> "$GTBI_CHANGES_FILE"
+    echo '{"id":"chg_002","description":"also valid"}' >> "$GTBI_CHANGES_FILE"
+    touch "$GTBI_UNDOS_FILE"
     
     repair_state_files 2>/dev/null
     
     # Should have only 2 valid lines now
     local valid_count
-    valid_count=$(grep -c '^{' "$ACFS_CHANGES_FILE" || echo 0)
+    valid_count=$(grep -c '^{' "$GTBI_CHANGES_FILE" || echo 0)
     if [[ "$valid_count" -ne 2 ]]; then
         test_fail "state_repair" "Expected 2 valid lines, got $valid_count"
-        rm -f "$ACFS_CHANGES_FILE" "$ACFS_UNDOS_FILE"
+        rm -f "$GTBI_CHANGES_FILE" "$GTBI_UNDOS_FILE"
         rmdir "$test_dir" 2>/dev/null || true
         return
     fi
     
-    rm -f "$ACFS_CHANGES_FILE" "$ACFS_UNDOS_FILE"
+    rm -f "$GTBI_CHANGES_FILE" "$GTBI_UNDOS_FILE"
     rmdir "$test_dir" 2>/dev/null || true
     test_pass "state_repair"
 }

@@ -1,4 +1,4 @@
-# AGENTS.md — Agentic Coding Flywheel Setup (ACFS)
+# AGENTS.md — Agentic Coding Flywheel Setup (GTBI)
 
 > Guidelines for AI coding agents working in this multi-component Bash/TypeScript codebase.
 
@@ -135,18 +135,18 @@ If you see errors, **carefully understand and resolve each issue**. Read suffici
 
 ## Verified Installer Checksum Discipline
 
-ACFS treats `checksums.yaml` as a security boundary for any manifest module that uses `verified_installer`.
+GTBI treats `checksums.yaml` as a security boundary for any manifest module that uses `verified_installer`.
 
-- **Whenever you change or release a tool whose ACFS manifest entry installs via `verified_installer`, you MUST run the canonical checksum refresh flow and review the diff.**
-- **For `rch` specifically:** every new `remote_compilation_helper` release/version change must be followed by this checksum review in ACFS, even if you expect the installer script hash to stay the same.
-- **Do not assume** a version bump is complete just because the upstream release exists; ACFS is still stale until the verified installer checksum is updated here.
-- **Use the canonical updater, not a hand-edited checksum:** generate a candidate path such as `candidate="/tmp/acfs-checksums.$$.candidate.yaml"`, then compare it to `checksums.yaml`.
+- **Whenever you change or release a tool whose GTBI manifest entry installs via `verified_installer`, you MUST run the canonical checksum refresh flow and review the diff.**
+- **For `rch` specifically:** every new `remote_compilation_helper` release/version change must be followed by this checksum review in GTBI, even if you expect the installer script hash to stay the same.
+- **Do not assume** a version bump is complete just because the upstream release exists; GTBI is still stale until the verified installer checksum is updated here.
+- **Use the canonical updater, not a hand-edited checksum:** generate a candidate path such as `candidate="/tmp/gtbi-checksums.$$.candidate.yaml"`, then compare it to `checksums.yaml`.
 - **If unrelated installer entries changed too:** stop and investigate before replacing `checksums.yaml`, even if the target tool entry also changed.
 - **If the diff is limited to the timestamp header plus the target tool entry:** replace `checksums.yaml` with the generated output.
 - **If the only diff is the timestamp header:** leave `checksums.yaml` unchanged.
 - Preferred targeted verification before or after regeneration:
   ```bash
-  candidate="/tmp/acfs-checksums.$$.candidate.yaml"
+  candidate="/tmp/gtbi-checksums.$$.candidate.yaml"
   ./scripts/lib/security.sh --update-checksums > "$candidate"
   diff -u checksums.yaml "$candidate" || [[ $? -eq 1 ]]
   ./scripts/lib/security.sh --checksum https://raw.githubusercontent.com/Dicklesworthstone/remote_compilation_helper/main/install.sh
@@ -206,9 +206,9 @@ If you aren't 100% sure how to use a third-party library, **SEARCH ONLINE** to f
 
 ---
 
-## ACFS — This Project
+## GTBI — This Project
 
-**This is the project you're working on.** ACFS (Agentic Coding Flywheel Setup) is a multi-component project that takes a beginner from "I have a laptop" to a fully configured VPS with coding agents, dev tools, and coordination infrastructure.
+**This is the project you're working on.** GTBI (Agentic Coding Flywheel Setup) is a multi-component project that takes a beginner from "I have a laptop" to a fully configured VPS with coding agents, dev tools, and coordination infrastructure.
 
 ### What It Does
 
@@ -221,18 +221,18 @@ Provides a step-by-step wizard website, a one-liner installer, and an onboarding
 | Website Wizard | `apps/web/` | Next.js 16 App Router wizard guiding beginners |
 | Installer | `install.sh` + `scripts/` | Bash installer, idempotent, checkpointed |
 | Onboarding TUI | `packages/onboard/` | Interactive tutorial for Linux basics + agent workflow |
-| Module Manifest | `acfs.manifest.yaml` | Single source of truth for all tools installed |
-| ACFS Configs | `acfs/` | Shell, tmux, onboard configs installed to `~/.acfs/` |
+| Module Manifest | `gtbi.manifest.yaml` | Single source of truth for all tools installed |
+| GTBI Configs | `gtbi/` | Shell, tmux, onboard configs installed to `~/.gtbi/` |
 | Manifest Parser | `packages/manifest/` | YAML parser + code generators |
 
 ### Repo Layout
 
 ```
-agentic_coding_flywheel_setup/
+gastown_batteries_included/
 ├── README.md
 ├── install.sh                    # One-liner entrypoint
 ├── VERSION
-├── acfs.manifest.yaml            # Canonical tool manifest
+├── gtbi.manifest.yaml            # Canonical tool manifest
 │
 ├── apps/
 │   └── web/                      # Next.js 16 wizard website
@@ -245,9 +245,9 @@ agentic_coding_flywheel_setup/
 │   ├── manifest/                 # Manifest YAML parser + generators
 │   └── onboard/                  # Onboard TUI source
 │
-├── acfs/                         # Files copied to ~/.acfs on VPS
+├── gtbi/                         # Files copied to ~/.gtbi on VPS
 │   ├── zsh/
-│   │   └── acfs.zshrc
+│   │   └── gtbi.zshrc
 │   ├── tmux/
 │   │   └── tmux.conf
 │   └── onboard/
@@ -287,7 +287,7 @@ scripts/generated/          # ALL files in this directory
 
 ### Installer Architecture
 
-- **Auto-Upgrade:** Older Ubuntu versions are automatically upgraded to 25.10 before ACFS install
+- **Auto-Upgrade:** Older Ubuntu versions are automatically upgraded to 25.10 before GTBI install
   - Upgrade path: 22.04 -> 24.04 -> 25.04 -> 25.10 (EOL interim releases like 24.10 may be skipped)
   - Takes 30-60 minutes per version hop; multiple reboots handled via systemd resume service
   - Skip with `--skip-ubuntu-upgrade` flag
@@ -312,7 +312,7 @@ Rules:
 - `--quiet` flag suppresses progress but not errors
 - All output functions should use the logging library (`scripts/lib/logging.sh`)
 
-### Third-Party Tools Installed by ACFS
+### Third-Party Tools Installed by GTBI
 
 These are installed on target VPS (not development machine).
 
@@ -701,7 +701,7 @@ rg -l -t ts 'useState' | xargs ast-grep run -l TypeScript -p 'useState($INIT)' -
 
 ```
 mcp__morph-mcp__warp_grep(
-  repoPath: "/dp/agentic_coding_flywheel_setup",
+  repoPath: "/dp/gastown_batteries_included",
   query: "How does the installer handle Ubuntu version upgrades?"
 )
 ```

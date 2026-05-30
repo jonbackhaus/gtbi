@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # ============================================================
-# ACFS newproj TUI Wizard - Error Handling and Recovery
+# GTBI newproj TUI Wizard - Error Handling and Recovery
 # Provides robust error handling, signal management, and cleanup
 # ============================================================
 
 # Prevent multiple sourcing
-if [[ -n "${_ACFS_NEWPROJ_ERRORS_SH_LOADED:-}" ]]; then
+if [[ -n "${_GTBI_NEWPROJ_ERRORS_SH_LOADED:-}" ]]; then
     return 0
 fi
-_ACFS_NEWPROJ_ERRORS_SH_LOADED=1
+_GTBI_NEWPROJ_ERRORS_SH_LOADED=1
 
 # ============================================================
 # Configuration
@@ -48,7 +48,7 @@ newproj_tty_printf() {
     local format="$1"
     shift
 
-    if [[ -z "${BATS_TEST_NAME:-}" && -z "${ACFS_TEST_MODE:-}" ]] && [[ -w /dev/tty ]] && { printf "$format" "$@" > /dev/tty; } 2>/dev/null; then
+    if [[ -z "${BATS_TEST_NAME:-}" && -z "${GTBI_TEST_MODE:-}" ]] && [[ -w /dev/tty ]] && { printf "$format" "$@" > /dev/tty; } 2>/dev/null; then
         return 0
     fi
 
@@ -731,12 +731,12 @@ show_error_with_recovery() {
     esac
 
     newproj_tty_printf "%b\n" ""
-    newproj_tty_printf "%s\n" "Need help? Run: acfs newproj --help"
+    newproj_tty_printf "%s\n" "Need help? Run: gtbi newproj --help"
 
     # Show log location if available
-    if [[ -n "${ACFS_SESSION_LOG:-}" && -f "${ACFS_SESSION_LOG:-}" ]]; then
+    if [[ -n "${GTBI_SESSION_LOG:-}" && -f "${GTBI_SESSION_LOG:-}" ]]; then
         newproj_tty_printf "%b\n" ""
-        newproj_tty_printf "%s\n" "Debug log: $ACFS_SESSION_LOG"
+        newproj_tty_printf "%s\n" "Debug log: $GTBI_SESSION_LOG"
     fi
     newproj_tty_printf "%b\n" ""
 }

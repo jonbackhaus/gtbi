@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # ============================================================
-# ACFS Installer - Ubuntu Integration Test (Docker)
+# GTBI Installer - Ubuntu Integration Test (Docker)
 #
 # Runs the full installer inside a fresh Ubuntu container image, then runs
-# `acfs doctor` as the `ubuntu` user.
+# `gtbi doctor` as the `ubuntu` user.
 #
 # Usage:
 #   ./tests/vm/test_install_ubuntu.sh              # defaults to 25.10
@@ -19,7 +19,7 @@ set -euo pipefail
 
 usage() {
   cat <<'EOF'
-tests/vm/test_install_ubuntu.sh - ACFS installer integration test (Docker)
+tests/vm/test_install_ubuntu.sh - GTBI installer integration test (Docker)
 
 Usage:
   ./tests/vm/test_install_ubuntu.sh [options]
@@ -107,7 +107,7 @@ run_one() {
 
   echo "" >&2
   echo "============================================================" >&2
-  echo "[ACFS Test] Ubuntu ${ubuntu_version} (mode=${MODE})" >&2
+  echo "[GTBI Test] Ubuntu ${ubuntu_version} (mode=${MODE})" >&2
   echo "Logs: ${log_dir}" >&2
   echo "============================================================" >&2
 
@@ -115,10 +115,10 @@ run_one() {
 
   docker run --rm \
     -e DEBIAN_FRONTEND=noninteractive \
-    -e ACFS_TEST_MODE="$MODE" \
-    -e ACFS_TEST_STRICT="$STRICT" \
-    -e ACFS_CHECKSUMS_REF="${ACFS_CHECKSUMS_REF:-}" \
-    -e ACFS_REF="${ACFS_REF:-}" \
+    -e GTBI_TEST_MODE="$MODE" \
+    -e GTBI_TEST_STRICT="$STRICT" \
+    -e GTBI_CHECKSUMS_REF="${GTBI_CHECKSUMS_REF:-}" \
+    -e GTBI_REF="${GTBI_REF:-}" \
     -v "${REPO_ROOT}:/repo:rw" \
     "$image" bash /repo/tests/vm/test_runner.sh
 }

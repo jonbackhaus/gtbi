@@ -1,10 +1,10 @@
 # Pinned Reference Installs
 
-This document explains how to use pinned references for reproducible ACFS installations.
+This document explains how to use pinned references for reproducible GTBI installations.
 
 ## Overview
 
-By default, the ACFS installer fetches scripts from the `main` branch. This means you always get the latest version, but installations done at different times may produce different results.
+By default, the GTBI installer fetches scripts from the `main` branch. This means you always get the latest version, but installations done at different times may produce different results.
 
 For production environments or when you need consistent installs across multiple machines, you can "pin" to a specific version.
 
@@ -14,10 +14,10 @@ Pass `--ref` to the installer and use the same ref in the raw GitHub URL:
 
 ```bash
 # Pin to a tagged release (recommended for production)
-curl -fsSL "https://raw.githubusercontent.com/Dicklesworthstone/agentic_coding_flywheel_setup/v0.6.0/install.sh" | bash -s -- --yes --mode vibe --ref v0.6.0
+curl -fsSL "https://raw.githubusercontent.com/jonbackhaus/gtbi/v0.6.0/install.sh" | bash -s -- --yes --mode vibe --ref v0.6.0
 
 # Pin to a specific commit SHA (maximum reproducibility)
-curl -fsSL "https://raw.githubusercontent.com/Dicklesworthstone/agentic_coding_flywheel_setup/abc1234/install.sh" | bash -s -- --yes --mode vibe --ref abc1234
+curl -fsSL "https://raw.githubusercontent.com/jonbackhaus/gtbi/abc1234/install.sh" | bash -s -- --yes --mode vibe --ref abc1234
 ```
 
 ## When to Use Pinning
@@ -47,7 +47,7 @@ curl -fsSL "https://raw.githubusercontent.com/Dicklesworthstone/agentic_coding_f
 
 ## Using the Wizard
 
-The [ACFS Wizard](https://agent-flywheel.com/wizard/run-installer) includes a "Pin to specific version" toggle:
+The [GTBI Wizard](https://agent-flywheel.com/wizard/run-installer) includes a "Pin to specific version" toggle:
 
 1. Enable the toggle
 2. Enter a tag (e.g., `v0.6.0`) or commit SHA
@@ -59,13 +59,13 @@ When using pinned refs, you can also use:
 
 ```bash
 # Use --ref instead of relying on shell environment-variable placement
-curl -fsSL "https://raw.githubusercontent.com/Dicklesworthstone/agentic_coding_flywheel_setup/v0.6.0/install.sh" | bash -s -- --yes --mode vibe --ref v0.6.0
+curl -fsSL "https://raw.githubusercontent.com/jonbackhaus/gtbi/v0.6.0/install.sh" | bash -s -- --yes --mode vibe --ref v0.6.0
 
 # Resolve a branch or tag to a copy-pasteable pinned SHA command
-curl -fsSL "https://raw.githubusercontent.com/Dicklesworthstone/agentic_coding_flywheel_setup/main/install.sh" | bash -s -- --pin-ref --ref main
+curl -fsSL "https://raw.githubusercontent.com/jonbackhaus/gtbi/main/install.sh" | bash -s -- --pin-ref --ref main
 
 # Fetch checksums from a different ref (advanced)
-curl -fsSL "https://raw.githubusercontent.com/Dicklesworthstone/agentic_coding_flywheel_setup/v0.6.0/install.sh" | bash -s -- --yes --mode vibe --ref v0.6.0 --checksums-ref main
+curl -fsSL "https://raw.githubusercontent.com/jonbackhaus/gtbi/v0.6.0/install.sh" | bash -s -- --yes --mode vibe --ref v0.6.0 --checksums-ref main
 ```
 
 ## Finding Version Tags
@@ -74,9 +74,9 @@ View available releases:
 
 ```bash
 # List all tags
-curl -s "https://api.github.com/repos/Dicklesworthstone/agentic_coding_flywheel_setup/tags" | jq -r '.[].name'
+curl -s "https://api.github.com/repos/Dicklesworthstone/gastown_batteries_included/tags" | jq -r '.[].name'
 
-# Or visit: https://github.com/Dicklesworthstone/agentic_coding_flywheel_setup/releases
+# Or visit: https://github.com/jonbackhaus/gtbi/releases
 ```
 
 ## Verifying Your Installation
@@ -84,11 +84,11 @@ curl -s "https://api.github.com/repos/Dicklesworthstone/agentic_coding_flywheel_
 After installation, check which version is installed:
 
 ```bash
-cat ~/.acfs/VERSION
+cat ~/.gtbi/VERSION
 # Outputs: 0.6.0
 
 # Check the ref used (if recorded)
-cat ~/.acfs/INSTALL_REF 2>/dev/null || echo "main (default)"
+cat ~/.gtbi/INSTALL_REF 2>/dev/null || echo "main (default)"
 ```
 
 ## Updating Pinned Installations
@@ -97,13 +97,13 @@ To update a pinned installation:
 
 ```bash
 # Option 1: Re-run with new pin
-curl -fsSL "https://raw.githubusercontent.com/Dicklesworthstone/agentic_coding_flywheel_setup/v0.7.0/install.sh" | bash -s -- --yes --mode vibe --ref v0.7.0
+curl -fsSL "https://raw.githubusercontent.com/jonbackhaus/gtbi/v0.7.0/install.sh" | bash -s -- --yes --mode vibe --ref v0.7.0
 
-# Option 2: Use acfs update (updates to main)
-acfs update
+# Option 2: Use gtbi update (updates to main)
+gtbi update
 
-# Option 3: Force ACFS to reinstall managed tools from the pinned ref
-curl -fsSL "https://raw.githubusercontent.com/Dicklesworthstone/agentic_coding_flywheel_setup/v0.7.0/install.sh" | bash -s -- --yes --mode vibe --ref v0.7.0 --force-reinstall
+# Option 3: Force GTBI to reinstall managed tools from the pinned ref
+curl -fsSL "https://raw.githubusercontent.com/jonbackhaus/gtbi/v0.7.0/install.sh" | bash -s -- --yes --mode vibe --ref v0.7.0 --force-reinstall
 ```
 
 ## Best Practices

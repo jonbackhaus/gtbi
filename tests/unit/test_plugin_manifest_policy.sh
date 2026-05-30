@@ -34,7 +34,7 @@ test_policy_doc_exists() {
 }
 
 test_schema_and_required_fields_are_defined() {
-    require_text "acfs.plugin-package.v1" || return 1
+    require_text "gtbi.plugin-package.v1" || return 1
     require_text "schemaVersion" || return 1
     require_text "packageId" || return 1
     require_text "provenance.pluginSha256" || return 1
@@ -59,7 +59,7 @@ test_declarative_install_kinds_are_bounded() {
 test_trust_policy_preserves_first_party_boundaries() {
     require_text "Module ID And Merge Rules" || return 1
     require_text "plugin.<package_slug>.<module_name>" || return 1
-    require_text "must not reuse any first-party ACFS module ID" || return 1
+    require_text "must not reuse any first-party GTBI module ID" || return 1
     require_text "generated function collision" || return 1
     require_text "cannot alter first-party module fields" || return 1
     require_text "scripts/generated/*" || return 1

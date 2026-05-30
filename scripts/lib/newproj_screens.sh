@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # ============================================================
-# ACFS newproj TUI Wizard - Screen Manager
+# GTBI newproj TUI Wizard - Screen Manager
 # Loads all screens and provides routing functionality
 # ============================================================
 
 # Prevent multiple sourcing
-if [[ -n "${_ACFS_NEWPROJ_SCREENS_SH_LOADED:-}" ]]; then
+if [[ -n "${_GTBI_NEWPROJ_SCREENS_SH_LOADED:-}" ]]; then
     return 0
 fi
-_ACFS_NEWPROJ_SCREENS_SH_LOADED=1
+_GTBI_NEWPROJ_SCREENS_SH_LOADED=1
 
 # Get the directory of this script
 NEWPROJ_LIB_DIR="${NEWPROJ_LIB_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}"

@@ -18,7 +18,7 @@ The manifest becomes the canonical definition of:
 
 ## Project Policies (Non-Negotiable)
 
-- **No outside contributors:** ACFS is maintained internally. Do not add contributing guides, “PRs welcome” language, or any workflow/documentation aimed at external contributors.
+- **No outside contributors:** GTBI is maintained internally. Do not add contributing guides, “PRs welcome” language, or any workflow/documentation aimed at external contributors.
 - **`curl | bash` is the primary entrypoint:** The design must work when `install.sh` runs without a local checkout (i.e., `SCRIPT_DIR` may be empty).
 - **Generated scripts are libraries:** Generated `scripts/generated/*.sh` must be safely `source`-able (no global `set -euo pipefail`, no top-level side effects, and contract validation must `return`, not `exit`).
 - **Deterministic generation:** Generated scripts must not embed timestamps or non-deterministic content; CI drift checks require stable output for a given manifest input.
@@ -60,7 +60,7 @@ Categories determine generated file layout (`scripts/generated/install_<category
 | `agents` | Coding agents (claude, codex, gemini) | `install_agents.sh` | 7 |
 | `cloud` | Cloud & database tools | `install_cloud.sh` | 8 |
 | `stack` | Dicklesworthstone stack (ntm, bv, cass, etc.) | `install_stack.sh` | 9 |
-| `acfs` | ACFS finalization (onboard, doctor) | `install_acfs.sh` | 10 |
+| `gtbi` | GTBI finalization (onboard, doctor) | `install_gtbi.sh` | 10 |
 
 **Notes:**
 - `users` (e.g., `users.ubuntu`) is an **orchestration-only** category with `generated: false`
@@ -99,7 +99,7 @@ Controls whether a module is included in the default install:
 | `tools.ast_grep` | `true` | Required by UBS |
 | `agents.*` | `true` | Core workflow |
 | `stack.*` | `true` | Core workflow (Dicklesworthstone stack) |
-| `acfs.*` | `true` | ACFS finalization |
+| `gtbi.*` | `true` | GTBI finalization |
 | `db.postgres18` | **`false`** | Heavy; `--skip-postgres` exists |
 | `tools.vault` | **`false`** | Specialized; `--skip-vault` exists |
 | `cloud.*` | **`false`** | Specialized; `--skip-cloud` exists |
@@ -146,7 +146,7 @@ How categories map to install.sh phases:
 | 7 | `agents` | Coding agents |
 | 8 | `cloud` | Cloud & database tools |
 | 9 | `stack` | Dicklesworthstone stack |
-| 10 | `acfs` | Finalization |
+| 10 | `gtbi` | Finalization |
 
 ### Category → Wizard Step Mapping
 
@@ -161,7 +161,7 @@ For website wizard progress display (step 8 "Run Installer"):
 | `agents` | "Installing coding agents..." | Visible (Claude, Codex, Gemini) |
 | `cloud` | "Installing cloud tools..." | Visible if enabled |
 | `stack` | "Installing agent stack..." | Visible (NTM, beads, etc.) |
-| `acfs` | "Finalizing..." | Progress only |
+| `gtbi` | "Finalizing..." | Progress only |
 
 ### Critical vs Recommended Classification
 
@@ -216,7 +216,7 @@ This section defines the exact semantics for module filtering, dependency resolu
 
 2. EXPAND dependencies (unless --no-deps):
    - For each module in starting_set:
-     - Add all transitive dependencies (from ACFS_MODULE_DEPS)
+     - Add all transitive dependencies (from GTBI_MODULE_DEPS)
      - Dependencies are added even if enabled_by_default=false
 
 3. APPLY skips:
@@ -230,25 +230,25 @@ This section defines the exact semantics for module filtering, dependency resolu
    - If any phase in --only-phase is invalid (not 1-10): FAIL EARLY
 
 5. OUTPUT:
-   - ACFS_EFFECTIVE_RUN[module_id]=1  (hash for O(1) membership test)
-   - ACFS_EFFECTIVE_PLAN=(...)        (ordered list, filtered from ACFS_MODULES_IN_ORDER)
+   - GTBI_EFFECTIVE_RUN[module_id]=1  (hash for O(1) membership test)
+   - GTBI_EFFECTIVE_PLAN=(...)        (ordered list, filtered from GTBI_MODULES_IN_ORDER)
 ```
 
 ### Output Structures
 
 ```bash
-# Populated by acfs_resolve_selection() after sourcing manifest_index.sh
+# Populated by gtbi_resolve_selection() after sourcing manifest_index.sh
 
 # Fast membership test (assoc array)
-declare -A ACFS_EFFECTIVE_RUN=(
+declare -A GTBI_EFFECTIVE_RUN=(
     [base.system]=1
     [base.filesystem]=1
     [lang.bun]=1
     # ...
 )
 
-# Ordered execution plan (array, subset of ACFS_MODULES_IN_ORDER)
-ACFS_EFFECTIVE_PLAN=(
+# Ordered execution plan (array, subset of GTBI_MODULES_IN_ORDER)
+GTBI_EFFECTIVE_PLAN=(
     base.system
     base.filesystem
     shell.zsh
@@ -257,7 +257,7 @@ ACFS_EFFECTIVE_PLAN=(
 )
 
 # Optional: diagnostic info for --print-plan
-declare -A ACFS_PLAN_REASON=(
+declare -A GTBI_PLAN_REASON=(
     [base.system]="default"
     [lang.bun]="only"
     [lang.rust]="dep:lang.bun"
@@ -272,7 +272,7 @@ declare -A ACFS_PLAN_REASON=(
 ./install.sh --yes --mode vibe
 ```
 - Selection: All modules with `enabled_by_default: true`
-- Result: Full stack (base, shell, cli, lang, agents, stack, acfs)
+- Result: Full stack (base, shell, cli, lang, agents, stack, gtbi)
 - Skipped: `db.postgres18`, `tools.vault`, `cloud.*` (opt-in)
 
 #### 2. Install Single Module with Dependencies
@@ -314,7 +314,7 @@ declare -A ACFS_PLAN_REASON=(
 # Equivalent new way
 ./install.sh --skip db.postgres18 --skip-tag cloud
 ```
-- Both produce identical `ACFS_EFFECTIVE_PLAN`
+- Both produce identical `GTBI_EFFECTIVE_PLAN`
 
 #### 7. Print Plan Without Running
 ```bash
@@ -322,7 +322,7 @@ declare -A ACFS_PLAN_REASON=(
 ```
 - Output (human-readable, stable ordering):
 ```
-ACFS Installation Plan
+GTBI Installation Plan
 ======================
 Phase 1: Base
   ✓ base.system (dependency of lang.bun)
@@ -369,10 +369,10 @@ Example:
 
 | Component | Location | Responsibility |
 |-----------|----------|----------------|
-| `acfs_resolve_selection()` | `scripts/lib/install_helpers.sh` | Algorithm implementation |
+| `gtbi_resolve_selection()` | `scripts/lib/install_helpers.sh` | Algorithm implementation |
 | `should_run_module()` | `scripts/lib/install_helpers.sh` | O(1) membership test |
-| `ACFS_MODULE_DEPS` | `scripts/generated/manifest_index.sh` | Dependency graph data |
-| `ACFS_MODULES_IN_ORDER` | `scripts/generated/manifest_index.sh` | Topological order data |
+| `GTBI_MODULE_DEPS` | `scripts/generated/manifest_index.sh` | Dependency graph data |
+| `GTBI_MODULES_IN_ORDER` | `scripts/generated/manifest_index.sh` | Topological order data |
 | `parse_args()` | `install.sh` | CLI parsing + legacy flag mapping |
 
 ---
@@ -390,36 +390,36 @@ source <(curl -fsSL https://example.com/script.sh)
 # RIGHT: Download → Validate → Extract → Validate → Source
 curl -fsSL "$ARCHIVE_URL" -o "$TMP_ARCHIVE"
 # ... validation steps ...
-source "$ACFS_LIB_DIR/security.sh"
+source "$GTBI_LIB_DIR/security.sh"
 ```
 
 ### Required Environment Variables
 
 | Variable | Required | Description | Example |
 |----------|----------|-------------|---------|
-| `ACFS_REPO_OWNER` | Yes | GitHub org/user | `Dicklesworthstone` |
-| `ACFS_REPO_NAME` | Yes | Repository name | `agentic_coding_flywheel_setup` |
-| `ACFS_REF` | Yes | Branch, tag, or SHA | `main`, `v1.2.3`, `abc1234` |
-| `ACFS_BOOTSTRAP_DIR` | No | Override temp dir | `/tmp/acfs-bootstrap` |
-| `ACFS_KEEP_BOOTSTRAP` | No | Keep extracted tree | `1` (for debugging) |
+| `GTBI_REPO_OWNER` | Yes | GitHub org/user | `Dicklesworthstone` |
+| `GTBI_REPO_NAME` | Yes | Repository name | `gastown_batteries_included` |
+| `GTBI_REF` | Yes | Branch, tag, or SHA | `main`, `v1.2.3`, `abc1234` |
+| `GTBI_BOOTSTRAP_DIR` | No | Override temp dir | `/tmp/gtbi-bootstrap` |
+| `GTBI_KEEP_BOOTSTRAP` | No | Keep extracted tree | `1` (for debugging) |
 
 ### Archive Download URL
 
 ```bash
 # GitHub archive URL (single ref, atomic snapshot)
-ARCHIVE_URL="https://github.com/${ACFS_REPO_OWNER}/${ACFS_REPO_NAME}/archive/${ACFS_REF}.tar.gz"
+ARCHIVE_URL="https://github.com/${GTBI_REPO_OWNER}/${GTBI_REPO_NAME}/archive/${GTBI_REF}.tar.gz"
 ```
 
 ### Bootstrap Sequence (Pseudocode)
 
 ```bash
-acfs_bootstrap() {
+gtbi_bootstrap() {
     # 1. CREATE TEMP DIRECTORY
-    ACFS_BOOTSTRAP_DIR="${ACFS_BOOTSTRAP_DIR:-$(mktemp -d -t acfs-bootstrap.XXXXXX)}"
-    trap 'rm -rf "$ACFS_BOOTSTRAP_DIR"' EXIT  # cleanup unless ACFS_KEEP_BOOTSTRAP; acfs-policy-lint: allow filesystem.no_destructive_cleanup
+    GTBI_BOOTSTRAP_DIR="${GTBI_BOOTSTRAP_DIR:-$(mktemp -d -t gtbi-bootstrap.XXXXXX)}"
+    trap 'rm -rf "$GTBI_BOOTSTRAP_DIR"' EXIT  # cleanup unless GTBI_KEEP_BOOTSTRAP; gtbi-policy-lint: allow filesystem.no_destructive_cleanup
 
     # 2. DOWNLOAD ARCHIVE
-    local archive_file="$ACFS_BOOTSTRAP_DIR/archive.tar.gz"
+    local archive_file="$GTBI_BOOTSTRAP_DIR/archive.tar.gz"
     if ! curl -fsSL --max-time 60 "$ARCHIVE_URL" -o "$archive_file"; then
         fail "BOOTSTRAP_DOWNLOAD_FAILED: Could not download archive from $ARCHIVE_URL"
     fi
@@ -430,19 +430,19 @@ acfs_bootstrap() {
     fi
 
     # 4. EXTRACT ARCHIVE
-    local extract_dir="$ACFS_BOOTSTRAP_DIR/extracted"
-    if ! tar -xzf "$archive_file" -C "$ACFS_BOOTSTRAP_DIR"; then
+    local extract_dir="$GTBI_BOOTSTRAP_DIR/extracted"
+    if ! tar -xzf "$archive_file" -C "$GTBI_BOOTSTRAP_DIR"; then
         fail "BOOTSTRAP_EXTRACT_FAILED: Could not extract archive"
     fi
     # GitHub archives extract to repo-ref/ directory
-    extract_dir="$(find "$ACFS_BOOTSTRAP_DIR" -maxdepth 1 -type d -name '*-*' | head -1)"
+    extract_dir="$(find "$GTBI_BOOTSTRAP_DIR" -maxdepth 1 -type d -name '*-*' | head -1)"
 
     # 5. VALIDATE REQUIRED FILES EXIST
     local required_files=(
         "scripts/lib/security.sh"
         "scripts/lib/logging.sh"
         "scripts/lib/tools.sh"
-        "acfs.manifest.yaml"
+        "gtbi.manifest.yaml"
         "checksums.yaml"
     )
     for f in "${required_files[@]}"; do
@@ -458,10 +458,10 @@ acfs_bootstrap() {
 
     # 7. COHERENCE CHECK (manifest vs generated index)
     local manifest_sha256
-    manifest_sha256=$(sha256sum "$extract_dir/acfs.manifest.yaml" | cut -d' ' -f1)
+    manifest_sha256=$(sha256sum "$extract_dir/gtbi.manifest.yaml" | cut -d' ' -f1)
     local index_sha256=""
     if [[ -f "$extract_dir/scripts/generated/manifest_index.sh" ]]; then
-        index_sha256=$(grep -oP 'ACFS_MANIFEST_SHA256="\K[^"]+' \
+        index_sha256=$(grep -oP 'GTBI_MANIFEST_SHA256="\K[^"]+' \
             "$extract_dir/scripts/generated/manifest_index.sh" || true)
     fi
     if [[ -n "$index_sha256" && "$manifest_sha256" != "$index_sha256" ]]; then
@@ -469,20 +469,20 @@ acfs_bootstrap() {
     fi
 
     # 8. SET UP ENVIRONMENT (only after all validations pass)
-    export ACFS_ROOT="$extract_dir"
-    export ACFS_LIB_DIR="$extract_dir/scripts/lib"
-    export ACFS_GENERATED_DIR="$extract_dir/scripts/generated"
-    export ACFS_ASSETS_DIR="$extract_dir/acfs"
+    export GTBI_ROOT="$extract_dir"
+    export GTBI_LIB_DIR="$extract_dir/scripts/lib"
+    export GTBI_GENERATED_DIR="$extract_dir/scripts/generated"
+    export GTBI_ASSETS_DIR="$extract_dir/gtbi"
 
     # 9. SOURCE ESSENTIAL LIBRARIES
-    source "$ACFS_LIB_DIR/logging.sh"
-    source "$ACFS_LIB_DIR/security.sh"
-    source "$ACFS_LIB_DIR/tools.sh"
-    if [[ -f "$ACFS_GENERATED_DIR/manifest_index.sh" ]]; then
-        source "$ACFS_GENERATED_DIR/manifest_index.sh"
+    source "$GTBI_LIB_DIR/logging.sh"
+    source "$GTBI_LIB_DIR/security.sh"
+    source "$GTBI_LIB_DIR/tools.sh"
+    if [[ -f "$GTBI_GENERATED_DIR/manifest_index.sh" ]]; then
+        source "$GTBI_GENERATED_DIR/manifest_index.sh"
     fi
 
-    log_success "Bootstrap complete from $ACFS_REF"
+    log_success "Bootstrap complete from $GTBI_REF"
 }
 ```
 
@@ -493,8 +493,8 @@ acfs_bootstrap() {
 | `scripts/lib/**` | Core installer libraries |
 | `scripts/generated/**` | Manifest-generated scripts |
 | `scripts/preflight.sh` | Pre-flight validation |
-| `acfs/**` | Assets deployed to `~/.acfs/` |
-| `acfs.manifest.yaml` | Module definitions |
+| `gtbi/**` | Assets deployed to `~/.gtbi/` |
+| `gtbi.manifest.yaml` | Module definitions |
 | `checksums.yaml` | Verified installer checksums |
 
 **Note:** Full `scripts/**` extraction is recommended over minimal allowlist to avoid "forgot to add new script" failures.
@@ -529,10 +529,10 @@ acfs_bootstrap() {
 
 ```bash
 # Keep bootstrap directory for debugging
-ACFS_KEEP_BOOTSTRAP=1 curl -fsSL ... | bash -s -- --mode vibe
+GTBI_KEEP_BOOTSTRAP=1 curl -fsSL ... | bash -s -- --mode vibe
 
 # After failure, inspect extracted files
-ls /tmp/acfs-bootstrap.*/
+ls /tmp/gtbi-bootstrap.*/
 ```
 
 ---
@@ -553,7 +553,7 @@ This section defines the contract between `install.sh` (orchestrator) and genera
 Every generated module function follows this structure:
 
 ```bash
-acfs_install_<module_id>() {
+gtbi_install_<module_id>() {
     # ─────────────────────────────────────────────────────────────
     # 1. LOCAL IDENTITY + CONTRACT CHECK
     # ─────────────────────────────────────────────────────────────
@@ -561,7 +561,7 @@ acfs_install_<module_id>() {
     local module_phase=6
     local module_optional=false  # true for optional modules
 
-    acfs_require_contract "module:${module_id}" || return 1
+    gtbi_require_contract "module:${module_id}" || return 1
 
     # ─────────────────────────────────────────────────────────────
     # 2. SELECTION CHECK (no side effects if filtered)
@@ -574,7 +574,7 @@ acfs_install_<module_id>() {
     # ─────────────────────────────────────────────────────────────
     # 3. IDEMPOTENCY CHECK (runs even in DRY_RUN)
     # ─────────────────────────────────────────────────────────────
-    if acfs_module_installed "$module_id"; then
+    if gtbi_module_installed "$module_id"; then
         log_info "$module_id: already installed, skipping"
         return 0
     fi
@@ -595,13 +595,13 @@ acfs_install_<module_id>() {
     log_info "Installing $module_id..."
 
     # Option A: Verified upstream installer
-    if ! acfs_run_verified_upstream_script_as_target_user "bun" "bash"; then
-        return $(acfs_handle_module_failure "$module_id" "$module_optional" "Verified installer failed")
+    if ! gtbi_run_verified_upstream_script_as_target_user "bun" "bash"; then
+        return $(gtbi_handle_module_failure "$module_id" "$module_optional" "Verified installer failed")
     fi
 
     # Option B: Direct commands (each wrapped)
     # if ! run_as_target_user_shell 'curl -fsSL https://bun.sh/install | bash'; then
-    #     return $(acfs_handle_module_failure "$module_id" "$module_optional" "Install command failed")
+    #     return $(gtbi_handle_module_failure "$module_id" "$module_optional" "Install command failed")
     # fi
 
     # ─────────────────────────────────────────────────────────────
@@ -609,7 +609,7 @@ acfs_install_<module_id>() {
     # ─────────────────────────────────────────────────────────────
     log_detail "Verifying $module_id..."
     if ! run_as_target_user_shell '~/.bun/bin/bun --version'; then
-        return $(acfs_handle_module_failure "$module_id" "$module_optional" "Verification failed")
+        return $(gtbi_handle_module_failure "$module_id" "$module_optional" "Verification failed")
     fi
 
     log_success "$module_id installed"
@@ -624,21 +624,21 @@ acfs_install_<module_id>() {
 | `local module_id="..."` | Self-identification for logging/state |
 | `local module_phase=N` | Phase number for selection filtering |
 | `local module_optional=true/false` | Failure behavior control |
-| `acfs_require_contract "module:${module_id}"` | Validate orchestrator environment |
+| `gtbi_require_contract "module:${module_id}"` | Validate orchestrator environment |
 
 ### Contract Validation
 
-`acfs_require_contract()` verifies the module is running in a properly initialized environment:
+`gtbi_require_contract()` verifies the module is running in a properly initialized environment:
 
 ```bash
-acfs_require_contract() {
+gtbi_require_contract() {
     local contract="$1"
 
     case "$contract" in
         module:*)
             # Verify orchestrator has initialized these
-            [[ -n "${ACFS_EFFECTIVE_RUN[*]:-}" ]] || return 1
-            [[ -n "${ACFS_LIB_DIR:-}" ]] || return 1
+            [[ -n "${GTBI_EFFECTIVE_RUN[*]:-}" ]] || return 1
+            [[ -n "${GTBI_LIB_DIR:-}" ]] || return 1
             [[ "$(type -t should_run_module)" == "function" ]] || return 1
             [[ "$(type -t run_as_target_user_shell)" == "function" ]] || return 1
             ;;
@@ -655,7 +655,7 @@ should_run_module() {
     local module_phase="$2"
 
     # O(1) lookup in associative array populated by selection algorithm
-    [[ -n "${ACFS_EFFECTIVE_RUN[$module_id]:-}" ]]
+    [[ -n "${GTBI_EFFECTIVE_RUN[$module_id]:-}" ]]
 }
 ```
 
@@ -664,7 +664,7 @@ should_run_module() {
 Installed check MUST be side-effect-free and run even in DRY_RUN mode:
 
 ```bash
-acfs_module_installed() {
+gtbi_module_installed() {
     local module_id="$1"
 
     # Use manifest's installed_check if available
@@ -706,7 +706,7 @@ In DRY_RUN mode, modules MUST:
 ### Failure Handling Helper
 
 ```bash
-acfs_handle_module_failure() {
+gtbi_handle_module_failure() {
     local module_id="$1"
     local is_optional="$2"
     local reason="$3"
@@ -728,7 +728,7 @@ Remote installers MUST use shared verified pathways:
 
 ```bash
 # RIGHT: Uses checksums.yaml validation
-acfs_run_verified_upstream_script_as_target_user "bun" "bash"
+gtbi_run_verified_upstream_script_as_target_user "bun" "bash"
 
 # WRONG: Never inline curl|bash in generated code
 curl -fsSL https://bun.sh/install | bash
@@ -745,10 +745,10 @@ bun --version
 
 # RIGHT: Explicit error handling
 if ! curl ... | bash; then
-    return $(acfs_handle_module_failure ...)
+    return $(gtbi_handle_module_failure ...)
 fi
 if ! bun --version; then
-    return $(acfs_handle_module_failure ...)
+    return $(gtbi_handle_module_failure ...)
 fi
 ```
 
@@ -757,15 +757,15 @@ fi
 Optional module failures integrate with:
 - `record_skipped_tool()` — Logs skip reason (from `scripts/lib/tools.sh`)
 - `report_skipped_tools()` — End-of-install summary
-- `acfs doctor` — Shows skipped tools in "Intentionally Skipped" section
+- `gtbi doctor` — Shows skipped tools in "Intentionally Skipped" section
 
 ### Module Function Naming Convention
 
 | Pattern | Generated From |
 |---------|----------------|
-| `acfs_install_lang_bun` | Module ID `lang.bun` |
-| `acfs_install_stack_ntm` | Module ID `stack.ntm` |
-| `acfs_install_base_system` | Module ID `base.system` |
+| `gtbi_install_lang_bun` | Module ID `lang.bun` |
+| `gtbi_install_stack_ntm` | Module ID `stack.ntm` |
+| `gtbi_install_base_system` | Module ID `base.system` |
 
 Dots in module IDs are converted to underscores.
 
@@ -776,7 +776,7 @@ All generated module scripts include:
 ```bash
 #!/usr/bin/env bash
 # ============================================================
-# AUTO-GENERATED FROM acfs.manifest.yaml - DO NOT EDIT
+# AUTO-GENERATED FROM gtbi.manifest.yaml - DO NOT EDIT
 # Regenerate: bun run generate (from packages/manifest)
 # Manifest SHA256: abc123...
 # Generated: 2025-12-21T12:00:00Z
@@ -785,7 +785,7 @@ All generated module scripts include:
 # It has no side effects when sourced.
 ```
 
-## How This Plan Interacts With Other ACFS Work
+## How This Plan Interacts With Other GTBI Work
 
 This plan is intentionally focused on **eliminating “two universes” drift** (manifest vs install.sh), but it must coexist cleanly with the project’s other reliability initiatives.
 
@@ -793,7 +793,7 @@ This plan is intentionally focused on **eliminating “two universes” drift** 
 
 - **Installer reliability work remains valid after refactor.** Features like preflight, resume/state, and structured error reporting must live in (or be callable from) the orchestrator/libs so they survive category-by-category migration.
 - **Generated scripts are “library code”, not “programs”.** They must remain safe to `source` at any time (for `--list-modules`, `--print-plan`, argument parsing) and must not mutate global state on import.
-- **State + skip tracking must still make sense.** When a module is optional or explicitly skipped, the system must be able to explain “why it’s missing” later (especially in `acfs doctor` output).
+- **State + skip tracking must still make sense.** When a module is optional or explicitly skipped, the system must be able to explain “why it’s missing” later (especially in `gtbi doctor` output).
 
 ### Concrete Touchpoints (Existing Epics)
 
@@ -814,7 +814,7 @@ This plan is intentionally focused on **eliminating “two universes” drift** 
 │                                                                  │
 │  Universe A (Unused):                                            │
 │  ┌──────────────────┐    ┌─────────────┐    ┌─────────────────┐ │
-│  │ acfs.manifest.yaml│───▶│ generate.ts │───▶│ scripts/generated/│
+│  │ gtbi.manifest.yaml│───▶│ generate.ts │───▶│ scripts/generated/│
 │  │ (50+ modules)     │    │             │    │ (NEVER EXECUTED) │
 │  └──────────────────┘    └─────────────┘    └─────────────────┘ │
 │                                                                  │
@@ -845,7 +845,7 @@ This plan is intentionally focused on **eliminating “two universes” drift** 
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                  │
 │  ┌──────────────────┐    ┌─────────────┐    ┌─────────────────┐ │
-│  │ acfs.manifest.yaml│───▶│ generate.ts │───▶│ scripts/generated/│
+│  │ gtbi.manifest.yaml│───▶│ generate.ts │───▶│ scripts/generated/│
 │  │ (enhanced schema) │    │ (enhanced)  │    │ install_*.sh    │ │
 │  └──────────────────┘    └─────────────┘    └────────┬────────┘ │
 │                                                       │          │
@@ -887,16 +887,16 @@ Generated scripts have a strict contract with install.sh. This contract MUST be 
 
 ### curl|bash Bootstrapping (No Local Checkout)
 
-When users run ACFS via `curl … | bash`, there is **no local repository checkout**, so `SCRIPT_DIR` may be empty. In that mode, the orchestrator must:
+When users run GTBI via `curl … | bash`, there is **no local repository checkout**, so `SCRIPT_DIR` may be empty. In that mode, the orchestrator must:
 
-1. Determine a local bootstrap directory (`mktemp -d`), and optionally mirror into `$ACFS_HOME/cache/bootstrap/<ref>/` for re-runs.
+1. Determine a local bootstrap directory (`mktemp -d`), and optionally mirror into `$GTBI_HOME/cache/bootstrap/<ref>/` for re-runs.
 2. Download a **single repo archive** (tar.gz) for a single ref (tag/sha/branch) to guarantee a self-consistent set of files.
 3. Extract only what the installer needs:
    - `scripts/lib/**`
    - `scripts/generated/**`
-   - `acfs/**` (assets deployed to `~/.acfs/`)
+   - `gtbi/**` (assets deployed to `~/.gtbi/`)
    - `checksums.yaml`
-   - `acfs.manifest.yaml` (for coherence checks)
+   - `gtbi.manifest.yaml` (for coherence checks)
 4. Validate extracted shell scripts with `bash -n` before sourcing them.
 5. `source` only **local files** from the extracted tree (never process substitution).
 
@@ -904,17 +904,17 @@ Generated scripts must assume they are being sourced from **local files** (eithe
 
 #### Pinning to a Single Git Ref (Reliability)
 
-If `ACFS_RAW` points at `.../main`, it is theoretically possible (rare, but real) to download a mismatched set of files if the branch updates during an install (e.g., install.sh from commit A, generated scripts from commit B). To make installs reproducible and avoid mid-run mismatches:
+If `GTBI_RAW` points at `.../main`, it is theoretically possible (rare, but real) to download a mismatched set of files if the branch updates during an install (e.g., install.sh from commit A, generated scripts from commit B). To make installs reproducible and avoid mid-run mismatches:
 
-- Prefer a **tag** or **commit SHA** in `ACFS_RAW` (e.g., `.../<tag>/...` or `.../<sha>/...`).
-- Optionally add an `ACFS_REF` variable (default: `main`) and set `ACFS_RAW="https://raw.githubusercontent.com/<owner>/<repo>/$ACFS_REF"`.
+- Prefer a **tag** or **commit SHA** in `GTBI_RAW` (e.g., `.../<tag>/...` or `.../<sha>/...`).
+- Optionally add an `GTBI_REF` variable (default: `main`) and set `GTBI_RAW="https://raw.githubusercontent.com/<owner>/<repo>/$GTBI_REF"`.
 
-**Stronger reliability guarantee (recommended):** In `curl|bash` mode, prefer fetching a single GitHub archive for `ACFS_REF` over multiple raw-file requests. This guarantees all files come from the same commit snapshot, even if `main` advances during the install.
+**Stronger reliability guarantee (recommended):** In `curl|bash` mode, prefer fetching a single GitHub archive for `GTBI_REF` over multiple raw-file requests. This guarantees all files come from the same commit snapshot, even if `main` advances during the install.
 
 ### Bootstrap Coherence Check (Prevents “mixed refs”)
 
 After bootstrapping, compute:
-- `MANIFEST_SHA256 := sha256(acfs.manifest.yaml)`
+- `MANIFEST_SHA256 := sha256(gtbi.manifest.yaml)`
 
 Then verify that each generated installer header contains the same manifest SHA. If mismatch is detected, abort early with a clear error:
 - “Bootstrap mismatch: generated scripts do not match manifest (mixed ref or stale generated output).”
@@ -928,7 +928,7 @@ These variables must be set by install.sh **before invoking any generated module
 # User context
 TARGET_USER="ubuntu"              # User to install for
 TARGET_HOME="/home/ubuntu"        # Home directory of target user
-ACFS_HOME="/home/ubuntu/.acfs"    # ACFS configuration directory
+GTBI_HOME="/home/ubuntu/.gtbi"    # GTBI configuration directory
 
 # Execution context
 MODE="vibe"                       # vibe | safe
@@ -936,21 +936,21 @@ DRY_RUN="false"                   # true | false
 SUDO="sudo"                       # sudo command (empty if root)
 
 # Repo identity (used for curl|bash bootstrap)
-ACFS_REPO_OWNER="Dicklesworthstone"
-ACFS_REPO_NAME="agentic_coding_flywheel_setup"
-ACFS_REF="main"                   # branch | tag | sha
+GTBI_REPO_OWNER="Dicklesworthstone"
+GTBI_REPO_NAME="gastown_batteries_included"
+GTBI_REF="main"                   # branch | tag | sha
 
 # Remote source location (optional if archive bootstrap is used)
-ACFS_RAW="https://raw.githubusercontent.com/${ACFS_REPO_OWNER}/${ACFS_REPO_NAME}/${ACFS_REF}"
+GTBI_RAW="https://raw.githubusercontent.com/${GTBI_REPO_OWNER}/${GTBI_REPO_NAME}/${GTBI_REF}"
 
 # Paths (local checkout vs curl|bash)
 SCRIPT_DIR="/path/to/installer"         # Directory containing install.sh (may be empty under curl|bash)
-ACFS_BOOTSTRAP_DIR="/tmp/acfs-bootstrap" # Local dir containing downloaded scripts when SCRIPT_DIR is empty (should be unique per run)
-ACFS_LIB_DIR="$ACFS_BOOTSTRAP_DIR/scripts/lib"
-ACFS_GENERATED_DIR="$ACFS_BOOTSTRAP_DIR/scripts/generated"
-ACFS_ASSETS_DIR="$ACFS_BOOTSTRAP_DIR/acfs"
-ACFS_CHECKSUMS_YAML="$ACFS_BOOTSTRAP_DIR/checksums.yaml"
-ACFS_MANIFEST_YAML="$ACFS_BOOTSTRAP_DIR/acfs.manifest.yaml"
+GTBI_BOOTSTRAP_DIR="/tmp/gtbi-bootstrap" # Local dir containing downloaded scripts when SCRIPT_DIR is empty (should be unique per run)
+GTBI_LIB_DIR="$GTBI_BOOTSTRAP_DIR/scripts/lib"
+GTBI_GENERATED_DIR="$GTBI_BOOTSTRAP_DIR/scripts/generated"
+GTBI_ASSETS_DIR="$GTBI_BOOTSTRAP_DIR/gtbi"
+GTBI_CHECKSUMS_YAML="$GTBI_BOOTSTRAP_DIR/checksums.yaml"
+GTBI_MANIFEST_YAML="$GTBI_BOOTSTRAP_DIR/gtbi.manifest.yaml"
 ```
 
 ### Required Functions
@@ -978,16 +978,16 @@ command_exists <cmd>              # Check if command is in PATH
 should_run_module "<id>" "<phase>"
 
 # Contract (from scripts/lib/contract.sh)
-acfs_require_contract "<context>"   # Validate runtime vars + required functions; returns nonzero on violation
+gtbi_require_contract "<context>"   # Validate runtime vars + required functions; returns nonzero on violation
 
 # Assets / fetching (from install.sh or scripts/lib/security.sh)
-acfs_curl <args...>               # Curl wrapper enforcing HTTPS where possible
-install_asset "<rel>" "<dest>"    # Copy from local checkout or download from ACFS_RAW
+gtbi_curl <args...>               # Curl wrapper enforcing HTTPS where possible
+install_asset "<rel>" "<dest>"    # Copy from local checkout or download from GTBI_RAW
 
 # Security (from scripts/lib/security.sh)
-acfs_run_verified_upstream_script_as_target "<tool>" "<runner>" [args...]
-acfs_run_verified_upstream_script_as_root "<tool>" "<runner>" [args...]
-acfs_run_verified_upstream_script_as_current "<tool>" "<runner>" [args...]
+gtbi_run_verified_upstream_script_as_target "<tool>" "<runner>" [args...]
+gtbi_run_verified_upstream_script_as_root "<tool>" "<runner>" [args...]
+gtbi_run_verified_upstream_script_as_current "<tool>" "<runner>" [args...]
 ```
 
 ### Contract Validation
@@ -1000,21 +1000,21 @@ Contract validation should be centralized in a shared lib so it is consistent ac
 Add: `scripts/lib/contract.sh`:
 
 ```bash
-acfs_require_contract() {
+gtbi_require_contract() {
     local context="${1:-generated}"
     local missing=()
     [[ -z "${TARGET_USER:-}" ]] && missing+=("TARGET_USER")
     [[ -z "${TARGET_HOME:-}" ]] && missing+=("TARGET_HOME")
     [[ -z "${MODE:-}" ]] && missing+=("MODE")
 
-    # Under curl|bash, install.sh must bootstrap a local tree (archive extract) and set ACFS_* paths.
+    # Under curl|bash, install.sh must bootstrap a local tree (archive extract) and set GTBI_* paths.
     if [[ -z "${SCRIPT_DIR:-}" ]]; then
-        [[ -z "${ACFS_BOOTSTRAP_DIR:-}" ]] && missing+=("ACFS_BOOTSTRAP_DIR")
-        [[ -z "${ACFS_LIB_DIR:-}" ]] && missing+=("ACFS_LIB_DIR")
-        [[ -z "${ACFS_GENERATED_DIR:-}" ]] && missing+=("ACFS_GENERATED_DIR")
-        [[ -z "${ACFS_ASSETS_DIR:-}" ]] && missing+=("ACFS_ASSETS_DIR")
-        [[ -z "${ACFS_CHECKSUMS_YAML:-}" ]] && missing+=("ACFS_CHECKSUMS_YAML")
-        [[ -z "${ACFS_MANIFEST_YAML:-}" ]] && missing+=("ACFS_MANIFEST_YAML")
+        [[ -z "${GTBI_BOOTSTRAP_DIR:-}" ]] && missing+=("GTBI_BOOTSTRAP_DIR")
+        [[ -z "${GTBI_LIB_DIR:-}" ]] && missing+=("GTBI_LIB_DIR")
+        [[ -z "${GTBI_GENERATED_DIR:-}" ]] && missing+=("GTBI_GENERATED_DIR")
+        [[ -z "${GTBI_ASSETS_DIR:-}" ]] && missing+=("GTBI_ASSETS_DIR")
+        [[ -z "${GTBI_CHECKSUMS_YAML:-}" ]] && missing+=("GTBI_CHECKSUMS_YAML")
+        [[ -z "${GTBI_MANIFEST_YAML:-}" ]] && missing+=("GTBI_MANIFEST_YAML")
     fi
 
     if ! declare -f log_detail >/dev/null 2>&1; then
@@ -1034,7 +1034,7 @@ acfs_require_contract() {
     fi
 
     if [[ ${#missing[@]} -gt 0 ]]; then
-        echo "ERROR: ACFS contract violation (${context})" >&2
+        echo "ERROR: GTBI contract violation (${context})" >&2
         echo "Missing: ${missing[*]}" >&2
         echo "Fix: install.sh must source scripts/lib/*.sh, set required vars, and only then invoke generated module functions." >&2
         return 1
@@ -1046,7 +1046,7 @@ acfs_require_contract() {
 Generated module functions must call:
 
 ```bash
-acfs_require_contract "module:${module_id}" || return 1
+gtbi_require_contract "module:${module_id}" || return 1
 ```
 
 ...at the top of each function (not at source-time), so scripts remain sourceable for `--list-modules` and for early argument parsing.
@@ -1066,7 +1066,7 @@ Some manifest modules currently contain prose inside `install:`. This is ambiguo
 - id: users.ubuntu
   install:
     - "Ensure user ubuntu exists with home /home/ubuntu"
-    - "Write /etc/sudoers.d/90-ubuntu-acfs: ubuntu ALL=(ALL) NOPASSWD:ALL"
+    - "Write /etc/sudoers.d/90-ubuntu-gtbi: ubuntu ALL=(ALL) NOPASSWD:ALL"
 ```
 
 ### Detection Heuristic
@@ -1231,7 +1231,7 @@ Generated scripts must respect DRY_RUN mode for testing:
 ```bash
 install_lang_bun() {
     local module_id="lang.bun"
-    acfs_require_contract "module:${module_id}" || return 1
+    gtbi_require_contract "module:${module_id}" || return 1
 
     # Installed check (runs even in dry-run to show current state)
     if run_as_target_shell "command -v bun >/dev/null 2>&1"; then
@@ -1242,14 +1242,14 @@ install_lang_bun() {
     # DRY_RUN check
     if [[ "${DRY_RUN:-false}" == "true" ]]; then
         log_detail "dry-run: would install $module_id"
-        log_detail "dry-run: would run: acfs_run_verified_upstream_script_as_target bun bash"
+        log_detail "dry-run: would run: gtbi_run_verified_upstream_script_as_target bun bash"
         return 0
     fi
 
     log_detail "Installing $module_id"
 
     # Actual installation
-    if ! acfs_run_verified_upstream_script_as_target "bun" "bash"; then
+    if ! gtbi_run_verified_upstream_script_as_target "bun" "bash"; then
         log_error "$module_id install failed"
         return 1
     fi
@@ -1273,7 +1273,7 @@ function generateModuleFunction(module: Module): string {
 
   lines.push(`${funcName}() {`);
   lines.push(`    local module_id="${module.id}"`);
-  lines.push(`    acfs_require_contract "module:${module.id}" || return 1`);
+  lines.push(`    gtbi_require_contract "module:${module.id}" || return 1`);
 
   // Installed check (always runs; run_as-aware)
   if (module.installed_check) {
@@ -1294,7 +1294,7 @@ function generateModuleFunction(module: Module): string {
   lines.push(`        log_detail "dry-run: would install $module_id"`);
   if (module.verified_installer) {
     lines.push(
-      `        log_detail "dry-run: would run: acfs_run_verified_upstream_script_as_target ${module.verified_installer.tool} ${module.verified_installer.runner}"`
+      `        log_detail "dry-run: would run: gtbi_run_verified_upstream_script_as_target ${module.verified_installer.tool} ${module.verified_installer.runner}"`
     );
   } else {
     for (const cmd of module.install) {
@@ -1390,9 +1390,9 @@ parse_args() {
 }
 
 # Effective selection computed once after scripts/generated/manifest_index.sh is sourced
-declare -A ACFS_EFFECTIVE_RUN=()
+declare -A GTBI_EFFECTIVE_RUN=()
 
-acfs_resolve_selection() {
+gtbi_resolve_selection() {
     # Uses generated manifest index (module->phase, module->deps).
     # Expands ONLY_MODULES/ONLY_PHASES into a set, then adds dependency closure.
     # Errors if SKIP removes a required dependency.
@@ -1401,7 +1401,7 @@ acfs_resolve_selection() {
 
 should_run_module() {
     local module_id="$1"
-    [[ -n "${ACFS_EFFECTIVE_RUN[$module_id]:-}" ]] && return 0
+    [[ -n "${GTBI_EFFECTIVE_RUN[$module_id]:-}" ]] && return 0
     return 1
 }
 ```
@@ -1412,7 +1412,7 @@ should_run_module() {
 install_lang_bun() {
     local module_id="lang.bun"
     local module_phase="6"
-    acfs_require_contract "module:${module_id}" || return 1
+    gtbi_require_contract "module:${module_id}" || return 1
 
     # Check if this module should run
     if ! should_run_module "$module_id" "$module_phase"; then
@@ -1464,7 +1464,7 @@ Unless `--no-deps` is provided:
 1. Initialize a “wanted” set from:
    - `--only` module IDs (if provided), else `enabled_by_default` modules
 2. If `--only-phase` is provided, filter wanted set to those phases.
-3. Add dependencies recursively using `ACFS_MODULE_DEPS`:
+3. Add dependencies recursively using `GTBI_MODULE_DEPS`:
    - Always include deps even if `enabled_by_default: false`
    - Reject manifest cycles at generation-time
 4. Apply skips:
@@ -1474,7 +1474,7 @@ Unless `--no-deps` is provided:
 ### Deterministic Execution Order
 
 Execution must be deterministic and explainable:
-- Generator emits `ACFS_MODULES_IN_ORDER=(...)` in `scripts/generated/manifest_index.sh`
+- Generator emits `GTBI_MODULES_IN_ORDER=(...)` in `scripts/generated/manifest_index.sh`
 - Orchestrator filters this list to just the effective run set
 - “Phase order” is implicit in the ordering list (phases 1→10, topo sort within each phase)
 
@@ -1483,23 +1483,23 @@ Execution must be deterministic and explainable:
 `scripts/generated/manifest_index.sh` is the “bridge” between Bash and the manifest:
 
 - **Data**:
-  - `ACFS_MANIFEST_SHA256="..."`
-  - `declare -A ACFS_MODULE_PHASE=([id]=N ...)`
-  - `declare -A ACFS_MODULE_DEPS=([id]="a,b,c" ...)`
-  - `declare -A ACFS_MODULE_FUNC=([id]="install_x_y" ...)`
-  - `declare -A ACFS_MODULE_TAGS=([id]="lang,runtime" ...)` (recommended)
-  - `declare -A ACFS_MODULE_CATEGORY=([id]="lang" ...)` (recommended)
-  - `declare -A ACFS_MODULE_DEFAULT=([id]="1|0" ...)` (recommended)
-  - `ACFS_MODULES_IN_ORDER=(...)`
+  - `GTBI_MANIFEST_SHA256="..."`
+  - `declare -A GTBI_MODULE_PHASE=([id]=N ...)`
+  - `declare -A GTBI_MODULE_DEPS=([id]="a,b,c" ...)`
+  - `declare -A GTBI_MODULE_FUNC=([id]="install_x_y" ...)`
+  - `declare -A GTBI_MODULE_TAGS=([id]="lang,runtime" ...)` (recommended)
+  - `declare -A GTBI_MODULE_CATEGORY=([id]="lang" ...)` (recommended)
+  - `declare -A GTBI_MODULE_DEFAULT=([id]="1|0" ...)` (recommended)
+  - `GTBI_MODULES_IN_ORDER=(...)`
 - **Helpers** (optional but recommended to keep install.sh small):
-  - `acfs_manifest_list_modules`
-  - `acfs_manifest_print_plan`
+  - `gtbi_manifest_list_modules`
+  - `gtbi_manifest_print_plan`
 
-### `acfs_resolve_selection` Responsibilities
+### `gtbi_resolve_selection` Responsibilities
 
 `scripts/lib/install_helpers.sh` (or equivalent) owns the runtime selection algorithm:
 
-- Computes the effective set (`declare -A ACFS_EFFECTIVE_RUN=([id]=1 ...)`)
+- Computes the effective set (`declare -A GTBI_EFFECTIVE_RUN=([id]=1 ...)`)
 - Optionally builds a human-readable plan (for `--print-plan`)
 - Provides `should_run_module` as a cheap membership predicate
 
@@ -1547,7 +1547,7 @@ curl -fsSL https://raw.githubusercontent.com/.../install.sh | bash -s -- --yes -
 [2/10] Normalizing user account...
 ...
 [10/10] Finalizing installation...
- ACFS installation complete!
+ GTBI installation complete!
 ```
 
 ---
@@ -1598,7 +1598,7 @@ Skipped phases: 2, 3, 4, 5, 7, 8, 9, 10
 4. Already-installed dependencies (idempotent check) are skipped quickly
 
 **Why this matters:**
-- Users upgrading from an older ACFS version
+- Users upgrading from an older GTBI version
 - CI/CD pipelines that only need agents
 - Testing agent installs in isolation
 
@@ -1662,7 +1662,7 @@ These stories document the `--no-deps` and `--print-plan` flags for advanced tro
 
 **Output:**
 ```
-ACFS Installation Plan
+GTBI Installation Plan
 ======================
 Mode: vibe
 Effective modules: 25 (5 disabled by default)
@@ -1714,9 +1714,9 @@ Phase 9 (stack):
   [ok] stack.caam [default]
   [ok] stack.slb [default]
 
-Phase 10 (acfs):
-  [ok] acfs.onboard [default]
-  [ok] acfs.doctor [default]
+Phase 10 (gtbi):
+  [ok] gtbi.onboard [default]
+  [ok] gtbi.doctor [default]
 
 Legend: [ok] will install, [skip] skipped, [reason]
 ```
@@ -1795,7 +1795,7 @@ For debugging: ./install.sh --only agents.codex --print-plan
 
 **Output:**
 ```
-ACFS Modules (from acfs.manifest.yaml)
+GTBI Modules (from gtbi.manifest.yaml)
 ======================================
 
 ID                           Phase  Category  Tags                      Default
@@ -1828,8 +1828,8 @@ stack.cass                   9      stack     agent                     [ok]
 stack.cm                     9      stack     agent                     [ok]
 stack.caam                   9      stack     agent                     [ok]
 stack.slb                    9      stack     agent                     [ok]
-acfs.onboard                 10     acfs      orchestration             [ok]
-acfs.doctor                  10     acfs      orchestration             [ok]
+gtbi.onboard                 10     gtbi      orchestration             [ok]
+gtbi.doctor                  10     gtbi      orchestration             [ok]
 
 Total: 30 modules (25 enabled by default, 5 opt-in)
 
@@ -1861,9 +1861,9 @@ Effective plan (3 modules):
     - sudo apt-get update -y
     - sudo apt-get install -y curl git ca-certificates ...
   Phase 6: lang.bun
-    - acfs_run_verified_upstream_script_as_target bun bash
+    - gtbi_run_verified_upstream_script_as_target bun bash
   Phase 7: agents.claude
-    - acfs_run_verified_upstream_script_as_target claude bash
+    - gtbi_run_verified_upstream_script_as_target claude bash
 
 No changes made (dry-run mode).
 ```
@@ -1886,7 +1886,7 @@ No changes made (dry-run mode).
 | Sudoers configuration | ✅ Full logic | ❌ Description only | LARGE |
 | Filesystem setup (/data/projects) | ✅ Full logic | ✅ Added | SMALL |
 | Run as target user | ✅ `run_as_target` | ❌ No concept | LARGE |
-| Verified upstream installers | ✅ `acfs_run_verified_upstream_script_as_target` | ❌ Just curl|bash | LARGE |
+| Verified upstream installers | ✅ `gtbi_run_verified_upstream_script_as_target` | ❌ Just curl|bash | LARGE |
 | Dry-run mode | ✅ Full support | ❌ No concept | MEDIUM |
 | Mode (vibe vs safe) | ✅ Full support | ✅ In defaults | SMALL |
 | Phase orchestration | ✅ 10 phases | ✅ Comments only | MEDIUM |
@@ -1899,11 +1899,11 @@ No changes made (dry-run mode).
 - [ ] **1.1.1** Create detailed mapping of every install.sh function to manifest modules
 - [ ] **1.1.2** Identify which install.sh functions are "orchestration" vs "module installation"
 - [ ] **1.1.3** Document all `run_as_target` usages and which modules need it
-- [ ] **1.1.4** Document all `acfs_run_verified_upstream_script_as_target` usages
+- [ ] **1.1.4** Document all `gtbi_run_verified_upstream_script_as_target` usages
 - [ ] **1.1.5** Audit checksums.yaml for completeness against manifest modules
 - [ ] **1.1.6** Identify all description-only modules and decide: `generated: false` or convert to commands
 - [ ] **1.1.7** Inventory existing install.sh CLI flags used by the wizard/docs and map them to manifest-driven selection (tags/modules)
-- [ ] **1.1.8** Inventory assets required at runtime (`acfs/**`, templates, onboarding lessons) so curl|bash bootstrap includes them
+- [ ] **1.1.8** Inventory assets required at runtime (`gtbi/**`, templates, onboarding lessons) so curl|bash bootstrap includes them
 
 **Deliverable:** `docs/audits/manifest-gap-analysis.md` with complete mapping
 
@@ -2020,11 +2020,11 @@ Rules:
 
 Generator must also emit a small, sourceable index file:
 `scripts/generated/manifest_index.sh` containing:
-- `ACFS_MANIFEST_SHA256="..."`
-- `declare -A ACFS_MODULE_PHASE=([lang.bun]=6 ...)`
-- `declare -A ACFS_MODULE_DEPS=([lang.bun]="base.system,base.filesystem" ...)`
-- `declare -A ACFS_MODULE_FUNC=([lang.bun]="install_lang_bun" ...)`
-- `ACFS_MODULES_IN_ORDER=(base.system ... lang.bun ...)` (already topo-sorted within phase)
+- `GTBI_MANIFEST_SHA256="..."`
+- `declare -A GTBI_MODULE_PHASE=([lang.bun]=6 ...)`
+- `declare -A GTBI_MODULE_DEPS=([lang.bun]="base.system,base.filesystem" ...)`
+- `declare -A GTBI_MODULE_FUNC=([lang.bun]="install_lang_bun" ...)`
+- `GTBI_MODULES_IN_ORDER=(base.system ... lang.bun ...)` (already topo-sorted within phase)
 
 This index must have **no contract validation** and no side effects beyond declarations.
 
@@ -2034,7 +2034,7 @@ This index must have **no contract validation** and no side effects beyond decla
 - [ ] **2.1.2** Update `packages/manifest/src/types.ts` with TypeScript types
 - [ ] **2.1.3** Update `packages/manifest/src/parser.ts` to validate new fields
 - [ ] **2.1.4** Add function name collision validation to parser
-- [ ] **2.2.1** Migrate all 50+ modules in `acfs.manifest.yaml` to new schema
+- [ ] **2.2.1** Migrate all 50+ modules in `gtbi.manifest.yaml` to new schema
 - [ ] **2.2.2** Add `verified_installer` to all curl|bash modules
 - [ ] **2.2.3** Add `run_as: target_user` to user-space modules
 - [ ] **2.2.4** Add `installed_check` to all modules (with correct run_as)
@@ -2045,7 +2045,7 @@ This index must have **no contract validation** and no side effects beyond decla
 - [ ] **2.4.1** Add manifest_index.sh generation and keep it deterministic
 - [ ] **2.4.2** Add tags + enabled_by_default migration for existing “skip flags”
 
-**Deliverable:** Enhanced manifest schema + fully migrated acfs.manifest.yaml
+**Deliverable:** Enhanced manifest schema + fully migrated gtbi.manifest.yaml
 
 ---
 
@@ -2058,10 +2058,10 @@ Each generated `install_<category>.sh` will contain:
 ```bash
 # NOTE: This file is meant to be sourced. Shebang is allowed but ignored when sourced.
 #!/usr/bin/env bash
-# AUTO-GENERATED FROM acfs.manifest.yaml - DO NOT EDIT
-# Regenerate: bun run --filter @acfs/manifest generate
-# Manifest SHA256: <sha256-of-acfs.manifest.yaml>
-# Generator: @acfs/manifest <version>
+# AUTO-GENERATED FROM gtbi.manifest.yaml - DO NOT EDIT
+# Regenerate: bun run --filter /manifest generate
+# Manifest SHA256: <sha256-of-gtbi.manifest.yaml>
+# Generator: /manifest <version>
 
 # ============================================================
 # Module: lang.bun
@@ -2070,7 +2070,7 @@ Each generated `install_<category>.sh` will contain:
 install_lang_bun() {
     local module_id="lang.bun"
     local module_phase="6"
-    acfs_require_contract "module:${module_id}" || return 1
+    gtbi_require_contract "module:${module_id}" || return 1
 
     # Check if this module should run (--only/--skip filtering)
     if ! should_run_module "$module_id" "$module_phase"; then
@@ -2087,14 +2087,14 @@ install_lang_bun() {
     # Dry-run mode
     if [[ "${DRY_RUN:-false}" == "true" ]]; then
         log_detail "dry-run: would install $module_id"
-        log_detail "dry-run: would run: acfs_run_verified_upstream_script_as_target bun bash"
+        log_detail "dry-run: would run: gtbi_run_verified_upstream_script_as_target bun bash"
         return 0
     fi
 
     log_detail "Installing $module_id"
 
     # Verified upstream installer (install.sh supplies '-s --')
-    if ! acfs_run_verified_upstream_script_as_target "bun" "bash"; then
+    if ! gtbi_run_verified_upstream_script_as_target "bun" "bash"; then
         log_error "$module_id install failed"
         return 1
     fi
@@ -2133,7 +2133,7 @@ function generateModuleFunction(module: Module): string {
   lines.push(`${funcName}() {`);
   lines.push(`    local module_id="${module.id}"`);
   lines.push(`    local module_phase="${module.phase ?? 0}"`);
-  lines.push(`    acfs_require_contract "module:${module.id}" || return 1`);
+  lines.push(`    gtbi_require_contract "module:${module.id}" || return 1`);
 
   // Module filtering (--only/--skip)
   lines.push(`    if ! should_run_module "$module_id" "$module_phase"; then`);
@@ -2174,17 +2174,17 @@ function generateModuleFunction(module: Module): string {
 
     // Runner must be validated/whitelisted (e.g., bash|sh) to prevent injection.
     if (module.run_as === 'target_user') {
-      lines.push(`    if ! acfs_run_verified_upstream_script_as_target "${tool}" "${runner}" ${args.map(escapeForBash).join(' ')}`.trimEnd() + `; then`);
+      lines.push(`    if ! gtbi_run_verified_upstream_script_as_target "${tool}" "${runner}" ${args.map(escapeForBash).join(' ')}`.trimEnd() + `; then`);
       lines.push(`        ${module.optional ? 'log_warn' : 'log_error'} "$module_id install failed"`);
       lines.push(`        ${module.optional ? 'return 0' : 'return 1'}`);
       lines.push(`    fi`);
     } else if (module.run_as === 'root') {
-      lines.push(`    if ! acfs_run_verified_upstream_script_as_root "${tool}" "${runner}" ${args.map(escapeForBash).join(' ')}`.trimEnd() + `; then`);
+      lines.push(`    if ! gtbi_run_verified_upstream_script_as_root "${tool}" "${runner}" ${args.map(escapeForBash).join(' ')}`.trimEnd() + `; then`);
       lines.push(`        ${module.optional ? 'log_warn' : 'log_error'} "$module_id install failed"`);
       lines.push(`        ${module.optional ? 'return 0' : 'return 1'}`);
       lines.push(`    fi`);
     } else {
-      lines.push(`    if ! acfs_run_verified_upstream_script_as_current "${tool}" "${runner}" ${args.map(escapeForBash).join(' ')}`.trimEnd() + `; then`);
+      lines.push(`    if ! gtbi_run_verified_upstream_script_as_current "${tool}" "${runner}" ${args.map(escapeForBash).join(' ')}`.trimEnd() + `; then`);
       lines.push(`        ${module.optional ? 'log_warn' : 'log_error'} "$module_id install failed"`);
       lines.push(`        ${module.optional ? 'return 0' : 'return 1'}`);
       lines.push(`    fi`);
@@ -2200,17 +2200,17 @@ function generateModuleFunction(module: Module): string {
 
       if (module.run_as === 'target_user') {
         // Always execute install strings as shell commands (supports pipes/heredocs).
-        lines.push(`    run_as_target_shell << 'ACFS_EOF_${module.id.replace(/[^a-z0-9]/gi, '_')}'`);
+        lines.push(`    run_as_target_shell << 'GTBI_EOF_${module.id.replace(/[^a-z0-9]/gi, '_')}'`);
         lines.push(cmd);
-        lines.push(`ACFS_EOF_${module.id.replace(/[^a-z0-9]/gi, '_')}`);
+        lines.push(`GTBI_EOF_${module.id.replace(/[^a-z0-9]/gi, '_')}`);
       } else if (module.run_as === 'root') {
-        lines.push(`    run_as_root_shell << 'ACFS_EOF_${module.id.replace(/[^a-z0-9]/gi, '_')}'`);
+        lines.push(`    run_as_root_shell << 'GTBI_EOF_${module.id.replace(/[^a-z0-9]/gi, '_')}'`);
         lines.push(cmd);
-        lines.push(`ACFS_EOF_${module.id.replace(/[^a-z0-9]/gi, '_')}`);
+        lines.push(`GTBI_EOF_${module.id.replace(/[^a-z0-9]/gi, '_')}`);
       } else {
-        lines.push(`    run_as_current_shell << 'ACFS_EOF_${module.id.replace(/[^a-z0-9]/gi, '_')}'`);
+        lines.push(`    run_as_current_shell << 'GTBI_EOF_${module.id.replace(/[^a-z0-9]/gi, '_')}'`);
         lines.push(cmd);
-        lines.push(`ACFS_EOF_${module.id.replace(/[^a-z0-9]/gi, '_')}`);
+        lines.push(`GTBI_EOF_${module.id.replace(/[^a-z0-9]/gi, '_')}`);
       }
     }
   }
@@ -2245,7 +2245,7 @@ function generateModuleFunction(module: Module): string {
 - [ ] **3.1.4** Add optional module handling (warn vs error)
 - [ ] **3.1.5** Add DRY_RUN mode support
 - [ ] **3.1.6** Add module filtering support (--only/--skip)
-- [ ] **3.2.1** Add `acfs_require_contract` calls in generated module functions
+- [ ] **3.2.1** Add `gtbi_require_contract` calls in generated module functions
 - [ ] **3.2.2** Generate module functions that use `run_as_target` correctly
 - [ ] **3.2.3** Generate category functions that call modules in phase order
 - [ ] **3.2.4** Skip modules with `generated: false`
@@ -2271,8 +2271,8 @@ function generateModuleFunction(module: Module): string {
 
 ```bash
 #!/usr/bin/env bash
-# ACFS Installer - Orchestration Layer
-# Module installation logic is generated from acfs.manifest.yaml
+# GTBI Installer - Orchestration Layer
+# Module installation logic is generated from gtbi.manifest.yaml
 
 set -euo pipefail
 
@@ -2284,25 +2284,25 @@ fi
 
 bootstrap_sources_if_needed() {
   if [[ -n "$SCRIPT_DIR" ]]; then
-    export ACFS_LIB_DIR="$SCRIPT_DIR/scripts/lib"
-    export ACFS_GENERATED_DIR="$SCRIPT_DIR/scripts/generated"
-    export ACFS_ASSETS_DIR="$SCRIPT_DIR/acfs"
-    export ACFS_CHECKSUMS_YAML="$SCRIPT_DIR/checksums.yaml"
-    export ACFS_MANIFEST_YAML="$SCRIPT_DIR/acfs.manifest.yaml"
+    export GTBI_LIB_DIR="$SCRIPT_DIR/scripts/lib"
+    export GTBI_GENERATED_DIR="$SCRIPT_DIR/scripts/generated"
+    export GTBI_ASSETS_DIR="$SCRIPT_DIR/gtbi"
+    export GTBI_CHECKSUMS_YAML="$SCRIPT_DIR/checksums.yaml"
+    export GTBI_MANIFEST_YAML="$SCRIPT_DIR/gtbi.manifest.yaml"
     return 0
   fi
 
   # curl|bash mode: prefer a single repo archive download for self-consistency.
-  : "${ACFS_REPO_OWNER:?}"
-  : "${ACFS_REPO_NAME:?}"
-  : "${ACFS_REF:?}"
+  : "${GTBI_REPO_OWNER:?}"
+  : "${GTBI_REPO_NAME:?}"
+  : "${GTBI_REF:?}"
 
-  ACFS_BOOTSTRAP_DIR="${ACFS_BOOTSTRAP_DIR:-$(mktemp -d /tmp/acfs-bootstrap-XXXXXX)}"
-  export ACFS_LIB_DIR="$ACFS_BOOTSTRAP_DIR/scripts/lib"
-  export ACFS_GENERATED_DIR="$ACFS_BOOTSTRAP_DIR/scripts/generated"
-  export ACFS_ASSETS_DIR="$ACFS_BOOTSTRAP_DIR/acfs"
-  export ACFS_CHECKSUMS_YAML="$ACFS_BOOTSTRAP_DIR/checksums.yaml"
-  export ACFS_MANIFEST_YAML="$ACFS_BOOTSTRAP_DIR/acfs.manifest.yaml"
+  GTBI_BOOTSTRAP_DIR="${GTBI_BOOTSTRAP_DIR:-$(mktemp -d /tmp/gtbi-bootstrap-XXXXXX)}"
+  export GTBI_LIB_DIR="$GTBI_BOOTSTRAP_DIR/scripts/lib"
+  export GTBI_GENERATED_DIR="$GTBI_BOOTSTRAP_DIR/scripts/generated"
+  export GTBI_ASSETS_DIR="$GTBI_BOOTSTRAP_DIR/gtbi"
+  export GTBI_CHECKSUMS_YAML="$GTBI_BOOTSTRAP_DIR/checksums.yaml"
+  export GTBI_MANIFEST_YAML="$GTBI_BOOTSTRAP_DIR/gtbi.manifest.yaml"
 
   # Download archive: https://github.com/<owner>/<repo>/archive/<ref>.tar.gz
   # Extract, validate, then source.
@@ -2311,7 +2311,7 @@ bootstrap_sources_if_needed() {
   # - download to temp file
   # - validate tarball exists + extract succeeds
   # - run bash -n scripts/lib/*.sh scripts/generated/*.sh before sourcing
-  # - optional: trap cleanup unless ACFS_KEEP_BOOTSTRAP=1
+  # - optional: trap cleanup unless GTBI_KEEP_BOOTSTRAP=1
 }
 
 bootstrap_sources_if_needed
@@ -2319,10 +2319,10 @@ bootstrap_sources_if_needed
 # ============================================================
 # Source libraries (order matters!)
 # ============================================================
-source "$ACFS_LIB_DIR/logging.sh"
-source "$ACFS_LIB_DIR/security.sh"
-source "$ACFS_LIB_DIR/contract.sh"
-source "$ACFS_LIB_DIR/install_helpers.sh"  # NEW: filtering + run_as_*_shell helpers
+source "$GTBI_LIB_DIR/logging.sh"
+source "$GTBI_LIB_DIR/security.sh"
+source "$GTBI_LIB_DIR/contract.sh"
+source "$GTBI_LIB_DIR/install_helpers.sh"  # NEW: filtering + run_as_*_shell helpers
 
 # ============================================================
 # Orchestration (NOT generated - hand-maintained)
@@ -2332,18 +2332,18 @@ main() {
     parse_args "$@"
     detect_environment
     # Now that runtime vars exist, source generated installers + manifest index.
-    source "$ACFS_GENERATED_DIR/manifest_index.sh"
-    source "$ACFS_GENERATED_DIR/install_base.sh"
-    source "$ACFS_GENERATED_DIR/install_shell.sh"
-    source "$ACFS_GENERATED_DIR/install_cli.sh"
-    source "$ACFS_GENERATED_DIR/install_lang.sh"
-    source "$ACFS_GENERATED_DIR/install_agents.sh"
-    source "$ACFS_GENERATED_DIR/install_cloud.sh"
-    source "$ACFS_GENERATED_DIR/install_stack.sh"
-    source "$ACFS_GENERATED_DIR/install_acfs.sh"
+    source "$GTBI_GENERATED_DIR/manifest_index.sh"
+    source "$GTBI_GENERATED_DIR/install_base.sh"
+    source "$GTBI_GENERATED_DIR/install_shell.sh"
+    source "$GTBI_GENERATED_DIR/install_cli.sh"
+    source "$GTBI_GENERATED_DIR/install_lang.sh"
+    source "$GTBI_GENERATED_DIR/install_agents.sh"
+    source "$GTBI_GENERATED_DIR/install_cloud.sh"
+    source "$GTBI_GENERATED_DIR/install_stack.sh"
+    source "$GTBI_GENERATED_DIR/install_gtbi.sh"
 
     # Compute effective selection once (deps + filters).
-    acfs_resolve_selection
+    gtbi_resolve_selection
 
     # Phase 1: Base dependencies
     log_step "1/10" "Checking base dependencies..."
@@ -2383,7 +2383,7 @@ main() {
 
     # Phase 10: Finalization
     log_step "10/10" "Finalizing installation..."
-    install_acfs  # FROM GENERATED (onboard, doctor)
+    install_gtbi  # FROM GENERATED (onboard, doctor)
     finalize      # Hand-maintained (tmux config, smoke test)
 }
 ```
@@ -2452,23 +2452,23 @@ command_exists_as_target() {
 }
 
 # Effective selection computed once after manifest_index is sourced
-declare -A ACFS_EFFECTIVE_RUN=()
+declare -A GTBI_EFFECTIVE_RUN=()
 
-acfs_resolve_selection() {
+gtbi_resolve_selection() {
     # Requires scripts/generated/manifest_index.sh to be sourced.
-    # Populates ACFS_EFFECTIVE_RUN with the final module set.
+    # Populates GTBI_EFFECTIVE_RUN with the final module set.
     :
 }
 
 should_run_module() {
     local module_id="$1"
-    [[ -n "${ACFS_EFFECTIVE_RUN[$module_id]:-}" ]] && return 0
+    [[ -n "${GTBI_EFFECTIVE_RUN[$module_id]:-}" ]] && return 0
     return 1
 }
 
 list_all_modules() {
     # Prefer generated manifest index output; never hardcode.
-    acfs_manifest_list_modules
+    gtbi_manifest_list_modules
 }
 ```
 
@@ -2481,10 +2481,10 @@ list_all_modules() {
 | `normalize_user` | Complex root→ubuntu logic, SSH key migration |
 | `finalize` | Tmux config, smoke test, final messaging |
 | `run_as_target` | Utility function used by generated scripts |
-| `acfs_run_verified_upstream_script_as_target` | Security wrapper |
+| `gtbi_run_verified_upstream_script_as_target` | Security wrapper |
 | `install_gum_early` | Bootstrap UI before other tools |
 | `bootstrap_sources_if_needed` | Archive download + extraction + coherence checks |
-| `acfs_resolve_selection` | Computes final module set once (filters + deps) |
+| `gtbi_resolve_selection` | Computes final module set once (filters + deps) |
 
 ### 4.4 What Moves to Generated Scripts
 
@@ -2532,7 +2532,7 @@ All module installation logic:
 | Full installation (Ubuntu 24.04) | Docker test | Smoke test passes |
 | Full installation (Ubuntu 25.04) | Docker test | Smoke test passes |
 | Idempotent re-run | Run installer twice | No errors, same result |
-| Doctor checks align | `acfs doctor` | All checks pass |
+| Doctor checks align | `gtbi doctor` | All checks pass |
 | Manifest→Generated sync | CI check | Generated matches manifest |
 | Simulated curl|bash bootstrap (offline) | `./tests/vm/test_curl_bash_simulation.sh` | Bootstraps + sources correctly |
 
@@ -2555,13 +2555,13 @@ jobs:
         run: bun install --frozen-lockfile
 
       - name: Generate scripts from manifest
-        run: bun run --filter @acfs/manifest generate
+        run: bun run --filter /manifest generate
 
       - name: Check for uncommitted changes
         run: |
           git diff --exit-code -- scripts/generated/ || {
             echo "Generated scripts are out of sync with manifest!"
-            echo "Run: bun run --filter @acfs/manifest generate"
+            echo "Run: bun run --filter /manifest generate"
             git diff -- scripts/generated/
             exit 1
           }
@@ -2592,7 +2592,7 @@ jobs:
 - [ ] **5.2.1** Test full installation in Docker (Ubuntu 24.04)
 - [ ] **5.2.2** Test full installation in Docker (Ubuntu 25.04)
 - [ ] **5.2.3** Test idempotent re-run (installer twice)
-- [ ] **5.3.1** Verify `acfs doctor` passes after installation
+- [ ] **5.3.1** Verify `gtbi doctor` passes after installation
 - [ ] **5.3.2** Verify doctor_checks.sh aligns with doctor.sh
 - [ ] **5.4.1** Add CI workflow to check generated scripts are in sync
 - [ ] **5.4.2** Add CI workflow to run shellcheck on generated scripts
@@ -2643,14 +2643,14 @@ At each step, keep the old code behind a feature flag (no commented code).
 
 Add one of:
 - `--legacy` (forces old inline installers)
-- `ACFS_USE_GENERATED=0/1` (global)
-- `ACFS_USE_GENERATED_CATEGORIES="lang,stack"` (optional, for incremental rollout)
+- `GTBI_USE_GENERATED=0/1` (global)
+- `GTBI_USE_GENERATED_CATEGORIES="lang,stack"` (optional, for incremental rollout)
 
 ```bash
 # Phase 6: Language runtimes
 log_step "6/10" "Installing language runtimes..."
 
-if [[ "${ACFS_USE_GENERATED_LANG:-1}" == "1" ]]; then
+if [[ "${GTBI_USE_GENERATED_LANG:-1}" == "1" ]]; then
   install_lang        # generated
 else
   install_lang_legacy # legacy
@@ -2668,7 +2668,7 @@ fi
 | 5 | cli | Medium | Many apt packages |
 | 6 | shell | High | Oh-my-zsh, plugins, complex config |
 | 7 | base | Low | Simple apt install |
-| 8 | acfs | Low | Just file copies |
+| 8 | gtbi | Low | Just file copies |
 
 ---
 
@@ -2741,7 +2741,7 @@ For each module, verify:
 
 ### Adding a New Module
 
-1. Add to `acfs.manifest.yaml`:
+1. Add to `gtbi.manifest.yaml`:
 ```yaml
 - id: tools.mytool
   description: My awesome tool
@@ -2768,7 +2768,7 @@ mytool:
 
 3. Regenerate:
 ```bash
-bun run --filter @acfs/manifest generate
+bun run --filter /manifest generate
 ```
 
 4. Commit both manifest and generated changes.
@@ -2799,7 +2799,7 @@ bootstrap_sources_if_needed() {
   # 3) extract
   # 4) bash -n scripts/lib/*.sh scripts/generated/*.sh
   # 5) verify manifest sha matches headers in generated scripts (optional but recommended)
-  # 6) set ACFS_*_DIR variables pointing at extracted tree
-  # 7) trap cleanup unless ACFS_KEEP_BOOTSTRAP=1
+  # 6) set GTBI_*_DIR variables pointing at extracted tree
+  # 7) trap cleanup unless GTBI_KEEP_BOOTSTRAP=1
 }
 ```

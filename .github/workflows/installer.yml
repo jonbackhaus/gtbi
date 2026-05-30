@@ -6,7 +6,7 @@ on:
     paths:
       - 'install.sh'
       - 'scripts/**'
-      - 'acfs.manifest.yaml'
+      - 'gtbi.manifest.yaml'
       - 'checksums.yaml'
       - 'packages/manifest/**'
       - '.github/workflows/*.yml'
@@ -18,7 +18,7 @@ on:
     paths:
       - 'install.sh'
       - 'scripts/**'
-      - 'acfs.manifest.yaml'
+      - 'gtbi.manifest.yaml'
       - 'checksums.yaml'
       - 'packages/manifest/**'
       - '.github/workflows/*.yml'
@@ -229,8 +229,8 @@ jobs:
 
       - name: Run pinned-ref install (checksums from main)
         run: |
-          ACFS_REF="$(cat VERSION)" \
-          ACFS_CHECKSUMS_REF=main \
+          GTBI_REF="$(cat VERSION)" \
+          GTBI_CHECKSUMS_REF=main \
           bash install.sh --yes --skip-preflight --skip-ubuntu-upgrade --mode safe --only lang.uv
 
   fresh-root-bootstrap-regression:
@@ -327,15 +327,15 @@ jobs:
         run: |
           # Skip preflight in CI - GitHub Actions containers have limited disk (17GB < 20GB required)
           # Skip Ubuntu upgrade in CI - containers can't reboot during workflow
-          ACFS_CI=true bash install.sh --yes --skip-preflight --skip-ubuntu-upgrade --mode ${{ matrix.mode }}
+          GTBI_CI=true bash install.sh --yes --skip-preflight --skip-ubuntu-upgrade --mode ${{ matrix.mode }}
 
       - name: Run doctor
         run: |
-          su - ubuntu -c "ACFS_DOCTOR_CI=true zsh -ic 'acfs doctor'"
+          su - ubuntu -c "GTBI_DOCTOR_CI=true zsh -ic 'gtbi doctor'"
 
       - name: Verify key tools
         run: |
-          su - ubuntu -c "zsh -ic 'test -f ~/.acfs/VERSION'"
+          su - ubuntu -c "zsh -ic 'test -f ~/.gtbi/VERSION'"
           su - ubuntu -c "zsh -ic 'gh --version'"
           su - ubuntu -c "zsh -ic 'jq --version'"
           su - ubuntu -c "zsh -ic 'sg --version'"
@@ -432,7 +432,7 @@ jobs:
       image: ubuntu:24.04
     env:
       DEBIAN_FRONTEND: noninteractive
-      ACFS_CI: "true"
+      GTBI_CI: "true"
     steps:
       - name: Install container prerequisites
         working-directory: /

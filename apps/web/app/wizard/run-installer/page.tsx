@@ -46,7 +46,7 @@ import {
 } from "@/lib/providerProvisioningPacket";
 import {
   normalizeGitRef,
-  useACFSRef,
+  useGTBIRef,
   useInstallMode,
   useSSHUsername,
   useUserOS,
@@ -117,7 +117,7 @@ export default function RunInstallerPage() {
   const [isNavigating, setIsNavigating] = useState(false);
   const [userOS, , userOSLoaded] = useUserOS();
   const [installMode, , installModeLoaded] = useInstallMode();
-  const [pinnedRef, setPinnedRef, acfsRefLoaded] = useACFSRef();
+  const [pinnedRef, setPinnedRef, gtbiRefLoaded] = useGTBIRef();
   const [vpsIP, , vpsIPLoaded] = useVPSIP();
   const [sshUsername, , sshUsernameLoaded] = useSSHUsername();
   const [vpsReadinessSelection, , vpsReadinessSelectionLoaded] = useVPSReadinessSelection();
@@ -131,7 +131,7 @@ export default function RunInstallerPage() {
   const ready =
     userOSLoaded &&
     installModeLoaded &&
-    acfsRefLoaded &&
+    gtbiRefLoaded &&
     vpsIPLoaded &&
     sshUsernameLoaded &&
     vpsReadinessSelectionLoaded;
@@ -141,7 +141,7 @@ export default function RunInstallerPage() {
   const effectiveVpsIP = vpsIP ?? "";
   const effectiveSSHUsername = sshUsername.trim() || "ubuntu";
   const reconnectCommand = useMemo(
-    () => `ssh -i ~/.ssh/acfs_ed25519 ${formatSshTarget(effectiveSSHUsername, effectiveVpsIP)}`,
+    () => `ssh -i ~/.ssh/gtbi_ed25519 ${formatSshTarget(effectiveSSHUsername, effectiveVpsIP)}`,
     [effectiveSSHUsername, effectiveVpsIP],
   );
   const effectiveSourceRef = useMemo(
@@ -254,7 +254,7 @@ export default function RunInstallerPage() {
   const handleRunbookDownload = useCallback((format: "json" | "markdown") => {
     if (format === "json") {
       downloadTextFile(
-        "acfs-handoff-runbook.json",
+        "gtbi-handoff-runbook.json",
         serializeHandoffRunbookJson(handoffRunbook),
         "application/json",
       );
@@ -262,14 +262,14 @@ export default function RunInstallerPage() {
     }
 
     downloadTextFile(
-      "acfs-handoff-runbook.md",
+      "gtbi-handoff-runbook.md",
       formatHandoffRunbookMarkdown(handoffRunbook),
       "text/markdown",
     );
   }, [handoffRunbook]);
   const handleProviderPacketDownload = useCallback(() => {
     downloadTextFile(
-      "acfs-provider-provisioning-packet.json",
+      "gtbi-provider-provisioning-packet.json",
       serializeProviderProvisioningPacketJson(providerProvisioningPacket),
       "application/json",
     );
@@ -277,7 +277,7 @@ export default function RunInstallerPage() {
   const handleTeamProfileDownload = useCallback((format: "json" | "markdown") => {
     if (format === "json") {
       downloadTextFile(
-        "acfs-team-profile.json",
+        "gtbi-team-profile.json",
         serializeTeamProfileJson(teamProfile),
         "application/json",
       );
@@ -285,7 +285,7 @@ export default function RunInstallerPage() {
     }
 
     downloadTextFile(
-      "acfs-team-profile-review.md",
+      "gtbi-team-profile-review.md",
       formatTeamProfileReviewMarkdown(teamProfile),
       "text/markdown",
     );
@@ -328,7 +328,7 @@ export default function RunInstallerPage() {
           <p>
             For a fresh VPS, your terminal prompt should look like{" "}
             <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">root@vps:~#</code>.
-            Run this command from that root session; ACFS creates the{" "}
+            Run this command from that root session; GTBI creates the{" "}
             <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">{effectiveSSHUsername}</code>{" "}
             user automatically during installation.
           </p>
@@ -354,18 +354,18 @@ export default function RunInstallerPage() {
           <p>
             If you connected to root with a password and root has no SSH key yet, the installer may ask
             you to paste the public key you generated earlier. Paste the single line from{" "}
-            <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">~/.ssh/acfs_ed25519.pub</code>{" "}
+            <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">~/.ssh/gtbi_ed25519.pub</code>{" "}
             and press Enter.
           </p>
           <p>
-            If your root account already has SSH keys, ACFS copies them to the{" "}
+            If your root account already has SSH keys, GTBI copies them to the{" "}
             <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">{effectiveSSHUsername}</code> user it creates.
           </p>
           <p className="text-sm text-muted-foreground">
             If you press Enter to skip the key prompt, finish the install and follow the red SSH-key command
             in the final summary before trying to reconnect as{" "}
             <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">{effectiveSSHUsername}</code>.
-            If the same public key appears more than once from earlier setup attempts, ACFS keeps exact
+            If the same public key appears more than once from earlier setup attempts, GTBI keeps exact
             duplicates from being copied again.
           </p>
         </div>
@@ -545,7 +545,7 @@ export default function RunInstallerPage() {
           </p>
           <div className="flex flex-wrap gap-2">
             <TrackedLink
-              href={`https://github.com/Dicklesworthstone/agentic_coding_flywheel_setup/blob/${effectiveSourceRef}/install.sh`}
+              href={`https://github.com/jonbackhaus/gtbi/blob/${effectiveSourceRef}/install.sh`}
               trackingId="install-sh-source"
               className="inline-flex items-center gap-1.5 rounded-lg border border-[oklch(0.75_0.18_195/0.3)] bg-[oklch(0.75_0.18_195/0.1)] px-2.5 py-1.5 text-xs font-medium text-[oklch(0.75_0.18_195)] transition-colors hover:bg-[oklch(0.75_0.18_195/0.2)]"
             >
@@ -554,7 +554,7 @@ export default function RunInstallerPage() {
               <ExternalLink className="h-2.5 w-2.5" />
             </TrackedLink>
             <TrackedLink
-              href="https://github.com/Dicklesworthstone/agentic_coding_flywheel_setup"
+              href="https://github.com/jonbackhaus/gtbi"
               trackingId="github-repo"
               className="inline-flex items-center gap-1.5 rounded-lg border border-border/50 bg-card/50 px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/30 hover:text-foreground"
             >
@@ -650,7 +650,7 @@ export default function RunInstallerPage() {
           Want to see exactly what it does?
         </span>
         <TrackedLink
-          href={`https://github.com/Dicklesworthstone/agentic_coding_flywheel_setup/blob/${effectiveSourceRef}/install.sh`}
+          href={`https://github.com/jonbackhaus/gtbi/blob/${effectiveSourceRef}/install.sh`}
           trackingId="install-sh-source-inline"
           className="inline-flex items-center gap-1 font-medium text-primary hover:underline"
         >

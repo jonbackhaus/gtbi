@@ -1,4 +1,0 @@
-{
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$comment": "ACFS Claude Code base settings. DCG hooks are registered separately via 'dcg install'."
-}

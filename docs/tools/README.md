@@ -1,6 +1,6 @@
-# ACFS Flywheel Tools Documentation
+# GTBI Flywheel Tools Documentation
 
-This directory contains documentation for the tools installed by ACFS (Agentic Coding Flywheel Setup).
+This directory contains documentation for the tools installed by GTBI (Agentic Coding Flywheel Setup).
 
 ## Core Tools
 
@@ -32,10 +32,10 @@ This directory contains documentation for the tools installed by ACFS (Agentic C
 
 ### Installation Verification
 
-All tools can be verified with `acfs doctor`:
+All tools can be verified with `gtbi doctor`:
 
 ```bash
-acfs doctor --json
+gtbi doctor --json
 ```
 
 ### Tool Categories

@@ -34,10 +34,10 @@ export {
 };
 
 /** localStorage key for storing completed lessons */
-export const COMPLETED_LESSONS_KEY = "acfs-learning-hub-completed-lessons";
+export const COMPLETED_LESSONS_KEY = "gtbi-learning-hub-completed-lessons";
 
 export const COMPLETED_LESSONS_CHANGED_EVENT =
-  "acfs:learning-hub:completed-lessons-changed";
+  "gtbi:learning-hub:completed-lessons-changed";
 
 // Query keys for TanStack Query
 export const lessonProgressKeys = {

@@ -1,13 +1,13 @@
-# ACFS Maintainer Guide
+# GTBI Maintainer Guide
 
-Internal reference for maintaining the ACFS installer and manifest.
+Internal reference for maintaining the GTBI installer and manifest.
 
 ## Manifest-Driven Architecture
 
-ACFS uses a single source of truth pattern:
+GTBI uses a single source of truth pattern:
 
 ```
-acfs.manifest.yaml
+gtbi.manifest.yaml
        ↓
 packages/manifest/src/generate.ts
        ↓
@@ -23,7 +23,7 @@ The manifest defines what gets installed. The generator produces bash functions.
 The manifest also drives web content (tools, TL;DR, commands, lessons). Modules with a `web` block generate TypeScript data files consumed by the Next.js website.
 
 ```
-acfs.manifest.yaml (web metadata)
+gtbi.manifest.yaml (web metadata)
        ↓
 packages/manifest/src/generate.ts
        ↓
@@ -39,13 +39,13 @@ apps/web/lib/generated/
 
 ## Adding a New Module
 
-### 1. Add to acfs.manifest.yaml
+### 1. Add to gtbi.manifest.yaml
 
 ```yaml
 modules:
   - id: category.toolname
     name: Tool Name
-    category: category  # base, shell, cli, lang, tools, agents, db, cloud, stack, acfs
+    category: category  # base, shell, cli, lang, tools, agents, db, cloud, stack, gtbi
     phase: 6            # Execution order (0-10)
     enabled_by_default: true  # Include in default install
     
@@ -55,7 +55,7 @@ modules:
       - command1
       - command2
     
-    # Verification (for acfs doctor)
+    # Verification (for gtbi doctor)
     installed_check: command -v toolname
     verify:
       - toolname --version
@@ -92,7 +92,7 @@ bun run generate
 Or with the pre-commit hook:
 ```bash
 ./scripts/hooks/install.sh  # One-time hook setup
-git add acfs.manifest.yaml
+git add gtbi.manifest.yaml
 git commit  # Hook auto-regenerates
 ```
 
@@ -208,7 +208,7 @@ PR checks include:
 
 ### Updating a Tool Version
 
-1. Edit `acfs.manifest.yaml` with new version
+1. Edit `gtbi.manifest.yaml` with new version
 2. Update checksum if external script changed
 3. Regenerate and test
 
@@ -239,7 +239,7 @@ fi
 
 | File | Purpose |
 |------|---------|
-| `acfs.manifest.yaml` | Module definitions (source of truth) |
+| `gtbi.manifest.yaml` | Module definitions (source of truth) |
 | `checksums.yaml` | SHA256 hashes for external scripts |
 | `packages/manifest/` | TypeScript generator |
 | `scripts/generated/` | Generated bash functions (don't edit) |

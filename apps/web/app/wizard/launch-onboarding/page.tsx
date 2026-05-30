@@ -110,7 +110,7 @@ export default function LaunchOnboardingStep() {
   const effectiveUsername = sshUsername.trim() || "ubuntu";
   const userTarget = formatSshTarget(effectiveUsername, displayIP);
   const homeDir = effectiveUsername === "root" ? "/root" : `/home/${effectiveUsername}`;
-  const sshConfigSnippet = `Host myserver\n    HostName ${displayIP}\n    User ${effectiveUsername}\n    IdentityFile ~/.ssh/acfs_ed25519`;
+  const sshConfigSnippet = `Host myserver\n    HostName ${displayIP}\n    User ${effectiveUsername}\n    IdentityFile ~/.ssh/gtbi_ed25519`;
 
   // Only persist full completion when the user actually reached the final step
   // through the normal flow. A direct visit/bookmark should not unlock the wizard.
@@ -196,7 +196,7 @@ export default function LaunchOnboardingStep() {
           <p className="text-muted-foreground">
             <strong className="text-foreground">Don&apos;t worry, this is optional!</strong> You can press{" "}
             <kbd className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">q</kbd> to skip it, or follow
-            the prompts to customize your terminal appearance. ACFS already configured sensible defaults,
+            the prompts to customize your terminal appearance. GTBI already configured sensible defaults,
             so skipping is perfectly fine.
           </p>
         </div>
@@ -322,8 +322,8 @@ export default function LaunchOnboardingStep() {
             <div className="space-y-2">
               <h3 className="font-medium">Connect to your VPS</h3>
               <CommandCard
-                command={`ssh -i ~/.ssh/acfs_ed25519 ${userTarget}`}
-                windowsCommand={`ssh -i $HOME\\.ssh\\acfs_ed25519 ${userTarget}`}
+                command={`ssh -i ~/.ssh/gtbi_ed25519 ${userTarget}`}
+                windowsCommand={`ssh -i $HOME\\.ssh\\gtbi_ed25519 ${userTarget}`}
                 runLocation="local"
               />
               <p className="text-sm text-muted-foreground">Open your terminal and SSH in.</p>
@@ -607,8 +607,8 @@ export default function LaunchOnboardingStep() {
           <div>
             <h3 className="font-medium">2. Connect to your VPS</h3>
             <CommandCard
-              command={`ssh -i ~/.ssh/acfs_ed25519 ${userTarget}`}
-              windowsCommand={`ssh -i $HOME\\.ssh\\acfs_ed25519 ${userTarget}`}
+              command={`ssh -i ~/.ssh/gtbi_ed25519 ${userTarget}`}
+              windowsCommand={`ssh -i $HOME\\.ssh\\gtbi_ed25519 ${userTarget}`}
               runLocation="local"
             />
           </div>
@@ -773,7 +773,7 @@ export default function LaunchOnboardingStep() {
             <ul className="mt-2 space-y-1 text-sm">
               <li>
                 <a
-                  href="https://github.com/Dicklesworthstone/agentic_coding_flywheel_setup"
+                  href="https://github.com/jonbackhaus/gtbi"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1 text-primary hover:underline"

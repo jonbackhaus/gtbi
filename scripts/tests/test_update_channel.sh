@@ -37,7 +37,7 @@ skip()    { SKIP=$((SKIP + 1)); log "  SKIP: $1"; }
 section() { log ""; log "=== $1 ==="; }
 
 UPDATE_SH="$REPO_ROOT/scripts/lib/update.sh"
-ZSHRC="$REPO_ROOT/acfs/zsh/acfs.zshrc"
+ZSHRC="$REPO_ROOT/gtbi/zsh/gtbi.zshrc"
 
 log "Test: Update Channel Fix (bd-gsjqf)"
 log "Log file: $LOG_FILE"
@@ -90,7 +90,7 @@ fi
 # ============================================================
 section "Test 2b: update_target_home resolves passwd homes"
 # ============================================================
-home_resolution_dir="${TMPDIR:-/tmp}/acfs-home-resolution.$$"
+home_resolution_dir="${TMPDIR:-/tmp}/gtbi-home-resolution.$$"
 mkdir -p "$home_resolution_dir"
 home_resolution_output=$(
     HOME_RESOLUTION_DIR="$home_resolution_dir" \
@@ -160,7 +160,7 @@ section "Test 3b: Gemini dry-run skips nvm warnings cleanly"
 # ============================================================
 gemini_dry_run_output=$(
     bash -c '
-        temp_home="${TMPDIR:-/tmp}/acfs-gemini-dry-run.$$"
+        temp_home="${TMPDIR:-/tmp}/gtbi-gemini-dry-run.$$"
         mkdir -p "$temp_home/.bun/bin"
         printf "#!/usr/bin/env bash\nexit 0\n" > "$temp_home/.bun/bin/bun"
         chmod +x "$temp_home/.bun/bin/bun"
@@ -214,9 +214,9 @@ dry_run_logging_output=$(
     bash -c '
         source "'"$UPDATE_SH"'"
 
-        temp_home="${TMPDIR:-/tmp}/acfs-update-dry-run-logging.$$"
+        temp_home="${TMPDIR:-/tmp}/gtbi-update-dry-run-logging.$$"
         HOME="$temp_home"
-        UPDATE_LOG_DIR="$temp_home/.acfs/logs/updates"
+        UPDATE_LOG_DIR="$temp_home/.gtbi/logs/updates"
         DRY_RUN=true
         UPDATE_LOG_FILE="sentinel"
 
@@ -281,7 +281,7 @@ section "Test 3e: legacy cleanup stays non-destructive in dry-run"
 # ============================================================
 dry_run_cleanup_output=$(
     bash -c '
-        temp_home="${TMPDIR:-/tmp}/acfs-update-dry-run-cleanup.$$"
+        temp_home="${TMPDIR:-/tmp}/gtbi-update-dry-run-cleanup.$$"
         mkdir -p "$temp_home/.claude/hooks"
         printf "legacy\n" > "$temp_home/.claude/hooks/git_safety_guard.sh"
 
@@ -315,22 +315,22 @@ else
 fi
 
 # ============================================================
-section "Test 3f: ACFS self-update dry-run avoids git fetch mutations"
+section "Test 3f: GTBI self-update dry-run avoids git fetch mutations"
 # ============================================================
 dry_run_self_update_output=$(
     bash -c '
         source "'"$UPDATE_SH"'"
 
-        temp_root="${TMPDIR:-/tmp}/acfs-update-dry-run-self.$$"
+        temp_root="${TMPDIR:-/tmp}/gtbi-update-dry-run-self.$$"
         mkdir -p "$temp_root/.git"
 
-        ACFS_REPO_ROOT="$temp_root"
+        GTBI_REPO_ROOT="$temp_root"
         DRY_RUN=true
         QUIET=true
         UPDATE_SELF=true
-        ACFS_SELF_UPDATE_DONE=false
+        GTBI_SELF_UPDATE_DONE=false
         UPDATE_LOG_FILE="/dev/null"
-        ACFS_VERSION_DISPLAY="vtest"
+        GTBI_VERSION_DISPLAY="vtest"
         NO_COLOR=1
         RED="" GREEN="" YELLOW="" CYAN="" BOLD="" DIM="" NC=""
 
@@ -344,7 +344,7 @@ dry_run_self_update_output=$(
 
             case "$*" in
                 *"remote get-url origin"*)
-                    printf "https://github.com/Dicklesworthstone/agentic_coding_flywheel_setup.git\n"
+                    printf "https://github.com/jonbackhaus/gtbi.git\n"
                     return 0
                     ;;
                 *"branch --show-current"*)
@@ -366,19 +366,19 @@ dry_run_self_update_output=$(
             esac
         }
 
-        update_acfs_self
+        update_gtbi_self
     ' 2>&1
 ) || true
 
 if ! echo "$dry_run_self_update_output" | grep -q '^FETCH_CALLED=yes$' \
-    && echo "$dry_run_self_update_output" | grep -q '^ok|ACFS|would update (remote main differs)$'; then
-    pass "ACFS self-update dry-run uses a non-mutating remote probe instead of git fetch"
+    && echo "$dry_run_self_update_output" | grep -q '^ok|GTBI|would update (remote main differs)$'; then
+    pass "GTBI self-update dry-run uses a non-mutating remote probe instead of git fetch"
 else
-    fail "ACFS self-update dry-run still triggered git fetch or lost its preview output: $dry_run_self_update_output"
+    fail "GTBI self-update dry-run still triggered git fetch or lost its preview output: $dry_run_self_update_output"
 fi
 
 # ============================================================
-section "Test 3f2: ACFS self-update re-exec marker does not count as skipped work"
+section "Test 3f2: GTBI self-update re-exec marker does not count as skipped work"
 # ============================================================
 self_update_done_output=$(
     bash -c '
@@ -386,7 +386,7 @@ self_update_done_output=$(
 
         QUIET=true
         UPDATE_SELF=true
-        ACFS_SELF_UPDATE_DONE=true
+        GTBI_SELF_UPDATE_DONE=true
         UPDATE_LOG_FILE="/dev/null"
         SUCCESS_COUNT=0
         SKIP_COUNT=0
@@ -394,7 +394,7 @@ self_update_done_output=$(
         NO_COLOR=1
         RED="" GREEN="" YELLOW="" CYAN="" BOLD="" DIM="" NC=""
 
-        update_acfs_self
+        update_gtbi_self
         printf "SUCCESS_COUNT=%s\n" "$SUCCESS_COUNT"
         printf "SKIP_COUNT=%s\n" "$SKIP_COUNT"
         printf "FAIL_COUNT=%s\n" "$FAIL_COUNT"
@@ -404,20 +404,20 @@ self_update_done_output=$(
 if echo "$self_update_done_output" | grep -q '^SUCCESS_COUNT=0$' \
     && echo "$self_update_done_output" | grep -q '^SKIP_COUNT=0$' \
     && echo "$self_update_done_output" | grep -q '^FAIL_COUNT=0$'; then
-    pass "ACFS self-update re-exec marker stays out of summary counters"
+    pass "GTBI self-update re-exec marker stays out of summary counters"
 else
-    fail "ACFS self-update re-exec marker polluted summary counters: $self_update_done_output"
+    fail "GTBI self-update re-exec marker polluted summary counters: $self_update_done_output"
 fi
 
 # ============================================================
-section "Test 3g: ACFS self-update repairs upstream-derived dirty checkout"
+section "Test 3g: GTBI self-update repairs upstream-derived dirty checkout"
 # ============================================================
 self_update_repair_output=$(
     bash -c '
         set -euo pipefail
         source "'"$UPDATE_SH"'"
 
-        temp_root="${TMPDIR:-/tmp}/acfs-update-dirty-repair.$$"
+        temp_root="${TMPDIR:-/tmp}/gtbi-update-dirty-repair.$$"
         seed_repo="$temp_root/seed"
         origin_repo="$temp_root/origin.git"
         work_repo="$temp_root/work"
@@ -425,7 +425,7 @@ self_update_repair_output=$(
         mkdir -p "$seed_repo/scripts/lib" "$seed_repo/scripts/generated"
         git -C "$seed_repo" init -b main >/dev/null
         git -C "$seed_repo" config user.email test@example.invalid
-        git -C "$seed_repo" config user.name "ACFS Test"
+        git -C "$seed_repo" config user.name "GTBI Test"
         printf "base-update\n" > "$seed_repo/scripts/lib/update.sh"
         printf "base-generated\n" > "$seed_repo/scripts/generated/install_all.sh"
         git -C "$seed_repo" add .
@@ -451,23 +451,23 @@ self_update_repair_output=$(
         git -C "$work_repo" show "$intermediate_commit:scripts/lib/update.sh" > "$work_repo/scripts/lib/update.sh"
         git -C "$work_repo" show "$intermediate_commit:scripts/generated/install_all.sh" > "$work_repo/scripts/generated/install_all.sh"
 
-        ACFS_REPO_ROOT="$work_repo"
-        ACFS_HOME="$work_repo"
+        GTBI_REPO_ROOT="$work_repo"
+        GTBI_HOME="$work_repo"
         DRY_RUN=false
         QUIET=true
         UPDATE_SELF=true
-        ACFS_SELF_UPDATE_DONE=false
+        GTBI_SELF_UPDATE_DONE=false
         UPDATE_LOG_FILE="/dev/null"
-        ACFS_VERSION_DISPLAY="vtest"
+        GTBI_VERSION_DISPLAY="vtest"
         NO_COLOR=1
         RED="" GREEN="" YELLOW="" CYAN="" BOLD="" DIM="" NC=""
 
         log_item() { printf "%s|%s|%s\n" "$1" "$2" "${3:-}"; }
-        is_expected_acfs_origin_url() { return 0; }
-        sync_acfs_global_wrapper() { return 0; }
-        update_runtime_acfs_home() { printf "%s\n" "$work_repo"; }
+        is_expected_gtbi_origin_url() { return 0; }
+        sync_gtbi_global_wrapper() { return 0; }
+        update_runtime_gtbi_home() { printf "%s\n" "$work_repo"; }
 
-        update_acfs_self
+        update_gtbi_self
         printf "HEAD=%s\n" "$(git -C "$work_repo" rev-parse HEAD)"
         printf "REMOTE=%s\n" "$(git -C "$work_repo" rev-parse origin/main)"
         if [[ -z "$(git -C "$work_repo" status --porcelain --untracked-files=no)" ]]; then
@@ -479,23 +479,23 @@ self_update_repair_output=$(
     ' 2>&1
 ) || true
 
-if echo "$self_update_repair_output" | grep -q '^fix|ACFS self-update|tracked changes match upstream history; completing fast-forward$' \
+if echo "$self_update_repair_output" | grep -q '^fix|GTBI self-update|tracked changes match upstream history; completing fast-forward$' \
     && echo "$self_update_repair_output" | grep -q '^STATUS_CLEAN=yes$' \
     && [[ "$(echo "$self_update_repair_output" | sed -n 's/^HEAD=//p' | tail -1)" == "$(echo "$self_update_repair_output" | sed -n 's/^REMOTE=//p' | tail -1)" ]]; then
-    pass "ACFS self-update fast-forwards dirty checkouts when changes are upstream-derived"
+    pass "GTBI self-update fast-forwards dirty checkouts when changes are upstream-derived"
 else
-    fail "ACFS self-update did not repair upstream-derived dirty checkout: $self_update_repair_output"
+    fail "GTBI self-update did not repair upstream-derived dirty checkout: $self_update_repair_output"
 fi
 
 # ============================================================
-section "Test 3h: deployed sync skips git-tracked files in ACFS home"
+section "Test 3h: deployed sync skips git-tracked files in GTBI home"
 # ============================================================
 sync_git_tracked_output=$(
     bash -c '
         set -euo pipefail
         source "'"$UPDATE_SH"'"
 
-        temp_root="${TMPDIR:-/tmp}/acfs-sync-git-managed.$$"
+        temp_root="${TMPDIR:-/tmp}/gtbi-sync-git-managed.$$"
         source_repo="$temp_root/source"
         deployed_repo="$temp_root/deployed"
 
@@ -504,18 +504,18 @@ sync_git_tracked_output=$(
         printf "deployed-update\n" > "$deployed_repo/scripts/lib/update.sh"
         git -C "$deployed_repo" init -b main >/dev/null
         git -C "$deployed_repo" config user.email test@example.invalid
-        git -C "$deployed_repo" config user.name "ACFS Test"
+        git -C "$deployed_repo" config user.name "GTBI Test"
         git -C "$deployed_repo" add scripts/lib/update.sh
         git -C "$deployed_repo" commit -m deployed >/dev/null
 
-        ACFS_REPO_ROOT="$source_repo"
-        ACFS_HOME="$deployed_repo"
+        GTBI_REPO_ROOT="$source_repo"
+        GTBI_HOME="$deployed_repo"
         DRY_RUN=false
         UPDATE_LOG_FILE="/dev/null"
-        update_runtime_acfs_home() { printf "%s\n" "$ACFS_HOME"; }
+        update_runtime_gtbi_home() { printf "%s\n" "$GTBI_HOME"; }
         log_to_file() { :; }
 
-        sync_acfs_deployed
+        sync_gtbi_deployed
         printf "DEPLOYED_CONTENT=%s\n" "$(cat "$deployed_repo/scripts/lib/update.sh")"
         if [[ -z "$(git -C "$deployed_repo" status --porcelain --untracked-files=no)" ]]; then
             printf "STATUS_CLEAN=yes\n"
@@ -528,9 +528,9 @@ sync_git_tracked_output=$(
 
 if echo "$sync_git_tracked_output" | grep -q '^DEPLOYED_CONTENT=deployed-update$' \
     && echo "$sync_git_tracked_output" | grep -q '^STATUS_CLEAN=yes$'; then
-    pass "sync_acfs_deployed leaves git-tracked ACFS home files untouched"
+    pass "sync_gtbi_deployed leaves git-tracked GTBI home files untouched"
 else
-    fail "sync_acfs_deployed still dirtied a git-managed ACFS home: $sync_git_tracked_output"
+    fail "sync_gtbi_deployed still dirtied a git-managed GTBI home: $sync_git_tracked_output"
 fi
 
 # ============================================================
@@ -541,7 +541,7 @@ cargo_target_dir_output=$(
         set -euo pipefail
         source "'"$UPDATE_SH"'"
 
-        temp_root="${TMPDIR:-/tmp}/acfs-cargo-target-dir.$$"
+        temp_root="${TMPDIR:-/tmp}/gtbi-cargo-target-dir.$$"
         source_repo="$temp_root/source"
         fake_bin="$temp_root/bin"
         temp_home="$temp_root/home"
@@ -550,7 +550,7 @@ cargo_target_dir_output=$(
         mkdir -p "$source_repo" "$fake_bin" "$temp_home" "$inherited_target"
         git -C "$source_repo" init -b main >/dev/null
         git -C "$source_repo" config user.email test@example.invalid
-        git -C "$source_repo" config user.name "ACFS Test"
+        git -C "$source_repo" config user.name "GTBI Test"
         printf "[package]\nname = \"demo_tool\"\nversion = \"0.1.0\"\nedition = \"2021\"\n" > "$source_repo/Cargo.toml"
         git -C "$source_repo" add Cargo.toml
         git -C "$source_repo" commit -m base >/dev/null
@@ -788,9 +788,9 @@ repo_checksum_preference_output=$(
         set -euo pipefail
         export HOME
         HOME="$(mktemp -d)"
-        mkdir -p "$HOME/.acfs"
-        cp "'"$REPO_ROOT"'/checksums.yaml" "$HOME/.acfs/checksums.yaml"
-        python3 - <<'"'"'PY'"'"' "$HOME/.acfs/checksums.yaml"
+        mkdir -p "$HOME/.gtbi"
+        cp "'"$REPO_ROOT"'/checksums.yaml" "$HOME/.gtbi/checksums.yaml"
+        python3 - <<'"'"'PY'"'"' "$HOME/.gtbi/checksums.yaml"
 import sys
 path = sys.argv[1]
 with open(path, "r", encoding="utf-8") as fh:
@@ -813,7 +813,7 @@ PY
 ) || true
 
 if echo "$repo_checksum_preference_output" | grep -q "CHECKSUM=$current_mcp_agent_mail_sha"; then
-    pass "Repo-local update.sh ignores stale ~/.acfs/checksums.yaml and loads repo checksums"
+    pass "Repo-local update.sh ignores stale ~/.gtbi/checksums.yaml and loads repo checksums"
 else
     fail "Repo-local update.sh still preferred stale installed checksums. Output: $repo_checksum_preference_output"
 fi
@@ -831,7 +831,7 @@ rch_manifest_block=$(awk '
     /^[[:space:]]*- id: stack\.rch$/ { in_block=1 }
     in_block { print }
     in_block && /^[[:space:]]*verify:/ { exit }
-' "$REPO_ROOT/acfs.manifest.yaml")
+' "$REPO_ROOT/gtbi.manifest.yaml")
 
 if echo "$rch_manifest_block" | grep -Fq 'args: ["--easy-mode"]'; then
     pass "RCH manifest verified installer records --easy-mode"
@@ -885,7 +885,7 @@ EOF
             "$@"
         }
 
-        acfs_download_to_file() {
+        gtbi_download_to_file() {
             local url="$1"
             local output_path="$2"
             case "$url" in
@@ -898,7 +898,7 @@ EOF
             esac
         }
 
-        acfs_fetch_fresh_checksums_to_file() {
+        gtbi_fetch_fresh_checksums_to_file() {
             cat > "$1" <<EOF
 installers:
   mcp_agent_mail:
@@ -940,7 +940,7 @@ section "Test 9: uca alias definition"
 if [[ -f "$ZSHRC" ]]; then
     uca_line=$(grep "alias uca=" "$ZSHRC" || true)
     if [[ -z "$uca_line" ]]; then
-        fail "uca alias not found in acfs.zshrc"
+        fail "uca alias not found in gtbi.zshrc"
     else
         # Check 1: no bare "claude update" in the alias
         if echo "$uca_line" | grep -q 'claude update'; then
@@ -966,7 +966,7 @@ if [[ -f "$ZSHRC" ]]; then
         fi
     fi
 else
-    skip "acfs.zshrc not found at $ZSHRC"
+    skip "gtbi.zshrc not found at $ZSHRC"
 fi
 
 # ============================================================

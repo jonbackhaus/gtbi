@@ -1,7 +1,7 @@
 /**
  * Lesson Data
  *
- * Static lesson definitions for the ACFS Learning Hub.
+ * Static lesson definitions for the GTBI Learning Hub.
  * This file contains only static data and pure functions,
  * so it can be imported by both Server and Client Components.
  *
@@ -506,11 +506,11 @@ export const LESSONS: Lesson[] = [
   },
   {
     id: 60,
-    slug: "acfs-doctor",
-    title: "ACFS Doctor & Maintenance",
+    slug: "gtbi-doctor",
+    title: "GTBI Doctor & Maintenance",
     description: "Keep your environment healthy with doctor checks, nightly updates, and SRPS",
     duration: "7 min",
-    file: "60_acfs_doctor.md",
+    file: "60_gtbi_doctor.md",
   },
 ];
 

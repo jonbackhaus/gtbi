@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-# ACFS Selection E2E Tests
+# GTBI Selection E2E Tests
 #
 # Tests selection semantics end-to-end by invoking install.sh
 # with various flags and verifying outputs without running
@@ -82,11 +82,11 @@ test_print_plan_does_not_mutate_state() {
     local temp_home
     temp_home=$(mktemp -d)
 
-    # ACFS_HOME points to the ~/.acfs directory (not $HOME), so keep the path consistent
+    # GTBI_HOME points to the ~/.gtbi directory (not $HOME), so keep the path consistent
     # with install.sh behavior when overriding it for tests.
-    ACFS_HOME="$temp_home/.acfs" bash "$REPO_ROOT/install.sh" --print-plan >/dev/null 2>&1 || true
+    GTBI_HOME="$temp_home/.gtbi" bash "$REPO_ROOT/install.sh" --print-plan >/dev/null 2>&1 || true
 
-    if [[ ! -f "$temp_home/.acfs/state.json" ]]; then
+    if [[ ! -f "$temp_home/.gtbi/state.json" ]]; then
         pass "$name"
     else
         fail "$name" "State file was created"
@@ -284,7 +284,7 @@ test_only_phase_limits_selection() {
 
 main() {
     echo ""
-    echo "ACFS Selection E2E Tests"
+    echo "GTBI Selection E2E Tests"
     echo "========================"
     echo ""
 

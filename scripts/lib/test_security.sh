@@ -36,7 +36,7 @@ test_fail() {
 
 # Create temp directory for test fixtures
 setup_fixtures() {
-    TEST_TMP_DIR=$(mktemp -d "${TMPDIR:-/tmp}/acfs_test_security.XXXXXX")
+    TEST_TMP_DIR=$(mktemp -d "${TMPDIR:-/tmp}/gtbi_test_security.XXXXXX")
     trap 'rm -rf "$TEST_TMP_DIR"' EXIT
 
     # Create a simple test script
@@ -334,7 +334,7 @@ test_has_checksum_mismatches_false() {
 test_retryable_exit_code_dns() {
     local name="DNS error (6) is retryable"
 
-    if acfs_is_retryable_curl_exit_code 6; then
+    if gtbi_is_retryable_curl_exit_code 6; then
         test_pass "$name"
     else
         test_fail "$name"
@@ -344,7 +344,7 @@ test_retryable_exit_code_dns() {
 test_retryable_exit_code_connect() {
     local name="Connect error (7) is retryable"
 
-    if acfs_is_retryable_curl_exit_code 7; then
+    if gtbi_is_retryable_curl_exit_code 7; then
         test_pass "$name"
     else
         test_fail "$name"
@@ -354,7 +354,7 @@ test_retryable_exit_code_connect() {
 test_retryable_exit_code_timeout() {
     local name="Timeout (28) is retryable"
 
-    if acfs_is_retryable_curl_exit_code 28; then
+    if gtbi_is_retryable_curl_exit_code 28; then
         test_pass "$name"
     else
         test_fail "$name"
@@ -364,7 +364,7 @@ test_retryable_exit_code_timeout() {
 test_non_retryable_exit_code() {
     local name="HTTP error (22) is not retryable"
 
-    if ! acfs_is_retryable_curl_exit_code 22; then
+    if ! gtbi_is_retryable_curl_exit_code 22; then
         test_pass "$name"
     else
         test_fail "$name"
@@ -374,7 +374,7 @@ test_non_retryable_exit_code() {
 test_non_retryable_exit_code_success() {
     local name="Success (0) is not retryable"
 
-    if ! acfs_is_retryable_curl_exit_code 0; then
+    if ! gtbi_is_retryable_curl_exit_code 0; then
         test_pass "$name"
     else
         test_fail "$name"
@@ -424,7 +424,7 @@ test_known_installers_all_https() {
 # ============================================================
 
 echo ""
-echo "ACFS Security Tests"
+echo "GTBI Security Tests"
 echo "==================="
 echo ""
 

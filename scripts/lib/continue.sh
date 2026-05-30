@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
 # ============================================================
-# ACFS Continue - View Installation Progress
+# GTBI Continue - View Installation Progress
 #
-# This script allows users to monitor ongoing ACFS installation
+# This script allows users to monitor ongoing GTBI installation
 # progress, especially after Ubuntu upgrades complete and the
 # installer continues in the background.
 #
 # Usage:
-#   acfs continue           # Show status and attach to logs
-#   acfs continue --status  # Just show current status
-#   acfs continue --help    # Show help
+#   gtbi continue           # Show status and attach to logs
+#   gtbi continue --status  # Just show current status
+#   gtbi continue --help    # Show help
 #
 # Related bead: hun4
 # ============================================================
@@ -200,7 +200,7 @@ continue_initial_current_home() {
     local cached_home=""
     local resolved_home=""
 
-    if [[ "${_CONTINUE_WAS_SOURCED:-false}" == "true" ]] && [[ -z "${TARGET_HOME:-}${TARGET_USER:-}${ACFS_HOME:-}${ACFS_STATE_FILE:-}${ACFS_SYSTEM_STATE_FILE:-}" ]]; then
+    if [[ "${_CONTINUE_WAS_SOURCED:-false}" == "true" ]] && [[ -z "${TARGET_HOME:-}${TARGET_USER:-}${GTBI_HOME:-}${GTBI_STATE_FILE:-}${GTBI_SYSTEM_STATE_FILE:-}" ]]; then
         cached_home="$(continue_sanitize_abs_nonroot_path "${_CONTINUE_ORIGINAL_HOME:-${HOME:-}}" 2>/dev/null || true)"
         if [[ -n "$cached_home" ]]; then
             printf '%s\n' "$cached_home"
@@ -232,21 +232,21 @@ fi
 
 # Constants
 _CONTINUE_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-_CONTINUE_LOG_DIR="/var/log/acfs"
+_CONTINUE_LOG_DIR="/var/log/gtbi"
 _CONTINUE_INSTALL_LOG="${_CONTINUE_LOG_DIR}/install.log"
 _CONTINUE_UPGRADE_LOG="${_CONTINUE_LOG_DIR}/upgrade_resume.log"
-_CONTINUE_SYSTEM_STATE_FILE="$(continue_sanitize_abs_nonroot_path "${ACFS_SYSTEM_STATE_FILE:-/var/lib/acfs/state.json}" 2>/dev/null || true)"
+_CONTINUE_SYSTEM_STATE_FILE="$(continue_sanitize_abs_nonroot_path "${GTBI_SYSTEM_STATE_FILE:-/var/lib/gtbi/state.json}" 2>/dev/null || true)"
 if [[ -z "$_CONTINUE_SYSTEM_STATE_FILE" ]]; then
-    _CONTINUE_SYSTEM_STATE_FILE="/var/lib/acfs/state.json"
+    _CONTINUE_SYSTEM_STATE_FILE="/var/lib/gtbi/state.json"
 fi
-_CONTINUE_STATE_FILE="$(continue_sanitize_abs_nonroot_path "${ACFS_STATE_FILE:-}" 2>/dev/null || true)"
-_CONTINUE_EXPLICIT_ACFS_HOME="$(continue_sanitize_abs_nonroot_path "${ACFS_HOME:-}" 2>/dev/null || true)"
-_CONTINUE_DEFAULT_ACFS_HOME=""
-[[ -n "$_CONTINUE_CURRENT_HOME" ]] && _CONTINUE_DEFAULT_ACFS_HOME="${_CONTINUE_CURRENT_HOME}/.acfs"
+_CONTINUE_STATE_FILE="$(continue_sanitize_abs_nonroot_path "${GTBI_STATE_FILE:-}" 2>/dev/null || true)"
+_CONTINUE_EXPLICIT_GTBI_HOME="$(continue_sanitize_abs_nonroot_path "${GTBI_HOME:-}" 2>/dev/null || true)"
+_CONTINUE_DEFAULT_GTBI_HOME=""
+[[ -n "$_CONTINUE_CURRENT_HOME" ]] && _CONTINUE_DEFAULT_GTBI_HOME="${_CONTINUE_CURRENT_HOME}/.gtbi"
 _CONTINUE_EXPLICIT_TARGET_HOME_RAW="${TARGET_HOME:-}"
 _CONTINUE_EXPLICIT_TARGET_USER_RAW="${TARGET_USER:-}"
 _CONTINUE_EXPLICIT_TARGET_HOME="$(continue_existing_abs_home "${TARGET_HOME:-}" 2>/dev/null || true)"
-_CONTINUE_SERVICE_NAME="acfs-upgrade-resume"
+_CONTINUE_SERVICE_NAME="gtbi-upgrade-resume"
 
 # Colors
 _CONTINUE_RED='\033[0;31m'
@@ -265,7 +265,7 @@ _CONTINUE_NC='\033[0m'
 print_header() {
     echo ""
     echo -e "${_CONTINUE_CYAN}╔══════════════════════════════════════════════════════════════╗${_CONTINUE_NC}"
-    echo -e "${_CONTINUE_CYAN}║${_CONTINUE_NC}  ${_CONTINUE_BOLD}ACFS Installation Progress${_CONTINUE_NC}                                 ${_CONTINUE_CYAN}║${_CONTINUE_NC}"
+    echo -e "${_CONTINUE_CYAN}║${_CONTINUE_NC}  ${_CONTINUE_BOLD}GTBI Installation Progress${_CONTINUE_NC}                                 ${_CONTINUE_CYAN}║${_CONTINUE_NC}"
     echo -e "${_CONTINUE_CYAN}╚══════════════════════════════════════════════════════════════╝${_CONTINUE_NC}"
     echo ""
 }
@@ -277,15 +277,15 @@ is_upgrade_service_running() {
 
 # Check if the installer process is running
 is_installer_running() {
-    # Only trust ACFS-specific continuation surfaces here. Generic install.sh
+    # Only trust GTBI-specific continuation surfaces here. Generic install.sh
     # pgrep patterns can match unrelated installers and the probe process
     # itself, causing false "running" reports.
     is_continuation_running
 }
 
 is_continuation_running() {
-    pgrep -f "bash.*/var/lib/acfs/continue_install.sh" &>/dev/null || \
-    pgrep -f "acfs-continue-install" &>/dev/null
+    pgrep -f "bash.*/var/lib/gtbi/continue_install.sh" &>/dev/null || \
+    pgrep -f "gtbi-continue-install" &>/dev/null
 }
 
 home_for_user() {
@@ -346,7 +346,7 @@ continue_resolve_explicit_target_home() {
         fi
         target_home="$_CONTINUE_EXPLICIT_TARGET_HOME"
         if [[ -n "$target_home" ]] && [[ "$target_home" != "${_CONTINUE_CURRENT_HOME:-}" ]] && {
-            [[ -f "$target_home/.acfs/state.json" ]] || [[ -f "$target_home/.acfs/VERSION" ]] || [[ -d "$target_home/.acfs/logs" ]] || [[ -f "$target_home/.acfs/scripts/lib/continue.sh" ]]
+            [[ -f "$target_home/.gtbi/state.json" ]] || [[ -f "$target_home/.gtbi/VERSION" ]] || [[ -d "$target_home/.gtbi/logs" ]] || [[ -f "$target_home/.gtbi/scripts/lib/continue.sh" ]]
         }; then
             printf '%s\n' "${target_home%/}"
             return 0
@@ -403,10 +403,10 @@ read_target_home_from_state() {
     printf '%s\n' "${target_home%/}"
 }
 
-script_acfs_home() {
+script_gtbi_home() {
     local candidate=""
     candidate=$(cd "$_CONTINUE_SCRIPT_DIR/../.." 2>/dev/null && pwd) || return 1
-    [[ "$(basename "$candidate")" == ".acfs" ]] || return 1
+    [[ "$(basename "$candidate")" == ".gtbi" ]] || return 1
     printf '%s\n' "$candidate"
 }
 
@@ -418,10 +418,10 @@ current_user_state_file() {
     local state_user=""
     local state_user_home=""
 
-    [[ -n "$_CONTINUE_DEFAULT_ACFS_HOME" && -n "$_CONTINUE_CURRENT_HOME" ]] || return 1
+    [[ -n "$_CONTINUE_DEFAULT_GTBI_HOME" && -n "$_CONTINUE_CURRENT_HOME" ]] || return 1
     [[ "$_CONTINUE_CURRENT_HOME" != "/root" ]] || return 1
 
-    candidate="$_CONTINUE_DEFAULT_ACFS_HOME/state.json"
+    candidate="$_CONTINUE_DEFAULT_GTBI_HOME/state.json"
     [[ -f "$candidate" ]] || return 1
 
     if [[ "${_CONTINUE_ORIGINAL_HOME_WAS_SET:-false}" == true ]]; then
@@ -457,7 +457,7 @@ find_scanned_install_state_file() {
         while IFS=: read -r _ _ _ _ _ candidate_home _; do
             [[ -n "$candidate_home" ]] || continue
             [[ "$candidate_home" == /* ]] || continue
-            candidate="${candidate_home%/}/.acfs/state.json"
+            candidate="${candidate_home%/}/.gtbi/state.json"
             [[ -f "$candidate" ]] || continue
             matches+=("$candidate")
         done < <(continue_getent_passwd_entry 2>/dev/null || true)
@@ -467,7 +467,7 @@ find_scanned_install_state_file() {
         while IFS=: read -r _ _ _ _ _ candidate_home _; do
             [[ -n "$candidate_home" ]] || continue
             [[ "$candidate_home" == /* ]] || continue
-            candidate="${candidate_home%/}/.acfs/state.json"
+            candidate="${candidate_home%/}/.gtbi/state.json"
             [[ -f "$candidate" ]] || continue
             matches+=("$candidate")
         done < <("$getent_bin" passwd 2>/dev/null || true)
@@ -501,7 +501,7 @@ get_install_state_file() {
         return 0
     fi
 
-    candidate=$(script_acfs_home 2>/dev/null || true)
+    candidate=$(script_gtbi_home 2>/dev/null || true)
     if [[ -n "$candidate" ]] && [[ -f "$candidate/state.json" ]]; then
         echo "$candidate/state.json"
         return 0
@@ -509,15 +509,15 @@ get_install_state_file() {
 
     explicit_target_home="$(continue_resolve_explicit_target_home 2>/dev/null || true)"
     if [[ -n "$explicit_target_home" ]]; then
-        candidate="${explicit_target_home}/.acfs/state.json"
+        candidate="${explicit_target_home}/.gtbi/state.json"
         if [[ -f "$candidate" ]]; then
             echo "$candidate"
             return 0
         fi
     fi
 
-    if [[ -n "$_CONTINUE_EXPLICIT_ACFS_HOME" ]] && [[ -f "$_CONTINUE_EXPLICIT_ACFS_HOME/state.json" ]]; then
-        echo "$_CONTINUE_EXPLICIT_ACFS_HOME/state.json"
+    if [[ -n "$_CONTINUE_EXPLICIT_GTBI_HOME" ]] && [[ -f "$_CONTINUE_EXPLICIT_GTBI_HOME/state.json" ]]; then
+        echo "$_CONTINUE_EXPLICIT_GTBI_HOME/state.json"
         return 0
     fi
 
@@ -533,7 +533,7 @@ get_install_state_file() {
 
     target_home=$(read_target_home_from_state "$_CONTINUE_SYSTEM_STATE_FILE" || true)
     if [[ -n "$target_home" ]]; then
-        candidate="${target_home}/.acfs/state.json"
+        candidate="${target_home}/.gtbi/state.json"
         if [[ -f "$candidate" ]]; then
             echo "$candidate"
             return 0
@@ -542,7 +542,7 @@ get_install_state_file() {
 
     if [[ -n "${SUDO_USER:-}" ]]; then
         target_home=$(home_for_user "$SUDO_USER" || true)
-        candidate="${target_home}/.acfs/state.json"
+        candidate="${target_home}/.gtbi/state.json"
         if [[ -n "$target_home" ]] && [[ -f "$candidate" ]]; then
             echo "$candidate"
             return 0
@@ -552,7 +552,7 @@ get_install_state_file() {
     target_user=$(read_target_user_from_state "$_CONTINUE_SYSTEM_STATE_FILE" || true)
     if [[ -n "$target_user" ]]; then
         target_home=$(home_for_user "$target_user" || true)
-        candidate="${target_home}/.acfs/state.json"
+        candidate="${target_home}/.gtbi/state.json"
         if [[ -n "$target_home" ]] && [[ -f "$candidate" ]]; then
             echo "$candidate"
             return 0
@@ -571,8 +571,8 @@ get_install_state_file() {
 # Select the correct state file based on query key.
 #
 # Rationale:
-# - Install progress is tracked in ~/.acfs/state.json (user state).
-# - Ubuntu upgrade progress is tracked in /var/lib/acfs/state.json (system state).
+# - Install progress is tracked in ~/.gtbi/state.json (user state).
+# - Ubuntu upgrade progress is tracked in /var/lib/gtbi/state.json (system state).
 # If both exist, we must avoid letting the system state mask install status.
 select_state_file_for_key() {
     local key="$1"
@@ -789,7 +789,7 @@ get_log_root_hint() {
     install_state_file=$(get_install_state_file || true)
     if [[ -n "$install_state_file" ]]; then
         install_root="$(dirname "$install_state_file")"
-        if [[ -d "$install_root/logs" ]] || [[ "$install_root" != "/var/lib/acfs" ]]; then
+        if [[ -d "$install_root/logs" ]] || [[ "$install_root" != "/var/lib/gtbi" ]]; then
             printf '%s/logs\n' "$install_root"
             return 0
         fi
@@ -931,7 +931,7 @@ show_live_log() {
     # Show last 20 lines first, then follow
     tail -n 20 -f "$log_file" 2>/dev/null || {
         echo -e "${_CONTINUE_RED}Unable to read log file${_CONTINUE_NC}"
-        echo -e "${_CONTINUE_DIM}You may need to run with sudo: sudo acfs continue${_CONTINUE_NC}"
+        echo -e "${_CONTINUE_DIM}You may need to run with sudo: sudo gtbi continue${_CONTINUE_NC}"
         return 1
     }
 }
@@ -941,23 +941,23 @@ show_live_log() {
 # ============================================================
 
 show_help() {
-    echo "ACFS Continue - View Installation Progress"
+    echo "GTBI Continue - View Installation Progress"
     echo ""
-    echo "Usage: acfs continue [OPTIONS]"
+    echo "Usage: gtbi continue [OPTIONS]"
     echo ""
     echo "Options:"
     echo "  --status, -s    Show current status only (don't attach to logs)"
     echo "  --help, -h      Show this help message"
     echo ""
     echo "Description:"
-    echo "  After Ubuntu upgrades complete, the ACFS installer continues"
+    echo "  After Ubuntu upgrades complete, the GTBI installer continues"
     echo "  running in the background. This command lets you see what's"
     echo "  happening and attach to the live log output."
     echo ""
     echo "Examples:"
-    echo "  acfs continue           # Show status and watch live logs"
-    echo "  acfs continue --status  # Just show current status"
-    echo "  sudo acfs continue      # If you get permission errors"
+    echo "  gtbi continue           # Show status and watch live logs"
+    echo "  gtbi continue --status  # Just show current status"
+    echo "  sudo gtbi continue      # If you get permission errors"
     echo ""
 }
 
@@ -981,7 +981,7 @@ main() {
                 ;;
             *)
                 echo -e "${_CONTINUE_RED}Unknown option: $1${_CONTINUE_NC}"
-                echo "Use 'acfs continue --help' for usage"
+                echo "Use 'gtbi continue --help' for usage"
                 exit 1
                 ;;
         esac
@@ -1038,8 +1038,8 @@ main() {
                     echo "  cat $_CONTINUE_UPGRADE_LOG"
                 fi
             else
-                echo "No ACFS installation logs found."
-                echo "Run the ACFS installer to get started."
+                echo "No GTBI installation logs found."
+                echo "Run the GTBI installer to get started."
             fi
         fi
     fi

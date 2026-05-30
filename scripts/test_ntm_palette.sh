@@ -78,10 +78,10 @@ test_ownership() {
 }
 
 # ============================================
-# Test 5: Works without ~/.acfs
+# Test 5: Works without ~/.gtbi
 # ============================================
-test_works_without_acfs() {
-    log "Test 5: Works without ~/.acfs"
+test_works_without_gtbi() {
+    log "Test 5: Works without ~/.gtbi"
 
     if ! command -v ntm >/dev/null 2>&1; then
         log "  Skipping: ntm not installed"
@@ -89,26 +89,26 @@ test_works_without_acfs() {
         return
     fi
 
-    # Temporarily rename .acfs if it exists
-    local acfs_dir="$HOME/.acfs"
-    local acfs_backup="$HOME/.acfs.backup.$$"
+    # Temporarily rename .gtbi if it exists
+    local gtbi_dir="$HOME/.gtbi"
+    local gtbi_backup="$HOME/.gtbi.backup.$$"
 
-    if [[ -d "$acfs_dir" ]]; then
-        mv "$acfs_dir" "$acfs_backup"
+    if [[ -d "$gtbi_dir" ]]; then
+        mv "$gtbi_dir" "$gtbi_backup"
     fi
 
     # Test ntm palette still works
     local count=$(ntm palette --list 2>/dev/null | wc -l || echo "0")
 
-    # Restore .acfs
-    if [[ -d "$acfs_backup" ]]; then
-        mv "$acfs_backup" "$acfs_dir"
+    # Restore .gtbi
+    if [[ -d "$gtbi_backup" ]]; then
+        mv "$gtbi_backup" "$gtbi_dir"
     fi
 
     if [[ $count -gt 5 ]]; then
-        pass "Test 5: Palette works without ~/.acfs"
+        pass "Test 5: Palette works without ~/.gtbi"
     else
-        fail "Test 5: Palette broken without ~/.acfs"
+        fail "Test 5: Palette broken without ~/.gtbi"
     fi
 }
 
@@ -121,7 +121,7 @@ main() {
     test_palette_content
     test_ntm_palette_command
     test_ownership
-    test_works_without_acfs
+    test_works_without_gtbi
 
     echo ""
     echo "========================================"

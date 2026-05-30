@@ -89,7 +89,7 @@ cat << 'HEADER'
 HEADER
 
 echo "> Auto-generated: $TIMESTAMP"
-echo '> Regenerate: `sudo /data/projects/agentic_coding_flywheel_setup/scripts/generate-root-agents-md.sh`'
+echo '> Regenerate: `sudo /data/projects/gastown_batteries_included/scripts/generate-root-agents-md.sh`'
 echo ""
 
 cat << 'SECTION1'
@@ -103,7 +103,7 @@ AGENTS.md, and `.beads/` directory for local issue tracking.
   ntm/                    # Named Tmux Manager (Go)
   beads_rust/             # Issue tracker CLI (Rust)
   coding_agent_session_search/  # Session search (Rust)
-  agentic_coding_flywheel_setup/  # VPS setup & scripts (Bash/TS)
+  gastown_batteries_included/  # VPS setup & scripts (Bash/TS)
   mcp_agent_mail/         # Agent coordination server (Rust)
   ...
 ```

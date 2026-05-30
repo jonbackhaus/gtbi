@@ -5,7 +5,7 @@ import { TOOLS } from "./tool-data";
 
 export const runtime = "edge";
 
-export const alt = "ACFS Tool";
+export const alt = "GTBI Tool";
 export const size = {
   width: 1200,
   height: 600,
@@ -27,7 +27,7 @@ export default async function Image({ params }: { params: Promise<{ tool: string
       description: doc.tagline,
       path: `/learn/tools/${tool}`,
       theme: "tools",
-      tags: [doc.id.toUpperCase(), "Learning Hub", "ACFS"],
+      tags: [doc.id.toUpperCase(), "Learning Hub", "GTBI"],
     },
     "twitter"
   );

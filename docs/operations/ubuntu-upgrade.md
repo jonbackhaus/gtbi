@@ -1,10 +1,10 @@
 # Ubuntu Auto-Upgrade Developer Documentation
 
-This document covers the internal architecture and debugging procedures for the ACFS Ubuntu auto-upgrade feature.
+This document covers the internal architecture and debugging procedures for the GTBI Ubuntu auto-upgrade feature.
 
 ## Overview
 
-ACFS automatically upgrades Ubuntu to version 25.10 before running the main installation. The upgrade system handles:
+GTBI automatically upgrades Ubuntu to version 25.10 before running the main installation. The upgrade system handles:
 - Multi-hop upgrades (e.g., 24.04 → 25.04 → 25.10; EOL interim releases like 24.10 may be skipped)
 - Automatic reboots after each upgrade
 - Resume via systemd service
@@ -23,14 +23,14 @@ scripts/lib/
 ├── report.sh              # Failure reporting
 └── errors.sh              # Error pattern matching
 
-/var/lib/acfs/             # Runtime state directory (created during upgrade)
+/var/lib/gtbi/             # Runtime state directory (created during upgrade)
 ├── state.json             # Main state file (upgrade progress, current phase)
 ├── upgrade_resume.sh      # Resume script (installed for systemd)
 ├── check_status.sh        # Status check script (for users)
 └── env_snapshot.sh        # Environment variables snapshot
 
 /etc/systemd/system/
-└── acfs-upgrade-resume.service  # Oneshot service for post-reboot resume
+└── gtbi-upgrade-resume.service  # Oneshot service for post-reboot resume
 ```
 
 ### State Machine
@@ -57,7 +57,7 @@ scripts/lib/
          │ System reboots
          ▼
 ┌─────────────────┐
-│   resuming      │ ← acfs-upgrade-resume.service runs
+│   resuming      │ ← gtbi-upgrade-resume.service runs
 └────────┬────────┘
          │ Check if more hops needed
          ├──────────────────────────────────┐
@@ -66,10 +66,10 @@ scripts/lib/
 ┌─────────────────┐               ┌─────────────────┐
 │   upgrading     │               │    completed    │
 └─────────────────┘               └────────┬────────┘
-                                           │ Continue ACFS install
+                                           │ Continue GTBI install
                                            ▼
                                   ┌─────────────────┐
-                                  │  acfs_resumed   │
+                                  │  gtbi_resumed   │
                                   └─────────────────┘
 ```
 
@@ -118,13 +118,13 @@ state_upgrade_get_next_target  # Returns: "25.10" or empty if done
 
 | Path | Purpose | Created When |
 |------|---------|--------------|
-| `/var/lib/acfs/` | Runtime state directory | Upgrade starts |
-| `/var/lib/acfs/state.json` | Upgrade progress state | Upgrade starts |
-| `/var/lib/acfs/upgrade_resume.sh` | Resume script | Before first reboot |
-| `/etc/systemd/system/acfs-upgrade-resume.service` | Systemd service | Before first reboot |
-| `/var/log/acfs/upgrade_resume.log` | Resume script logs | Each reboot |
-| `/var/log/acfs/install.log` | Main installer logs | Install start |
-| `~/.acfs/state.json` | User-space state (post-upgrade) | ACFS install completes |
+| `/var/lib/gtbi/` | Runtime state directory | Upgrade starts |
+| `/var/lib/gtbi/state.json` | Upgrade progress state | Upgrade starts |
+| `/var/lib/gtbi/upgrade_resume.sh` | Resume script | Before first reboot |
+| `/etc/systemd/system/gtbi-upgrade-resume.service` | Systemd service | Before first reboot |
+| `/var/log/gtbi/upgrade_resume.log` | Resume script logs | Each reboot |
+| `/var/log/gtbi/install.log` | Main installer logs | Install start |
+| `~/.gtbi/state.json` | User-space state (post-upgrade) | GTBI install completes |
 
 ## Debugging Failed Upgrades
 
@@ -132,19 +132,19 @@ state_upgrade_get_next_target  # Returns: "25.10" or empty if done
 
 ```bash
 # Quick status check
-/var/lib/acfs/check_status.sh
+/var/lib/gtbi/check_status.sh
 
 # View systemd service status
-systemctl status acfs-upgrade-resume
+systemctl status gtbi-upgrade-resume
 
 # View resume service logs
-journalctl -u acfs-upgrade-resume -n 50
+journalctl -u gtbi-upgrade-resume -n 50
 
 # View detailed upgrade logs
-cat /var/log/acfs/upgrade_resume.log
+cat /var/log/gtbi/upgrade_resume.log
 
 # View main state file
-jq . /var/lib/acfs/state.json
+jq . /var/lib/gtbi/state.json
 ```
 
 ### Common Failure Patterns
@@ -163,9 +163,9 @@ cat /var/log/dist-upgrade/main.log
 # Manually retry upgrade
 do-release-upgrade -f DistUpgradeViewNonInteractive
 
-# Or skip and continue ACFS
+# Or skip and continue GTBI
 ts="$(date +%Y%m%d_%H%M%S)"
-[ -f /var/lib/acfs/state.json ] && sudo mv /var/lib/acfs/state.json /var/lib/acfs/state.json.backup."$ts"
+[ -f /var/lib/gtbi/state.json ] && sudo mv /var/lib/gtbi/state.json /var/lib/gtbi/state.json.backup."$ts"
 curl -fsSL .../install.sh | bash -s -- --yes --mode vibe --skip-ubuntu-upgrade
 ```
 
@@ -178,13 +178,13 @@ curl -fsSL .../install.sh | bash -s -- --yes --mode vibe --skip-ubuntu-upgrade
 **Resolution:**
 ```bash
 # Check if service exists
-systemctl status acfs-upgrade-resume
+systemctl status gtbi-upgrade-resume
 
 # Manually trigger resume
-/var/lib/acfs/upgrade_resume.sh
+/var/lib/gtbi/upgrade_resume.sh
 
 # Check for service enable issues
-systemctl is-enabled acfs-upgrade-resume
+systemctl is-enabled gtbi-upgrade-resume
 ```
 
 #### 3. Network Issues During Upgrade
@@ -210,7 +210,7 @@ If the upgrade is stuck and you need to recover:
 
 ```bash
 # 1. Check what state we're in
-cat /var/lib/acfs/state.json | jq '.ubuntu_upgrade'
+cat /var/lib/gtbi/state.json | jq '.ubuntu_upgrade'
 
 # 2. If stuck in awaiting_reboot, manually reboot
 sudo reboot
@@ -219,13 +219,13 @@ sudo reboot
 cat /etc/os-release | grep VERSION_ID
 
 # 4. If at target version, manually update state
-jq '.ubuntu_upgrade.current_stage = "completed" | .ubuntu_upgrade.needs_reboot = false' /var/lib/acfs/state.json > /tmp/state.json
-sudo mv /tmp/state.json /var/lib/acfs/state.json
+jq '.ubuntu_upgrade.current_stage = "completed" | .ubuntu_upgrade.needs_reboot = false' /var/lib/gtbi/state.json > /tmp/state.json
+sudo mv /tmp/state.json /var/lib/gtbi/state.json
 
 # 5. Disable the resume service
-sudo systemctl disable acfs-upgrade-resume
+sudo systemctl disable gtbi-upgrade-resume
 
-# 6. Continue ACFS installation
+# 6. Continue GTBI installation
 curl -fsSL .../install.sh | bash -s -- --yes --mode vibe --skip-ubuntu-upgrade
 ```
 
@@ -236,12 +236,12 @@ To completely reset and start over:
 ```bash
 # 1. Backup state files (recommended)
 ts="$(date +%Y%m%d_%H%M%S)"
-[ -d /var/lib/acfs ] && sudo mv /var/lib/acfs /var/lib/acfs.backup."$ts"
-[ -f ~/.acfs/state.json ] && mv ~/.acfs/state.json ~/.acfs/state.json.backup."$ts"
+[ -d /var/lib/gtbi ] && sudo mv /var/lib/gtbi /var/lib/gtbi.backup."$ts"
+[ -f ~/.gtbi/state.json ] && mv ~/.gtbi/state.json ~/.gtbi/state.json.backup."$ts"
 
 # 2. Disable systemd service
-sudo systemctl disable acfs-upgrade-resume 2>/dev/null
-[ -f /etc/systemd/system/acfs-upgrade-resume.service ] && sudo mv /etc/systemd/system/acfs-upgrade-resume.service /etc/systemd/system/acfs-upgrade-resume.service.backup."$ts"
+sudo systemctl disable gtbi-upgrade-resume 2>/dev/null
+[ -f /etc/systemd/system/gtbi-upgrade-resume.service ] && sudo mv /etc/systemd/system/gtbi-upgrade-resume.service /etc/systemd/system/gtbi-upgrade-resume.service.backup."$ts"
 sudo systemctl daemon-reload
 
 # 3. Start fresh
@@ -278,13 +278,13 @@ curl -fsSL .../install.sh | bash -s -- --yes --mode vibe
 | `UBUNTU_TARGET_VERSION` | Target version string | "25.10" |
 | `UBUNTU_TARGET_VERSION_NUM` | Target version number | 2510 |
 | `UBUNTU_UPGRADE_MIN_DISK_MB` | Minimum disk space for upgrade | 5000 |
-| `ACFS_RESUME_DIR` | State directory | /var/lib/acfs |
-| `ACFS_UPGRADE_LOCK` | Lock file path | /var/run/acfs-upgrade.lock |
+| `GTBI_RESUME_DIR` | State directory | /var/lib/gtbi |
+| `GTBI_UPGRADE_LOCK` | Lock file path | /var/run/gtbi-upgrade.lock |
 
 ## Security Considerations
 
 - Upgrades run as root (required by do-release-upgrade)
-- State files in `/var/lib/acfs/` are root-owned
+- State files in `/var/lib/gtbi/` are root-owned
 - Resume script validates state before executing
 - Lock file prevents concurrent upgrade attempts
 - No secrets are stored in state files

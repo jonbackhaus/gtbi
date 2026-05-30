@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-# ACFS E2E Test Harness
+# GTBI E2E Test Harness
 #
 # Provides standardized logging, timing, and artifact capture
 # for tests/vm integration tests.
@@ -85,7 +85,7 @@ harness_init() {
     HARNESS_SKIP_COUNT=0
 
     # Create artifact directory
-    HARNESS_ARTIFACT_DIR="${HARNESS_ARTIFACT_DIR:-/tmp/acfs-test-artifacts-$(date +%Y%m%d-%H%M%S)}"
+    HARNESS_ARTIFACT_DIR="${HARNESS_ARTIFACT_DIR:-/tmp/gtbi-test-artifacts-$(date +%Y%m%d-%H%M%S)}"
     mkdir -p "$HARNESS_ARTIFACT_DIR"
 
     {
@@ -369,15 +369,15 @@ harness_capture_output() {
     echo "${HARNESS_GRAY}  📝 Captured: ${description} → ${artifact_name}${HARNESS_NC}" >&2
 }
 
-# Capture common ACFS artifacts
-harness_capture_acfs_state() {
-    local acfs_home="${1:-$HOME/.acfs}"
+# Capture common GTBI artifacts
+harness_capture_gtbi_state() {
+    local gtbi_home="${1:-$HOME/.gtbi}"
 
-    harness_subsection "Capturing ACFS artifacts"
+    harness_subsection "Capturing GTBI artifacts"
 
-    harness_capture_file "${acfs_home}/state.json" "ACFS state"
-    harness_capture_dir "${acfs_home}/logs" "ACFS logs"
-    harness_capture_file "/tmp/acfs-install.log" "Install log"
+    harness_capture_file "${gtbi_home}/state.json" "GTBI state"
+    harness_capture_dir "${gtbi_home}/logs" "GTBI logs"
+    harness_capture_file "/tmp/gtbi-install.log" "Install log"
 }
 
 # ============================================================
@@ -456,5 +456,5 @@ export -f harness_run harness_run_live
 export -f harness_pass harness_fail harness_skip harness_info harness_warn
 export -f harness_assert_eq harness_assert_contains harness_assert_file_exists
 export -f harness_assert_dir_exists harness_assert_cmd_succeeds harness_assert_cmd_fails
-export -f harness_capture_file harness_capture_dir harness_capture_output harness_capture_acfs_state
+export -f harness_capture_file harness_capture_dir harness_capture_output harness_capture_gtbi_state
 export -f harness_summary harness_cleanup

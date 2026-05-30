@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-# ACFS Swarm Assign - role-aware Beads allocation planner
+# GTBI Swarm Assign - role-aware Beads allocation planner
 #
 # Reads ready Beads plus optional bv triage JSON, then emits advisory-only
 # per-agent assignment suggestions. This script never marks Beads, sends
@@ -18,7 +18,7 @@ SWARM_ASSIGN_TRIAGE_FILE=""
 
 swarm_assign_usage() {
     cat <<'EOF'
-Usage: acfs swarm assign [OPTIONS]
+Usage: gtbi swarm assign [OPTIONS]
 
 Options:
   --json              Emit machine-readable JSON
@@ -93,7 +93,7 @@ swarm_assign_parse_args() {
                 ;;
             *)
                 echo "Error: unknown option: $1" >&2
-                echo "Run 'acfs swarm assign --help' for usage." >&2
+                echo "Run 'gtbi swarm assign --help' for usage." >&2
                 return 2
                 ;;
         esac
@@ -350,7 +350,7 @@ def reservation_surfaces($i):
      + (if has_label($ls; "capacity") then ["scripts/lib/capacity.sh", "tests/unit/test_capacity.sh"] else [] end)
      + (if has_label($ls; "support") then ["scripts/lib/support.sh", "tests/**/test_support*.sh"] else [] end)
      + (if has_label($ls; "inventory") then ["scripts/lib/swarm_inventory.sh", "tests/unit/test_swarm_inventory.sh"] else [] end)
-     + (if has_label($ls; "docs|documentation|content|lesson|onboard|readme") then ["README.md", "docs/**", "acfs/onboard/**"] else [] end)
+     + (if has_label($ls; "docs|documentation|content|lesson|onboard|readme") then ["README.md", "docs/**", "gtbi/onboard/**"] else [] end)
      + (if has_label($ls; "test|tests|qa|harness") or has_text($i; "test|fixture|harness") then ["tests/**"] else [] end))
     | unique
     | .[:8];
@@ -477,7 +477,7 @@ swarm_assign_emit_markdown() {
     local report="$1"
     local jq_bin="$2"
 
-    printf '# ACFS Swarm Assignment Plan\n\n'
+    printf '# GTBI Swarm Assignment Plan\n\n'
     printf 'Advisory only: this command did not mark Beads, send Agent Mail, claim reservations, launch agents, or change RCH/NTM state.\n\n'
 
     "$jq_bin" -r '

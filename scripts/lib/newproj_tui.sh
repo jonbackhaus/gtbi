@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
 # shellcheck disable=SC2034  # variables are consumed by screen modules
 # ============================================================
-# ACFS newproj TUI Wizard - Core Framework
+# GTBI newproj TUI Wizard - Core Framework
 # Provides screen management, navigation, state, and styling
 # ============================================================
 
 # Prevent multiple sourcing
-if [[ -n "${_ACFS_NEWPROJ_TUI_SH_LOADED:-}" ]]; then
+if [[ -n "${_GTBI_NEWPROJ_TUI_SH_LOADED:-}" ]]; then
     return 0
 fi
-_ACFS_NEWPROJ_TUI_SH_LOADED=1
+_GTBI_NEWPROJ_TUI_SH_LOADED=1
 
 # Get the directory of this script
 NEWPROJ_LIB_DIR="${NEWPROJ_LIB_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}"
@@ -300,7 +300,7 @@ run_screen_handler_capture() {
     shift
 
     local capture_file=""
-    capture_file=$(mktemp "${TMPDIR:-/tmp}/acfs_newproj_handler.XXXXXX") || {
+    capture_file=$(mktemp "${TMPDIR:-/tmp}/gtbi_newproj_handler.XXXXXX") || {
         SCREEN_HANDLER_OUTPUT=""
         SCREEN_HANDLER_STATUS=1
         log_error "Unable to create handler capture file for: $handler" 2>/dev/null || true
@@ -461,7 +461,7 @@ read_text_input() {
             # final value on stdout. Bubble Tea (gum's TUI engine)
             # draws the live interface to stderr; sending stderr to
             # /dev/null produces a working-but-invisible input field
-            # — see acfs#269.
+            # — see gtbi#269.
             input=$(gum input \
                 --placeholder "${default:-Type here...}" \
                 --prompt "$prompt: " \
@@ -638,7 +638,7 @@ render_screen_header() {
     local progress
     progress=$(render_progress "$current" "$total")
 
-    echo -e "${TUI_PRIMARY}${TUI_BOLD}ACFS newproj Wizard${TUI_NC}"
+    echo -e "${TUI_PRIMARY}${TUI_BOLD}GTBI newproj Wizard${TUI_NC}"
     echo -e "${TUI_GRAY}$progress${TUI_NC}"
     echo ""
     echo -e "${TUI_BOLD}$title${TUI_NC}"

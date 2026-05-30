@@ -1,5 +1,5 @@
 /**
- * Tests for ACFS Manifest Schema (Zod schemas)
+ * Tests for GTBI Manifest Schema (Zod schemas)
  * Related: bead dvt.2
  *
  * Tests schema validation behavior, error messages, and defaults.

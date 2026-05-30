@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-# Unit tests for acfs installed-tool provenance ledger
+# Unit tests for gtbi installed-tool provenance ledger
 # ============================================================
 
 set -euo pipefail
@@ -11,7 +11,7 @@ SUPPORT_SH="$REPO_ROOT/scripts/lib/support.sh"
 
 TESTS_PASSED=0
 TESTS_FAILED=0
-ARTIFACT_DIR="${ACFS_PROVENANCE_TEST_ARTIFACTS_DIR:-${TMPDIR:-/tmp}/acfs-provenance-test-artifacts-$(date +%Y%m%d-%H%M%S)-$$}"
+ARTIFACT_DIR="${GTBI_PROVENANCE_TEST_ARTIFACTS_DIR:-${TMPDIR:-/tmp}/gtbi-provenance-test-artifacts-$(date +%Y%m%d-%H%M%S)-$$}"
 
 mkdir -p "$ARTIFACT_DIR"
 
@@ -82,8 +82,8 @@ run_provenance_fixture() {
     env \
         HOME="$home_dir" \
         PATH="$bin_dir:/usr/bin:/bin" \
-        ACFS_PROVENANCE_TOOLS_FILE="$spec_file" \
-        ACFS_PROVENANCE_CHECKSUMS_FILE="$checksums_file" \
+        GTBI_PROVENANCE_TOOLS_FILE="$spec_file" \
+        GTBI_PROVENANCE_CHECKSUMS_FILE="$checksums_file" \
         bash "$PROVENANCE_SH" --json
 }
 
@@ -155,8 +155,8 @@ test_support_capture_records_provenance_json() {
     output="$(env \
         HOME="$home_dir" \
         PATH="$bin_dir:/usr/bin:/bin" \
-        ACFS_PROVENANCE_TOOLS_FILE="$spec_file" \
-        ACFS_PROVENANCE_CHECKSUMS_FILE="$checksums_file" \
+        GTBI_PROVENANCE_TOOLS_FILE="$spec_file" \
+        GTBI_PROVENANCE_CHECKSUMS_FILE="$checksums_file" \
         SUPPORT_SH="$SUPPORT_SH" \
         REPO_ROOT="$REPO_ROOT" \
         BUNDLE_DIR="$bundle_dir" \
@@ -170,7 +170,7 @@ test_support_capture_records_provenance_json() {
             log_error() { :; }
             # shellcheck source=../../scripts/lib/support.sh
             source "$SUPPORT_SH"
-            _SUPPORT_ACFS_HOME=""
+            _SUPPORT_GTBI_HOME=""
             _SUPPORT_SCRIPT_DIR="$REPO_ROOT/scripts/lib"
             PROVENANCE_TIMEOUT=5
             BUNDLE_FILES=()

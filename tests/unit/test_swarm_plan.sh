@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-# Unit tests for acfs swarm plan advisor
+# Unit tests for gtbi swarm plan advisor
 # ============================================================
 
 set -euo pipefail
@@ -10,7 +10,7 @@ SWARM_PLAN_SH="$REPO_ROOT/scripts/lib/swarm_plan.sh"
 
 TESTS_PASSED=0
 TESTS_FAILED=0
-ARTIFACT_DIR="${ACFS_SWARM_PLAN_TEST_ARTIFACTS_DIR:-${TMPDIR:-/tmp}/acfs-swarm-plan-test-artifacts-$(date +%Y%m%d-%H%M%S)-$$}"
+ARTIFACT_DIR="${GTBI_SWARM_PLAN_TEST_ARTIFACTS_DIR:-${TMPDIR:-/tmp}/gtbi-swarm-plan-test-artifacts-$(date +%Y%m%d-%H%M%S)-$$}"
 
 mkdir -p "$ARTIFACT_DIR"
 
@@ -46,9 +46,9 @@ run_plan_json() {
     shift 2
     local output status capacity_script
 
-    capacity_script="${ACFS_TEST_CAPACITY_SCRIPT:?missing test capacity script}"
+    capacity_script="${GTBI_TEST_CAPACITY_SCRIPT:?missing test capacity script}"
     set +e
-    output="$(ACFS_SWARM_CAPACITY_SCRIPT="$capacity_script" bash "$SWARM_PLAN_SH" --json --status-file "$fixture" "$@" 2>&1)"
+    output="$(GTBI_SWARM_CAPACITY_SCRIPT="$capacity_script" bash "$SWARM_PLAN_SH" --json --status-file "$fixture" "$@" 2>&1)"
     status=$?
     set -e
 
@@ -192,8 +192,8 @@ JSON
 test_healthy_ten_agents_passes_with_launch_command() {
     local fixture output status
     fixture="$(healthy_status_fixture)"
-    ACFS_TEST_CAPACITY_SCRIPT="$(capacity_script_with_safe_count 64 44 pass "Requested count is within the recommended tier")"
-    export ACFS_TEST_CAPACITY_SCRIPT
+    GTBI_TEST_CAPACITY_SCRIPT="$(capacity_script_with_safe_count 64 44 pass "Requested count is within the recommended tier")"
+    export GTBI_TEST_CAPACITY_SCRIPT
 
     output="$(run_plan_json healthy_ten "$fixture" --agents 10 --profile balanced --workload standard)"
     status="$(cat "$ARTIFACT_DIR/healthy_ten.exit")"
@@ -217,8 +217,8 @@ test_healthy_ten_agents_passes_with_launch_command() {
 test_busy_rch_warns_and_scales_down() {
     local fixture output status
     fixture="$(busy_rch_status_fixture)"
-    ACFS_TEST_CAPACITY_SCRIPT="$(capacity_script_with_safe_count 64 44 pass "Requested count is within the recommended tier")"
-    export ACFS_TEST_CAPACITY_SCRIPT
+    GTBI_TEST_CAPACITY_SCRIPT="$(capacity_script_with_safe_count 64 44 pass "Requested count is within the recommended tier")"
+    export GTBI_TEST_CAPACITY_SCRIPT
 
     output="$(run_plan_json busy_rch "$fixture" --agents 25 --profile codex-heavy --workload standard)"
     status="$(cat "$ARTIFACT_DIR/busy_rch.exit")"
@@ -242,8 +242,8 @@ test_busy_rch_warns_and_scales_down() {
 test_low_capacity_blocks_large_profile() {
     local fixture output status
     fixture="$(healthy_status_fixture)"
-    ACFS_TEST_CAPACITY_SCRIPT="$(capacity_script_with_safe_count 8 6 fail "Requested count exceeds the safe maximum")"
-    export ACFS_TEST_CAPACITY_SCRIPT
+    GTBI_TEST_CAPACITY_SCRIPT="$(capacity_script_with_safe_count 8 6 fail "Requested count exceeds the safe maximum")"
+    export GTBI_TEST_CAPACITY_SCRIPT
 
     output="$(run_plan_json low_capacity "$fixture" --agents 50 --profile balanced --workload heavy)"
     status="$(cat "$ARTIFACT_DIR/low_capacity.exit")"
@@ -265,8 +265,8 @@ test_low_capacity_blocks_large_profile() {
 test_missing_agent_mail_blocks_launch_command() {
     local fixture output status
     fixture="$(missing_agent_mail_status_fixture)"
-    ACFS_TEST_CAPACITY_SCRIPT="$(capacity_script_with_safe_count 32 24 pass "Requested count is within the recommended tier")"
-    export ACFS_TEST_CAPACITY_SCRIPT
+    GTBI_TEST_CAPACITY_SCRIPT="$(capacity_script_with_safe_count 32 24 pass "Requested count is within the recommended tier")"
+    export GTBI_TEST_CAPACITY_SCRIPT
 
     output="$(run_plan_json missing_agent_mail "$fixture" --agents 10 --profile review-heavy --workload light)"
     status="$(cat "$ARTIFACT_DIR/missing_agent_mail.exit")"
@@ -287,8 +287,8 @@ test_missing_agent_mail_blocks_launch_command() {
 test_high_load_quiesce_waits() {
     local fixture output status
     fixture="$(high_load_status_fixture)"
-    ACFS_TEST_CAPACITY_SCRIPT="$(capacity_script_with_safe_count 32 24 pass "Requested count is within the recommended tier")"
-    export ACFS_TEST_CAPACITY_SCRIPT
+    GTBI_TEST_CAPACITY_SCRIPT="$(capacity_script_with_safe_count 32 24 pass "Requested count is within the recommended tier")"
+    export GTBI_TEST_CAPACITY_SCRIPT
 
     output="$(run_plan_json high_load "$fixture" --agents 10 --profile balanced --workload standard)"
     status="$(cat "$ARTIFACT_DIR/high_load.exit")"
@@ -307,8 +307,8 @@ test_high_load_quiesce_waits() {
 test_low_memory_quiesce_waits() {
     local fixture output status
     fixture="$(low_memory_status_fixture)"
-    ACFS_TEST_CAPACITY_SCRIPT="$(capacity_script_with_safe_count 32 24 pass "Requested count is within the recommended tier")"
-    export ACFS_TEST_CAPACITY_SCRIPT
+    GTBI_TEST_CAPACITY_SCRIPT="$(capacity_script_with_safe_count 32 24 pass "Requested count is within the recommended tier")"
+    export GTBI_TEST_CAPACITY_SCRIPT
 
     output="$(run_plan_json low_memory "$fixture" --agents 10 --profile balanced --workload standard)"
     status="$(cat "$ARTIFACT_DIR/low_memory.exit")"
@@ -327,8 +327,8 @@ test_low_memory_quiesce_waits() {
 test_stale_work_quiesce_waits() {
     local fixture output status
     fixture="$(stale_work_status_fixture)"
-    ACFS_TEST_CAPACITY_SCRIPT="$(capacity_script_with_safe_count 32 24 pass "Requested count is within the recommended tier")"
-    export ACFS_TEST_CAPACITY_SCRIPT
+    GTBI_TEST_CAPACITY_SCRIPT="$(capacity_script_with_safe_count 32 24 pass "Requested count is within the recommended tier")"
+    export GTBI_TEST_CAPACITY_SCRIPT
 
     output="$(run_plan_json stale_work "$fixture" --agents 10 --profile balanced --workload standard)"
     status="$(cat "$ARTIFACT_DIR/stale_work.exit")"
@@ -338,7 +338,7 @@ test_stale_work_quiesce_waits() {
       .status == "warn" and
       .quiesce_advisory.recommendation == "wait" and
       (.checks[] | select(.id == "active_work" and .status == "warn" and (.details[] | contains("stale_work_count=1")))) and
-      (.next_commands[] | select(. == "acfs swarm doctor --stale-hours 12"))
+      (.next_commands[] | select(. == "gtbi swarm doctor --stale-hours 12"))
     ' <<<"$output" >/dev/null || return 1
 
     pass "stale_work_quiesce_waits"
@@ -347,14 +347,14 @@ test_stale_work_quiesce_waits() {
 test_status_file_replay_ignores_live_status_script() {
     local fixture output status bad_status_script
     fixture="$(healthy_status_fixture)"
-    ACFS_TEST_CAPACITY_SCRIPT="$(capacity_script_with_safe_count 64 44 pass "Requested count is within the recommended tier")"
-    export ACFS_TEST_CAPACITY_SCRIPT
+    GTBI_TEST_CAPACITY_SCRIPT="$(capacity_script_with_safe_count 64 44 pass "Requested count is within the recommended tier")"
+    export GTBI_TEST_CAPACITY_SCRIPT
     bad_status_script="$ARTIFACT_DIR/bad-swarm-status.sh"
     printf '#!/usr/bin/env bash\nexit 99\n' > "$bad_status_script"
     chmod +x "$bad_status_script"
 
     set +e
-    output="$(ACFS_SWARM_STATUS_SCRIPT="$bad_status_script" ACFS_SWARM_CAPACITY_SCRIPT="$ACFS_TEST_CAPACITY_SCRIPT" bash "$SWARM_PLAN_SH" --json --status-file "$fixture" --agents 10 --profile docs-heavy --workload standard 2>&1)"
+    output="$(GTBI_SWARM_STATUS_SCRIPT="$bad_status_script" GTBI_SWARM_CAPACITY_SCRIPT="$GTBI_TEST_CAPACITY_SCRIPT" bash "$SWARM_PLAN_SH" --json --status-file "$fixture" --agents 10 --profile docs-heavy --workload standard 2>&1)"
     status=$?
     set -e
     printf '%s\n' "$output" > "$ARTIFACT_DIR/status_file_replay.output.json"

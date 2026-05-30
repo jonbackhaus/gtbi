@@ -83,7 +83,7 @@ const REQUIRED_README_SNIPPETS = [
     reason: 'manifest-derived website metadata',
   },
   {
-    snippet: 'acfs/onboard/lessons',
+    snippet: 'gtbi/onboard/lessons',
     reason: 'manifest-linked onboarding lesson content',
   },
   {
@@ -135,7 +135,7 @@ function extractDoctorCheckIds(content: string): Set<string> {
 
 function extractManifestIndexModuleIds(content: string): Set<string> {
   const ids = new Set<string>();
-  const arrayMatch = content.match(/ACFS_MODULES_IN_ORDER=\(\n([\s\S]*?)\n\)/);
+  const arrayMatch = content.match(/GTBI_MODULES_IN_ORDER=\(\n([\s\S]*?)\n\)/);
   if (!arrayMatch) {
     return ids;
   }
@@ -204,7 +204,7 @@ function checkOnboardingLessons(
   modules: Module[],
   mismatches: DriftContractMismatch[]
 ): void {
-  const lessonsDir = join(root, 'acfs/onboard/lessons');
+  const lessonsDir = join(root, 'gtbi/onboard/lessons');
   let files: string[] = [];
   if (!existsSync(lessonsDir)) {
     mismatches.push({
@@ -223,7 +223,7 @@ function checkOnboardingLessons(
     if (!files.some((file) => file.endsWith(expectedSuffix))) {
       mismatches.push({
         code: 'ONBOARDING_LESSON_MISSING',
-        file: 'acfs/onboard/lessons',
+        file: 'gtbi/onboard/lessons',
         moduleId: module.id,
         expected: expectedSuffix,
         message: `Onboarding lesson file ending in "${expectedSuffix}" is missing for "${module.id}"`,
@@ -266,12 +266,12 @@ export function checkManifestDriftContract(rootDir = DEFAULT_ROOT): DriftContrac
     checked: 0,
   };
 
-  const manifestPath = join(root, 'acfs.manifest.yaml');
+  const manifestPath = join(root, 'gtbi.manifest.yaml');
   const parseResult = parseManifestFile(manifestPath);
   if (!parseResult.success || !parseResult.data) {
     mismatches.push({
       code: 'MANIFEST_PARSE_FAILED',
-      file: 'acfs.manifest.yaml',
+      file: 'gtbi.manifest.yaml',
       message: parseResult.error?.message ?? 'Failed to parse manifest',
     });
     return { ok: false, root, summary, mismatches };
@@ -440,7 +440,7 @@ Checks manifest-derived surfaces for semantic drift:
   - scripts/generated/manifest_index.sh module coverage
   - scripts/generated/doctor_checks.sh verify coverage
   - apps/web/lib/generated manifest metadata
-  - acfs/onboard/lessons lesson files
+  - gtbi/onboard/lessons lesson files
   - README release gate snippets
 `);
 }

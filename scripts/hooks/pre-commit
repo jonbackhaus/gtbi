@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# ACFS Pre-commit Hook: Auto-regenerate manifest outputs
+# GTBI Pre-commit Hook: Auto-regenerate manifest outputs
 #
-# When acfs.manifest.yaml or packages/manifest/** change,
+# When gtbi.manifest.yaml or packages/manifest/** change,
 # this hook regenerates all manifest-derived outputs and stages the changes.
 #
 # Install: ./scripts/hooks/install.sh
@@ -11,7 +11,7 @@
 set -euo pipefail
 
 # Check if manifest-related files are staged
-if git diff --cached --name-only | grep -qE '^(acfs\.manifest\.yaml|packages/manifest/)'; then
+if git diff --cached --name-only | grep -qE '^(gtbi\.manifest\.yaml|packages/manifest/)'; then
     echo "📦 Manifest changes detected, regenerating manifest-derived outputs..."
 
     # Check if bun is available

@@ -2,7 +2,7 @@
 # ============================================================
 # Lint: Declare Scoping
 #
-# Sourceable ACFS Bash files are sometimes sourced inside functions.
+# Sourceable GTBI Bash files are sometimes sourced inside functions.
 # Without the -g flag, top-level declare -A and declare -a create
 # function-local arrays that vanish when the function returns.
 #

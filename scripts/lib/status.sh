@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # shellcheck disable=SC1091
 # ============================================================
-# ACFS Status - One-line health summary
+# GTBI Status - One-line health summary
 # Quick check: runs in <100ms, no network calls by default
 #
 # Exit codes:
@@ -10,10 +10,10 @@
 #   2 - Errors (broken state, missing critical tools)
 #
 # Usage:
-#   acfs status                # Human-readable one-liner
-#   acfs status --json         # Machine-readable JSON
-#   acfs status --short        # Minimal output for shell prompts
-#   acfs status --check-updates  # Include network-based update check
+#   gtbi status                # Human-readable one-liner
+#   gtbi status --json         # Machine-readable JSON
+#   gtbi status --short        # Minimal output for shell prompts
+#   gtbi status --check-updates  # Include network-based update check
 # ============================================================
 
 _STATUS_WAS_SOURCED=false
@@ -217,7 +217,7 @@ _status_initial_current_home() {
     local cached_home=""
     local resolved_home=""
 
-    if [[ "${_STATUS_WAS_SOURCED:-false}" == "true" ]] && [[ -z "${TARGET_HOME:-}${TARGET_USER:-}${ACFS_HOME:-}${ACFS_STATE_FILE:-}${ACFS_SYSTEM_STATE_FILE:-}" ]]; then
+    if [[ "${_STATUS_WAS_SOURCED:-false}" == "true" ]] && [[ -z "${TARGET_HOME:-}${TARGET_USER:-}${GTBI_HOME:-}${GTBI_STATE_FILE:-}${GTBI_SYSTEM_STATE_FILE:-}" ]]; then
         cached_home="$(_status_sanitize_abs_nonroot_path "${_STATUS_ORIGINAL_HOME:-${HOME:-}}" 2>/dev/null || true)"
         if [[ -n "$cached_home" ]]; then
             printf '%s\n' "$cached_home"
@@ -247,20 +247,20 @@ if [[ -n "$_STATUS_CURRENT_HOME" ]]; then
     export HOME
 fi
 
-_STATUS_EXPLICIT_ACFS_HOME="$(_status_sanitize_abs_nonroot_path "${ACFS_HOME:-}" 2>/dev/null || true)"
-_STATUS_DEFAULT_ACFS_HOME=""
-[[ -n "$_STATUS_CURRENT_HOME" ]] && _STATUS_DEFAULT_ACFS_HOME="${_STATUS_CURRENT_HOME}/.acfs"
-_ACFS_HOME="${_STATUS_EXPLICIT_ACFS_HOME:-$_STATUS_DEFAULT_ACFS_HOME}"
+_STATUS_EXPLICIT_GTBI_HOME="$(_status_sanitize_abs_nonroot_path "${GTBI_HOME:-}" 2>/dev/null || true)"
+_STATUS_DEFAULT_GTBI_HOME=""
+[[ -n "$_STATUS_CURRENT_HOME" ]] && _STATUS_DEFAULT_GTBI_HOME="${_STATUS_CURRENT_HOME}/.gtbi"
+_GTBI_HOME="${_STATUS_EXPLICIT_GTBI_HOME:-$_STATUS_DEFAULT_GTBI_HOME}"
 _STATUS_SYSTEM_STATE_WAS_EXPLICIT=false
-[[ -n "${ACFS_SYSTEM_STATE_FILE:-}" ]] && [[ "${ACFS_SYSTEM_STATE_FILE%/}" != "/var/lib/acfs/state.json" ]] && _STATUS_SYSTEM_STATE_WAS_EXPLICIT=true
-_STATUS_SYSTEM_STATE_FILE="$(_status_sanitize_abs_nonroot_path "${ACFS_SYSTEM_STATE_FILE:-/var/lib/acfs/state.json}" 2>/dev/null || true)"
+[[ -n "${GTBI_SYSTEM_STATE_FILE:-}" ]] && [[ "${GTBI_SYSTEM_STATE_FILE%/}" != "/var/lib/gtbi/state.json" ]] && _STATUS_SYSTEM_STATE_WAS_EXPLICIT=true
+_STATUS_SYSTEM_STATE_FILE="$(_status_sanitize_abs_nonroot_path "${GTBI_SYSTEM_STATE_FILE:-/var/lib/gtbi/state.json}" 2>/dev/null || true)"
 if [[ -z "$_STATUS_SYSTEM_STATE_FILE" ]]; then
-    _STATUS_SYSTEM_STATE_FILE="/var/lib/acfs/state.json"
+    _STATUS_SYSTEM_STATE_FILE="/var/lib/gtbi/state.json"
 fi
 _STATUS_EXPLICIT_TARGET_HOME_RAW="${TARGET_HOME:-}"
 _STATUS_EXPLICIT_TARGET_USER_RAW="${TARGET_USER:-}"
 _STATUS_EXPLICIT_TARGET_HOME="$(_status_existing_abs_home "${TARGET_HOME:-}" 2>/dev/null || true)"
-_STATUS_RESOLVED_ACFS_HOME=""
+_STATUS_RESOLVED_GTBI_HOME=""
 
 _status_reset_options() {
     _STATUS_JSON=false
@@ -269,7 +269,7 @@ _status_reset_options() {
 }
 
 _status_print_help() {
-    echo "Usage: acfs status [--json] [--short] [--check-updates]"
+    echo "Usage: gtbi status [--json] [--short] [--check-updates]"
     echo ""
     echo "Quick one-line health summary."
     echo ""
@@ -284,13 +284,13 @@ _status_print_help() {
     echo "  2  Errors (broken state, missing critical tools)"
     echo ""
     echo "Examples:"
-    echo "  acfs status                     # Quick health check"
-    echo "  acfs status --json              # JSON for scripts"
-    echo "  acfs status --short             # For shell prompts"
-    echo "  acfs status --check-updates     # Check for ACFS updates"
+    echo "  gtbi status                     # Quick health check"
+    echo "  gtbi status --json              # JSON for scripts"
+    echo "  gtbi status --short             # For shell prompts"
+    echo "  gtbi status --check-updates     # Check for GTBI updates"
     echo ""
     echo "Shell prompt integration:"
-    echo "  PROMPT='\$(acfs status --short 2>/dev/null) \w \$ '"
+    echo "  PROMPT='\$(gtbi status --short 2>/dev/null) \w \$ '"
 }
 
 _status_parse_args() {
@@ -305,7 +305,7 @@ _status_parse_args() {
                 ;;
             *)
                 echo "Error: Unknown option: $1" >&2
-                echo "Try 'acfs status --help' for usage." >&2
+                echo "Try 'gtbi status --help' for usage." >&2
                 return 1
                 ;;
         esac
@@ -329,7 +329,7 @@ _status_prepend_user_paths() {
     for dir in \
         "$primary_bin_dir" \
         "$base_home/.local/bin" \
-        "$base_home/.acfs/bin" \
+        "$base_home/.gtbi/bin" \
         "$base_home/.bun/bin" \
         "$base_home/.cargo/bin" \
         "$base_home/go/bin" \
@@ -397,7 +397,7 @@ _status_binary_path() {
         for candidate in \
             "$primary_bin_dir/$name" \
             "$base_home/.local/bin/$name" \
-            "$base_home/.acfs/bin/$name" \
+            "$base_home/.gtbi/bin/$name" \
             "$base_home/.bun/bin/$name" \
             "$base_home/.cargo/bin/$name" \
             "$base_home/.atuin/bin/$name" \
@@ -480,7 +480,7 @@ _status_resolve_explicit_target_home() {
         fi
         target_home="$_STATUS_EXPLICIT_TARGET_HOME"
         if [[ -n "$target_home" ]] && [[ "$target_home" != "${_STATUS_CURRENT_HOME:-}" ]] && {
-            [[ -f "$target_home/.acfs/state.json" ]] || [[ -f "$target_home/.acfs/VERSION" ]] || [[ -d "$target_home/.acfs/onboard" ]] || [[ -f "$target_home/.acfs/scripts/lib/status.sh" ]]
+            [[ -f "$target_home/.gtbi/state.json" ]] || [[ -f "$target_home/.gtbi/VERSION" ]] || [[ -d "$target_home/.gtbi/onboard" ]] || [[ -f "$target_home/.gtbi/scripts/lib/status.sh" ]]
         }; then
             printf '%s\n' "${target_home%/}"
             return 0
@@ -567,7 +567,7 @@ _status_validate_bin_dir_for_home() {
 
     case "$bin_dir" in
         */.local/bin) hinted_home="${bin_dir%/.local/bin}" ;;
-        */.acfs/bin) hinted_home="${bin_dir%/.acfs/bin}" ;;
+        */.gtbi/bin) hinted_home="${bin_dir%/.gtbi/bin}" ;;
         */.bun/bin) hinted_home="${bin_dir%/.bun/bin}" ;;
         */.cargo/bin) hinted_home="${bin_dir%/.cargo/bin}" ;;
         */.atuin/bin) hinted_home="${bin_dir%/.atuin/bin}" ;;
@@ -598,11 +598,11 @@ _status_state_file_path_target_home() {
     local state_home=""
     local candidate_user=""
 
-    [[ "$state_file" == */.acfs/state.json ]] || return 1
+    [[ "$state_file" == */.gtbi/state.json ]] || return 1
     data_home="${state_file%/state.json}"
     data_home="$(_status_sanitize_abs_nonroot_path "$data_home" 2>/dev/null || true)"
     [[ -n "$data_home" ]] || return 1
-    path_home="${data_home%/.acfs}"
+    path_home="${data_home%/.gtbi}"
 
     candidate_user="$(_status_read_user_for_home "$path_home" 2>/dev/null || true)"
     if [[ -n "$candidate_user" ]]; then
@@ -616,7 +616,7 @@ _status_state_file_path_target_home() {
         return 0
     fi
 
-    if [[ -n "$_STATUS_EXPLICIT_ACFS_HOME" ]] && [[ "$data_home" == "$_STATUS_EXPLICIT_ACFS_HOME" ]] && _status_path_looks_like_user_home "$path_home"; then
+    if [[ -n "$_STATUS_EXPLICIT_GTBI_HOME" ]] && [[ "$data_home" == "$_STATUS_EXPLICIT_GTBI_HOME" ]] && _status_path_looks_like_user_home "$path_home"; then
         printf '%s\n' "$path_home"
         return 0
     fi
@@ -662,7 +662,7 @@ _status_read_user_for_home() {
         return 0
     fi
 
-    state_file="$user_home/.acfs/state.json"
+    state_file="$user_home/.gtbi/state.json"
     candidate_user="$(_status_read_target_user_from_state "$state_file" 2>/dev/null || true)"
     if [[ -n "$candidate_user" ]]; then
         candidate_home="$(_status_home_for_user "$candidate_user" 2>/dev/null || true)"
@@ -698,7 +698,7 @@ _status_resolve_target_user() {
     fi
 
     if [[ -n "$system_user" ]] && [[ -n "$system_home" ]] && { [[ -z "$path_home" ]] || [[ "$path_home" == "$system_home" ]]; }; then
-        if [[ -n "$path_home" ]] || [[ -z "$state_home" ]] || [[ "$state_home" == "$system_home" ]] || [[ -z "$_STATUS_EXPLICIT_ACFS_HOME" ]] || [[ "$state_file" != "$_STATUS_EXPLICIT_ACFS_HOME/state.json" ]]; then
+        if [[ -n "$path_home" ]] || [[ -z "$state_home" ]] || [[ "$state_home" == "$system_home" ]] || [[ -z "$_STATUS_EXPLICIT_GTBI_HOME" ]] || [[ "$state_file" != "$_STATUS_EXPLICIT_GTBI_HOME/state.json" ]]; then
             printf '%s\n' "$system_user"
             return 0
         fi
@@ -733,12 +733,12 @@ _status_resolve_target_user() {
             printf '%s\n' "$candidate_user"
             return 0
         fi
-        if [[ -z "$path_home" ]] && [[ -n "$state_home" ]] && { [[ -z "$system_home" ]] || [[ "$state_home" == "$system_home" ]] || { [[ -n "$_STATUS_EXPLICIT_ACFS_HOME" ]] && [[ "$state_file" == "$_STATUS_EXPLICIT_ACFS_HOME/state.json" ]]; }; }; then
+        if [[ -z "$path_home" ]] && [[ -n "$state_home" ]] && { [[ -z "$system_home" ]] || [[ "$state_home" == "$system_home" ]] || { [[ -n "$_STATUS_EXPLICIT_GTBI_HOME" ]] && [[ "$state_file" == "$_STATUS_EXPLICIT_GTBI_HOME/state.json" ]]; }; }; then
             printf '%s\n' "$candidate_user"
             return 0
         fi
 
-        if [[ -n "$_STATUS_EXPLICIT_ACFS_HOME" ]] && [[ "$state_file" == "$_STATUS_EXPLICIT_ACFS_HOME/state.json" ]] && [[ -z "$path_home" ]]; then
+        if [[ -n "$_STATUS_EXPLICIT_GTBI_HOME" ]] && [[ "$state_file" == "$_STATUS_EXPLICIT_GTBI_HOME/state.json" ]] && [[ -z "$path_home" ]]; then
             printf '%s\n' "$candidate_user"
             return 0
         fi
@@ -783,7 +783,7 @@ _status_resolve_target_home() {
             printf '%s\n' "$state_home"
             return 0
         fi
-        if [[ -n "$_STATUS_EXPLICIT_ACFS_HOME" ]] && [[ "$state_file" == "$_STATUS_EXPLICIT_ACFS_HOME/state.json" ]]; then
+        if [[ -n "$_STATUS_EXPLICIT_GTBI_HOME" ]] && [[ "$state_file" == "$_STATUS_EXPLICIT_GTBI_HOME/state.json" ]]; then
             printf '%s\n' "$state_home"
             return 0
         fi
@@ -818,7 +818,7 @@ _status_allow_target_home_fallback_from_user() {
 
     [[ "$state_file" == "$_STATUS_SYSTEM_STATE_FILE" ]] && return 0
     [[ -n "$state_home" ]] && { [[ -z "$system_home" ]] || [[ "$state_home" == "$system_home" ]]; } && return 0
-    [[ -n "$_STATUS_EXPLICIT_ACFS_HOME" ]] && [[ "$state_file" == "$_STATUS_EXPLICIT_ACFS_HOME/state.json" ]] && [[ -z "$state_home" ]] && return 0
+    [[ -n "$_STATUS_EXPLICIT_GTBI_HOME" ]] && [[ "$state_file" == "$_STATUS_EXPLICIT_GTBI_HOME/state.json" ]] && [[ -z "$state_home" ]] && return 0
 
     return 1
 }
@@ -837,7 +837,7 @@ _status_preferred_bin_dir() {
         return 0
     fi
 
-    candidate="$(_status_validate_bin_dir_for_home "${ACFS_BIN_DIR:-}" "$base_home" 2>/dev/null || true)"
+    candidate="$(_status_validate_bin_dir_for_home "${GTBI_BIN_DIR:-}" "$base_home" 2>/dev/null || true)"
     if [[ -n "$candidate" ]]; then
         printf '%s\n' "$candidate"
         return 0
@@ -847,15 +847,15 @@ _status_preferred_bin_dir() {
     printf '%s\n' "$base_home/.local/bin"
 }
 
-_status_script_acfs_home() {
+_status_script_gtbi_home() {
     local candidate=""
     candidate=$(cd "$_STATUS_SCRIPT_DIR/../.." 2>/dev/null && pwd) || return 1
-    [[ "$(basename "$candidate")" == ".acfs" ]] || return 1
+    [[ "$(basename "$candidate")" == ".gtbi" ]] || return 1
     printf '%s\n' "$candidate"
 }
 
-_status_current_home_acfs_candidate() {
-    local candidate="$_STATUS_DEFAULT_ACFS_HOME"
+_status_current_home_gtbi_candidate() {
+    local candidate="$_STATUS_DEFAULT_GTBI_HOME"
     local current_home="$_STATUS_CURRENT_HOME"
     local current_user=""
     local original_home=""
@@ -889,9 +889,9 @@ _status_current_home_acfs_candidate() {
     printf '%s\n' "$candidate"
 }
 
-_status_resolve_acfs_home() {
-    if [[ -n "$_STATUS_RESOLVED_ACFS_HOME" ]]; then
-        printf '%s\n' "$_STATUS_RESOLVED_ACFS_HOME"
+_status_resolve_gtbi_home() {
+    if [[ -n "$_STATUS_RESOLVED_GTBI_HOME" ]]; then
+        printf '%s\n' "$_STATUS_RESOLVED_GTBI_HOME"
         return 0
     fi
 
@@ -900,43 +900,43 @@ _status_resolve_acfs_home() {
     local target_user=""
     local explicit_target_home=""
 
-    candidate=$(_status_script_acfs_home 2>/dev/null || true)
+    candidate=$(_status_script_gtbi_home 2>/dev/null || true)
     if [[ -n "$candidate" ]] && [[ -f "$candidate/state.json" || -f "$candidate/VERSION" || -d "$candidate/onboard" ]]; then
-        _STATUS_RESOLVED_ACFS_HOME="$candidate"
-        printf '%s\n' "$_STATUS_RESOLVED_ACFS_HOME"
+        _STATUS_RESOLVED_GTBI_HOME="$candidate"
+        printf '%s\n' "$_STATUS_RESOLVED_GTBI_HOME"
         return 0
     fi
 
     explicit_target_home="$(_status_resolve_explicit_target_home 2>/dev/null || true)"
     if [[ -n "$explicit_target_home" ]]; then
-        candidate="${explicit_target_home}/.acfs"
+        candidate="${explicit_target_home}/.gtbi"
         if [[ -f "$candidate/state.json" || -f "$candidate/VERSION" || -d "$candidate/onboard" ]]; then
-            _STATUS_RESOLVED_ACFS_HOME="$candidate"
-            printf '%s\n' "$_STATUS_RESOLVED_ACFS_HOME"
+            _STATUS_RESOLVED_GTBI_HOME="$candidate"
+            printf '%s\n' "$_STATUS_RESOLVED_GTBI_HOME"
             return 0
         fi
     fi
 
-    if [[ ! -f "$_STATUS_SYSTEM_STATE_FILE" ]] && [[ -n "$_STATUS_EXPLICIT_ACFS_HOME" ]] && [[ -f "$_STATUS_EXPLICIT_ACFS_HOME/state.json" || -f "$_STATUS_EXPLICIT_ACFS_HOME/VERSION" || -d "$_STATUS_EXPLICIT_ACFS_HOME/onboard" ]]; then
-        _STATUS_RESOLVED_ACFS_HOME="$_STATUS_EXPLICIT_ACFS_HOME"
-        printf '%s\n' "$_STATUS_RESOLVED_ACFS_HOME"
+    if [[ ! -f "$_STATUS_SYSTEM_STATE_FILE" ]] && [[ -n "$_STATUS_EXPLICIT_GTBI_HOME" ]] && [[ -f "$_STATUS_EXPLICIT_GTBI_HOME/state.json" || -f "$_STATUS_EXPLICIT_GTBI_HOME/VERSION" || -d "$_STATUS_EXPLICIT_GTBI_HOME/onboard" ]]; then
+        _STATUS_RESOLVED_GTBI_HOME="$_STATUS_EXPLICIT_GTBI_HOME"
+        printf '%s\n' "$_STATUS_RESOLVED_GTBI_HOME"
         return 0
     fi
 
-    candidate="$(_status_current_home_acfs_candidate 2>/dev/null || true)"
+    candidate="$(_status_current_home_gtbi_candidate 2>/dev/null || true)"
     if [[ -n "$candidate" ]]; then
-        _STATUS_RESOLVED_ACFS_HOME="$candidate"
-        printf '%s\n' "$_STATUS_RESOLVED_ACFS_HOME"
+        _STATUS_RESOLVED_GTBI_HOME="$candidate"
+        printf '%s\n' "$_STATUS_RESOLVED_GTBI_HOME"
         return 0
     fi
 
     if [[ "$_STATUS_SYSTEM_STATE_WAS_EXPLICIT" == true ]]; then
         target_home=$(_status_read_target_home_from_state "$_STATUS_SYSTEM_STATE_FILE" 2>/dev/null || true)
         if [[ -n "$target_home" ]]; then
-            candidate="${target_home}/.acfs"
+            candidate="${target_home}/.gtbi"
             if [[ -f "$candidate/state.json" || -f "$candidate/VERSION" || -d "$candidate/onboard" ]]; then
-                _STATUS_RESOLVED_ACFS_HOME="$candidate"
-                printf '%s\n' "$_STATUS_RESOLVED_ACFS_HOME"
+                _STATUS_RESOLVED_GTBI_HOME="$candidate"
+                printf '%s\n' "$_STATUS_RESOLVED_GTBI_HOME"
                 return 0
             fi
         fi
@@ -944,43 +944,43 @@ _status_resolve_acfs_home() {
         target_user=$(_status_read_target_user_from_state "$_STATUS_SYSTEM_STATE_FILE" 2>/dev/null || true)
         if [[ -n "$target_user" ]]; then
             target_home=$(_status_home_for_user "$target_user" 2>/dev/null || true)
-            candidate="${target_home}/.acfs"
+            candidate="${target_home}/.gtbi"
             if [[ -n "$target_home" ]] && [[ -f "$candidate/state.json" || -f "$candidate/VERSION" || -d "$candidate/onboard" ]]; then
-                _STATUS_RESOLVED_ACFS_HOME="$candidate"
-                printf '%s\n' "$_STATUS_RESOLVED_ACFS_HOME"
+                _STATUS_RESOLVED_GTBI_HOME="$candidate"
+                printf '%s\n' "$_STATUS_RESOLVED_GTBI_HOME"
                 return 0
             fi
         fi
     fi
 
-    if [[ -n "$_STATUS_EXPLICIT_ACFS_HOME" ]] && [[ -f "$_STATUS_EXPLICIT_ACFS_HOME/state.json" || -f "$_STATUS_EXPLICIT_ACFS_HOME/VERSION" || -d "$_STATUS_EXPLICIT_ACFS_HOME/onboard" ]]; then
-        _STATUS_RESOLVED_ACFS_HOME="$_STATUS_EXPLICIT_ACFS_HOME"
-        printf '%s\n' "$_STATUS_RESOLVED_ACFS_HOME"
+    if [[ -n "$_STATUS_EXPLICIT_GTBI_HOME" ]] && [[ -f "$_STATUS_EXPLICIT_GTBI_HOME/state.json" || -f "$_STATUS_EXPLICIT_GTBI_HOME/VERSION" || -d "$_STATUS_EXPLICIT_GTBI_HOME/onboard" ]]; then
+        _STATUS_RESOLVED_GTBI_HOME="$_STATUS_EXPLICIT_GTBI_HOME"
+        printf '%s\n' "$_STATUS_RESOLVED_GTBI_HOME"
         return 0
     fi
 
     if [[ -n "$_STATUS_EXPLICIT_TARGET_HOME_RAW" ]] || [[ -n "$_STATUS_EXPLICIT_TARGET_USER_RAW" ]]; then
-        _STATUS_RESOLVED_ACFS_HOME=""
-        printf '%s\n' "$_STATUS_RESOLVED_ACFS_HOME"
+        _STATUS_RESOLVED_GTBI_HOME=""
+        printf '%s\n' "$_STATUS_RESOLVED_GTBI_HOME"
         return 0
     fi
 
     if [[ -n "${SUDO_USER:-}" ]]; then
         target_home=$(_status_home_for_user "$SUDO_USER" 2>/dev/null || true)
-        candidate="${target_home}/.acfs"
+        candidate="${target_home}/.gtbi"
         if [[ -n "$target_home" ]] && [[ -f "$candidate/state.json" || -f "$candidate/VERSION" || -d "$candidate/onboard" ]]; then
-            _STATUS_RESOLVED_ACFS_HOME="$candidate"
-            printf '%s\n' "$_STATUS_RESOLVED_ACFS_HOME"
+            _STATUS_RESOLVED_GTBI_HOME="$candidate"
+            printf '%s\n' "$_STATUS_RESOLVED_GTBI_HOME"
             return 0
         fi
     fi
 
     target_home=$(_status_read_target_home_from_state "$_STATUS_SYSTEM_STATE_FILE" 2>/dev/null || true)
     if [[ -n "$target_home" ]]; then
-        candidate="${target_home}/.acfs"
+        candidate="${target_home}/.gtbi"
         if [[ -f "$candidate/state.json" || -f "$candidate/VERSION" || -d "$candidate/onboard" ]]; then
-            _STATUS_RESOLVED_ACFS_HOME="$candidate"
-            printf '%s\n' "$_STATUS_RESOLVED_ACFS_HOME"
+            _STATUS_RESOLVED_GTBI_HOME="$candidate"
+            printf '%s\n' "$_STATUS_RESOLVED_GTBI_HOME"
             return 0
         fi
     fi
@@ -988,35 +988,35 @@ _status_resolve_acfs_home() {
     target_user=$(_status_read_target_user_from_state "$_STATUS_SYSTEM_STATE_FILE" 2>/dev/null || true)
     if [[ -n "$target_user" ]]; then
         target_home=$(_status_home_for_user "$target_user" 2>/dev/null || true)
-        candidate="${target_home}/.acfs"
+        candidate="${target_home}/.gtbi"
         if [[ -n "$target_home" ]] && [[ -f "$candidate/state.json" || -f "$candidate/VERSION" || -d "$candidate/onboard" ]]; then
-            _STATUS_RESOLVED_ACFS_HOME="$candidate"
-            printf '%s\n' "$_STATUS_RESOLVED_ACFS_HOME"
+            _STATUS_RESOLVED_GTBI_HOME="$candidate"
+            printf '%s\n' "$_STATUS_RESOLVED_GTBI_HOME"
             return 0
         fi
     fi
 
-    if [[ -n "$_STATUS_EXPLICIT_ACFS_HOME" ]] && [[ -f "$_STATUS_EXPLICIT_ACFS_HOME/state.json" || -f "$_STATUS_EXPLICIT_ACFS_HOME/VERSION" || -d "$_STATUS_EXPLICIT_ACFS_HOME/onboard" ]]; then
-        _STATUS_RESOLVED_ACFS_HOME="$_STATUS_EXPLICIT_ACFS_HOME"
-        printf '%s\n' "$_STATUS_RESOLVED_ACFS_HOME"
+    if [[ -n "$_STATUS_EXPLICIT_GTBI_HOME" ]] && [[ -f "$_STATUS_EXPLICIT_GTBI_HOME/state.json" || -f "$_STATUS_EXPLICIT_GTBI_HOME/VERSION" || -d "$_STATUS_EXPLICIT_GTBI_HOME/onboard" ]]; then
+        _STATUS_RESOLVED_GTBI_HOME="$_STATUS_EXPLICIT_GTBI_HOME"
+        printf '%s\n' "$_STATUS_RESOLVED_GTBI_HOME"
         return 0
     fi
 
-    if [[ -n "$_STATUS_DEFAULT_ACFS_HOME" ]] && [[ -f "$_STATUS_DEFAULT_ACFS_HOME/state.json" || -f "$_STATUS_DEFAULT_ACFS_HOME/VERSION" || -d "$_STATUS_DEFAULT_ACFS_HOME/onboard" ]]; then
-        _STATUS_RESOLVED_ACFS_HOME="$_STATUS_DEFAULT_ACFS_HOME"
-        printf '%s\n' "$_STATUS_RESOLVED_ACFS_HOME"
+    if [[ -n "$_STATUS_DEFAULT_GTBI_HOME" ]] && [[ -f "$_STATUS_DEFAULT_GTBI_HOME/state.json" || -f "$_STATUS_DEFAULT_GTBI_HOME/VERSION" || -d "$_STATUS_DEFAULT_GTBI_HOME/onboard" ]]; then
+        _STATUS_RESOLVED_GTBI_HOME="$_STATUS_DEFAULT_GTBI_HOME"
+        printf '%s\n' "$_STATUS_RESOLVED_GTBI_HOME"
         return 0
     fi
 
-    _STATUS_RESOLVED_ACFS_HOME="$_STATUS_DEFAULT_ACFS_HOME"
-    printf '%s\n' "$_STATUS_RESOLVED_ACFS_HOME"
+    _STATUS_RESOLVED_GTBI_HOME="$_STATUS_DEFAULT_GTBI_HOME"
+    printf '%s\n' "$_STATUS_RESOLVED_GTBI_HOME"
 }
 
 _status_resolve_state_file() {
     local candidate=""
 
-    if [[ -n "$_ACFS_HOME" ]]; then
-        candidate="$_ACFS_HOME/state.json"
+    if [[ -n "$_GTBI_HOME" ]]; then
+        candidate="$_GTBI_HOME/state.json"
     fi
 
     if [[ -n "$candidate" ]] && [[ -f "$candidate" ]]; then
@@ -1037,7 +1037,7 @@ _status_prepare_context() {
     local explicit_target_home=""
     local resolved_target_home=""
 
-    _ACFS_HOME="$(_status_resolve_acfs_home 2>/dev/null || true)"
+    _GTBI_HOME="$(_status_resolve_gtbi_home 2>/dev/null || true)"
     state_file="$(_status_resolve_state_file)"
     explicit_target_home="$(_status_resolve_explicit_target_home 2>/dev/null || true)"
 
@@ -1191,8 +1191,8 @@ status_main() {
     _jq_bin="$(_status_system_binary_path jq 2>/dev/null || true)"
     _date_bin="$(_status_system_binary_path date 2>/dev/null || true)"
 
-    if [[ ! -d "$_ACFS_HOME" ]]; then
-        _errors+=("ACFS_HOME missing")
+    if [[ ! -d "$_GTBI_HOME" ]]; then
+        _errors+=("GTBI_HOME missing")
     fi
 
     if [[ ! -f "$_state_file" ]]; then
@@ -1237,10 +1237,10 @@ status_main() {
     fi
 
     if [[ "$_STATUS_CHECK_UPDATES" == "true" ]]; then
-        if [[ -n "$_ACFS_HOME" ]] && [[ -f "$_ACFS_HOME/VERSION" ]]; then
-            _local_version=$(cat "$_ACFS_HOME/VERSION" 2>/dev/null) || _local_version=""
+        if [[ -n "$_GTBI_HOME" ]] && [[ -f "$_GTBI_HOME/VERSION" ]]; then
+            _local_version=$(cat "$_GTBI_HOME/VERSION" 2>/dev/null) || _local_version=""
             _remote_version=$(_status_system_curl -fsSL --connect-timeout 2 --max-time 5 \
-                "https://raw.githubusercontent.com/Dicklesworthstone/agentic_coding_flywheel_setup/main/VERSION" \
+                "https://raw.githubusercontent.com/jonbackhaus/gtbi/main/VERSION" \
                 2>/dev/null) || _remote_version=""
             if [[ -n "$_remote_version" ]] && [[ -n "$_local_version" ]] \
                && [[ "$_remote_version" != "$_local_version" ]]; then
@@ -1289,7 +1289,7 @@ status_main() {
             2) echo "ERR" ;;
         esac
     else
-        _msg="ACFS $_status_word: $_tool_count tools"
+        _msg="GTBI $_status_word: $_tool_count tools"
         [[ -n "$_last_update_human" ]] && _msg="$_msg, last update $_last_update_human"
 
         if [[ ${#_errors[@]} -gt 0 ]]; then

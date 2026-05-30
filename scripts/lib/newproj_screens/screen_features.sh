@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # ============================================================
-# ACFS newproj TUI Wizard - Features Screen
+# GTBI newproj TUI Wizard - Features Screen
 # Multi-select for optional project features
 # ============================================================
 
 # Prevent multiple sourcing
-if [[ -n "${_ACFS_SCREEN_FEATURES_LOADED:-}" ]]; then
+if [[ -n "${_GTBI_SCREEN_FEATURES_LOADED:-}" ]]; then
     return 0
 fi
-_ACFS_SCREEN_FEATURES_LOADED=1
+_GTBI_SCREEN_FEATURES_LOADED=1
 
 # ============================================================
 # Screen: Features

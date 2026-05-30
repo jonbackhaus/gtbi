@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
 # shellcheck disable=SC1091
 # ============================================================
-# AUTO-GENERATED FROM acfs.manifest.yaml - DO NOT EDIT
+# AUTO-GENERATED FROM gtbi.manifest.yaml - DO NOT EDIT
 # Regenerate: bun run generate (from packages/manifest)
 # ============================================================
 
 set -euo pipefail
 
 # Resolve relative helper paths first.
-ACFS_GENERATED_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+GTBI_GENERATED_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Ensure logging functions available
-if [[ -f "$ACFS_GENERATED_SCRIPT_DIR/../lib/logging.sh" ]]; then
-    source "$ACFS_GENERATED_SCRIPT_DIR/../lib/logging.sh"
+if [[ -f "$GTBI_GENERATED_SCRIPT_DIR/../lib/logging.sh" ]]; then
+    source "$GTBI_GENERATED_SCRIPT_DIR/../lib/logging.sh"
 else
     # Fallback logging functions if logging.sh not found
     # Progress/status output should go to stderr so stdout stays clean for piping.
@@ -25,11 +25,11 @@ else
 fi
 
 # Source install helpers (run_as_*_shell, selection helpers)
-if [[ -f "$ACFS_GENERATED_SCRIPT_DIR/../lib/install_helpers.sh" ]]; then
-    source "$ACFS_GENERATED_SCRIPT_DIR/../lib/install_helpers.sh"
+if [[ -f "$GTBI_GENERATED_SCRIPT_DIR/../lib/install_helpers.sh" ]]; then
+    source "$GTBI_GENERATED_SCRIPT_DIR/../lib/install_helpers.sh"
 fi
 
-acfs_generated_system_binary_path() {
+gtbi_generated_system_binary_path() {
     local name="${1:-}"
     local candidate=""
 
@@ -59,18 +59,18 @@ acfs_generated_system_binary_path() {
     return 1
 }
 
-acfs_generated_resolve_current_user() {
+gtbi_generated_resolve_current_user() {
     local current_user=""
     local id_bin=""
     local whoami_bin=""
 
-    id_bin="$(acfs_generated_system_binary_path id 2>/dev/null || true)"
+    id_bin="$(gtbi_generated_system_binary_path id 2>/dev/null || true)"
     if [[ -n "$id_bin" ]]; then
         current_user="$("$id_bin" -un 2>/dev/null || true)"
     fi
 
     if [[ -z "$current_user" ]]; then
-        whoami_bin="$(acfs_generated_system_binary_path whoami 2>/dev/null || true)"
+        whoami_bin="$(gtbi_generated_system_binary_path whoami 2>/dev/null || true)"
         if [[ -n "$whoami_bin" ]]; then
             current_user="$("$whoami_bin" 2>/dev/null || true)"
         fi
@@ -80,14 +80,14 @@ acfs_generated_resolve_current_user() {
     printf '%s\n' "$current_user"
 }
 
-acfs_generated_getent_passwd_entry() {
+gtbi_generated_getent_passwd_entry() {
     local user="${1-}"
     local getent_bin=""
     local passwd_entry=""
     local passwd_line=""
     local printed_any=false
 
-    getent_bin="$(acfs_generated_system_binary_path getent 2>/dev/null || true)"
+    getent_bin="$(gtbi_generated_system_binary_path getent 2>/dev/null || true)"
     if [[ -z "$user" ]]; then
         if [[ -n "$getent_bin" ]]; then
             while IFS= read -r passwd_line; do
@@ -122,7 +122,7 @@ acfs_generated_getent_passwd_entry() {
     printf '%s\n' "$passwd_entry"
 }
 
-acfs_generated_passwd_home_from_entry() {
+gtbi_generated_passwd_home_from_entry() {
     local passwd_entry="${1:-}"
     local passwd_home=""
 
@@ -136,17 +136,17 @@ acfs_generated_passwd_home_from_entry() {
     return 1
 }
 
-acfs_generated_target_user_exists() {
+gtbi_generated_target_user_exists() {
     local user="${1:-}"
     local id_bin=""
 
     [[ -n "$user" ]] || return 1
-    id_bin="$(acfs_generated_system_binary_path id 2>/dev/null || true)"
+    id_bin="$(gtbi_generated_system_binary_path id 2>/dev/null || true)"
     [[ -n "$id_bin" ]] || return 1
     "$id_bin" "$user" >/dev/null 2>&1
 }
 
-acfs_generated_default_home_for_new_user() {
+gtbi_generated_default_home_for_new_user() {
     local user="${1:-}"
 
     [[ -n "$user" ]] || return 1
@@ -161,29 +161,29 @@ acfs_generated_default_home_for_new_user() {
 }
 
 # When running a generated installer directly (not sourced by install.sh),
-# set sane defaults and derive ACFS paths from the script location so
+# set sane defaults and derive GTBI paths from the script location so
 # contract validation passes and local assets are discoverable.
 if [[ "${BASH_SOURCE[0]}" = "${0}" ]]; then
     # Match install.sh defaults
     if [[ -z "${TARGET_USER:-}" ]]; then
         if [[ $EUID -eq 0 ]] && [[ -z "${SUDO_USER:-}" ]]; then
-            _ACFS_DETECTED_USER="ubuntu"
+            _GTBI_DETECTED_USER="ubuntu"
         else
-            _ACFS_DETECTED_USER="${SUDO_USER:-}"
-            if [[ -z "$_ACFS_DETECTED_USER" ]]; then
-                _ACFS_DETECTED_USER="$(acfs_generated_resolve_current_user 2>/dev/null || true)"
+            _GTBI_DETECTED_USER="${SUDO_USER:-}"
+            if [[ -z "$_GTBI_DETECTED_USER" ]]; then
+                _GTBI_DETECTED_USER="$(gtbi_generated_resolve_current_user 2>/dev/null || true)"
             fi
-            if [[ -z "$_ACFS_DETECTED_USER" ]]; then
+            if [[ -z "$_GTBI_DETECTED_USER" ]]; then
                 log_error "Unable to resolve the current user for TARGET_USER"
                 exit 1
             fi
         fi
-        TARGET_USER="$_ACFS_DETECTED_USER"
+        TARGET_USER="$_GTBI_DETECTED_USER"
     fi
-    unset _ACFS_DETECTED_USER
+    unset _GTBI_DETECTED_USER
 
-    if declare -f _acfs_validate_target_user >/dev/null 2>&1; then
-        _acfs_validate_target_user "${TARGET_USER}" "TARGET_USER" || exit 1
+    if declare -f _gtbi_validate_target_user >/dev/null 2>&1; then
+        _gtbi_validate_target_user "${TARGET_USER}" "TARGET_USER" || exit 1
     elif [[ -z "${TARGET_USER:-}" ]] || [[ ! "${TARGET_USER}" =~ ^[a-z_][a-z0-9._-]*$ ]]; then
         log_error "Invalid TARGET_USER '${TARGET_USER:-<empty>}' (expected: lowercase user name like 'ubuntu')"
         exit 1
@@ -191,45 +191,45 @@ if [[ "${BASH_SOURCE[0]}" = "${0}" ]]; then
 
     MODE="${MODE:-vibe}"
 
-    _ACFS_EXPLICIT_TARGET_HOME="${TARGET_HOME:-}"
-    if [[ -n "$_ACFS_EXPLICIT_TARGET_HOME" ]]; then
-        _ACFS_EXPLICIT_TARGET_HOME="${_ACFS_EXPLICIT_TARGET_HOME%/}"
+    _GTBI_EXPLICIT_TARGET_HOME="${TARGET_HOME:-}"
+    if [[ -n "$_GTBI_EXPLICIT_TARGET_HOME" ]]; then
+        _GTBI_EXPLICIT_TARGET_HOME="${_GTBI_EXPLICIT_TARGET_HOME%/}"
     fi
-    _ACFS_RESOLVED_TARGET_HOME=""
-    if declare -f _acfs_resolve_target_home >/dev/null 2>&1; then
-        _ACFS_RESOLVED_TARGET_HOME="$(_acfs_resolve_target_home "${TARGET_USER}" "$_ACFS_EXPLICIT_TARGET_HOME" || true)"
+    _GTBI_RESOLVED_TARGET_HOME=""
+    if declare -f _gtbi_resolve_target_home >/dev/null 2>&1; then
+        _GTBI_RESOLVED_TARGET_HOME="$(_gtbi_resolve_target_home "${TARGET_USER}" "$_GTBI_EXPLICIT_TARGET_HOME" || true)"
     else
         if [[ "${TARGET_USER}" == "root" ]]; then
-            _ACFS_RESOLVED_TARGET_HOME="/root"
+            _GTBI_RESOLVED_TARGET_HOME="/root"
         else
-            _acfs_passwd_entry="$(acfs_generated_getent_passwd_entry "${TARGET_USER}" 2>/dev/null || true)"
-            if [[ -n "$_acfs_passwd_entry" ]]; then
-                _ACFS_RESOLVED_TARGET_HOME="$(acfs_generated_passwd_home_from_entry "$_acfs_passwd_entry" 2>/dev/null || true)"
+            _gtbi_passwd_entry="$(gtbi_generated_getent_passwd_entry "${TARGET_USER}" 2>/dev/null || true)"
+            if [[ -n "$_gtbi_passwd_entry" ]]; then
+                _GTBI_RESOLVED_TARGET_HOME="$(gtbi_generated_passwd_home_from_entry "$_gtbi_passwd_entry" 2>/dev/null || true)"
             else
-                _acfs_current_user="$(acfs_generated_resolve_current_user 2>/dev/null || true)"
-                _acfs_current_home="${HOME:-}"
-                if [[ -n "$_acfs_current_home" ]]; then
-                    _acfs_current_home="${_acfs_current_home%/}"
+                _gtbi_current_user="$(gtbi_generated_resolve_current_user 2>/dev/null || true)"
+                _gtbi_current_home="${HOME:-}"
+                if [[ -n "$_gtbi_current_home" ]]; then
+                    _gtbi_current_home="${_gtbi_current_home%/}"
                 fi
-                if [[ "${_acfs_current_user:-}" == "${TARGET_USER}" ]] && [[ -n "$_acfs_current_home" ]] && [[ "$_acfs_current_home" == /* ]] && [[ "$_acfs_current_home" != "/" ]] && { [[ -z "$_ACFS_EXPLICIT_TARGET_HOME" ]] || [[ "$_acfs_current_home" == "$_ACFS_EXPLICIT_TARGET_HOME" ]]; }; then
-                    _ACFS_RESOLVED_TARGET_HOME="$_acfs_current_home"
+                if [[ "${_gtbi_current_user:-}" == "${TARGET_USER}" ]] && [[ -n "$_gtbi_current_home" ]] && [[ "$_gtbi_current_home" == /* ]] && [[ "$_gtbi_current_home" != "/" ]] && { [[ -z "$_GTBI_EXPLICIT_TARGET_HOME" ]] || [[ "$_gtbi_current_home" == "$_GTBI_EXPLICIT_TARGET_HOME" ]]; }; then
+                    _GTBI_RESOLVED_TARGET_HOME="$_gtbi_current_home"
                 fi
-                unset _acfs_current_user _acfs_current_home
+                unset _gtbi_current_user _gtbi_current_home
             fi
-            unset _acfs_passwd_entry
+            unset _gtbi_passwd_entry
         fi
     fi
-    if [[ -z "$_ACFS_RESOLVED_TARGET_HOME" ]] && [[ $EUID -eq 0 ]] && ! acfs_generated_target_user_exists "${TARGET_USER}"; then
-        if [[ -n "$_ACFS_EXPLICIT_TARGET_HOME" ]] && [[ "$_ACFS_EXPLICIT_TARGET_HOME" == /* ]] && [[ "$_ACFS_EXPLICIT_TARGET_HOME" != "/" ]]; then
-            _ACFS_RESOLVED_TARGET_HOME="$_ACFS_EXPLICIT_TARGET_HOME"
+    if [[ -z "$_GTBI_RESOLVED_TARGET_HOME" ]] && [[ $EUID -eq 0 ]] && ! gtbi_generated_target_user_exists "${TARGET_USER}"; then
+        if [[ -n "$_GTBI_EXPLICIT_TARGET_HOME" ]] && [[ "$_GTBI_EXPLICIT_TARGET_HOME" == /* ]] && [[ "$_GTBI_EXPLICIT_TARGET_HOME" != "/" ]]; then
+            _GTBI_RESOLVED_TARGET_HOME="$_GTBI_EXPLICIT_TARGET_HOME"
         else
-            _ACFS_RESOLVED_TARGET_HOME="$(acfs_generated_default_home_for_new_user "${TARGET_USER}" 2>/dev/null || true)"
+            _GTBI_RESOLVED_TARGET_HOME="$(gtbi_generated_default_home_for_new_user "${TARGET_USER}" 2>/dev/null || true)"
         fi
     fi
-    if [[ -n "$_ACFS_RESOLVED_TARGET_HOME" ]]; then
-        TARGET_HOME="${_ACFS_RESOLVED_TARGET_HOME%/}"
+    if [[ -n "$_GTBI_RESOLVED_TARGET_HOME" ]]; then
+        TARGET_HOME="${_GTBI_RESOLVED_TARGET_HOME%/}"
     fi
-    unset _ACFS_EXPLICIT_TARGET_HOME _ACFS_RESOLVED_TARGET_HOME
+    unset _GTBI_EXPLICIT_TARGET_HOME _GTBI_RESOLVED_TARGET_HOME
 
     if [[ -z "${TARGET_HOME:-}" ]] || [[ "${TARGET_HOME}" == "/" ]] || [[ "${TARGET_HOME}" != /* ]]; then
         log_error "Invalid TARGET_HOME for '${TARGET_USER}': ${TARGET_HOME:-<empty>} (must be an absolute path and cannot be '/')"
@@ -237,54 +237,54 @@ if [[ "${BASH_SOURCE[0]}" = "${0}" ]]; then
     fi
 
     # Derive "bootstrap" paths from the repo layout (scripts/generated/.. -> repo root).
-    if [[ -z "${ACFS_BOOTSTRAP_DIR:-}" ]]; then
-        ACFS_BOOTSTRAP_DIR="$(cd "$ACFS_GENERATED_SCRIPT_DIR/../.." && pwd)"
+    if [[ -z "${GTBI_BOOTSTRAP_DIR:-}" ]]; then
+        GTBI_BOOTSTRAP_DIR="$(cd "$GTBI_GENERATED_SCRIPT_DIR/../.." && pwd)"
     fi
 
-    ACFS_BIN_DIR="${ACFS_BIN_DIR:-$TARGET_HOME/.local/bin}"
-    if [[ -z "${ACFS_BIN_DIR:-}" ]] || [[ "${ACFS_BIN_DIR}" == "/" ]] || [[ "${ACFS_BIN_DIR}" != /* ]]; then
-        log_error "ACFS_BIN_DIR must be an absolute path and cannot be '/' (got: ${ACFS_BIN_DIR:-<empty>})"
+    GTBI_BIN_DIR="${GTBI_BIN_DIR:-$TARGET_HOME/.local/bin}"
+    if [[ -z "${GTBI_BIN_DIR:-}" ]] || [[ "${GTBI_BIN_DIR}" == "/" ]] || [[ "${GTBI_BIN_DIR}" != /* ]]; then
+        log_error "GTBI_BIN_DIR must be an absolute path and cannot be '/' (got: ${GTBI_BIN_DIR:-<empty>})"
         exit 1
     fi
-    ACFS_LIB_DIR="${ACFS_LIB_DIR:-$ACFS_BOOTSTRAP_DIR/scripts/lib}"
-    ACFS_GENERATED_DIR="${ACFS_GENERATED_DIR:-$ACFS_BOOTSTRAP_DIR/scripts/generated}"
-    ACFS_ASSETS_DIR="${ACFS_ASSETS_DIR:-$ACFS_BOOTSTRAP_DIR/acfs}"
-    ACFS_CHECKSUMS_YAML="${ACFS_CHECKSUMS_YAML:-$ACFS_BOOTSTRAP_DIR/checksums.yaml}"
-    ACFS_MANIFEST_YAML="${ACFS_MANIFEST_YAML:-$ACFS_BOOTSTRAP_DIR/acfs.manifest.yaml}"
+    GTBI_LIB_DIR="${GTBI_LIB_DIR:-$GTBI_BOOTSTRAP_DIR/scripts/lib}"
+    GTBI_GENERATED_DIR="${GTBI_GENERATED_DIR:-$GTBI_BOOTSTRAP_DIR/scripts/generated}"
+    GTBI_ASSETS_DIR="${GTBI_ASSETS_DIR:-$GTBI_BOOTSTRAP_DIR/gtbi}"
+    GTBI_CHECKSUMS_YAML="${GTBI_CHECKSUMS_YAML:-$GTBI_BOOTSTRAP_DIR/checksums.yaml}"
+    GTBI_MANIFEST_YAML="${GTBI_MANIFEST_YAML:-$GTBI_BOOTSTRAP_DIR/gtbi.manifest.yaml}"
 
-    export TARGET_USER TARGET_HOME MODE ACFS_BIN_DIR
-    export ACFS_BOOTSTRAP_DIR ACFS_LIB_DIR ACFS_GENERATED_DIR ACFS_ASSETS_DIR ACFS_CHECKSUMS_YAML ACFS_MANIFEST_YAML
+    export TARGET_USER TARGET_HOME MODE GTBI_BIN_DIR
+    export GTBI_BOOTSTRAP_DIR GTBI_LIB_DIR GTBI_GENERATED_DIR GTBI_ASSETS_DIR GTBI_CHECKSUMS_YAML GTBI_MANIFEST_YAML
 fi
 
 # Source contract validation
-if [[ -f "$ACFS_GENERATED_SCRIPT_DIR/../lib/contract.sh" ]]; then
-    source "$ACFS_GENERATED_SCRIPT_DIR/../lib/contract.sh"
+if [[ -f "$GTBI_GENERATED_SCRIPT_DIR/../lib/contract.sh" ]]; then
+    source "$GTBI_GENERATED_SCRIPT_DIR/../lib/contract.sh"
 fi
 
 # Optional security verification for upstream installer scripts.
-# Scripts that need it should call: acfs_security_init
-ACFS_SECURITY_READY=false
-acfs_security_init() {
-    if [[ "${ACFS_SECURITY_READY}" = "true" ]]; then
+# Scripts that need it should call: gtbi_security_init
+GTBI_SECURITY_READY=false
+gtbi_security_init() {
+    if [[ "${GTBI_SECURITY_READY}" = "true" ]]; then
         return 0
     fi
 
-    local security_lib="$ACFS_GENERATED_SCRIPT_DIR/../lib/security.sh"
+    local security_lib="$GTBI_GENERATED_SCRIPT_DIR/../lib/security.sh"
     if [[ ! -f "$security_lib" ]]; then
         log_error "Security library not found: $security_lib"
         return 1
     fi
 
-    # Use ACFS_CHECKSUMS_YAML if set by install.sh bootstrap (overrides security.sh default)
-    if [[ -n "${ACFS_CHECKSUMS_YAML:-}" ]]; then
-        export CHECKSUMS_FILE="${ACFS_CHECKSUMS_YAML}"
+    # Use GTBI_CHECKSUMS_YAML if set by install.sh bootstrap (overrides security.sh default)
+    if [[ -n "${GTBI_CHECKSUMS_YAML:-}" ]]; then
+        export CHECKSUMS_FILE="${GTBI_CHECKSUMS_YAML}"
     fi
 
     # shellcheck source=../lib/security.sh
     # shellcheck disable=SC1091  # runtime relative source
     source "$security_lib"
     load_checksums || { log_error "Failed to load checksums.yaml"; return 1; }
-    ACFS_SECURITY_READY=true
+    GTBI_SECURITY_READY=true
     return 0
 }
 
@@ -294,7 +294,7 @@ acfs_security_init() {
 # Zero-config mesh VPN for secure remote VPS access
 install_network_tailscale() {
     local module_id="network.tailscale"
-    acfs_require_contract "module:${module_id}" || return 1
+    gtbi_require_contract "module:${module_id}" || return 1
     log_step "Installing network.tailscale"
 
     if [[ "${DRY_RUN:-false}" = "true" ]]; then
@@ -361,16 +361,16 @@ INSTALL_NETWORK_TAILSCALE
 # Configure SSH server keepalive to prevent VPN/NAT disconnects
 install_network_ssh_keepalive() {
     local module_id="network.ssh_keepalive"
-    acfs_require_contract "module:${module_id}" || return 1
+    gtbi_require_contract "module:${module_id}" || return 1
     log_step "Installing network.ssh_keepalive"
 
     if [[ "${DRY_RUN:-false}" = "true" ]]; then
-        log_info "dry-run: install: if [[ ! -f /etc/ssh/sshd_config.acfs.bak ]]; then (root)"
+        log_info "dry-run: install: if [[ ! -f /etc/ssh/sshd_config.gtbi.bak ]]; then (root)"
     else
         if ! run_as_root_shell <<'INSTALL_NETWORK_SSH_KEEPALIVE'
 # Backup original sshd_config if not already backed up
-if [[ ! -f /etc/ssh/sshd_config.acfs.bak ]]; then
-  cp /etc/ssh/sshd_config /etc/ssh/sshd_config.acfs.bak
+if [[ ! -f /etc/ssh/sshd_config.gtbi.bak ]]; then
+  cp /etc/ssh/sshd_config /etc/ssh/sshd_config.gtbi.bak
 fi
 
 # Configure SSH keepalive settings
@@ -383,7 +383,7 @@ sed -i '/^#*ClientAliveCountMax/d' /etc/ssh/sshd_config
 
 # Add new settings at the end
 echo "" >> /etc/ssh/sshd_config
-echo "# ACFS: SSH keepalive for VPN/NAT resilience" >> /etc/ssh/sshd_config
+echo "# GTBI: SSH keepalive for VPN/NAT resilience" >> /etc/ssh/sshd_config
 echo "ClientAliveInterval 60" >> /etc/ssh/sshd_config
 echo "ClientAliveCountMax 3" >> /etc/ssh/sshd_config
 
@@ -391,9 +391,9 @@ echo "ClientAliveCountMax 3" >> /etc/ssh/sshd_config
 systemctl reload sshd || systemctl reload ssh || true
 INSTALL_NETWORK_SSH_KEEPALIVE
         then
-            log_warn "network.ssh_keepalive: install command failed: if [[ ! -f /etc/ssh/sshd_config.acfs.bak ]]; then"
+            log_warn "network.ssh_keepalive: install command failed: if [[ ! -f /etc/ssh/sshd_config.gtbi.bak ]]; then"
             if type -t record_skipped_tool >/dev/null 2>&1; then
-              record_skipped_tool "network.ssh_keepalive" "install command failed: if [[ ! -f /etc/ssh/sshd_config.acfs.bak ]]; then"
+              record_skipped_tool "network.ssh_keepalive" "install command failed: if [[ ! -f /etc/ssh/sshd_config.gtbi.bak ]]; then"
             elif type -t state_tool_skip >/dev/null 2>&1; then
               state_tool_skip "network.ssh_keepalive"
             fi
@@ -438,7 +438,7 @@ INSTALL_NETWORK_SSH_KEEPALIVE
     # Post-install message
     log_info "SSH keepalive configured! Your connections will now survive VPN/NAT timeouts."
     log_info "Settings: ClientAliveInterval 60, ClientAliveCountMax 3"
-    log_info "Original config backed up to /etc/ssh/sshd_config.acfs.bak"
+    log_info "Original config backed up to /etc/ssh/sshd_config.gtbi.bak"
 
     log_success "network.ssh_keepalive installed"
 }

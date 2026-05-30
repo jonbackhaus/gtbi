@@ -1,5 +1,5 @@
 /**
- * Tests for ACFS Manifest Validation
+ * Tests for GTBI Manifest Validation
  * Related: bead mjt.3.2
  */
 

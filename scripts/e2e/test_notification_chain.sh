@@ -28,7 +28,7 @@ LOG_DIR="${REPO_ROOT}/target/e2e-logs/notification_$(date +%Y%m%d_%H%M%S)"
 mkdir -p "$LOG_DIR"
 
 # Configuration
-ACFS_REPO="${ACFS_REPO:-Dicklesworthstone/agentic_coding_flywheel_setup}"
+GTBI_REPO="${GTBI_REPO:-Dicklesworthstone/gastown_batteries_included}"
 DRY_RUN="${DRY_RUN:-false}"
 RUN_PR_TESTS="${RUN_PR_TESTS:-false}"
 
@@ -71,7 +71,7 @@ send_dispatch() {
     fi
 
     log "INFO" "Sending repository_dispatch: event=$event_type"
-    gh api "repos/$ACFS_REPO/dispatches" \
+    gh api "repos/$GTBI_REPO/dispatches" \
         -f event_type="$event_type" \
         -f client_payload="$payload"
 }
@@ -95,7 +95,7 @@ wait_for_workflow() {
 
     # Get the most recent run ID
     sleep 10  # Brief wait for workflow to trigger
-    run_id=$(gh run list --repo "$ACFS_REPO" --workflow="$workflow_name" --limit=1 --json databaseId -q '.[0].databaseId' 2>/dev/null || echo "")
+    run_id=$(gh run list --repo "$GTBI_REPO" --workflow="$workflow_name" --limit=1 --json databaseId -q '.[0].databaseId' 2>/dev/null || echo "")
 
     if [[ -z "$run_id" ]]; then
         log "WARN" "Could not find workflow run"
@@ -113,11 +113,11 @@ wait_for_workflow() {
         fi
 
         local status
-        status=$(gh run view "$run_id" --repo "$ACFS_REPO" --json status,conclusion -q '.status' 2>/dev/null || echo "")
+        status=$(gh run view "$run_id" --repo "$GTBI_REPO" --json status,conclusion -q '.status' 2>/dev/null || echo "")
 
         if [[ "$status" == "completed" ]]; then
             local conclusion
-            conclusion=$(gh run view "$run_id" --repo "$ACFS_REPO" --json conclusion -q '.conclusion' 2>/dev/null || echo "")
+            conclusion=$(gh run view "$run_id" --repo "$GTBI_REPO" --json conclusion -q '.conclusion' 2>/dev/null || echo "")
             log "INFO" "Workflow completed: conclusion=$conclusion"
 
             if [[ "$conclusion" == "$expected_conclusion" ]] || [[ "$expected_conclusion" == "*" ]]; then
@@ -202,7 +202,7 @@ test_3_malformed_payload() {
     # Check workflow - should fail validation or skip
     log "INFO" "Checking workflow result for malformed payload..."
     local run_info
-    run_info=$(gh run list --repo "$ACFS_REPO" --workflow=installer-notification-receiver.yml --limit=1 --json conclusion -q '.[0].conclusion' 2>/dev/null || echo "")
+    run_info=$(gh run list --repo "$GTBI_REPO" --workflow=installer-notification-receiver.yml --limit=1 --json conclusion -q '.[0].conclusion' 2>/dev/null || echo "")
     log "INFO" "Workflow conclusion for malformed payload: $run_info"
 
     # Any outcome is acceptable - failure or success (with validation skip)
@@ -347,7 +347,7 @@ test_pr_mismatched_checksum() {
     sleep 45
 
     local prs
-    prs=$(gh pr list --repo "$ACFS_REPO" --search "Update zoxide" --json number,title --limit 5 2>/dev/null || echo "[]")
+    prs=$(gh pr list --repo "$GTBI_REPO" --search "Update zoxide" --json number,title --limit 5 2>/dev/null || echo "[]")
     log "INFO" "Recent PRs: $prs"
 
     # Note: In real test, verify PR was created
@@ -387,7 +387,7 @@ test_pr_installer_added() {
 
     # Check for PR creation
     local prs
-    prs=$(gh pr list --repo "$ACFS_REPO" --search "$new_tool_name" --json number,title --limit 5 2>/dev/null || echo "[]")
+    prs=$(gh pr list --repo "$GTBI_REPO" --search "$new_tool_name" --json number,title --limit 5 2>/dev/null || echo "[]")
     log "INFO" "PRs for new tool: $prs"
 
     # Check if PR was created
@@ -402,7 +402,7 @@ test_pr_installer_added() {
         pr_num=$(echo "$prs" | jq -r '.[0].number' 2>/dev/null || echo "")
         if [[ -n "$pr_num" ]] && [[ "$pr_num" != "null" ]]; then
             log "INFO" "Closing test PR #$pr_num..."
-            gh pr close "$pr_num" --repo "$ACFS_REPO" --delete-branch 2>/dev/null || true
+            gh pr close "$pr_num" --repo "$GTBI_REPO" --delete-branch 2>/dev/null || true
         fi
         return 0
     else
@@ -443,7 +443,7 @@ test_pr_idempotency() {
 
     # Check that we don't have multiple duplicate PRs
     local prs
-    prs=$(gh pr list --repo "$ACFS_REPO" --search "Update zoxide" --json number,title,body --limit 10 2>/dev/null || echo "[]")
+    prs=$(gh pr list --repo "$GTBI_REPO" --search "Update zoxide" --json number,title,body --limit 10 2>/dev/null || echo "[]")
     local pr_count
     pr_count=$(echo "$prs" | jq '. | length' 2>/dev/null || echo "0")
 
@@ -469,7 +469,7 @@ main() {
 
     log "INFO" "Starting notification chain E2E tests"
     log "INFO" "Log directory: $LOG_DIR"
-    log "INFO" "Repository: $ACFS_REPO"
+    log "INFO" "Repository: $GTBI_REPO"
     log "INFO" "DRY_RUN: $DRY_RUN"
     log "INFO" "RUN_PR_TESTS: $RUN_PR_TESTS"
 

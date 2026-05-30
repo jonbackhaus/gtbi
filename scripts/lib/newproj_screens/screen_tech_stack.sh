@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # ============================================================
-# ACFS newproj TUI Wizard - Tech Stack Screen
+# GTBI newproj TUI Wizard - Tech Stack Screen
 # Multi-select for project tech stack
 # ============================================================
 
 # Prevent multiple sourcing
-if [[ -n "${_ACFS_SCREEN_TECH_STACK_LOADED:-}" ]]; then
+if [[ -n "${_GTBI_SCREEN_TECH_STACK_LOADED:-}" ]]; then
     return 0
 fi
-_ACFS_SCREEN_TECH_STACK_LOADED=1
+_GTBI_SCREEN_TECH_STACK_LOADED=1
 
 # ============================================================
 # Screen: Tech Stack

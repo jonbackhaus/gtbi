@@ -301,7 +301,7 @@ $ git commit -m "feat: add user auth"`}
 
         <div className="mt-6">
           <TipBox variant="info">
-            ACFS agents are trained to run <code>ubs</code> automatically
+            GTBI agents are trained to run <code>ubs</code> automatically
             before committing. You get this protection by default!
           </TipBox>
         </div>

@@ -17,23 +17,23 @@ TESTS_FAILED=0
 
 setup_autofix_state_dir() {
     local state_dir="$1"
-    export ACFS_STATE_DIR="$state_dir"
-    export ACFS_CHANGES_FILE="$ACFS_STATE_DIR/changes.jsonl"
-    export ACFS_UNDOS_FILE="$ACFS_STATE_DIR/undos.jsonl"
-    export ACFS_BACKUPS_DIR="$ACFS_STATE_DIR/backups"
-    export ACFS_LOCK_FILE="$ACFS_STATE_DIR/.lock"
-    export ACFS_INTEGRITY_FILE="$ACFS_STATE_DIR/.integrity"
+    export GTBI_STATE_DIR="$state_dir"
+    export GTBI_CHANGES_FILE="$GTBI_STATE_DIR/changes.jsonl"
+    export GTBI_UNDOS_FILE="$GTBI_STATE_DIR/undos.jsonl"
+    export GTBI_BACKUPS_DIR="$GTBI_STATE_DIR/backups"
+    export GTBI_LOCK_FILE="$GTBI_STATE_DIR/.lock"
+    export GTBI_INTEGRITY_FILE="$GTBI_STATE_DIR/.integrity"
 
-    ACFS_CHANGE_RECORDS=()
-    ACFS_CHANGE_ORDER=()
-    ACFS_SESSION_ID=""
-    ACFS_AUTOFIX_INITIALIZED=false
-    ACFS_AUTOFIX_LOCK_FD=""
+    GTBI_CHANGE_RECORDS=()
+    GTBI_CHANGE_ORDER=()
+    GTBI_SESSION_ID=""
+    GTBI_AUTOFIX_INITIALIZED=false
+    GTBI_AUTOFIX_LOCK_FD=""
 
-    rm -rf "$ACFS_STATE_DIR"
-    mkdir -p "$ACFS_BACKUPS_DIR"
-    : > "$ACFS_CHANGES_FILE"
-    : > "$ACFS_UNDOS_FILE"
+    rm -rf "$GTBI_STATE_DIR"
+    mkdir -p "$GTBI_BACKUPS_DIR"
+    : > "$GTBI_CHANGES_FILE"
+    : > "$GTBI_UNDOS_FILE"
 }
 
 cleanup_test_dir() {
@@ -180,13 +180,13 @@ test_fix_manages_session_and_records_changes() {
         return
     fi
 
-    if [[ -f "$ACFS_STATE_DIR/.session" ]]; then
+    if [[ -f "$GTBI_STATE_DIR/.session" ]]; then
         cleanup_test_dir "$test_dir"
         test_fail "fix_manages_session_and_records_changes" "session marker was left behind after standalone fix"
         return
     fi
 
-    if ! jq -e 'select(.category == "unattended")' "$ACFS_CHANGES_FILE" >/dev/null 2>&1; then
+    if ! jq -e 'select(.category == "unattended")' "$GTBI_CHANGES_FILE" >/dev/null 2>&1; then
         cleanup_test_dir "$test_dir"
         test_fail "fix_manages_session_and_records_changes" "standalone fix did not record unattended changes"
         return
@@ -202,7 +202,7 @@ test_restore_manages_session_and_persists_marker() {
     mkdir -p "$test_dir"
     setup_autofix_state_dir "$state_dir"
 
-    cat > "$ACFS_CHANGES_FILE" <<'EOF'
+    cat > "$GTBI_CHANGES_FILE" <<'EOF'
 {"id":"chg_0001","category":"unattended","description":"Stopped unattended-upgrades service","session_id":"sess_fixture"}
 EOF
 
@@ -222,13 +222,13 @@ EOF
         return
     fi
 
-    if [[ -f "$ACFS_STATE_DIR/.session" ]]; then
+    if [[ -f "$GTBI_STATE_DIR/.session" ]]; then
         cleanup_test_dir "$test_dir"
         test_fail "restore_manages_session_and_persists_marker" "session marker was left behind after restore"
         return
     fi
 
-    if ! jq -e 'select(.auto_restored == "unattended-upgrades")' "$ACFS_UNDOS_FILE" >/dev/null 2>&1; then
+    if ! jq -e 'select(.auto_restored == "unattended-upgrades")' "$GTBI_UNDOS_FILE" >/dev/null 2>&1; then
         cleanup_test_dir "$test_dir"
         test_fail "restore_manages_session_and_persists_marker" "restore did not persist unattended auto-restore marker"
         return
@@ -245,15 +245,15 @@ test_restore_fails_closed_on_unresolved_session_marker() {
     mkdir -p "$test_dir"
     setup_autofix_state_dir "$state_dir"
 
-    cat > "$ACFS_CHANGES_FILE" <<'EOF'
+    cat > "$GTBI_CHANGES_FILE" <<'EOF'
 {"id":"chg_0001","category":"unattended","description":"Stopped unattended-upgrades service","session_id":"sess_fixture"}
 EOF
 
-    cat > "$ACFS_UNDOS_FILE" <<'EOF'
+    cat > "$GTBI_UNDOS_FILE" <<'EOF'
 {"auto_restored":"unattended-upgrades","timestamp":"2026-04-16T00:00:00Z"}
 EOF
 
-    cat > "$ACFS_STATE_DIR/.session" <<'EOF'
+    cat > "$GTBI_STATE_DIR/.session" <<'EOF'
 {"id":"sess_stale","start":"2026-04-16T00:00:00Z","pid":123}
 EOF
 
@@ -282,13 +282,13 @@ EOF
         return
     fi
 
-    if [[ ! -f "$ACFS_STATE_DIR/.session" ]]; then
+    if [[ ! -f "$GTBI_STATE_DIR/.session" ]]; then
         cleanup_test_dir "$test_dir"
         test_fail "restore_fails_closed_on_unresolved_session_marker" "stale session marker was unexpectedly removed"
         return
     fi
 
-    if ! jq -e 'select(.auto_restored == "unattended-upgrades")' "$ACFS_UNDOS_FILE" >/dev/null 2>&1; then
+    if ! jq -e 'select(.auto_restored == "unattended-upgrades")' "$GTBI_UNDOS_FILE" >/dev/null 2>&1; then
         cleanup_test_dir "$test_dir"
         test_fail "restore_fails_closed_on_unresolved_session_marker" "existing auto-restore marker was unexpectedly removed"
         return
@@ -349,7 +349,7 @@ test_stop_service_rolls_back_when_record_change_fails() {
         return
     fi
 
-    if [[ -s "$ACFS_CHANGES_FILE" ]]; then
+    if [[ -s "$GTBI_CHANGES_FILE" ]]; then
         cleanup_test_dir "$test_dir"
         test_fail "stop_service_rolls_back_when_record_change_fails" "service stop wrote change records despite journaling failure"
         return
@@ -386,7 +386,7 @@ test_kill_stuck_processes_does_not_record_failed_kill() {
         return
     fi
 
-    if [[ -s "$ACFS_CHANGES_FILE" ]]; then
+    if [[ -s "$GTBI_CHANGES_FILE" ]]; then
         cleanup_test_dir "$test_dir"
         test_fail "kill_stuck_processes_does_not_record_failed_kill" "failed kill still wrote a change record"
         return

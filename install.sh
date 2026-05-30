@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # shellcheck disable=SC1090,SC1091
 # ============================================================
-# ACFS - Agentic Coding Flywheel Setup
+# GTBI - Agentic Coding Flywheel Setup
 # Main installer script
 #
 # Usage:
-#   curl -fsSL "https://raw.githubusercontent.com/${ACFS_REPO_OWNER:-jonbackhaus}/${ACFS_REPO_NAME:-gtbi}/main/install.sh?$(date +%s)" | bash -s -- --yes --mode vibe
+#   curl -fsSL "https://raw.githubusercontent.com/${GTBI_REPO_OWNER:-jonbackhaus}/${GTBI_REPO_NAME:-gtbi}/main/install.sh?$(date +%s)" | bash -s -- --yes --mode vibe
 #
 # Options:
 #   --yes         Skip all prompts, use defaults
@@ -34,16 +34,16 @@
 #   --skip <module>       Skip a specific module (repeatable)
 #   --no-deps             Disable automatic dependency closure (expert/debug)
 #   --checksums-ref <ref> Fetch checksums.yaml from this ref (default: main for pinned tags/SHAs)
-#   --offline-pack <dir>  Use an extracted acfs-offline-pack/ and refuse live fallback
+#   --offline-pack <dir>  Use an extracted gtbi-offline-pack/ and refuse live fallback
 #   --ref <ref>          Git ref to install (branch, tag, or SHA). Equivalent to
-#                        ACFS_REF env var but works reliably in curl|bash pipelines.
+#                        GTBI_REF env var but works reliably in curl|bash pipelines.
 #   --pin-ref            Print resolved SHA and pinned command, then exit
 # ============================================================
 
 set -euo pipefail
 
-# Enable shell tracing when ACFS_DEBUG=true (matches the hint in our error messages)
-[[ "${ACFS_DEBUG:-}" == "true" ]] && set -x
+# Enable shell tracing when GTBI_DEBUG=true (matches the hint in our error messages)
+[[ "${GTBI_DEBUG:-}" == "true" ]] && set -x
 
 # Prevent apt/dpkg from displaying interactive dialogs (kernel upgrade prompts,
 # debconf questions, etc.) that corrupt the terminal with ncurses escape sequences
@@ -55,47 +55,47 @@ export DEBCONF_NONINTERACTIVE_SEEN=true
 # ============================================================
 # Configuration
 # ============================================================
-ACFS_VERSION="0.7.0"
+GTBI_VERSION="0.7.0"
 # Allow fork installations by overriding these via environment variables
-ACFS_REPO_OWNER="${ACFS_REPO_OWNER:-jonbackhaus}"
-ACFS_REPO_NAME="${ACFS_REPO_NAME:-gtbi}"
-ACFS_REF="${ACFS_REF:-main}"
+GTBI_REPO_OWNER="${GTBI_REPO_OWNER:-jonbackhaus}"
+GTBI_REPO_NAME="${GTBI_REPO_NAME:-gtbi}"
+GTBI_REF="${GTBI_REF:-main}"
 # Preserve the original ref (branch/tag/sha) before resolving to a commit SHA.
-ACFS_REF_INPUT="$ACFS_REF"
-# Checksums ref defaults to ACFS_REF_INPUT, but pinned tags/SHAs fall back to main
+GTBI_REF_INPUT="$GTBI_REF"
+# Checksums ref defaults to GTBI_REF_INPUT, but pinned tags/SHAs fall back to main
 # to avoid stale checksums for fast-moving upstream installers.
-_ACFS_CHECKSUMS_REF_FROM_ENV="${ACFS_CHECKSUMS_REF:-}"
-ACFS_CHECKSUMS_REF_EXPLICIT=false
-ACFS_CHECKSUMS_REF="$_ACFS_CHECKSUMS_REF_FROM_ENV"
-if [[ -z "$ACFS_CHECKSUMS_REF" ]]; then
-    if [[ "$ACFS_REF_INPUT" =~ ^v[0-9]+(\.[0-9]+){1,2}([.-][A-Za-z0-9]+)*$ ]] || [[ "$ACFS_REF_INPUT" =~ ^[0-9a-f]{7,40}$ ]]; then
-        ACFS_CHECKSUMS_REF="main"
+_GTBI_CHECKSUMS_REF_FROM_ENV="${GTBI_CHECKSUMS_REF:-}"
+GTBI_CHECKSUMS_REF_EXPLICIT=false
+GTBI_CHECKSUMS_REF="$_GTBI_CHECKSUMS_REF_FROM_ENV"
+if [[ -z "$GTBI_CHECKSUMS_REF" ]]; then
+    if [[ "$GTBI_REF_INPUT" =~ ^v[0-9]+(\.[0-9]+){1,2}([.-][A-Za-z0-9]+)*$ ]] || [[ "$GTBI_REF_INPUT" =~ ^[0-9a-f]{7,40}$ ]]; then
+        GTBI_CHECKSUMS_REF="main"
     else
-        ACFS_CHECKSUMS_REF="$ACFS_REF_INPUT"
+        GTBI_CHECKSUMS_REF="$GTBI_REF_INPUT"
     fi
 else
-    ACFS_CHECKSUMS_REF_EXPLICIT=true
+    GTBI_CHECKSUMS_REF_EXPLICIT=true
 fi
-unset _ACFS_CHECKSUMS_REF_FROM_ENV
-ACFS_RAW="https://raw.githubusercontent.com/${ACFS_REPO_OWNER}/${ACFS_REPO_NAME}/${ACFS_REF}"
-ACFS_CHECKSUMS_RAW="https://raw.githubusercontent.com/${ACFS_REPO_OWNER}/${ACFS_REPO_NAME}/${ACFS_CHECKSUMS_REF}"
-export ACFS_RAW ACFS_CHECKSUMS_REF ACFS_CHECKSUMS_RAW ACFS_CHECKSUMS_REF_EXPLICIT ACFS_VERSION
-export CHECKSUMS_FILE="${ACFS_CHECKSUMS_YAML:-${CHECKSUMS_FILE:-}}"
-ACFS_OFFLINE_PACK="${ACFS_OFFLINE_PACK:-}"
-ACFS_OFFLINE_NETWORK_MODE="${ACFS_OFFLINE_NETWORK_MODE:-}"
-ACFS_OFFLINE_PACK_REQUIRED="${ACFS_OFFLINE_PACK_REQUIRED:-}"
-export ACFS_OFFLINE_PACK ACFS_OFFLINE_NETWORK_MODE ACFS_OFFLINE_PACK_REQUIRED
-ACFS_COMMIT_SHA=""       # Short SHA for display (12 chars)
-ACFS_COMMIT_SHA_FULL=""  # Full SHA for pinning resume scripts (40 chars)
+unset _GTBI_CHECKSUMS_REF_FROM_ENV
+GTBI_RAW="https://raw.githubusercontent.com/${GTBI_REPO_OWNER}/${GTBI_REPO_NAME}/${GTBI_REF}"
+GTBI_CHECKSUMS_RAW="https://raw.githubusercontent.com/${GTBI_REPO_OWNER}/${GTBI_REPO_NAME}/${GTBI_CHECKSUMS_REF}"
+export GTBI_RAW GTBI_CHECKSUMS_REF GTBI_CHECKSUMS_RAW GTBI_CHECKSUMS_REF_EXPLICIT GTBI_VERSION
+export CHECKSUMS_FILE="${GTBI_CHECKSUMS_YAML:-${CHECKSUMS_FILE:-}}"
+GTBI_OFFLINE_PACK="${GTBI_OFFLINE_PACK:-}"
+GTBI_OFFLINE_NETWORK_MODE="${GTBI_OFFLINE_NETWORK_MODE:-}"
+GTBI_OFFLINE_PACK_REQUIRED="${GTBI_OFFLINE_PACK_REQUIRED:-}"
+export GTBI_OFFLINE_PACK GTBI_OFFLINE_NETWORK_MODE GTBI_OFFLINE_PACK_REQUIRED
+GTBI_COMMIT_SHA=""       # Short SHA for display (12 chars)
+GTBI_COMMIT_SHA_FULL=""  # Full SHA for pinning resume scripts (40 chars)
 
 # Early curl defaults: enforce HTTPS (including redirects) when supported.
 # This is used before security.sh is available (bootstrap / early library sourcing).
-ACFS_EARLY_CURL_ARGS=(--connect-timeout 30 --max-time 300 -fsSL)
-# Note: ACFS_HOME is set after TARGET_HOME is determined
-ACFS_LOG_DIR="/var/log/acfs"
-_ACFS_BOOTSTRAP_DIR_OWNED=false
-_ACFS_BOOTSTRAP_DIR_CREATED=""
-_ACFS_BOOTSTRAP_DIR_TMP_ROOT=""
+GTBI_EARLY_CURL_ARGS=(--connect-timeout 30 --max-time 300 -fsSL)
+# Note: GTBI_HOME is set after TARGET_HOME is determined
+GTBI_LOG_DIR="/var/log/gtbi"
+_GTBI_BOOTSTRAP_DIR_OWNED=false
+_GTBI_BOOTSTRAP_DIR_CREATED=""
+_GTBI_BOOTSTRAP_DIR_TMP_ROOT=""
 # SCRIPT_DIR is empty when running via curl|bash (stdin; no file on disk)
 SCRIPT_DIR=""
 if [[ -n "${BASH_SOURCE[0]:-}" && -f "${BASH_SOURCE[0]}" ]]; then
@@ -104,15 +104,15 @@ fi
 
 # Early PATH setup: ensure ~/.local/bin is available for native installers
 # when HOME is present, without assuming stripped environments already set it.
-_ACFS_EARLY_PATH="${PATH:-/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin}"
+_GTBI_EARLY_PATH="${PATH:-/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin}"
 if [[ -n "${HOME:-}" ]]; then
-    export PATH="$HOME/.local/bin:$_ACFS_EARLY_PATH"
+    export PATH="$HOME/.local/bin:$_GTBI_EARLY_PATH"
 else
-    export PATH="$_ACFS_EARLY_PATH"
+    export PATH="$_GTBI_EARLY_PATH"
 fi
-unset _ACFS_EARLY_PATH
+unset _GTBI_EARLY_PATH
 
-acfs_early_system_binary_path() {
+gtbi_early_system_binary_path() {
     local name="${1:-}"
     local candidate=""
 
@@ -142,34 +142,34 @@ acfs_early_system_binary_path() {
     return 1
 }
 
-acfs_early_sudo_binary_path() {
+gtbi_early_sudo_binary_path() {
     if [[ -n "${SUDO:-}" && "$SUDO" == /* && -x "$SUDO" ]]; then
         printf '%s\n' "$SUDO"
         return 0
     fi
 
-    acfs_early_system_binary_path sudo
+    gtbi_early_system_binary_path sudo
 }
 
-_acfs_early_curl_bin="$(acfs_early_system_binary_path curl 2>/dev/null || true)"
-_acfs_early_grep_bin="$(acfs_early_system_binary_path grep 2>/dev/null || true)"
-if [[ -n "$_acfs_early_curl_bin" && -n "$_acfs_early_grep_bin" ]] && "$_acfs_early_curl_bin" --help all 2>/dev/null | "$_acfs_early_grep_bin" -q -- '--proto'; then
-    ACFS_EARLY_CURL_ARGS=(--proto '=https' --proto-redir '=https' --connect-timeout 30 --max-time 300 -fsSL)
+_gtbi_early_curl_bin="$(gtbi_early_system_binary_path curl 2>/dev/null || true)"
+_gtbi_early_grep_bin="$(gtbi_early_system_binary_path grep 2>/dev/null || true)"
+if [[ -n "$_gtbi_early_curl_bin" && -n "$_gtbi_early_grep_bin" ]] && "$_gtbi_early_curl_bin" --help all 2>/dev/null | "$_gtbi_early_grep_bin" -q -- '--proto'; then
+    GTBI_EARLY_CURL_ARGS=(--proto '=https' --proto-redir '=https' --connect-timeout 30 --max-time 300 -fsSL)
 fi
-unset _acfs_early_curl_bin _acfs_early_grep_bin
+unset _gtbi_early_curl_bin _gtbi_early_grep_bin
 
-acfs_early_resolve_current_user() {
+gtbi_early_resolve_current_user() {
     local current_user=""
     local id_bin=""
     local whoami_bin=""
 
-    id_bin="$(acfs_early_system_binary_path id 2>/dev/null || true)"
+    id_bin="$(gtbi_early_system_binary_path id 2>/dev/null || true)"
     if [[ -n "$id_bin" ]]; then
         current_user="$("$id_bin" -un 2>/dev/null || true)"
     fi
 
     if [[ -z "$current_user" ]]; then
-        whoami_bin="$(acfs_early_system_binary_path whoami 2>/dev/null || true)"
+        whoami_bin="$(gtbi_early_system_binary_path whoami 2>/dev/null || true)"
         if [[ -n "$whoami_bin" ]]; then
             current_user="$("$whoami_bin" 2>/dev/null || true)"
         fi
@@ -179,13 +179,13 @@ acfs_early_resolve_current_user() {
     echo "$current_user"
 }
 
-acfs_early_getent_passwd_entry() {
+gtbi_early_getent_passwd_entry() {
     local user="${1:-}"
     local getent_bin=""
     local passwd_line=""
     local passwd_user=""
 
-    getent_bin="$(acfs_early_system_binary_path getent 2>/dev/null || true)"
+    getent_bin="$(gtbi_early_system_binary_path getent 2>/dev/null || true)"
     if [[ -n "$getent_bin" ]]; then
         if [[ -n "$user" ]]; then
             "$getent_bin" passwd "$user" 2>/dev/null
@@ -232,14 +232,14 @@ SKIP_MODULES=()
 NO_DEPS=false
 
 # Resume/reinstall options (used by state.sh confirm_resume)
-export ACFS_FORCE_RESUME=false
-export ACFS_FORCE_REINSTALL=false
+export GTBI_FORCE_RESUME=false
+export GTBI_FORCE_REINSTALL=false
 # NOTE: When unset/empty, downstream libs default to interactive behavior when a TTY is available.
 # install.sh forces non-interactive behavior in --yes mode.
-export ACFS_INTERACTIVE="${ACFS_INTERACTIVE:-}"
+export GTBI_INTERACTIVE="${GTBI_INTERACTIVE:-}"
 RESET_STATE_ONLY=false
-ACFS_INSTALL_LOCK_FD=""
-ACFS_INSTALL_LOCK_FILE=""
+GTBI_INSTALL_LOCK_FD=""
+GTBI_INSTALL_LOCK_FILE=""
 
 # Preflight options
 SKIP_PREFLIGHT=false
@@ -260,20 +260,20 @@ TARGET_UBUNTU_VERSION_EXPLICIT=false  # true when user passes --target-ubuntu
 # Note: Previously defaulted to "ubuntu" which broke non-ubuntu VPS installs.
 if [[ -z "${TARGET_USER:-}" ]]; then
     if [[ $EUID -eq 0 ]] && [[ -z "${SUDO_USER:-}" ]]; then
-        _ACFS_DETECTED_USER="ubuntu"
+        _GTBI_DETECTED_USER="ubuntu"
     else
-        _ACFS_DETECTED_USER="${SUDO_USER:-}"
-        if [[ -z "$_ACFS_DETECTED_USER" ]]; then
-            _ACFS_DETECTED_USER="$(acfs_early_resolve_current_user 2>/dev/null || true)"
+        _GTBI_DETECTED_USER="${SUDO_USER:-}"
+        if [[ -z "$_GTBI_DETECTED_USER" ]]; then
+            _GTBI_DETECTED_USER="$(gtbi_early_resolve_current_user 2>/dev/null || true)"
         fi
-        if [[ -z "$_ACFS_DETECTED_USER" ]]; then
+        if [[ -z "$_GTBI_DETECTED_USER" ]]; then
             printf 'ERROR: Unable to resolve the current user for TARGET_USER\n' >&2
             exit 1
         fi
     fi
-    TARGET_USER="$_ACFS_DETECTED_USER"
+    TARGET_USER="$_GTBI_DETECTED_USER"
 fi
-unset _ACFS_DETECTED_USER
+unset _GTBI_DETECTED_USER
 # Export TARGET_USER early so subprocesses (e.g. preflight.sh) can use it
 # to determine the correct installation partition for disk-space checks (#243).
 export TARGET_USER
@@ -292,14 +292,14 @@ NC='\033[0m' # No Color
 
 # Check if gum is available for enhanced UI
 HAS_GUM=false
-if acfs_early_system_binary_path gum &>/dev/null; then
+if gtbi_early_system_binary_path gum &>/dev/null; then
     HAS_GUM=true
 fi
 
 # ============================================================
 # Prevent logging.sh from overwriting our inline gum-enhanced functions
 # ============================================================
-export _ACFS_LOGGING_SH_LOADED=1
+export _GTBI_LOGGING_SH_LOADED=1
 
 # ============================================================
 # Minimal error-tracking fallbacks
@@ -309,7 +309,7 @@ type -t set_phase &>/dev/null || set_phase() { :; }
 type -t try_step &>/dev/null || try_step() { shift; "$@"; }
 type -t try_step_eval &>/dev/null || try_step_eval() {
     local bash_bin=""
-    bash_bin="$(acfs_early_system_binary_path bash 2>/dev/null || true)"
+    bash_bin="$(gtbi_early_system_binary_path bash 2>/dev/null || true)"
     [[ -n "$bash_bin" ]] || return 127
     shift
     "$bash_bin" -e -o pipefail -c "$1"
@@ -325,15 +325,15 @@ type -t try_step_eval &>/dev/null || try_step_eval() {
 # ============================================================
 _source_ubuntu_upgrade_lib() {
     # Already loaded?
-    if [[ -n "${ACFS_UBUNTU_UPGRADE_LOADED:-}" ]]; then
+    if [[ -n "${GTBI_UBUNTU_UPGRADE_LOADED:-}" ]]; then
         return 0
     fi
 
     # Prefer bootstrapped libs when available (curl|bash mode), to avoid mixed refs.
-    if [[ -n "${ACFS_LIB_DIR:-}" ]] && [[ -f "$ACFS_LIB_DIR/ubuntu_upgrade.sh" ]]; then
+    if [[ -n "${GTBI_LIB_DIR:-}" ]] && [[ -f "$GTBI_LIB_DIR/ubuntu_upgrade.sh" ]]; then
         # shellcheck source=scripts/lib/ubuntu_upgrade.sh
-        source "$ACFS_LIB_DIR/ubuntu_upgrade.sh"
-        export ACFS_UBUNTU_UPGRADE_LOADED=1
+        source "$GTBI_LIB_DIR/ubuntu_upgrade.sh"
+        export GTBI_UBUNTU_UPGRADE_LOADED=1
         return 0
     fi
 
@@ -341,32 +341,32 @@ _source_ubuntu_upgrade_lib() {
     if [[ -n "${SCRIPT_DIR:-}" ]] && [[ -f "$SCRIPT_DIR/scripts/lib/ubuntu_upgrade.sh" ]]; then
         # shellcheck source=scripts/lib/ubuntu_upgrade.sh
         source "$SCRIPT_DIR/scripts/lib/ubuntu_upgrade.sh"
-        export ACFS_UBUNTU_UPGRADE_LOADED=1
+        export GTBI_UBUNTU_UPGRADE_LOADED=1
         return 0
     fi
 
     # Try relative path (when running from repo root)
     if [[ -f "./scripts/lib/ubuntu_upgrade.sh" ]]; then
         source "./scripts/lib/ubuntu_upgrade.sh"
-        export ACFS_UBUNTU_UPGRADE_LOADED=1
+        export GTBI_UBUNTU_UPGRADE_LOADED=1
         return 0
     fi
 
     # Download for curl|bash scenario
     local curl_bin=""
-    curl_bin="$(acfs_early_system_binary_path curl 2>/dev/null || true)"
+    curl_bin="$(gtbi_early_system_binary_path curl 2>/dev/null || true)"
     if [[ -n "$curl_bin" ]]; then
         local tmp_upgrade=""
         local mktemp_bin=""
-        mktemp_bin="$(acfs_early_system_binary_path mktemp 2>/dev/null || true)"
+        mktemp_bin="$(gtbi_early_system_binary_path mktemp 2>/dev/null || true)"
         if [[ -n "$mktemp_bin" ]]; then
-            tmp_upgrade="$("$mktemp_bin" "${TMPDIR:-/tmp}/acfs-ubuntu-upgrade.XXXXXX" 2>/dev/null)" || tmp_upgrade=""
+            tmp_upgrade="$("$mktemp_bin" "${TMPDIR:-/tmp}/gtbi-ubuntu-upgrade.XXXXXX" 2>/dev/null)" || tmp_upgrade=""
         fi
         if [[ -n "$tmp_upgrade" ]]; then
-            if "$curl_bin" "${ACFS_EARLY_CURL_ARGS[@]}" "$ACFS_RAW/scripts/lib/ubuntu_upgrade.sh" -o "$tmp_upgrade" 2>/dev/null; then
+            if "$curl_bin" "${GTBI_EARLY_CURL_ARGS[@]}" "$GTBI_RAW/scripts/lib/ubuntu_upgrade.sh" -o "$tmp_upgrade" 2>/dev/null; then
                 source "$tmp_upgrade"
                 rm -f "$tmp_upgrade"
-                export ACFS_UBUNTU_UPGRADE_LOADED=1
+                export GTBI_UBUNTU_UPGRADE_LOADED=1
                 return 0
             fi
             rm -f "$tmp_upgrade"
@@ -377,36 +377,36 @@ _source_ubuntu_upgrade_lib() {
     return 1
 }
 
-# ACFS Color scheme (Catppuccin Mocha inspired)
-ACFS_PRIMARY="#89b4fa"
-ACFS_SUCCESS="#a6e3a1"
-ACFS_WARNING="#f9e2af"
-ACFS_ERROR="#f38ba8"
-ACFS_MUTED="#6c7086"
+# GTBI Color scheme (Catppuccin Mocha inspired)
+GTBI_PRIMARY="#89b4fa"
+GTBI_SUCCESS="#a6e3a1"
+GTBI_WARNING="#f9e2af"
+GTBI_ERROR="#f38ba8"
+GTBI_MUTED="#6c7086"
 
 # ============================================================
 # Fetch commit SHA and date from GitHub API
 # This ensures we always know exactly which version is running
 # ============================================================
-export ACFS_COMMIT_DATE=""  # exported for child processes/debugging
-ACFS_COMMIT_AGE=""
+export GTBI_COMMIT_DATE=""  # exported for child processes/debugging
+GTBI_COMMIT_AGE=""
 
 fetch_commit_sha() {
     # Already have it? Skip
-    if [[ -n "$ACFS_COMMIT_SHA" && "$ACFS_COMMIT_SHA" != "(unknown)" ]]; then
+    if [[ -n "$GTBI_COMMIT_SHA" && "$GTBI_COMMIT_SHA" != "(unknown)" ]]; then
         return 0
     fi
 
     # Need curl
     local curl_bin=""
-    curl_bin="$(acfs_early_system_binary_path curl 2>/dev/null || true)"
+    curl_bin="$(gtbi_early_system_binary_path curl 2>/dev/null || true)"
     if [[ -z "$curl_bin" ]]; then
-        ACFS_COMMIT_SHA="(curl not available)"
+        GTBI_COMMIT_SHA="(curl not available)"
         return 0
     fi
 
     # Fetch from GitHub API - get the commit SHA for the ref
-    local api_url="https://api.github.com/repos/${ACFS_REPO_OWNER}/${ACFS_REPO_NAME}/commits/${ACFS_REF}"
+    local api_url="https://api.github.com/repos/${GTBI_REPO_OWNER}/${GTBI_REPO_NAME}/commits/${GTBI_REF}"
     local response
 
     if response=$("$curl_bin" -sf --max-time 5 "$api_url" 2>/dev/null); then
@@ -415,7 +415,7 @@ fetch_commit_sha() {
         local commit_date=""
 
         local python3_bin=""
-        python3_bin="$(acfs_early_system_binary_path python3 2>/dev/null || true)"
+        python3_bin="$(gtbi_early_system_binary_path python3 2>/dev/null || true)"
         if [[ -n "$python3_bin" ]]; then
             # Python parsing - robust against JSON formatting changes
             sha=$(echo "$response" | "$python3_bin" -c "import sys, json; print(json.load(sys.stdin).get('sha', ''))" 2>/dev/null)
@@ -430,13 +430,13 @@ fetch_commit_sha() {
         fi
 
         if [[ -n "$sha" && ${#sha} -ge 7 ]]; then
-            ACFS_COMMIT_SHA="${sha:0:12}"
+            GTBI_COMMIT_SHA="${sha:0:12}"
             # shellcheck disable=SC2034  # Used by scripts/lib/ubuntu_upgrade.sh to pin resume scripts to a specific commit.
-            [[ ${#sha} -ge 40 ]] && ACFS_COMMIT_SHA_FULL="$sha"
+            [[ ${#sha} -ge 40 ]] && GTBI_COMMIT_SHA_FULL="$sha"
         fi
 
         if [[ -n "$commit_date" ]]; then
-            ACFS_COMMIT_DATE="$commit_date"
+            GTBI_COMMIT_DATE="$commit_date"
             # Calculate age
             local now commit_ts age_seconds
             now=$(date +%s 2>/dev/null || echo 0)
@@ -453,26 +453,26 @@ fetch_commit_sha() {
                 age_seconds=$((now - commit_ts))
                 # Handle negative age (clock skew / future commit)
                 if [[ $age_seconds -lt 0 ]]; then
-                    ACFS_COMMIT_AGE="just now"
+                    GTBI_COMMIT_AGE="just now"
                 elif [[ $age_seconds -lt 60 ]]; then
-                    ACFS_COMMIT_AGE="${age_seconds}s ago"
+                    GTBI_COMMIT_AGE="${age_seconds}s ago"
                 elif [[ $age_seconds -lt 3600 ]]; then
-                    ACFS_COMMIT_AGE="$((age_seconds / 60))m ago"
+                    GTBI_COMMIT_AGE="$((age_seconds / 60))m ago"
                 elif [[ $age_seconds -lt 86400 ]]; then
-                    ACFS_COMMIT_AGE="$((age_seconds / 3600))h ago"
+                    GTBI_COMMIT_AGE="$((age_seconds / 3600))h ago"
                 else
-                    ACFS_COMMIT_AGE="$((age_seconds / 86400))d ago"
+                    GTBI_COMMIT_AGE="$((age_seconds / 86400))d ago"
                 fi
             fi
         fi
 
-        if [[ -n "$ACFS_COMMIT_SHA" ]]; then
+        if [[ -n "$GTBI_COMMIT_SHA" ]]; then
             return 0
         fi
     fi
 
     # Fallback
-    ACFS_COMMIT_SHA="(unknown)"
+    GTBI_COMMIT_SHA="(unknown)"
 }
 
 # ============================================================
@@ -480,7 +480,7 @@ fetch_commit_sha() {
 # ============================================================
 install_gum_early() {
     # Already have gum? Great!
-    if acfs_early_system_binary_path gum &>/dev/null; then
+    if gtbi_early_system_binary_path gum &>/dev/null; then
         HAS_GUM=true
         return 0
     fi
@@ -515,28 +515,28 @@ install_gum_early() {
 
     # Need curl to fetch gum - if curl isn't installed yet, skip early install
     # (gum will be installed later in install_cli_tools after ensure_base_deps)
-    curl_bin="$(acfs_early_system_binary_path curl 2>/dev/null || true)"
+    curl_bin="$(gtbi_early_system_binary_path curl 2>/dev/null || true)"
     if [[ -z "$curl_bin" ]]; then
         return 0
     fi
 
     # Need gpg for apt key handling
-    gpg_bin="$(acfs_early_system_binary_path gpg 2>/dev/null || true)"
+    gpg_bin="$(gtbi_early_system_binary_path gpg 2>/dev/null || true)"
     if [[ -z "$gpg_bin" ]]; then
         return 0
     fi
 
     # Need apt-get for installation
-    apt_get_bin="$(acfs_early_system_binary_path apt-get 2>/dev/null || true)"
+    apt_get_bin="$(gtbi_early_system_binary_path apt-get 2>/dev/null || true)"
     if [[ -z "$apt_get_bin" ]]; then
         return 0
     fi
-    timeout_bin="$(acfs_early_system_binary_path timeout 2>/dev/null || true)"
+    timeout_bin="$(gtbi_early_system_binary_path timeout 2>/dev/null || true)"
     if [[ -z "$timeout_bin" ]]; then
         return 0
     fi
-    mkdir_bin="$(acfs_early_system_binary_path mkdir 2>/dev/null || true)"
-    tee_bin="$(acfs_early_system_binary_path tee 2>/dev/null || true)"
+    mkdir_bin="$(gtbi_early_system_binary_path mkdir 2>/dev/null || true)"
+    tee_bin="$(gtbi_early_system_binary_path tee 2>/dev/null || true)"
     if [[ -z "$mkdir_bin" || -z "$tee_bin" ]]; then
         return 0
     fi
@@ -545,7 +545,7 @@ install_gum_early() {
     local -a sudo_cmd=()
     local sudo_bin=""
     if [[ $EUID -ne 0 ]]; then
-        sudo_bin="$(acfs_early_sudo_binary_path 2>/dev/null || true)"
+        sudo_bin="$(gtbi_early_sudo_binary_path 2>/dev/null || true)"
         if [[ -n "$sudo_bin" ]]; then
             sudo_cmd=("$sudo_bin")
         else
@@ -613,17 +613,17 @@ print_banner() {
     echo -e "\r\033[K" >&2
 
     # Build version line with proper padding (63 chars inner width)
-    local version_text="Agentic Coding Flywheel Setup v${ACFS_VERSION}"
+    local version_text="Agentic Coding Flywheel Setup v${GTBI_VERSION}"
     local padding=$(( (63 - ${#version_text}) / 2 ))
     local version_line
     version_line=$(printf "║%*s%s%*s║" "$padding" "" "$version_text" "$((63 - padding - ${#version_text}))" "")
 
     # Build commit info line
     local commit_text=""
-    if [[ -n "$ACFS_COMMIT_SHA" && "$ACFS_COMMIT_SHA" != "(unknown)" ]]; then
-        commit_text="Commit: ${ACFS_COMMIT_SHA}"
-        if [[ -n "$ACFS_COMMIT_AGE" ]]; then
-            commit_text="${commit_text} (${ACFS_COMMIT_AGE})"
+    if [[ -n "$GTBI_COMMIT_SHA" && "$GTBI_COMMIT_SHA" != "(unknown)" ]]; then
+        commit_text="Commit: ${GTBI_COMMIT_SHA}"
+        if [[ -n "$GTBI_COMMIT_AGE" ]]; then
+            commit_text="${commit_text} (${GTBI_COMMIT_AGE})"
         fi
     fi
     local commit_padding=$(( (63 - ${#commit_text}) / 2 ))
@@ -651,7 +651,7 @@ ${commit_line}
 "
 
     if [[ "$HAS_GUM" == "true" ]]; then
-        echo "$banner" | gum style --foreground "$ACFS_PRIMARY" --bold >&2
+        echo "$banner" | gum style --foreground "$GTBI_PRIMARY" --bold >&2
     else
         echo -e "${BLUE}$banner${NC}" >&2
     fi
@@ -662,39 +662,39 @@ ${commit_line}
 # Prints resolved SHA and copy-pasteable pinned command
 # ============================================================
 print_pinned_ref() {
-    local sha="${ACFS_COMMIT_SHA_FULL:-$ACFS_COMMIT_SHA}"
+    local sha="${GTBI_COMMIT_SHA_FULL:-$GTBI_COMMIT_SHA}"
 
     if [[ -z "$sha" || "$sha" == "(unknown)" || "$sha" == "(curl not available)" ]]; then
-        echo "Error: Could not resolve ref '$ACFS_REF' to SHA" >&2
+        echo "Error: Could not resolve ref '$GTBI_REF' to SHA" >&2
         echo "" >&2
         echo "Possible causes:" >&2
         echo "  - Invalid ref (branch, tag, or SHA)" >&2
         echo "  - GitHub API rate limit or network issue" >&2
         echo "" >&2
         echo "Try:" >&2
-        echo "  export ACFS_REF=main  # use main branch" >&2
-        echo "  export ACFS_REF=v1.0  # use a tag" >&2
+        echo "  export GTBI_REF=main  # use main branch" >&2
+        echo "  export GTBI_REF=v1.0  # use a tag" >&2
         exit 1
     fi
 
     local short_sha="${sha:0:12}"
-    local install_url="https://raw.githubusercontent.com/${ACFS_REPO_OWNER}/${ACFS_REPO_NAME}/${sha}/install.sh"
+    local install_url="https://raw.githubusercontent.com/${GTBI_REPO_OWNER}/${GTBI_REPO_NAME}/${sha}/install.sh"
 
     echo ""
     echo "═════════════════════════════════════════════════════════════════"
-    echo "                    ACFS Pinned Reference"
+    echo "                    GTBI Pinned Reference"
     echo "═════════════════════════════════════════════════════════════════"
     echo ""
-    echo "  Requested ref:  ${ACFS_REF_INPUT:-$ACFS_REF}"
+    echo "  Requested ref:  ${GTBI_REF_INPUT:-$GTBI_REF}"
     echo "  Resolved SHA:   ${short_sha}"
-    if [[ -n "${ACFS_COMMIT_SHA_FULL:-}" ]]; then
-        echo "  Full SHA:       ${ACFS_COMMIT_SHA_FULL}"
+    if [[ -n "${GTBI_COMMIT_SHA_FULL:-}" ]]; then
+        echo "  Full SHA:       ${GTBI_COMMIT_SHA_FULL}"
     fi
-    if [[ -n "${ACFS_COMMIT_DATE:-}" ]]; then
-        echo "  Commit date:    ${ACFS_COMMIT_DATE}"
+    if [[ -n "${GTBI_COMMIT_DATE:-}" ]]; then
+        echo "  Commit date:    ${GTBI_COMMIT_DATE}"
     fi
-    if [[ -n "${ACFS_COMMIT_AGE:-}" ]]; then
-        echo "  Commit age:     ${ACFS_COMMIT_AGE}"
+    if [[ -n "${GTBI_COMMIT_AGE:-}" ]]; then
+        echo "  Commit age:     ${GTBI_COMMIT_AGE}"
     fi
     echo ""
     echo "─────────────────────────────────────────────────────────────────"
@@ -723,7 +723,7 @@ log_step() {
     fi
 
     if [[ "$HAS_GUM" == "true" ]]; then
-        gum style --foreground "$ACFS_PRIMARY" --bold "[$step]" | tr -d '\n' >&2
+        gum style --foreground "$GTBI_PRIMARY" --bold "[$step]" | tr -d '\n' >&2
         echo -n " " >&2
         gum style "$message" >&2
     else
@@ -733,7 +733,7 @@ log_step() {
 
 log_detail() {
     if [[ "$HAS_GUM" == "true" ]]; then
-        gum style --foreground "$ACFS_MUTED" --margin "0 0 0 4" "→ $1" >&2
+        gum style --foreground "$GTBI_MUTED" --margin "0 0 0 4" "→ $1" >&2
     else
         echo -e "${GRAY}    → $1${NC}" >&2
     fi
@@ -745,7 +745,7 @@ log_info() {
 
 log_success() {
     if [[ "$HAS_GUM" == "true" ]]; then
-        gum style --foreground "$ACFS_SUCCESS" --bold "✓ $1" >&2
+        gum style --foreground "$GTBI_SUCCESS" --bold "✓ $1" >&2
     else
         echo -e "${GREEN}✓ $1${NC}" >&2
     fi
@@ -753,7 +753,7 @@ log_success() {
 
 log_warn() {
     if [[ "$HAS_GUM" == "true" ]]; then
-        gum style --foreground "$ACFS_WARNING" "⚠ $1" >&2
+        gum style --foreground "$GTBI_WARNING" "⚠ $1" >&2
     else
         echo -e "${YELLOW}⚠ $1${NC}" >&2
     fi
@@ -761,7 +761,7 @@ log_warn() {
 
 log_error() {
     if [[ "$HAS_GUM" == "true" ]]; then
-        gum style --foreground "$ACFS_ERROR" --bold "✖ $1" >&2
+        gum style --foreground "$GTBI_ERROR" --bold "✖ $1" >&2
     else
         echo -e "${RED}✖ $1${NC}" >&2
     fi
@@ -775,7 +775,7 @@ log_fatal() {
 log_section() {
     if [[ "$HAS_GUM" == "true" ]]; then
         echo "" >&2
-        gum style --foreground "$ACFS_PRIMARY" --bold "═══ $1 ═══" >&2
+        gum style --foreground "$GTBI_PRIMARY" --bold "═══ $1 ═══" >&2
     else
         echo "" >&2
         echo -e "${BLUE}═══ $1 ═══${NC}" >&2
@@ -787,42 +787,42 @@ log_section() {
 # ============================================================
 
 # Initialize log file capture: tee stderr to a timestamped log file.
-# After calling, all stderr output is captured to ACFS_LOG_FILE.
-acfs_log_init() {
-    local log_dir="${1:-${ACFS_HOME:+${ACFS_HOME}/logs}}"
+# After calling, all stderr output is captured to GTBI_LOG_FILE.
+gtbi_log_init() {
+    local log_dir="${1:-${GTBI_HOME:+${GTBI_HOME}/logs}}"
     local saved_stderr_fd=""
 
-    # Fallback if ACFS_HOME not set or empty
+    # Fallback if GTBI_HOME not set or empty
     if [[ -z "$log_dir" ]]; then
-        log_dir="${ACFS_LOG_DIR:-/var/log/acfs}"
+        log_dir="${GTBI_LOG_DIR:-/var/log/gtbi}"
     fi
 
-    ACFS_LOG_INITIALIZED=false
-    ACFS_LOG_STDERR_CAPTURED=false
-    ACFS_LOG_ORIGINAL_STDERR_FD=""
+    GTBI_LOG_INITIALIZED=false
+    GTBI_LOG_STDERR_CAPTURED=false
+    GTBI_LOG_ORIGINAL_STDERR_FD=""
 
     # Create log directory
     mkdir -p "$log_dir" 2>/dev/null || return 1
 
-    ACFS_LOG_FILE="${log_dir}/install-$(date +%Y%m%d_%H%M%S).log"
-    export ACFS_LOG_FILE
+    GTBI_LOG_FILE="${log_dir}/install-$(date +%Y%m%d_%H%M%S).log"
+    export GTBI_LOG_FILE
 
     # Write log header
     {
-        printf '=== ACFS Install Log ===\n'
+        printf '=== GTBI Install Log ===\n'
         printf 'Started: %s\n' "$(date -Iseconds)"
-        printf 'Version: %s\n' "${ACFS_VERSION:-unknown}"
+        printf 'Version: %s\n' "${GTBI_VERSION:-unknown}"
         printf 'User: %s\n' "${TARGET_USER:-unknown}"
         printf 'Home: %s\n' "${TARGET_HOME:-unknown}"
         printf 'Mode: %s\n' "${MODE:-unknown}"
         printf 'Bash: %s\n' "${BASH_VERSION:-unknown}"
         printf '========================\n\n'
-    } > "$ACFS_LOG_FILE" 2>/dev/null || return 1
-    ACFS_LOG_INITIALIZED=true
+    } > "$GTBI_LOG_FILE" 2>/dev/null || return 1
+    GTBI_LOG_INITIALIZED=true
 
     # Fix ownership so target user can read logs
     if [[ -n "${TARGET_USER:-}" ]] && [[ "$(id -u)" -eq 0 ]]; then
-        chown "${TARGET_USER}:${TARGET_USER}" "$log_dir" "$ACFS_LOG_FILE" 2>/dev/null || true
+        chown "${TARGET_USER}:${TARGET_USER}" "$log_dir" "$GTBI_LOG_FILE" 2>/dev/null || true
     fi
 
     # Tee stderr: all stderr output goes to both terminal and log file.
@@ -840,17 +840,17 @@ acfs_log_init() {
         # shellcheck disable=SC2261
         if (exec 3>&1; echo test > >(cat >/dev/null)) 2>/dev/null; then
             # Process substitution works - set up tee logging
-            # Save original stderr first. Use an ACFS-owned dynamic fd instead
+            # Save original stderr first. Use an GTBI-owned dynamic fd instead
             # of fd 3, because BATS and other callers may already own fd 3.
             if exec {saved_stderr_fd}>&2; then
-                ACFS_LOG_ORIGINAL_STDERR_FD="$saved_stderr_fd"
+                GTBI_LOG_ORIGINAL_STDERR_FD="$saved_stderr_fd"
                 # Now redirect stderr to tee (which sends to both log and original stderr)
                 # shellcheck disable=SC2261
                 # Use subshell test first to prevent exec from exiting under bash 5.3+
-                if (set +e; exec 2> >(tee -a "$ACFS_LOG_FILE" >&"$saved_stderr_fd")) 2>/dev/null; then
-                    if exec 2> >(tee -a "$ACFS_LOG_FILE" >&"$saved_stderr_fd"); then
+                if (set +e; exec 2> >(tee -a "$GTBI_LOG_FILE" >&"$saved_stderr_fd")) 2>/dev/null; then
+                    if exec 2> >(tee -a "$GTBI_LOG_FILE" >&"$saved_stderr_fd"); then
                         tee_logging_ok=true
-                        ACFS_LOG_STDERR_CAPTURED=true
+                        GTBI_LOG_STDERR_CAPTURED=true
                     fi
                 fi
             fi
@@ -858,51 +858,51 @@ acfs_log_init() {
     fi
 
     if [[ "$tee_logging_ok" != "true" ]]; then
-        if [[ -n "${ACFS_LOG_ORIGINAL_STDERR_FD:-}" ]]; then
-            { exec {ACFS_LOG_ORIGINAL_STDERR_FD}>&-; } 2>/dev/null || true
-            ACFS_LOG_ORIGINAL_STDERR_FD=""
+        if [[ -n "${GTBI_LOG_ORIGINAL_STDERR_FD:-}" ]]; then
+            { exec {GTBI_LOG_ORIGINAL_STDERR_FD}>&-; } 2>/dev/null || true
+            GTBI_LOG_ORIGINAL_STDERR_FD=""
         fi
         # Fallback: redirect stderr to both terminal (via original fd) and log file
         # This is less elegant but works on all bash versions
         echo "Note: Tee logging unavailable on this system, using fallback" >&2 || true
         # Save original stderr, then append to log file for each command
         # We'll rely on explicit logging calls instead of automatic tee
-        ACFS_LOG_FALLBACK=true
-        export ACFS_LOG_FALLBACK
+        GTBI_LOG_FALLBACK=true
+        export GTBI_LOG_FALLBACK
     fi
 
-    log_detail "Log file: $ACFS_LOG_FILE"
+    log_detail "Log file: $GTBI_LOG_FILE"
 }
 
 # Close log file capture and restore stderr.
 # Strips ANSI color codes from the log for clean text output.
-acfs_log_close() {
-    # Restore only an fd that acfs_log_init opened. Callers and test harnesses
+gtbi_log_close() {
+    # Restore only an fd that gtbi_log_init opened. Callers and test harnesses
     # often use fd 3 themselves; inheriting it must not make us redirect/close it.
-    if [[ "${ACFS_LOG_STDERR_CAPTURED:-false}" == "true" && -n "${ACFS_LOG_ORIGINAL_STDERR_FD:-}" ]]; then
-        exec 2>&"${ACFS_LOG_ORIGINAL_STDERR_FD}" || true
-        { exec {ACFS_LOG_ORIGINAL_STDERR_FD}>&-; } 2>/dev/null || true
-        ACFS_LOG_ORIGINAL_STDERR_FD=""
-        ACFS_LOG_STDERR_CAPTURED=false
+    if [[ "${GTBI_LOG_STDERR_CAPTURED:-false}" == "true" && -n "${GTBI_LOG_ORIGINAL_STDERR_FD:-}" ]]; then
+        exec 2>&"${GTBI_LOG_ORIGINAL_STDERR_FD}" || true
+        { exec {GTBI_LOG_ORIGINAL_STDERR_FD}>&-; } 2>/dev/null || true
+        GTBI_LOG_ORIGINAL_STDERR_FD=""
+        GTBI_LOG_STDERR_CAPTURED=false
     fi
 
-    if [[ "${ACFS_LOG_INITIALIZED:-false}" == "true" && -n "${ACFS_LOG_FILE:-}" && -f "$ACFS_LOG_FILE" ]]; then
+    if [[ "${GTBI_LOG_INITIALIZED:-false}" == "true" && -n "${GTBI_LOG_FILE:-}" && -f "$GTBI_LOG_FILE" ]]; then
         # Strip ANSI escape codes for clean log
-        sed -i $'s/\033\[[0-9;]*m//g' "$ACFS_LOG_FILE" 2>/dev/null || true
+        sed -i $'s/\033\[[0-9;]*m//g' "$GTBI_LOG_FILE" 2>/dev/null || true
 
         # Append footer
         {
             printf '\n========================\n'
             printf 'Finished: %s\n' "$(date -Iseconds)"
             printf '========================\n'
-        } >> "$ACFS_LOG_FILE"
+        } >> "$GTBI_LOG_FILE"
 
         # Fix ownership
         if [[ -n "${TARGET_USER:-}" ]] && [[ "$(id -u)" -eq 0 ]]; then
-            chown "${TARGET_USER}:${TARGET_USER}" "$ACFS_LOG_FILE" 2>/dev/null || true
+            chown "${TARGET_USER}:${TARGET_USER}" "$GTBI_LOG_FILE" 2>/dev/null || true
         fi
     fi
-    ACFS_LOG_INITIALIZED=false
+    GTBI_LOG_INITIALIZED=false
 }
 
 # ============================================================
@@ -910,9 +910,9 @@ acfs_log_close() {
 # ============================================================
 
 # Emit a local performance budget artifact derived from an install summary.
-# Usage: acfs_performance_budget_emit <summary_file>
-# Output: ~/.acfs/logs/performance_budget_<timestamp>.json
-acfs_performance_budget_emit() {
+# Usage: gtbi_performance_budget_emit <summary_file>
+# Output: ~/.gtbi/logs/performance_budget_<timestamp>.json
+gtbi_performance_budget_emit() {
     local summary_file="$1"
 
     command -v jq &>/dev/null || return 0
@@ -981,7 +981,7 @@ acfs_performance_budget_emit() {
             },
             run: {
                 run_id: ($source_summary | sub("^install_summary_"; "") | sub("\\.json$"; "")),
-                acfs_version: ($s.environment.acfs_version // "unknown"),
+                gtbi_version: ($s.environment.gtbi_version // "unknown"),
                 completed_at: ($s.timestamp // null),
                 duration_seconds: $total_seconds,
                 install_status: ($s.status // "unknown")
@@ -1005,8 +1005,8 @@ acfs_performance_budget_emit() {
             recommendations: []
         }' > "$budget_file" 2>/dev/null || return 0
 
-    ACFS_PERFORMANCE_BUDGET_FILE="$budget_file"
-    export ACFS_PERFORMANCE_BUDGET_FILE
+    GTBI_PERFORMANCE_BUDGET_FILE="$budget_file"
+    export GTBI_PERFORMANCE_BUDGET_FILE
 
     if [[ -n "${TARGET_USER:-}" ]] && [[ "$(id -u)" -eq 0 ]]; then
         chown "${TARGET_USER}:${TARGET_USER}" "$budget_file" 2>/dev/null || true
@@ -1016,11 +1016,11 @@ acfs_performance_budget_emit() {
 }
 
 # Emit a JSON summary of the install run for downstream tooling.
-# Usage: acfs_summary_emit <status> [total_seconds]
+# Usage: gtbi_summary_emit <status> [total_seconds]
 #   status: "success" or "failure"
 #   total_seconds: total wall-clock time (optional, default 0)
-# Output: ~/.acfs/logs/install_summary_<timestamp>.json
-acfs_summary_emit() {
+# Output: ~/.gtbi/logs/install_summary_<timestamp>.json
+gtbi_summary_emit() {
     local status="$1"
     local total_seconds="${2:-0}"
 
@@ -1032,44 +1032,44 @@ acfs_summary_emit() {
     if [[ -n "${TARGET_HOME:-}" ]] && [[ "${TARGET_HOME}" == /* ]] && [[ "${TARGET_HOME}" != "/" ]]; then
         explicit_target_home="${TARGET_HOME%/}"
     fi
-    resolved_target_home="$(acfs_home_for_user "${TARGET_USER:-ubuntu}" "$explicit_target_home" 2>/dev/null || true)"
+    resolved_target_home="$(gtbi_home_for_user "${TARGET_USER:-ubuntu}" "$explicit_target_home" 2>/dev/null || true)"
     resolved_target_home="${resolved_target_home%/}"
     if [[ -z "$resolved_target_home" ]] || [[ "$resolved_target_home" == "/" ]] || [[ "$resolved_target_home" != /* ]]; then
         return 1
     fi
 
-    local summary_home="${ACFS_HOME:-}"
+    local summary_home="${GTBI_HOME:-}"
     if [[ -z "$summary_home" ]]; then
-        summary_home="${resolved_target_home}/.acfs"
+        summary_home="${resolved_target_home}/.gtbi"
     fi
 
     local summary_dir="${summary_home}/logs"
     mkdir -p "$summary_dir" 2>/dev/null || return 1
 
-    ACFS_SUMMARY_FILE="${summary_dir}/install_summary_$(date +%Y%m%d_%H%M%S).json"
-    export ACFS_SUMMARY_FILE
+    GTBI_SUMMARY_FILE="${summary_dir}/install_summary_$(date +%Y%m%d_%H%M%S).json"
+    export GTBI_SUMMARY_FILE
 
     # Read phase data from state.json if available
     local phases_json="[]"
     local failure_json="null"
-    if [[ -f "${ACFS_STATE_FILE:-}" ]] && command -v jq &>/dev/null; then
+    if [[ -f "${GTBI_STATE_FILE:-}" ]] && command -v jq &>/dev/null; then
         # Build phases array: [{id, name, duration_seconds}] in completion order
         phases_json=$(jq -r '
             (.completed_phases // []) as $completed |
             (.phase_durations // {}) as $durations |
             [$completed[] | {id: ., duration_seconds: ($durations[.] // null)}]
-        ' "$ACFS_STATE_FILE" 2>/dev/null) || phases_json="[]"
+        ' "$GTBI_STATE_FILE" 2>/dev/null) || phases_json="[]"
 
         # Build failure object if present with precise resume hint (bd-31ps.9.1)
         local failed_phase
-        failed_phase=$(jq -r '.failed_phase // empty' "$ACFS_STATE_FILE" 2>/dev/null) || true
+        failed_phase=$(jq -r '.failed_phase // empty' "$GTBI_STATE_FILE" 2>/dev/null) || true
         if [[ -n "$failed_phase" ]]; then
             local resume_hint
             resume_hint=$(generate_resume_hint "$failed_phase" "")
             failure_json=$(jq -n \
                 --arg phase "$failed_phase" \
-                --arg step "$(jq -r '.failed_step // empty' "$ACFS_STATE_FILE" 2>/dev/null)" \
-                --arg error "$(jq -r '.failed_error // empty' "$ACFS_STATE_FILE" 2>/dev/null)" \
+                --arg step "$(jq -r '.failed_step // empty' "$GTBI_STATE_FILE" 2>/dev/null)" \
+                --arg error "$(jq -r '.failed_error // empty' "$GTBI_STATE_FILE" 2>/dev/null)" \
                 --arg resume_hint "$resume_hint" \
                 '{phase: $phase, step: (if $step == "" then null else $step end), error: (if $error == "" then null else $error end), resume_hint: $resume_hint}')
         fi
@@ -1087,21 +1087,21 @@ acfs_summary_emit() {
         --arg status "$status" \
         --arg timestamp "$(date -Iseconds)" \
         --argjson total_seconds "$total_seconds" \
-        --arg acfs_version "${ACFS_VERSION:-unknown}" \
+        --arg gtbi_version "${GTBI_VERSION:-unknown}" \
         --arg mode "${MODE:-unknown}" \
         --arg ubuntu_version "$ubuntu_version" \
         --arg target_user "${TARGET_USER:-unknown}" \
         --arg target_home "${resolved_target_home:-unknown}" \
         --argjson phases "$phases_json" \
         --argjson failure "$failure_json" \
-        --arg log_file "${ACFS_LOG_FILE:-}" \
+        --arg log_file "${GTBI_LOG_FILE:-}" \
         '{
             schema_version: $schema_version,
             status: $status,
             timestamp: $timestamp,
             total_seconds: $total_seconds,
             environment: {
-                acfs_version: $acfs_version,
+                gtbi_version: $gtbi_version,
                 mode: $mode,
                 ubuntu_version: $ubuntu_version,
                 target_user: $target_user,
@@ -1110,16 +1110,16 @@ acfs_summary_emit() {
             phases: $phases,
             failure: $failure,
             log_file: (if $log_file != "" then $log_file else null end)
-        }' > "$ACFS_SUMMARY_FILE" 2>/dev/null || return 1
+        }' > "$GTBI_SUMMARY_FILE" 2>/dev/null || return 1
 
     # Fix ownership so target user can read
     if [[ -n "${TARGET_USER:-}" ]] && [[ "$(id -u)" -eq 0 ]]; then
-        chown "${TARGET_USER}:${TARGET_USER}" "$ACFS_SUMMARY_FILE" 2>/dev/null || true
+        chown "${TARGET_USER}:${TARGET_USER}" "$GTBI_SUMMARY_FILE" 2>/dev/null || true
     fi
 
-    acfs_performance_budget_emit "$ACFS_SUMMARY_FILE" 2>/dev/null || true
+    gtbi_performance_budget_emit "$GTBI_SUMMARY_FILE" 2>/dev/null || true
 
-    log_detail "Summary: $ACFS_SUMMARY_FILE"
+    log_detail "Summary: $GTBI_SUMMARY_FILE"
 }
 
 # ============================================================
@@ -1144,13 +1144,13 @@ generate_resume_hint() {
     if [[ -z "${SCRIPT_DIR:-}" ]]; then
         # curl|bash invocation - use one-liner format
         cmd="curl -fsSL"
-        if [[ -n "${ACFS_COMMIT_SHA_FULL:-}" ]]; then
+        if [[ -n "${GTBI_COMMIT_SHA_FULL:-}" ]]; then
             # Pin to exact commit SHA for reproducibility
-            install_url="https://raw.githubusercontent.com/${ACFS_REPO_OWNER}/${ACFS_REPO_NAME}/${ACFS_COMMIT_SHA_FULL}/install.sh"
-        elif [[ -n "${ACFS_REF_INPUT:-}" && "${ACFS_REF_INPUT}" != "main" ]]; then
-            install_url="https://raw.githubusercontent.com/${ACFS_REPO_OWNER}/${ACFS_REPO_NAME}/${ACFS_REF_INPUT}/install.sh"
+            install_url="https://raw.githubusercontent.com/${GTBI_REPO_OWNER}/${GTBI_REPO_NAME}/${GTBI_COMMIT_SHA_FULL}/install.sh"
+        elif [[ -n "${GTBI_REF_INPUT:-}" && "${GTBI_REF_INPUT}" != "main" ]]; then
+            install_url="https://raw.githubusercontent.com/${GTBI_REPO_OWNER}/${GTBI_REPO_NAME}/${GTBI_REF_INPUT}/install.sh"
         else
-            install_url="https://acfs.sh"
+            install_url="https://gtbi.sh"
         fi
         printf -v install_url_q '%q' "$install_url"
         cmd="$cmd $install_url_q"
@@ -1171,12 +1171,12 @@ generate_resume_hint() {
     fi
 
     # Propagate --ref so the resume uses the same git ref (avoids the
-    # curl|bash env-var pitfall where ACFS_REF only reaches curl, not bash)
-    if [[ -z "${SCRIPT_DIR:-}" && -n "${ACFS_COMMIT_SHA_FULL:-}" ]]; then
-        resume_ref="$ACFS_COMMIT_SHA_FULL"
+    # curl|bash env-var pitfall where GTBI_REF only reaches curl, not bash)
+    if [[ -z "${SCRIPT_DIR:-}" && -n "${GTBI_COMMIT_SHA_FULL:-}" ]]; then
+        resume_ref="$GTBI_COMMIT_SHA_FULL"
         resume_ref_pinned_from_commit=true
-    elif [[ -n "${ACFS_REF_INPUT:-}" && "${ACFS_REF_INPUT}" != "main" ]]; then
-        resume_ref="$ACFS_REF_INPUT"
+    elif [[ -n "${GTBI_REF_INPUT:-}" && "${GTBI_REF_INPUT}" != "main" ]]; then
+        resume_ref="$GTBI_REF_INPUT"
     fi
     if [[ -n "$resume_ref" ]]; then
         resume_args+=(--ref "$resume_ref")
@@ -1184,15 +1184,15 @@ generate_resume_hint() {
 
     # Preserve checksum metadata that would otherwise be lost when replaying
     # the resume command with a different --ref than the original invocation.
-    if [[ "${ACFS_CHECKSUMS_REF_EXPLICIT:-false}" == "true" && -n "${ACFS_CHECKSUMS_REF:-}" ]]; then
-        resume_args+=(--checksums-ref "$ACFS_CHECKSUMS_REF")
-    elif [[ "$resume_ref_pinned_from_commit" == "true" && -n "${ACFS_CHECKSUMS_REF:-}" && "$ACFS_CHECKSUMS_REF" != "main" ]]; then
+    if [[ "${GTBI_CHECKSUMS_REF_EXPLICIT:-false}" == "true" && -n "${GTBI_CHECKSUMS_REF:-}" ]]; then
+        resume_args+=(--checksums-ref "$GTBI_CHECKSUMS_REF")
+    elif [[ "$resume_ref_pinned_from_commit" == "true" && -n "${GTBI_CHECKSUMS_REF:-}" && "$GTBI_CHECKSUMS_REF" != "main" ]]; then
         # Pinning --ref to an exact SHA would otherwise make parse_args derive
         # checksum metadata from main, not the symbolic branch used originally.
-        resume_args+=(--checksums-ref "$ACFS_CHECKSUMS_REF")
+        resume_args+=(--checksums-ref "$GTBI_CHECKSUMS_REF")
     fi
-    if [[ -n "${ACFS_OFFLINE_PACK:-}" ]]; then
-        resume_args+=(--offline-pack "$ACFS_OFFLINE_PACK")
+    if [[ -n "${GTBI_OFFLINE_PACK:-}" ]]; then
+        resume_args+=(--offline-pack "$GTBI_OFFLINE_PACK")
     fi
 
     # Add skip flags that were used
@@ -1206,7 +1206,7 @@ generate_resume_hint() {
     [[ "${YES_MODE:-false}" == "true" ]] && resume_args+=(--yes)
 
     # Add --strict if it was set
-    [[ "${STRICT_MODE:-false}" == "true" || "${ACFS_STRICT_MODE:-false}" == "true" ]] && resume_args+=(--strict)
+    [[ "${STRICT_MODE:-false}" == "true" || "${GTBI_STRICT_MODE:-false}" == "true" ]] && resume_args+=(--strict)
 
     for arg_q in "${resume_args[@]}"; do
         printf -v arg_q '%q' "$arg_q"
@@ -1228,7 +1228,7 @@ print_resume_hint() {
             printf -v local_install '%q' "$local_install"
             resume_cmd="bash $local_install --resume --yes"
         else
-            resume_cmd="curl -fsSL https://acfs.sh | bash -s -- --resume --yes"
+            resume_cmd="curl -fsSL https://gtbi.sh | bash -s -- --resume --yes"
         fi
     fi
 
@@ -1249,7 +1249,7 @@ print_resume_hint() {
 
     # Also persist the precise resume hint into state.json, but only through the
     # state library so we keep same-directory atomic writes and target-user ownership.
-    if [[ -f "${ACFS_STATE_FILE:-}" ]] && type -t state_set_resume_hint &>/dev/null; then
+    if [[ -f "${GTBI_STATE_FILE:-}" ]] && type -t state_set_resume_hint &>/dev/null; then
         state_set_resume_hint "${resume_cmd:-}" 2>/dev/null || true
     fi
 }
@@ -1258,10 +1258,10 @@ print_resume_hint() {
 # Error handling
 # ============================================================
 # Track whether cleanup was triggered by a signal (not a normal EXIT).
-_ACFS_SIGNAL_RECEIVED=""
+_GTBI_SIGNAL_RECEIVED=""
 
-_acfs_signal_handler() {
-    _ACFS_SIGNAL_RECEIVED="$1"
+_gtbi_signal_handler() {
+    _GTBI_SIGNAL_RECEIVED="$1"
     # Exit with 128+signum (standard convention) to trigger the EXIT trap.
     case "$1" in
         TERM) exit 143 ;;
@@ -1271,30 +1271,30 @@ _acfs_signal_handler() {
     esac
 }
 
-acfs_bootstrap_dir_is_owned_temp() {
+gtbi_bootstrap_dir_is_owned_temp() {
     local dir="${1:-}"
-    local tmp_root="${_ACFS_BOOTSTRAP_DIR_TMP_ROOT:-}"
+    local tmp_root="${_GTBI_BOOTSTRAP_DIR_TMP_ROOT:-}"
 
-    [[ "${_ACFS_BOOTSTRAP_DIR_OWNED:-false}" == "true" ]] || return 1
+    [[ "${_GTBI_BOOTSTRAP_DIR_OWNED:-false}" == "true" ]] || return 1
     [[ -n "$dir" ]] || return 1
-    [[ -n "${_ACFS_BOOTSTRAP_DIR_CREATED:-}" ]] || return 1
-    [[ "$dir" == "$_ACFS_BOOTSTRAP_DIR_CREATED" ]] || return 1
+    [[ -n "${_GTBI_BOOTSTRAP_DIR_CREATED:-}" ]] || return 1
+    [[ "$dir" == "$_GTBI_BOOTSTRAP_DIR_CREATED" ]] || return 1
 
     dir="${dir%/}"
     [[ "$dir" == /* ]] || return 1
     [[ "$dir" != "/" ]] || return 1
     [[ "$tmp_root" == /* ]] || return 1
-    [[ "$dir" == "$tmp_root"/acfs-bootstrap-* ]] || return 1
+    [[ "$dir" == "$tmp_root"/gtbi-bootstrap-* ]] || return 1
     [[ -d "$dir" ]] || return 1
 }
 
-acfs_remember_install_lock() {
-    ACFS_INSTALL_LOCK_FD="$1"
-    ACFS_INSTALL_LOCK_FILE="$2"
+gtbi_remember_install_lock() {
+    GTBI_INSTALL_LOCK_FD="$1"
+    GTBI_INSTALL_LOCK_FILE="$2"
 }
 
-acfs_release_install_lock() {
-    case "${ACFS_INSTALL_LOCK_FD:-}" in
+gtbi_release_install_lock() {
+    case "${GTBI_INSTALL_LOCK_FD:-}" in
         198)
             flock -u 198 2>/dev/null || true
             { exec 198>&-; } 2>/dev/null || true
@@ -1304,8 +1304,8 @@ acfs_release_install_lock() {
             { exec 199>&-; } 2>/dev/null || true
             ;;
     esac
-    ACFS_INSTALL_LOCK_FD=""
-    ACFS_INSTALL_LOCK_FILE=""
+    GTBI_INSTALL_LOCK_FD=""
+    GTBI_INSTALL_LOCK_FILE=""
 }
 
 cleanup() {
@@ -1315,25 +1315,25 @@ cleanup() {
     # Cleanup must never abort — disable errexit for the entire function.
     set +e
 
-    if acfs_bootstrap_dir_is_owned_temp "${ACFS_BOOTSTRAP_DIR:-}"; then
-        rm -rf -- "$ACFS_BOOTSTRAP_DIR" 2>/dev/null || true
+    if gtbi_bootstrap_dir_is_owned_temp "${GTBI_BOOTSTRAP_DIR:-}"; then
+        rm -rf -- "$GTBI_BOOTSTRAP_DIR" 2>/dev/null || true
     fi
 
-    if [[ -n "${ACFS_TMP_ARCHIVE:-}" ]] && [[ -f "$ACFS_TMP_ARCHIVE" ]]; then
-        rm -f "$ACFS_TMP_ARCHIVE" 2>/dev/null || true
+    if [[ -n "${GTBI_TMP_ARCHIVE:-}" ]] && [[ -f "$GTBI_TMP_ARCHIVE" ]]; then
+        rm -f "$GTBI_TMP_ARCHIVE" 2>/dev/null || true
     fi
 
-    if [[ -n "${ACFS_TMP_SLB:-}" ]] && [[ -d "$ACFS_TMP_SLB" ]]; then
-        rm -rf "$ACFS_TMP_SLB" 2>/dev/null || true
+    if [[ -n "${GTBI_TMP_SLB:-}" ]] && [[ -d "$GTBI_TMP_SLB" ]]; then
+        rm -rf "$GTBI_TMP_SLB" 2>/dev/null || true
     fi
 
-    if [[ -n "${ACFS_TMP_INSTALL:-}" ]] && [[ -f "$ACFS_TMP_INSTALL" ]]; then
-        rm -f "$ACFS_TMP_INSTALL" 2>/dev/null || true
+    if [[ -n "${GTBI_TMP_INSTALL:-}" ]] && [[ -f "$GTBI_TMP_INSTALL" ]]; then
+        rm -f "$GTBI_TMP_INSTALL" 2>/dev/null || true
     fi
 
     # If a signal triggered this cleanup, mark state as interrupted so
     # resume logic does not see a partially-started phase.
-    if [[ -n "${_ACFS_SIGNAL_RECEIVED:-}" ]]; then
+    if [[ -n "${_GTBI_SIGNAL_RECEIVED:-}" ]]; then
         if type -t state_mark_interrupted &>/dev/null; then
             state_mark_interrupted 2>/dev/null || true
         fi
@@ -1342,56 +1342,56 @@ cleanup() {
     if [[ $exit_code -ne 0 ]]; then
         log_error ""
         if [[ "${SMOKE_TEST_FAILED:-false}" == "true" ]]; then
-            log_error "ACFS installation completed, but the post-install smoke test failed."
+            log_error "GTBI installation completed, but the post-install smoke test failed."
         else
-            log_error "ACFS installation failed!"
+            log_error "GTBI installation failed!"
         fi
         log_error ""
         log_error "To debug:"
-        if [[ -n "${ACFS_LOG_FILE:-}" ]] && [[ -f "${ACFS_LOG_FILE:-}" ]]; then
-            log_error "  1. Check the log: cat ${ACFS_LOG_FILE:-}"
-        elif [[ -n "${ACFS_LOG_DIR:-}" ]] && [[ -d "${ACFS_LOG_DIR:-}" ]]; then
-            log_error "  1. Check the log: cat ${ACFS_LOG_DIR:-}/install.log"
+        if [[ -n "${GTBI_LOG_FILE:-}" ]] && [[ -f "${GTBI_LOG_FILE:-}" ]]; then
+            log_error "  1. Check the log: cat ${GTBI_LOG_FILE:-}"
+        elif [[ -n "${GTBI_LOG_DIR:-}" ]] && [[ -d "${GTBI_LOG_DIR:-}" ]]; then
+            log_error "  1. Check the log: cat ${GTBI_LOG_DIR:-}/install.log"
         else
-            log_error "  1. Re-run with ACFS_DEBUG=true for detailed output"
+            log_error "  1. Re-run with GTBI_DEBUG=true for detailed output"
         fi
-        log_error "  2. If installed, run: acfs doctor (try as ${TARGET_USER:-ubuntu})"
-        log_error "     (If you ran the installer as root: sudo -u ${TARGET_USER:-ubuntu} -i bash -lc 'acfs doctor')"
+        log_error "  2. If installed, run: gtbi doctor (try as ${TARGET_USER:-ubuntu})"
+        log_error "     (If you ran the installer as root: sudo -u ${TARGET_USER:-ubuntu} -i bash -lc 'gtbi doctor')"
         log_error ""
         # Print precise resume hint if available (bd-31ps.9.1)
         # Get failed phase from state if available
         local failed_phase=""
         local failed_step=""
-        if [[ -f "${ACFS_STATE_FILE:-}" ]] && command -v jq &>/dev/null; then
-            failed_phase=$(jq -r '.failed_phase // empty' "${ACFS_STATE_FILE:-}" 2>/dev/null) || true
-            failed_step=$(jq -r '.failed_step // empty' "${ACFS_STATE_FILE:-}" 2>/dev/null) || true
+        if [[ -f "${GTBI_STATE_FILE:-}" ]] && command -v jq &>/dev/null; then
+            failed_phase=$(jq -r '.failed_phase // empty' "${GTBI_STATE_FILE:-}" 2>/dev/null) || true
+            failed_step=$(jq -r '.failed_step // empty' "${GTBI_STATE_FILE:-}" 2>/dev/null) || true
         fi
         print_resume_hint "${failed_phase:-}" "${failed_step:-}"
         log_error ""
         # Emit failure summary (best-effort)
-        acfs_summary_emit "failure" 0 2>/dev/null || true
+        gtbi_summary_emit "failure" 0 2>/dev/null || true
         # Send webhook notification for failure (bd-2zqr)
         if type -t webhook_notify &>/dev/null; then
-            webhook_notify "failure" "${ACFS_SUMMARY_FILE:-}" 2>/dev/null || true
+            webhook_notify "failure" "${GTBI_SUMMARY_FILE:-}" 2>/dev/null || true
         fi
         # Send ntfy.sh notification for failure (bd-2igt6)
-        if type -t acfs_notify_install_failure &>/dev/null; then
-            acfs_notify_install_failure 2>/dev/null || true
+        if type -t gtbi_notify_install_failure &>/dev/null; then
+            gtbi_notify_install_failure 2>/dev/null || true
         fi
     fi
-    acfs_release_install_lock
+    gtbi_release_install_lock
     # Finalize log file (restore stderr, strip colors, add footer)
-    acfs_log_close 2>/dev/null || true
+    gtbi_log_close 2>/dev/null || true
 }
 trap cleanup EXIT
-trap '_acfs_signal_handler TERM' TERM
-trap '_acfs_signal_handler INT'  INT
-trap '_acfs_signal_handler HUP'  HUP
+trap '_gtbi_signal_handler TERM' TERM
+trap '_gtbi_signal_handler INT'  INT
+trap '_gtbi_signal_handler HUP'  HUP
 
 # ============================================================
 # Parse arguments
 # ============================================================
-acfs_require_ref_arg_value() {
+gtbi_require_ref_arg_value() {
     local flag="$1"
     local value="${2:-}"
     local example="$3"
@@ -1415,7 +1415,7 @@ acfs_require_ref_arg_value() {
     esac
 }
 
-acfs_resolve_offline_pack_dir() {
+gtbi_resolve_offline_pack_dir() {
     local flag="$1"
     local value="${2:-}"
     local candidate=""
@@ -1442,26 +1442,26 @@ acfs_resolve_offline_pack_dir() {
         log_fatal "$flag could not resolve directory: $value"
     }
 
-    if [[ ! -r "$resolved/manifest.json" && ! -r "$resolved/acfs-offline-pack/manifest.json" ]]; then
-        log_fatal "$flag must point to acfs-offline-pack/ or its parent directory with manifest.json"
+    if [[ ! -r "$resolved/manifest.json" && ! -r "$resolved/gtbi-offline-pack/manifest.json" ]]; then
+        log_fatal "$flag must point to gtbi-offline-pack/ or its parent directory with manifest.json"
     fi
 
     printf '%s\n' "$resolved"
 }
 
-acfs_normalize_offline_pack_configuration() {
-    if [[ -z "${ACFS_OFFLINE_PACK:-}" ]]; then
+gtbi_normalize_offline_pack_configuration() {
+    if [[ -z "${GTBI_OFFLINE_PACK:-}" ]]; then
         return 0
     fi
 
-    ACFS_OFFLINE_PACK="$(acfs_resolve_offline_pack_dir "ACFS_OFFLINE_PACK" "$ACFS_OFFLINE_PACK")"
-    if [[ -z "${ACFS_OFFLINE_NETWORK_MODE:-}" ]]; then
-        ACFS_OFFLINE_NETWORK_MODE=offline
+    GTBI_OFFLINE_PACK="$(gtbi_resolve_offline_pack_dir "GTBI_OFFLINE_PACK" "$GTBI_OFFLINE_PACK")"
+    if [[ -z "${GTBI_OFFLINE_NETWORK_MODE:-}" ]]; then
+        GTBI_OFFLINE_NETWORK_MODE=offline
     fi
-    if [[ "${ACFS_OFFLINE_NETWORK_MODE:-}" == "offline" && -z "${ACFS_OFFLINE_PACK_REQUIRED:-}" ]]; then
-        ACFS_OFFLINE_PACK_REQUIRED=true
+    if [[ "${GTBI_OFFLINE_NETWORK_MODE:-}" == "offline" && -z "${GTBI_OFFLINE_PACK_REQUIRED:-}" ]]; then
+        GTBI_OFFLINE_PACK_REQUIRED=true
     fi
-    export ACFS_OFFLINE_PACK ACFS_OFFLINE_NETWORK_MODE ACFS_OFFLINE_PACK_REQUIRED
+    export GTBI_OFFLINE_PACK GTBI_OFFLINE_NETWORK_MODE GTBI_OFFLINE_PACK_REQUIRED
 }
 
 parse_args() {
@@ -1505,11 +1505,11 @@ parse_args() {
                 shift
                 ;;
             --resume)
-                export ACFS_FORCE_RESUME=true
+                export GTBI_FORCE_RESUME=true
                 shift
                 ;;
             --force-reinstall)
-                export ACFS_FORCE_REINSTALL=true
+                export GTBI_FORCE_REINSTALL=true
                 shift
                 ;;
             --reset-state)
@@ -1517,14 +1517,14 @@ parse_args() {
                 shift
                 ;;
             --interactive)
-                export ACFS_INTERACTIVE=true
+                export GTBI_INTERACTIVE=true
                 shift
                 ;;
             --strict)
                 # Treat all tools as critical - any checksum mismatch aborts
-                # Related: bead 8mv, tools.sh ACFS_STRICT_MODE handling
+                # Related: bead 8mv, tools.sh GTBI_STRICT_MODE handling
                 STRICT_MODE=true
-                export ACFS_STRICT_MODE=true
+                export GTBI_STRICT_MODE=true
                 shift
                 ;;
             --skip-preflight)
@@ -1553,35 +1553,35 @@ parse_args() {
                 ;;
             --checksums-ref|--checksums-ref=*)
                 if [[ "$1" == "--checksums-ref" ]]; then
-                    acfs_require_ref_arg_value "--checksums-ref" "${2:-}" "--checksums-ref main"
-                    ACFS_CHECKSUMS_REF="$2"
+                    gtbi_require_ref_arg_value "--checksums-ref" "${2:-}" "--checksums-ref main"
+                    GTBI_CHECKSUMS_REF="$2"
                     shift 2
                 else
-                    ACFS_CHECKSUMS_REF="${1#*=}"
-                    acfs_require_ref_arg_value "--checksums-ref" "$ACFS_CHECKSUMS_REF" "--checksums-ref=main"
+                    GTBI_CHECKSUMS_REF="${1#*=}"
+                    gtbi_require_ref_arg_value "--checksums-ref" "$GTBI_CHECKSUMS_REF" "--checksums-ref=main"
                     shift
                 fi
-                ACFS_CHECKSUMS_REF_EXPLICIT=true
-                ACFS_CHECKSUMS_RAW="https://raw.githubusercontent.com/${ACFS_REPO_OWNER}/${ACFS_REPO_NAME}/${ACFS_CHECKSUMS_REF}"
-                export ACFS_CHECKSUMS_REF ACFS_CHECKSUMS_RAW ACFS_CHECKSUMS_REF_EXPLICIT
+                GTBI_CHECKSUMS_REF_EXPLICIT=true
+                GTBI_CHECKSUMS_RAW="https://raw.githubusercontent.com/${GTBI_REPO_OWNER}/${GTBI_REPO_NAME}/${GTBI_CHECKSUMS_REF}"
+                export GTBI_CHECKSUMS_REF GTBI_CHECKSUMS_RAW GTBI_CHECKSUMS_REF_EXPLICIT
                 ;;
             --offline-pack|--offline-pack=*)
                 if [[ "$1" == "--offline-pack" ]]; then
                     if [[ -z "${2:-}" || "$2" == -* ]]; then
                         log_fatal "--offline-pack requires a directory"
                     fi
-                    ACFS_OFFLINE_PACK="$2"
+                    GTBI_OFFLINE_PACK="$2"
                     shift 2
                 else
-                    ACFS_OFFLINE_PACK="${1#*=}"
-                    if [[ -z "$ACFS_OFFLINE_PACK" ]]; then
+                    GTBI_OFFLINE_PACK="${1#*=}"
+                    if [[ -z "$GTBI_OFFLINE_PACK" ]]; then
                         log_fatal "--offline-pack requires a directory"
                     fi
                     shift
                 fi
-                ACFS_OFFLINE_NETWORK_MODE=offline
-                ACFS_OFFLINE_PACK_REQUIRED=true
-                export ACFS_OFFLINE_PACK ACFS_OFFLINE_NETWORK_MODE ACFS_OFFLINE_PACK_REQUIRED
+                GTBI_OFFLINE_NETWORK_MODE=offline
+                GTBI_OFFLINE_PACK_REQUIRED=true
+                export GTBI_OFFLINE_PACK GTBI_OFFLINE_NETWORK_MODE GTBI_OFFLINE_PACK_REQUIRED
                 ;;
             --pin-ref|--confirm-ref)
                 # Print resolved SHA and pinned command, then exit
@@ -1589,32 +1589,32 @@ parse_args() {
                 shift
                 ;;
             --ref|--ref=*)
-                # Set ACFS_REF from CLI (fixes curl|bash where env vars
-                # bind to curl, not bash: ACFS_REF=v1 curl ... | bash
+                # Set GTBI_REF from CLI (fixes curl|bash where env vars
+                # bind to curl, not bash: GTBI_REF=v1 curl ... | bash
                 # doesn't propagate to the bash process)
                 if [[ "$1" == "--ref" ]]; then
-                    acfs_require_ref_arg_value "--ref" "${2:-}" "--ref main"
-                    ACFS_REF="$2"
+                    gtbi_require_ref_arg_value "--ref" "${2:-}" "--ref main"
+                    GTBI_REF="$2"
                     shift 2
                 else
-                    ACFS_REF="${1#*=}"
-                    acfs_require_ref_arg_value "--ref" "$ACFS_REF" "--ref=main"
+                    GTBI_REF="${1#*=}"
+                    gtbi_require_ref_arg_value "--ref" "$GTBI_REF" "--ref=main"
                     shift
                 fi
-                ACFS_REF_INPUT="$ACFS_REF"
-                ACFS_RAW="https://raw.githubusercontent.com/${ACFS_REPO_OWNER}/${ACFS_REPO_NAME}/${ACFS_REF}"
+                GTBI_REF_INPUT="$GTBI_REF"
+                GTBI_RAW="https://raw.githubusercontent.com/${GTBI_REPO_OWNER}/${GTBI_REPO_NAME}/${GTBI_REF}"
                 # Recalculate checksums ref for the new install ref unless the
                 # user explicitly pinned checksum metadata with --checksums-ref
-                # or ACFS_CHECKSUMS_REF.
-                if [[ "${ACFS_CHECKSUMS_REF_EXPLICIT:-false}" != "true" ]]; then
-                    if [[ "$ACFS_REF" =~ ^v[0-9]+(\.[0-9]+){1,2}([.-][A-Za-z0-9]+)*$ ]] || [[ "$ACFS_REF" =~ ^[0-9a-f]{7,40}$ ]]; then
-                        ACFS_CHECKSUMS_REF="main"
+                # or GTBI_CHECKSUMS_REF.
+                if [[ "${GTBI_CHECKSUMS_REF_EXPLICIT:-false}" != "true" ]]; then
+                    if [[ "$GTBI_REF" =~ ^v[0-9]+(\.[0-9]+){1,2}([.-][A-Za-z0-9]+)*$ ]] || [[ "$GTBI_REF" =~ ^[0-9a-f]{7,40}$ ]]; then
+                        GTBI_CHECKSUMS_REF="main"
                     else
-                        ACFS_CHECKSUMS_REF="$ACFS_REF"
+                        GTBI_CHECKSUMS_REF="$GTBI_REF"
                     fi
                 fi
-                ACFS_CHECKSUMS_RAW="https://raw.githubusercontent.com/${ACFS_REPO_OWNER}/${ACFS_REPO_NAME}/${ACFS_CHECKSUMS_REF}"
-                export ACFS_REF ACFS_RAW ACFS_CHECKSUMS_REF ACFS_CHECKSUMS_RAW ACFS_CHECKSUMS_REF_EXPLICIT
+                GTBI_CHECKSUMS_RAW="https://raw.githubusercontent.com/${GTBI_REPO_OWNER}/${GTBI_REPO_NAME}/${GTBI_CHECKSUMS_REF}"
+                export GTBI_REF GTBI_RAW GTBI_CHECKSUMS_REF GTBI_CHECKSUMS_RAW GTBI_CHECKSUMS_REF_EXPLICIT
                 ;;
             --skip-ubuntu-upgrade)
                 # Skip automatic Ubuntu version upgrade (nb4)
@@ -1683,11 +1683,11 @@ parse_args() {
                     if [[ -z "${2:-}" ]]; then
                         log_fatal "--webhook requires a URL (e.g., --webhook https://hooks.slack.com/...)"
                     fi
-                    export ACFS_WEBHOOK_URL="$2"
+                    export GTBI_WEBHOOK_URL="$2"
                     shift 2
                 else
                     # Handle --webhook=https://... format
-                    export ACFS_WEBHOOK_URL="${1#*=}"
+                    export GTBI_WEBHOOK_URL="${1#*=}"
                     shift
                 fi
                 ;;
@@ -1818,7 +1818,7 @@ handle_autofix() {
             else
                 # Interactive prompt
                 local response=""
-                printf "%b" "${ACFS_YELLOW:-}Would you like ACFS to fix this automatically? [Y/n] ${ACFS_NC:-}" >&2
+                printf "%b" "${GTBI_YELLOW:-}Would you like GTBI to fix this automatically? [Y/n] ${GTBI_NC:-}" >&2
                 read -r response </dev/tty 2>/dev/null || response="y"
                 case "${response:-y}" in
                     [Yy]|[Yy][Ee][Ss]|"")
@@ -1852,39 +1852,39 @@ export -f handle_autofix 2>/dev/null || true
 # ============================================================
 detect_environment() {
     # Set lib and generated script directories based on context
-    if [[ -n "${ACFS_BOOTSTRAP_DIR:-}" ]]; then
+    if [[ -n "${GTBI_BOOTSTRAP_DIR:-}" ]]; then
         # curl|bash mode: use bootstrap archive
-        ACFS_LIB_DIR="$ACFS_BOOTSTRAP_DIR/scripts/lib"
-        ACFS_GENERATED_DIR="$ACFS_BOOTSTRAP_DIR/scripts/generated"
-        ACFS_ASSETS_DIR="${ACFS_ASSETS_DIR:-$ACFS_BOOTSTRAP_DIR/acfs}"
-        ACFS_CHECKSUMS_YAML="${ACFS_CHECKSUMS_YAML:-$ACFS_BOOTSTRAP_DIR/checksums.yaml}"
-        ACFS_MANIFEST_YAML="${ACFS_MANIFEST_YAML:-$ACFS_BOOTSTRAP_DIR/acfs.manifest.yaml}"
+        GTBI_LIB_DIR="$GTBI_BOOTSTRAP_DIR/scripts/lib"
+        GTBI_GENERATED_DIR="$GTBI_BOOTSTRAP_DIR/scripts/generated"
+        GTBI_ASSETS_DIR="${GTBI_ASSETS_DIR:-$GTBI_BOOTSTRAP_DIR/gtbi}"
+        GTBI_CHECKSUMS_YAML="${GTBI_CHECKSUMS_YAML:-$GTBI_BOOTSTRAP_DIR/checksums.yaml}"
+        GTBI_MANIFEST_YAML="${GTBI_MANIFEST_YAML:-$GTBI_BOOTSTRAP_DIR/gtbi.manifest.yaml}"
     elif [[ -n "${SCRIPT_DIR:-}" ]]; then
         # Local checkout mode
-        ACFS_LIB_DIR="$SCRIPT_DIR/scripts/lib"
-        ACFS_GENERATED_DIR="$SCRIPT_DIR/scripts/generated"
-        ACFS_ASSETS_DIR="$SCRIPT_DIR/acfs"
-        ACFS_CHECKSUMS_YAML="$SCRIPT_DIR/checksums.yaml"
-        ACFS_MANIFEST_YAML="$SCRIPT_DIR/acfs.manifest.yaml"
+        GTBI_LIB_DIR="$SCRIPT_DIR/scripts/lib"
+        GTBI_GENERATED_DIR="$SCRIPT_DIR/scripts/generated"
+        GTBI_ASSETS_DIR="$SCRIPT_DIR/gtbi"
+        GTBI_CHECKSUMS_YAML="$SCRIPT_DIR/checksums.yaml"
+        GTBI_MANIFEST_YAML="$SCRIPT_DIR/gtbi.manifest.yaml"
     else
         # Fallback: current directory (only valid for testing from repo root)
         # This should NOT be reached in curl-pipe mode since bootstrap_repo_archive
-        # sets ACFS_BOOTSTRAP_DIR. If we reach here without SCRIPT_DIR, something is wrong.
-        ACFS_LIB_DIR="./scripts/lib"
-        ACFS_GENERATED_DIR="./scripts/generated"
-        ACFS_ASSETS_DIR="./acfs"
-        ACFS_CHECKSUMS_YAML="./checksums.yaml"
-        ACFS_MANIFEST_YAML="./acfs.manifest.yaml"
+        # sets GTBI_BOOTSTRAP_DIR. If we reach here without SCRIPT_DIR, something is wrong.
+        GTBI_LIB_DIR="./scripts/lib"
+        GTBI_GENERATED_DIR="./scripts/generated"
+        GTBI_ASSETS_DIR="./gtbi"
+        GTBI_CHECKSUMS_YAML="./checksums.yaml"
+        GTBI_MANIFEST_YAML="./gtbi.manifest.yaml"
     fi
 
-    export ACFS_LIB_DIR ACFS_GENERATED_DIR ACFS_ASSETS_DIR ACFS_CHECKSUMS_YAML ACFS_MANIFEST_YAML
+    export GTBI_LIB_DIR GTBI_GENERATED_DIR GTBI_ASSETS_DIR GTBI_CHECKSUMS_YAML GTBI_MANIFEST_YAML
 
     # Validate that library directory exists - if not, fail early with a clear message
-    if [[ ! -d "$ACFS_LIB_DIR" ]]; then
-        local abs_lib_dir="$ACFS_LIB_DIR"
+    if [[ ! -d "$GTBI_LIB_DIR" ]]; then
+        local abs_lib_dir="$GTBI_LIB_DIR"
         # Try to show absolute path for better debugging
-        if [[ "$ACFS_LIB_DIR" == ./* ]]; then
-            abs_lib_dir="$(pwd)/${ACFS_LIB_DIR#./}"
+        if [[ "$GTBI_LIB_DIR" == ./* ]]; then
+            abs_lib_dir="$(pwd)/${GTBI_LIB_DIR#./}"
         fi
         echo "ERROR: Library directory not found: $abs_lib_dir" >&2
         echo "This typically means bootstrap failed or the script is being run from an unexpected location." >&2
@@ -1894,33 +1894,33 @@ detect_environment() {
     fi
 
     # Source minimal libs in correct order (logging, then helpers)
-    if [[ -f "$ACFS_LIB_DIR/logging.sh" ]]; then
+    if [[ -f "$GTBI_LIB_DIR/logging.sh" ]]; then
         # shellcheck source=scripts/lib/logging.sh
-        source "$ACFS_LIB_DIR/logging.sh"
+        source "$GTBI_LIB_DIR/logging.sh"
     fi
 
     # Verify internal script integrity before sourcing (bd-3tpl.5)
     # Fail-closed: abort if any tracked script has been modified.
     # Gracefully skips if checksums file is missing (pre-migration compat).
-    if [[ -f "$ACFS_GENERATED_DIR/internal_checksums.sh" ]]; then
+    if [[ -f "$GTBI_GENERATED_DIR/internal_checksums.sh" ]]; then
         # shellcheck source=scripts/generated/internal_checksums.sh
-        source "$ACFS_GENERATED_DIR/internal_checksums.sh"
-        if declare -p ACFS_INTERNAL_CHECKSUMS &>/dev/null; then
+        source "$GTBI_GENERATED_DIR/internal_checksums.sh"
+        if declare -p GTBI_INTERNAL_CHECKSUMS &>/dev/null; then
             local _ics_base
-            if [[ -n "${ACFS_BOOTSTRAP_DIR:-}" ]]; then
-                _ics_base="$ACFS_BOOTSTRAP_DIR"
+            if [[ -n "${GTBI_BOOTSTRAP_DIR:-}" ]]; then
+                _ics_base="$GTBI_BOOTSTRAP_DIR"
             elif [[ -n "${SCRIPT_DIR:-}" ]]; then
                 _ics_base="$SCRIPT_DIR"
             else
                 _ics_base="."
             fi
             local _ics_fail=0
-            for _ics_path in "${!ACFS_INTERNAL_CHECKSUMS[@]}"; do
-                local _ics_expected="${ACFS_INTERNAL_CHECKSUMS[$_ics_path]}"
+            for _ics_path in "${!GTBI_INTERNAL_CHECKSUMS[@]}"; do
+                local _ics_expected="${GTBI_INTERNAL_CHECKSUMS[$_ics_path]}"
                 local _ics_file="$_ics_base/$_ics_path"
                 if [[ -f "$_ics_file" ]]; then
                     local _ics_actual
-                    _ics_actual="$(acfs_calculate_file_sha256 "$_ics_file" 2>/dev/null || true)"
+                    _ics_actual="$(gtbi_calculate_file_sha256 "$_ics_file" 2>/dev/null || true)"
                     if [[ -z "$_ics_actual" ]]; then
                         _ics_fail=$((_ics_fail + 1))
                         if declare -f log_error &>/dev/null; then
@@ -1957,110 +1957,110 @@ detect_environment() {
                 exit 1
             fi
             if [[ "$_ics_fail" -eq 0 ]] && declare -f log_success &>/dev/null; then
-                log_success "Internal script integrity verified (${ACFS_INTERNAL_CHECKSUMS_COUNT:-?} scripts)"
+                log_success "Internal script integrity verified (${GTBI_INTERNAL_CHECKSUMS_COUNT:-?} scripts)"
             fi
         fi
     fi
 
-    if [[ -f "$ACFS_LIB_DIR/security.sh" ]]; then
+    if [[ -f "$GTBI_LIB_DIR/security.sh" ]]; then
         # shellcheck source=scripts/lib/security.sh
-        source "$ACFS_LIB_DIR/security.sh"
+        source "$GTBI_LIB_DIR/security.sh"
     fi
 
-    if [[ -f "$ACFS_LIB_DIR/contract.sh" ]]; then
+    if [[ -f "$GTBI_LIB_DIR/contract.sh" ]]; then
         # shellcheck source=scripts/lib/contract.sh
-        source "$ACFS_LIB_DIR/contract.sh"
+        source "$GTBI_LIB_DIR/contract.sh"
     fi
 
-    if [[ -f "$ACFS_LIB_DIR/install_helpers.sh" ]]; then
+    if [[ -f "$GTBI_LIB_DIR/install_helpers.sh" ]]; then
         # shellcheck source=scripts/lib/install_helpers.sh
-        source "$ACFS_LIB_DIR/install_helpers.sh"
+        source "$GTBI_LIB_DIR/install_helpers.sh"
     fi
 
-    if [[ -f "$ACFS_LIB_DIR/user.sh" ]]; then
+    if [[ -f "$GTBI_LIB_DIR/user.sh" ]]; then
         # shellcheck source=scripts/lib/user.sh
-        source "$ACFS_LIB_DIR/user.sh"
+        source "$GTBI_LIB_DIR/user.sh"
     fi
 
     # Source state management for resume/progress tracking (mjt.5.8)
-    if [[ -f "$ACFS_LIB_DIR/state.sh" ]]; then
+    if [[ -f "$GTBI_LIB_DIR/state.sh" ]]; then
         # shellcheck source=scripts/lib/state.sh
-        source "$ACFS_LIB_DIR/state.sh"
+        source "$GTBI_LIB_DIR/state.sh"
     fi
 
     # Source error pattern matcher (report.sh uses get_suggested_fix when available).
-    if [[ -f "$ACFS_LIB_DIR/errors.sh" ]]; then
+    if [[ -f "$GTBI_LIB_DIR/errors.sh" ]]; then
         # shellcheck source=scripts/lib/errors.sh
-        source "$ACFS_LIB_DIR/errors.sh"
+        source "$GTBI_LIB_DIR/errors.sh"
     fi
 
     # Source structured failure/success reporting (mjt.5.8).
-    if [[ -f "$ACFS_LIB_DIR/report.sh" ]]; then
+    if [[ -f "$GTBI_LIB_DIR/report.sh" ]]; then
         # shellcheck source=scripts/lib/report.sh
-        source "$ACFS_LIB_DIR/report.sh"
+        source "$GTBI_LIB_DIR/report.sh"
     fi
 
     # Source error tracking for try_step wrappers (mjt.5.8)
-    if [[ -f "$ACFS_LIB_DIR/error_tracking.sh" ]]; then
+    if [[ -f "$GTBI_LIB_DIR/error_tracking.sh" ]]; then
         # shellcheck source=scripts/lib/error_tracking.sh
-        source "$ACFS_LIB_DIR/error_tracking.sh"
+        source "$GTBI_LIB_DIR/error_tracking.sh"
     fi
 
     # Source Ubuntu upgrade library from the same lib dir when available (nb4).
-    if [[ -f "$ACFS_LIB_DIR/ubuntu_upgrade.sh" ]]; then
+    if [[ -f "$GTBI_LIB_DIR/ubuntu_upgrade.sh" ]]; then
         # shellcheck source=scripts/lib/ubuntu_upgrade.sh
-        source "$ACFS_LIB_DIR/ubuntu_upgrade.sh"
-        export ACFS_UBUNTU_UPGRADE_LOADED=1
+        source "$GTBI_LIB_DIR/ubuntu_upgrade.sh"
+        export GTBI_UBUNTU_UPGRADE_LOADED=1
     fi
 
     # Source tailscale installer (bt5)
-    if [[ -f "$ACFS_LIB_DIR/tailscale.sh" ]]; then
+    if [[ -f "$GTBI_LIB_DIR/tailscale.sh" ]]; then
         # shellcheck source=scripts/lib/tailscale.sh
-        source "$ACFS_LIB_DIR/tailscale.sh"
+        source "$GTBI_LIB_DIR/tailscale.sh"
     fi
 
     # Source finalize library
-    if [[ -f "$ACFS_LIB_DIR/finalize.sh" ]]; then
+    if [[ -f "$GTBI_LIB_DIR/finalize.sh" ]]; then
         # shellcheck source=scripts/lib/finalize.sh
-        source "$ACFS_LIB_DIR/finalize.sh"
+        source "$GTBI_LIB_DIR/finalize.sh"
     fi
 
     # Source auto-fix modules (bd-19y9.3.4)
-    if [[ -f "$ACFS_LIB_DIR/autofix.sh" ]]; then
+    if [[ -f "$GTBI_LIB_DIR/autofix.sh" ]]; then
         # shellcheck source=scripts/lib/autofix.sh
-        source "$ACFS_LIB_DIR/autofix.sh"
-        export ACFS_AUTOFIX_LOADED=1
+        source "$GTBI_LIB_DIR/autofix.sh"
+        export GTBI_AUTOFIX_LOADED=1
     fi
-    if [[ -f "$ACFS_LIB_DIR/autofix_unattended.sh" ]]; then
+    if [[ -f "$GTBI_LIB_DIR/autofix_unattended.sh" ]]; then
         # shellcheck source=scripts/lib/autofix_unattended.sh
-        source "$ACFS_LIB_DIR/autofix_unattended.sh"
+        source "$GTBI_LIB_DIR/autofix_unattended.sh"
     fi
-    if [[ -f "$ACFS_LIB_DIR/autofix_existing.sh" ]]; then
+    if [[ -f "$GTBI_LIB_DIR/autofix_existing.sh" ]]; then
         # shellcheck source=scripts/lib/autofix_existing.sh
-        source "$ACFS_LIB_DIR/autofix_existing.sh"
+        source "$GTBI_LIB_DIR/autofix_existing.sh"
     fi
 
     # Source webhook notification library (bd-2zqr)
-    if [[ -f "$ACFS_LIB_DIR/webhook.sh" ]]; then
+    if [[ -f "$GTBI_LIB_DIR/webhook.sh" ]]; then
         # shellcheck source=scripts/lib/webhook.sh
-        source "$ACFS_LIB_DIR/webhook.sh"
+        source "$GTBI_LIB_DIR/webhook.sh"
     fi
     # Source ntfy.sh notification library (bd-2igt6)
-    if [[ -f "$ACFS_LIB_DIR/notify.sh" ]]; then
+    if [[ -f "$GTBI_LIB_DIR/notify.sh" ]]; then
         # shellcheck source=scripts/lib/notify.sh
-        source "$ACFS_LIB_DIR/notify.sh"
+        source "$GTBI_LIB_DIR/notify.sh"
     fi
 
     # Source manifest index (data-only, safe to source)
-    if [[ -f "$ACFS_GENERATED_DIR/manifest_index.sh" ]]; then
+    if [[ -f "$GTBI_GENERATED_DIR/manifest_index.sh" ]]; then
         # shellcheck source=scripts/generated/manifest_index.sh
-        source "$ACFS_GENERATED_DIR/manifest_index.sh"
-        ACFS_MANIFEST_INDEX_LOADED=true
+        source "$GTBI_GENERATED_DIR/manifest_index.sh"
+        GTBI_MANIFEST_INDEX_LOADED=true
     else
-        ACFS_MANIFEST_INDEX_LOADED=false
+        GTBI_MANIFEST_INDEX_LOADED=false
     fi
 
-    export ACFS_MANIFEST_INDEX_LOADED
+    export GTBI_MANIFEST_INDEX_LOADED
 }
 
 # ============================================================
@@ -2068,17 +2068,17 @@ detect_environment() {
 # Loads generated category scripts for module functions.
 # ============================================================
 source_generated_installers() {
-    if [[ "${ACFS_GENERATED_SOURCED:-false}" == "true" ]]; then
+    if [[ "${GTBI_GENERATED_SOURCED:-false}" == "true" ]]; then
         return 0
     fi
 
-    if [[ -z "${ACFS_GENERATED_DIR:-}" ]]; then
-        log_warn "ACFS_GENERATED_DIR not set; cannot source generated installers"
+    if [[ -z "${GTBI_GENERATED_DIR:-}" ]]; then
+        log_warn "GTBI_GENERATED_DIR not set; cannot source generated installers"
         return 0
     fi
 
-    if [[ ! -d "$ACFS_GENERATED_DIR" ]]; then
-        log_warn "Generated installers directory not found: $ACFS_GENERATED_DIR"
+    if [[ ! -d "$GTBI_GENERATED_DIR" ]]; then
+        log_warn "Generated installers directory not found: $GTBI_GENERATED_DIR"
         return 0
     fi
 
@@ -2096,18 +2096,18 @@ source_generated_installers() {
         "install_db.sh"
         "install_cloud.sh"
         "install_stack.sh"
-        "install_acfs.sh"
+        "install_gtbi.sh"
     )
 
     for script in "${scripts[@]}"; do
-        if [[ -f "$ACFS_GENERATED_DIR/$script" ]]; then
+        if [[ -f "$GTBI_GENERATED_DIR/$script" ]]; then
             # shellcheck source=/dev/null
-            source "$ACFS_GENERATED_DIR/$script"
+            source "$GTBI_GENERATED_DIR/$script"
         fi
     done
 
-    ACFS_GENERATED_SOURCED=true
-    export ACFS_GENERATED_SOURCED
+    GTBI_GENERATED_SOURCED=true
+    export GTBI_GENERATED_SOURCED
 }
 
 # ============================================================
@@ -2115,12 +2115,12 @@ source_generated_installers() {
 # Prints available modules from manifest_index.sh
 # ============================================================
 list_modules() {
-    if [[ "${ACFS_MANIFEST_INDEX_LOADED:-false}" != "true" ]]; then
+    if [[ "${GTBI_MANIFEST_INDEX_LOADED:-false}" != "true" ]]; then
         echo "Error: Manifest index not loaded. Cannot list modules." >&2
         return 1
     fi
 
-    echo "Available ACFS Modules"
+    echo "Available GTBI Modules"
     echo "======================"
     echo ""
 
@@ -2132,13 +2132,13 @@ list_modules() {
     local enabled=""
     local key=""
     local enabled_marker=""
-    for module in "${ACFS_MODULES_IN_ORDER[@]}"; do
+    for module in "${GTBI_MODULES_IN_ORDER[@]}"; do
         # Use key variable to prevent arithmetic evaluation with dots
         key="$module"
-        phase="${ACFS_MODULE_PHASE[$key]:-?}"
-        category="${ACFS_MODULE_CATEGORY[$key]:-?}"
-        deps="${ACFS_MODULE_DEPS[$key]:-none}"
-        enabled="${ACFS_MODULE_DEFAULT[$key]:-1}"
+        phase="${GTBI_MODULE_PHASE[$key]:-?}"
+        category="${GTBI_MODULE_CATEGORY[$key]:-?}"
+        deps="${GTBI_MODULE_DEPS[$key]:-none}"
+        enabled="${GTBI_MODULE_DEFAULT[$key]:-1}"
 
         if [[ "$phase" != "$current_phase" ]]; then
             echo ""
@@ -2159,7 +2159,7 @@ list_modules() {
 
     echo ""
     echo "Legend: [+] enabled by default, [-] optional"
-    echo "Total: ${#ACFS_MODULES_IN_ORDER[@]} modules"
+    echo "Total: ${#GTBI_MODULES_IN_ORDER[@]} modules"
 }
 
 # ============================================================
@@ -2167,16 +2167,16 @@ list_modules() {
 # Prints the effective execution plan without running installs.
 # ============================================================
 print_execution_plan() {
-    if [[ "${ACFS_MANIFEST_INDEX_LOADED:-false}" != "true" ]]; then
+    if [[ "${GTBI_MANIFEST_INDEX_LOADED:-false}" != "true" ]]; then
         echo "Error: Manifest index not loaded. Cannot print plan." >&2
         return 1
     fi
 
-    echo "ACFS Installation Plan"
+    echo "GTBI Installation Plan"
     echo "======================"
     echo ""
     echo "Mode: $MODE"
-    echo "Selected modules: ${#ACFS_EFFECTIVE_PLAN[@]} of ${#ACFS_MODULES_IN_ORDER[@]} available"
+    echo "Selected modules: ${#GTBI_EFFECTIVE_PLAN[@]} of ${#GTBI_MODULES_IN_ORDER[@]} available"
     echo ""
 
     # Show selection settings if non-default
@@ -2197,12 +2197,12 @@ print_execution_plan() {
 
     local idx=1
     local module phase func key reason
-    for module in "${ACFS_EFFECTIVE_PLAN[@]}"; do
+    for module in "${GTBI_EFFECTIVE_PLAN[@]}"; do
         # Use key variable to prevent arithmetic evaluation with dots
         key="$module"
-        phase="${ACFS_MODULE_PHASE[$key]:-?}"
-        func="${ACFS_MODULE_FUNC[$key]:-?}"
-        reason="${ACFS_PLAN_REASON[$key]:-}"
+        phase="${GTBI_MODULE_PHASE[$key]:-?}"
+        func="${GTBI_MODULE_FUNC[$key]:-?}"
+        reason="${GTBI_PLAN_REASON[$key]:-}"
         if [[ -n "$reason" ]]; then
             printf "  %2d. [Phase %s] %s -> %s()  (%s)\n" "$idx" "$phase" "$module" "$func" "$reason"
         else
@@ -2263,7 +2263,7 @@ handle_autofix() {
                 else
                     log_warn "[AUTO-FIX] Fix function not available: $fix_func"
                 fi
-            elif confirm "Would you like ACFS to fix this automatically?"; then
+            elif confirm "Would you like GTBI to fix this automatically?"; then
                 log_info "[AUTO-FIX] Fixing: $description"
                 if type "$fix_func" &>/dev/null; then
                     "$fix_func" fix
@@ -2280,7 +2280,7 @@ handle_autofix() {
 # Run auto-fix checks before main preflight validation
 run_autofix_checks() {
     # Skip if auto-fix modules not loaded
-    if [[ "${ACFS_AUTOFIX_LOADED:-0}" != "1" ]]; then
+    if [[ "${GTBI_AUTOFIX_LOADED:-0}" != "1" ]]; then
         return 0
     fi
 
@@ -2292,15 +2292,15 @@ run_autofix_checks() {
 
     log_info "Running auto-fix pre-flight checks..."
 
-    # Check for existing ACFS installation
+    # Check for existing GTBI installation
     # Skip this check when --only or --only-phase is specified, since the user
     # is targeting a specific module on an already-installed system
     if [[ ${#ONLY_MODULES[@]} -eq 0 ]] && [[ ${#ONLY_PHASES[@]} -eq 0 ]]; then
-        if type autofix_existing_acfs_needs_handling &>/dev/null; then
-            if autofix_existing_acfs_needs_handling 2>/dev/null; then
+        if type autofix_existing_gtbi_needs_handling &>/dev/null; then
+            if autofix_existing_gtbi_needs_handling 2>/dev/null; then
                 local version
                 version=$(get_installed_version 2>/dev/null || echo "unknown")
-                handle_autofix "existing" "Existing ACFS installation detected (version: $version)"
+                handle_autofix "existing" "Existing GTBI installation detected (version: $version)"
             fi
         fi
     else
@@ -2324,7 +2324,7 @@ run_autofix_checks() {
 # Pre-Flight Validation
 # ============================================================
 # Runs system validation checks before installation begins.
-# Related beads: agentic_coding_flywheel_setup-545
+# Related beads: gastown_batteries_included-545
 
 run_preflight_checks() {
     log_step "0/9" "Running pre-flight validation..."
@@ -2333,8 +2333,8 @@ run_preflight_checks() {
     local preflight_tmp=""
 
     # Try to find preflight script in different locations
-    if [[ -n "${ACFS_BOOTSTRAP_DIR:-}" ]] && [[ -f "$ACFS_BOOTSTRAP_DIR/scripts/preflight.sh" ]]; then
-        preflight_script="$ACFS_BOOTSTRAP_DIR/scripts/preflight.sh"
+    if [[ -n "${GTBI_BOOTSTRAP_DIR:-}" ]] && [[ -f "$GTBI_BOOTSTRAP_DIR/scripts/preflight.sh" ]]; then
+        preflight_script="$GTBI_BOOTSTRAP_DIR/scripts/preflight.sh"
     elif [[ -n "${SCRIPT_DIR:-}" ]] && [[ -f "$SCRIPT_DIR/scripts/preflight.sh" ]]; then
         preflight_script="$SCRIPT_DIR/scripts/preflight.sh"
     elif [[ -f "./scripts/preflight.sh" ]]; then
@@ -2342,17 +2342,17 @@ run_preflight_checks() {
     else
         # Download preflight script for curl | bash scenario (if curl available)
         local curl_bin=""
-        curl_bin="$(acfs_early_system_binary_path curl 2>/dev/null || true)"
+        curl_bin="$(gtbi_early_system_binary_path curl 2>/dev/null || true)"
         if [[ -n "$curl_bin" ]]; then
             log_detail "Downloading preflight script..."
             local mktemp_bin=""
-            mktemp_bin="$(acfs_early_system_binary_path mktemp 2>/dev/null || true)"
+            mktemp_bin="$(gtbi_early_system_binary_path mktemp 2>/dev/null || true)"
             if [[ -n "$mktemp_bin" ]]; then
-                preflight_tmp="$("$mktemp_bin" "${TMPDIR:-/tmp}/acfs-preflight.XXXXXX" 2>/dev/null)" || preflight_tmp=""
+                preflight_tmp="$("$mktemp_bin" "${TMPDIR:-/tmp}/gtbi-preflight.XXXXXX" 2>/dev/null)" || preflight_tmp=""
             fi
-            if [[ -n "$preflight_tmp" ]] && acfs_curl -o "$preflight_tmp" "$ACFS_RAW/scripts/preflight.sh" 2>/dev/null; then
+            if [[ -n "$preflight_tmp" ]] && gtbi_curl -o "$preflight_tmp" "$GTBI_RAW/scripts/preflight.sh" 2>/dev/null; then
                 local chmod_bin=""
-                chmod_bin="$(acfs_early_system_binary_path chmod 2>/dev/null || true)"
+                chmod_bin="$(gtbi_early_system_binary_path chmod 2>/dev/null || true)"
                 if [[ -n "$chmod_bin" ]]; then
                     "$chmod_bin" +x "$preflight_tmp"
                 fi
@@ -2371,7 +2371,7 @@ run_preflight_checks() {
     # (can't use "if ! cmd; then exit_code=$?" because $? would be 0 from the negation)
     local exit_code=0
     local bash_bin=""
-    bash_bin="$(acfs_early_system_binary_path bash 2>/dev/null || true)"
+    bash_bin="$(gtbi_early_system_binary_path bash 2>/dev/null || true)"
     if [[ -z "$bash_bin" ]]; then
         log_warn "bash not available - skipping preflight checks"
         return 0
@@ -2402,29 +2402,29 @@ run_preflight_checks() {
     echo ""
 }
 
-ACFS_CURL_BASE_ARGS=(--connect-timeout 30 --max-time 300 -fsSL)
-_acfs_early_curl_bin="$(acfs_early_system_binary_path curl 2>/dev/null || true)"
-_acfs_early_grep_bin="$(acfs_early_system_binary_path grep 2>/dev/null || true)"
-if [[ -n "$_acfs_early_curl_bin" && -n "$_acfs_early_grep_bin" ]] && "$_acfs_early_curl_bin" --help all 2>/dev/null | "$_acfs_early_grep_bin" -q -- '--proto'; then
-    ACFS_CURL_BASE_ARGS=(--proto '=https' --proto-redir '=https' --connect-timeout 30 --max-time 300 -fsSL)
+GTBI_CURL_BASE_ARGS=(--connect-timeout 30 --max-time 300 -fsSL)
+_gtbi_early_curl_bin="$(gtbi_early_system_binary_path curl 2>/dev/null || true)"
+_gtbi_early_grep_bin="$(gtbi_early_system_binary_path grep 2>/dev/null || true)"
+if [[ -n "$_gtbi_early_curl_bin" && -n "$_gtbi_early_grep_bin" ]] && "$_gtbi_early_curl_bin" --help all 2>/dev/null | "$_gtbi_early_grep_bin" -q -- '--proto'; then
+    GTBI_CURL_BASE_ARGS=(--proto '=https' --proto-redir '=https' --connect-timeout 30 --max-time 300 -fsSL)
 fi
-unset _acfs_early_curl_bin _acfs_early_grep_bin
+unset _gtbi_early_curl_bin _gtbi_early_grep_bin
 
-acfs_curl() {
+gtbi_curl() {
     local curl_bin=""
-    curl_bin="$(acfs_early_system_binary_path curl 2>/dev/null || true)"
+    curl_bin="$(gtbi_early_system_binary_path curl 2>/dev/null || true)"
     if [[ -z "$curl_bin" ]]; then
         log_error "Unable to locate curl"
         return 1
     fi
 
-    "$curl_bin" "${ACFS_CURL_BASE_ARGS[@]}" "$@"
+    "$curl_bin" "${GTBI_CURL_BASE_ARGS[@]}" "$@"
 }
 
 # Automatic retry for transient network errors (fast total budget).
-ACFS_CURL_RETRY_DELAYS=(0 5 15)
+GTBI_CURL_RETRY_DELAYS=(0 5 15)
 
-acfs_is_retryable_curl_exit_code() {
+gtbi_is_retryable_curl_exit_code() {
     local exit_code="${1:-0}"
     case "$exit_code" in
         6|7|28|35|52|56) return 0 ;; # DNS/connect/timeout/SSL/empty reply/recv error
@@ -2432,35 +2432,35 @@ acfs_is_retryable_curl_exit_code() {
     esac
 }
 
-acfs_curl_with_retry() {
+gtbi_curl_with_retry() {
     local url="$1"
     local output_path="$2"
 
     if [[ -z "$url" || -z "$output_path" ]]; then
-        log_error "acfs_curl_with_retry: missing url or output path"
+        log_error "gtbi_curl_with_retry: missing url or output path"
         return 1
     fi
 
     local attempt delay exit_code
-    local max_attempts="${#ACFS_CURL_RETRY_DELAYS[@]}"
+    local max_attempts="${#GTBI_CURL_RETRY_DELAYS[@]}"
     if (( max_attempts == 0 )); then
-        ACFS_CURL_RETRY_DELAYS=(0 5 15)
-        max_attempts="${#ACFS_CURL_RETRY_DELAYS[@]}"
+        GTBI_CURL_RETRY_DELAYS=(0 5 15)
+        max_attempts="${#GTBI_CURL_RETRY_DELAYS[@]}"
     fi
 
     for ((attempt=0; attempt<max_attempts; attempt++)); do
-        delay="${ACFS_CURL_RETRY_DELAYS[$attempt]}"
+        delay="${GTBI_CURL_RETRY_DELAYS[$attempt]}"
         if (( attempt > 0 )); then
             log_detail "Retry ${attempt}/${max_attempts} (waiting ${delay}s)..."
             sleep "$delay"
         fi
 
-        if acfs_curl -o "$output_path" "$url"; then
+        if gtbi_curl -o "$output_path" "$url"; then
             return 0
         else
             exit_code=$?
         fi
-        if ! acfs_is_retryable_curl_exit_code "$exit_code"; then
+        if ! gtbi_is_retryable_curl_exit_code "$exit_code"; then
             return "$exit_code"
         fi
     done
@@ -2468,7 +2468,7 @@ acfs_curl_with_retry() {
     return 1
 }
 
-acfs_calculate_file_sha256() {
+gtbi_calculate_file_sha256() {
     local file_path="$1"
 
     if command_exists sha256sum; then
@@ -2485,14 +2485,14 @@ acfs_calculate_file_sha256() {
     return 1
 }
 
-acfs_download_file_and_verify_sha256() {
+gtbi_download_file_and_verify_sha256() {
     local url="$1"
     local output_path="$2"
     local expected_sha256="$3"
     local label="${4:-download}"
 
     if [[ -z "$url" || -z "$output_path" || -z "$expected_sha256" ]]; then
-        log_error "acfs_download_file_and_verify_sha256: missing url, output path, or expected sha256"
+        log_error "gtbi_download_file_and_verify_sha256: missing url, output path, or expected sha256"
         return 1
     fi
 
@@ -2501,14 +2501,14 @@ acfs_download_file_and_verify_sha256() {
         return 1
     fi
 
-    if ! acfs_curl_with_retry "$url" "$output_path"; then
+    if ! gtbi_curl_with_retry "$url" "$output_path"; then
         log_error "Failed to download $label"
         log_detail "URL: $url"
         return 1
     fi
 
     local actual_sha256=""
-    actual_sha256="$(acfs_calculate_file_sha256 "$output_path")" || actual_sha256=""
+    actual_sha256="$(gtbi_calculate_file_sha256 "$output_path")" || actual_sha256=""
 
     if [[ -z "$actual_sha256" ]] || [[ "$actual_sha256" != "$expected_sha256" ]]; then
         log_error "Security error: checksum mismatch for $label"
@@ -2526,12 +2526,12 @@ bootstrap_repo_archive() {
         return 0
     fi
 
-    local ref="$ACFS_REF"
+    local ref="$GTBI_REF"
     # Cache-bust GitHub's CDN to ensure we get the latest archive
     # GitHub caches archives for up to 5 minutes; this ensures fresh downloads
     local cache_buster
     cache_buster="$(date +%s)"
-    local archive_url="https://github.com/${ACFS_REPO_OWNER}/${ACFS_REPO_NAME}/archive/${ref}.tar.gz?cb=${cache_buster}"
+    local archive_url="https://github.com/${GTBI_REPO_OWNER}/${GTBI_REPO_NAME}/archive/${ref}.tar.gz?cb=${cache_buster}"
     local ref_safe="${ref//[^a-zA-Z0-9._-]/_}"
     local tmp_dir
     local mktemp_bin=""
@@ -2545,95 +2545,95 @@ bootstrap_repo_archive() {
     local cut_bin=""
     local tr_bin=""
 
-    tar_bin="$(acfs_early_system_binary_path tar 2>/dev/null || true)"
+    tar_bin="$(gtbi_early_system_binary_path tar 2>/dev/null || true)"
     if [[ -z "$tar_bin" ]]; then
         log_error "Bootstrap requires tar (install tar or run from a local checkout)"
         return 1
     fi
-    mktemp_bin="$(acfs_early_system_binary_path mktemp 2>/dev/null || true)"
-    chmod_bin="$(acfs_early_system_binary_path chmod 2>/dev/null || true)"
-    rm_bin="$(acfs_early_system_binary_path rm 2>/dev/null || true)"
-    find_bin="$(acfs_early_system_binary_path find 2>/dev/null || true)"
-    bash_bin="$(acfs_early_system_binary_path bash 2>/dev/null || true)"
-    grep_bin="$(acfs_early_system_binary_path grep 2>/dev/null || true)"
-    head_bin="$(acfs_early_system_binary_path head 2>/dev/null || true)"
-    cut_bin="$(acfs_early_system_binary_path cut 2>/dev/null || true)"
-    tr_bin="$(acfs_early_system_binary_path tr 2>/dev/null || true)"
+    mktemp_bin="$(gtbi_early_system_binary_path mktemp 2>/dev/null || true)"
+    chmod_bin="$(gtbi_early_system_binary_path chmod 2>/dev/null || true)"
+    rm_bin="$(gtbi_early_system_binary_path rm 2>/dev/null || true)"
+    find_bin="$(gtbi_early_system_binary_path find 2>/dev/null || true)"
+    bash_bin="$(gtbi_early_system_binary_path bash 2>/dev/null || true)"
+    grep_bin="$(gtbi_early_system_binary_path grep 2>/dev/null || true)"
+    head_bin="$(gtbi_early_system_binary_path head 2>/dev/null || true)"
+    cut_bin="$(gtbi_early_system_binary_path cut 2>/dev/null || true)"
+    tr_bin="$(gtbi_early_system_binary_path tr 2>/dev/null || true)"
     if [[ -z "$mktemp_bin" || -z "$chmod_bin" || -z "$rm_bin" || -z "$find_bin" || -z "$bash_bin" || -z "$grep_bin" || -z "$head_bin" || -z "$cut_bin" || -z "$tr_bin" ]]; then
         log_error "Bootstrap requires core system utilities (mktemp, chmod, rm, find, bash, grep, head, cut, tr)"
         return 1
     fi
 
     # mktemp portability: BSD mktemp requires Xs at end of template; tar doesn't need a .tar.gz suffix.
-    ACFS_TMP_ARCHIVE="$("$mktemp_bin" "${TMPDIR:-/tmp}/acfs-archive-${ref_safe}.XXXXXX" 2>/dev/null)" || {
+    GTBI_TMP_ARCHIVE="$("$mktemp_bin" "${TMPDIR:-/tmp}/gtbi-archive-${ref_safe}.XXXXXX" 2>/dev/null)" || {
         log_fatal "Failed to create temp file for archive"
     }
 
-    tmp_dir="$("$mktemp_bin" -d "${TMPDIR:-/tmp}/acfs-bootstrap-${ref_safe}.XXXXXX" 2>/dev/null)" || {
+    tmp_dir="$("$mktemp_bin" -d "${TMPDIR:-/tmp}/gtbi-bootstrap-${ref_safe}.XXXXXX" 2>/dev/null)" || {
         log_fatal "Failed to create temp dir for extraction"
     }
-    ACFS_BOOTSTRAP_DIR="$tmp_dir"
-    _ACFS_BOOTSTRAP_DIR_CREATED="$tmp_dir"
-    _ACFS_BOOTSTRAP_DIR_TMP_ROOT="${TMPDIR:-/tmp}"
-    _ACFS_BOOTSTRAP_DIR_TMP_ROOT="${_ACFS_BOOTSTRAP_DIR_TMP_ROOT%/}"
-    _ACFS_BOOTSTRAP_DIR_OWNED=true
+    GTBI_BOOTSTRAP_DIR="$tmp_dir"
+    _GTBI_BOOTSTRAP_DIR_CREATED="$tmp_dir"
+    _GTBI_BOOTSTRAP_DIR_TMP_ROOT="${TMPDIR:-/tmp}"
+    _GTBI_BOOTSTRAP_DIR_TMP_ROOT="${_GTBI_BOOTSTRAP_DIR_TMP_ROOT%/}"
+    _GTBI_BOOTSTRAP_DIR_OWNED=true
     # Make bootstrap dir world-readable so ubuntu user can access scripts
     "$chmod_bin" 755 "$tmp_dir"
 
-    log_step "Bootstrapping ACFS archive (${ref})"
+    log_step "Bootstrapping GTBI archive (${ref})"
 
     # Test-mode hook: offline bootstrap checks cannot use PATH-based curl
-    # stubs because acfs_curl resolves curl via absolute paths only (intentional
+    # stubs because gtbi_curl resolves curl via absolute paths only (intentional
     # hardening, commit 958e2ee2). The hook lets tests point the bootstrap at
     # a locally-staged archive and skip the network entirely. Gated on an
-    # explicit ACFS_TEST_MODE=1 so accidentally setting ACFS_TEST_ARCHIVE in
+    # explicit GTBI_TEST_MODE=1 so accidentally setting GTBI_TEST_ARCHIVE in
     # production cannot bypass the network path.
-    if [[ "${ACFS_TEST_MODE:-}" == "1" && -n "${ACFS_TEST_ARCHIVE:-}" ]]; then
+    if [[ "${GTBI_TEST_MODE:-}" == "1" && -n "${GTBI_TEST_ARCHIVE:-}" ]]; then
         local cp_bin
-        cp_bin="$(acfs_early_system_binary_path cp 2>/dev/null || true)"
+        cp_bin="$(gtbi_early_system_binary_path cp 2>/dev/null || true)"
         if [[ -z "$cp_bin" ]]; then
             log_error "Test-mode bootstrap requires cp"
             "$rm_bin" -rf "$tmp_dir"
             return 1
         fi
-        if [[ ! -f "$ACFS_TEST_ARCHIVE" ]]; then
-            log_error "ACFS_TEST_MODE=1 but ACFS_TEST_ARCHIVE is not a regular file: $ACFS_TEST_ARCHIVE"
-            "$rm_bin" -f "$ACFS_TMP_ARCHIVE"
+        if [[ ! -f "$GTBI_TEST_ARCHIVE" ]]; then
+            log_error "GTBI_TEST_MODE=1 but GTBI_TEST_ARCHIVE is not a regular file: $GTBI_TEST_ARCHIVE"
+            "$rm_bin" -f "$GTBI_TMP_ARCHIVE"
             "$rm_bin" -rf "$tmp_dir"
             return 1
         fi
-        log_detail "Test mode: using local archive $ACFS_TEST_ARCHIVE"
-        if ! "$cp_bin" "$ACFS_TEST_ARCHIVE" "$ACFS_TMP_ARCHIVE"; then
+        log_detail "Test mode: using local archive $GTBI_TEST_ARCHIVE"
+        if ! "$cp_bin" "$GTBI_TEST_ARCHIVE" "$GTBI_TMP_ARCHIVE"; then
             log_error "Failed to stage local archive for bootstrap"
-            "$rm_bin" -f "$ACFS_TMP_ARCHIVE"
+            "$rm_bin" -f "$GTBI_TMP_ARCHIVE"
             "$rm_bin" -rf "$tmp_dir"
             return 1
         fi
     else
         log_detail "Downloading ${archive_url}"
-        if ! acfs_curl_with_retry "$archive_url" "$ACFS_TMP_ARCHIVE"; then
-            log_error "Failed to download ACFS archive. Try again, or pin ACFS_REF to a tag/sha."
-            "$rm_bin" -f "$ACFS_TMP_ARCHIVE"
+        if ! gtbi_curl_with_retry "$archive_url" "$GTBI_TMP_ARCHIVE"; then
+            log_error "Failed to download GTBI archive. Try again, or pin GTBI_REF to a tag/sha."
+            "$rm_bin" -f "$GTBI_TMP_ARCHIVE"
             "$rm_bin" -rf "$tmp_dir"
             return 1
         fi
     fi
 
     log_detail "Extracting runtime assets"
-    if ! "$tar_bin" -xzf "$ACFS_TMP_ARCHIVE" -C "$tmp_dir" --strip-components=1 \
+    if ! "$tar_bin" -xzf "$GTBI_TMP_ARCHIVE" -C "$tmp_dir" --strip-components=1 \
         --wildcards --wildcards-match-slash \
         "*/scripts/**" \
-        "*/acfs/**" \
+        "*/gtbi/**" \
         "*/checksums.yaml" \
-        "*/acfs.manifest.yaml" \
+        "*/gtbi.manifest.yaml" \
         "*/VERSION"; then
-        log_error "Failed to extract ACFS bootstrap archive (tar error)"
-        "$rm_bin" -f "$ACFS_TMP_ARCHIVE"
+        log_error "Failed to extract GTBI bootstrap archive (tar error)"
+        "$rm_bin" -f "$GTBI_TMP_ARCHIVE"
         return 1
     fi
-    "$rm_bin" -f "$ACFS_TMP_ARCHIVE"
+    "$rm_bin" -f "$GTBI_TMP_ARCHIVE"
 
-    if [[ ! -f "$tmp_dir/acfs.manifest.yaml" ]] || [[ ! -f "$tmp_dir/checksums.yaml" ]] || [[ ! -f "$tmp_dir/VERSION" ]]; then
+    if [[ ! -f "$tmp_dir/gtbi.manifest.yaml" ]] || [[ ! -f "$tmp_dir/checksums.yaml" ]] || [[ ! -f "$tmp_dir/VERSION" ]]; then
         log_error "Bootstrap archive missing required manifest/checksums/VERSION files"
         return 1
     fi
@@ -2654,16 +2654,16 @@ bootstrap_repo_archive() {
     done < <("$find_bin" "$tmp_dir" -type f -name "*.sh" -print0)
 
     if [[ "$shellcheck_failed" == "true" ]]; then
-        log_error "Bootstrap validation failed. Retry or pin ACFS_REF to a known-good tag/sha."
+        log_error "Bootstrap validation failed. Retry or pin GTBI_REF to a known-good tag/sha."
         return 1
     fi
 
     local manifest_sha expected_sha
-    manifest_sha="$(acfs_calculate_file_sha256 "$tmp_dir/acfs.manifest.yaml")" || return 1
-    expected_sha="$("$grep_bin" -E '^ACFS_MANIFEST_SHA256=' "$tmp_dir/scripts/generated/manifest_index.sh" | "$head_bin" -n 1 | "$cut_bin" -d'=' -f2 | "$tr_bin" -d '"[:space:]\r' || true)"
+    manifest_sha="$(gtbi_calculate_file_sha256 "$tmp_dir/gtbi.manifest.yaml")" || return 1
+    expected_sha="$("$grep_bin" -E '^GTBI_MANIFEST_SHA256=' "$tmp_dir/scripts/generated/manifest_index.sh" | "$head_bin" -n 1 | "$cut_bin" -d'=' -f2 | "$tr_bin" -d '"[:space:]\r' || true)"
 
     if [[ -z "$expected_sha" ]]; then
-        log_error "Bootstrap manifest index missing ACFS_MANIFEST_SHA256"
+        log_error "Bootstrap manifest index missing GTBI_MANIFEST_SHA256"
         return 1
     fi
 
@@ -2674,20 +2674,20 @@ bootstrap_repo_archive() {
         return 1
     fi
 
-    ACFS_BOOTSTRAP_DIR="$tmp_dir"
-    ACFS_LIB_DIR="$tmp_dir/scripts/lib"
-    ACFS_GENERATED_DIR="$tmp_dir/scripts/generated"
-    ACFS_ASSETS_DIR="$tmp_dir/acfs"
-    ACFS_CHECKSUMS_YAML="$tmp_dir/checksums.yaml"
-    ACFS_MANIFEST_YAML="$tmp_dir/acfs.manifest.yaml"
+    GTBI_BOOTSTRAP_DIR="$tmp_dir"
+    GTBI_LIB_DIR="$tmp_dir/scripts/lib"
+    GTBI_GENERATED_DIR="$tmp_dir/scripts/generated"
+    GTBI_ASSETS_DIR="$tmp_dir/gtbi"
+    GTBI_CHECKSUMS_YAML="$tmp_dir/checksums.yaml"
+    GTBI_MANIFEST_YAML="$tmp_dir/gtbi.manifest.yaml"
 
-    export ACFS_BOOTSTRAP_DIR ACFS_LIB_DIR ACFS_GENERATED_DIR ACFS_ASSETS_DIR ACFS_CHECKSUMS_YAML ACFS_MANIFEST_YAML
+    export GTBI_BOOTSTRAP_DIR GTBI_LIB_DIR GTBI_GENERATED_DIR GTBI_ASSETS_DIR GTBI_CHECKSUMS_YAML GTBI_MANIFEST_YAML
 
     log_success "Bootstrap archive ready"
     return 0
 }
 
-_acfs_install_asset_has_symlink_component_under_prefix() {
+_gtbi_install_asset_has_symlink_component_under_prefix() {
     local prefix="$1"
     local dest_path="$2"
 
@@ -2733,15 +2733,15 @@ install_asset() {
         return 1
     fi
 
-    if [[ -z "${ACFS_HOME:-}" ]] || [[ -z "${TARGET_HOME:-}" ]]; then
-        log_error "install_asset: ACFS_HOME/TARGET_HOME not set (call init_target_paths first)"
+    if [[ -z "${GTBI_HOME:-}" ]] || [[ -z "${TARGET_HOME:-}" ]]; then
+        log_error "install_asset: GTBI_HOME/TARGET_HOME not set (call init_target_paths first)"
         return 1
     fi
 
     local -a sudo_cmd=()
     local sudo_bin=""
     if [[ $EUID -ne 0 ]]; then
-        sudo_bin="$(acfs_early_sudo_binary_path 2>/dev/null || true)"
+        sudo_bin="$(gtbi_early_sudo_binary_path 2>/dev/null || true)"
         if [[ -n "$sudo_bin" ]]; then
             sudo_cmd=("$sudo_bin")
         fi
@@ -2749,21 +2749,21 @@ install_asset() {
 
     local mkdir_bin=""
     local cp_bin=""
-    mkdir_bin="$(acfs_early_system_binary_path mkdir 2>/dev/null || true)"
+    mkdir_bin="$(gtbi_early_system_binary_path mkdir 2>/dev/null || true)"
     if [[ -z "$mkdir_bin" ]]; then
         log_error "install_asset: Unable to locate mkdir"
         return 1
     fi
-    cp_bin="$(acfs_early_system_binary_path cp 2>/dev/null || true)"
+    cp_bin="$(gtbi_early_system_binary_path cp 2>/dev/null || true)"
     if [[ -z "$cp_bin" ]]; then
         log_error "install_asset: Unable to locate cp"
         return 1
     fi
 
     # Security: Validate dest_path is under expected directories
-    local allowed_prefixes=("$ACFS_HOME" "$TARGET_HOME" "/data" "/usr/local/bin")
-    if [[ -n "${ACFS_BIN_DIR:-}" ]] && [[ "$ACFS_BIN_DIR" == /* ]] && [[ "$ACFS_BIN_DIR" != "/" ]]; then
-        allowed_prefixes+=("$ACFS_BIN_DIR")
+    local allowed_prefixes=("$GTBI_HOME" "$TARGET_HOME" "/data" "/usr/local/bin")
+    if [[ -n "${GTBI_BIN_DIR:-}" ]] && [[ "$GTBI_BIN_DIR" == /* ]] && [[ "$GTBI_BIN_DIR" != "/" ]]; then
+        allowed_prefixes+=("$GTBI_BIN_DIR")
     fi
     local valid_dest=false
     for prefix in "${allowed_prefixes[@]}"; do
@@ -2794,15 +2794,15 @@ install_asset() {
     # If running with elevated privileges, refuse to write through symlink path
     # components for sensitive destinations (prevents symlink clobber attacks).
     if [[ $EUID -eq 0 ]]; then
-        if _acfs_install_asset_has_symlink_component_under_prefix "$ACFS_HOME" "$dest_path" || \
-           _acfs_install_asset_has_symlink_component_under_prefix "$TARGET_HOME" "$dest_path" || \
-           _acfs_install_asset_has_symlink_component_under_prefix "/usr/local/bin" "$dest_path"; then
+        if _gtbi_install_asset_has_symlink_component_under_prefix "$GTBI_HOME" "$dest_path" || \
+           _gtbi_install_asset_has_symlink_component_under_prefix "$TARGET_HOME" "$dest_path" || \
+           _gtbi_install_asset_has_symlink_component_under_prefix "/usr/local/bin" "$dest_path"; then
             log_error "install_asset: Refusing to write through symlink path component: $dest_path"
             return 1
         fi
-        if [[ -n "${ACFS_BIN_DIR:-}" ]] && [[ "$ACFS_BIN_DIR" == /* ]] && [[ "$ACFS_BIN_DIR" != "/" ]] && \
-           [[ "$ACFS_BIN_DIR" != "/usr/local/bin" ]] && \
-           _acfs_install_asset_has_symlink_component_under_prefix "$ACFS_BIN_DIR" "$dest_path"; then
+        if [[ -n "${GTBI_BIN_DIR:-}" ]] && [[ "$GTBI_BIN_DIR" == /* ]] && [[ "$GTBI_BIN_DIR" != "/" ]] && \
+           [[ "$GTBI_BIN_DIR" != "/usr/local/bin" ]] && \
+           _gtbi_install_asset_has_symlink_component_under_prefix "$GTBI_BIN_DIR" "$dest_path"; then
             log_error "install_asset: Refusing to write through symlink path component: $dest_path"
             return 1
         fi
@@ -2823,13 +2823,13 @@ install_asset() {
         return 1
     fi
 
-    if [[ -n "${ACFS_BOOTSTRAP_DIR:-}" ]] && [[ -f "$ACFS_BOOTSTRAP_DIR/$rel_path" ]]; then
+    if [[ -n "${GTBI_BOOTSTRAP_DIR:-}" ]] && [[ -f "$GTBI_BOOTSTRAP_DIR/$rel_path" ]]; then
         if [[ "$need_sudo" == "true" ]]; then
-            if ! "${sudo_cmd[@]}" "$cp_bin" "$ACFS_BOOTSTRAP_DIR/$rel_path" "$dest_path"; then
+            if ! "${sudo_cmd[@]}" "$cp_bin" "$GTBI_BOOTSTRAP_DIR/$rel_path" "$dest_path"; then
                 log_error "install_asset: Failed to copy from bootstrap: $rel_path"
                 return 1
             fi
-        elif ! "$cp_bin" "$ACFS_BOOTSTRAP_DIR/$rel_path" "$dest_path"; then
+        elif ! "$cp_bin" "$GTBI_BOOTSTRAP_DIR/$rel_path" "$dest_path"; then
             log_error "install_asset: Failed to copy from bootstrap: $rel_path"
             return 1
         fi
@@ -2846,16 +2846,16 @@ install_asset() {
     else
         if [[ "$need_sudo" == "true" ]]; then
             local curl_bin=""
-            curl_bin="$(acfs_early_system_binary_path curl 2>/dev/null || true)"
+            curl_bin="$(gtbi_early_system_binary_path curl 2>/dev/null || true)"
             if [[ -z "$curl_bin" ]]; then
                 log_error "install_asset: Unable to locate curl"
                 return 1
             fi
-            if ! "${sudo_cmd[@]}" "$curl_bin" "${ACFS_CURL_BASE_ARGS[@]}" -o "$dest_path" "$ACFS_RAW/$rel_path"; then
+            if ! "${sudo_cmd[@]}" "$curl_bin" "${GTBI_CURL_BASE_ARGS[@]}" -o "$dest_path" "$GTBI_RAW/$rel_path"; then
                 log_error "install_asset: Failed to download: $rel_path"
                 return 1
             fi
-        elif ! acfs_curl -o "$dest_path" "$ACFS_RAW/$rel_path"; then
+        elif ! gtbi_curl -o "$dest_path" "$GTBI_RAW/$rel_path"; then
             log_error "install_asset: Failed to download: $rel_path"
             return 1
         fi
@@ -2888,7 +2888,7 @@ install_asset_from_path() {
     local -a sudo_cmd=()
     local sudo_bin=""
     if [[ $EUID -ne 0 ]]; then
-        sudo_bin="$(acfs_early_sudo_binary_path 2>/dev/null || true)"
+        sudo_bin="$(gtbi_early_sudo_binary_path 2>/dev/null || true)"
         if [[ -n "$sudo_bin" ]]; then
             sudo_cmd=("$sudo_bin")
         fi
@@ -2896,12 +2896,12 @@ install_asset_from_path() {
 
     local mkdir_bin=""
     local cp_bin=""
-    mkdir_bin="$(acfs_early_system_binary_path mkdir 2>/dev/null || true)"
+    mkdir_bin="$(gtbi_early_system_binary_path mkdir 2>/dev/null || true)"
     if [[ -z "$mkdir_bin" ]]; then
         log_error "install_asset_from_path: Unable to locate mkdir"
         return 1
     fi
-    cp_bin="$(acfs_early_system_binary_path cp 2>/dev/null || true)"
+    cp_bin="$(gtbi_early_system_binary_path cp 2>/dev/null || true)"
     if [[ -z "$cp_bin" ]]; then
         log_error "install_asset_from_path: Unable to locate cp"
         return 1
@@ -2954,23 +2954,23 @@ install_checksums_yaml() {
     fi
 
     # If checksums ref matches the install ref, use the standard asset path.
-    if [[ -z "${ACFS_CHECKSUMS_REF:-}" || -z "${ACFS_REF_INPUT:-}" || "$ACFS_CHECKSUMS_REF" == "$ACFS_REF_INPUT" ]]; then
+    if [[ -z "${GTBI_CHECKSUMS_REF:-}" || -z "${GTBI_REF_INPUT:-}" || "$GTBI_CHECKSUMS_REF" == "$GTBI_REF_INPUT" ]]; then
         install_asset "checksums.yaml" "$dest_path"
         return $?
     fi
 
     # Otherwise, fetch checksums from the dedicated checksums ref.
     local content=""
-    content="$(acfs_fetch_fresh_checksums_via_api)" || {
+    content="$(gtbi_fetch_fresh_checksums_via_api)" || {
         local cb
         cb="$(date +%s)"
-        content="$(acfs_fetch_url_content "$ACFS_CHECKSUMS_RAW/checksums.yaml?cb=${cb}")" || {
-            log_error "Failed to fetch checksums.yaml from ref '${ACFS_CHECKSUMS_REF}'"
+        content="$(gtbi_fetch_url_content "$GTBI_CHECKSUMS_RAW/checksums.yaml?cb=${cb}")" || {
+            log_error "Failed to fetch checksums.yaml from ref '${GTBI_CHECKSUMS_REF}'"
             return 1
         }
     }
-    if ! ( acfs_parse_checksums_content "$content" && acfs_validate_upstream_checksums ); then
-        log_error "Fetched checksums.yaml from ref '${ACFS_CHECKSUMS_REF}' failed validation"
+    if ! ( gtbi_parse_checksums_content "$content" && gtbi_validate_upstream_checksums ); then
+        log_error "Fetched checksums.yaml from ref '${GTBI_CHECKSUMS_REF}' failed validation"
         return 1
     fi
 
@@ -2980,7 +2980,7 @@ install_checksums_yaml() {
     local -a sudo_cmd=()
     local sudo_bin=""
     if [[ $EUID -ne 0 ]]; then
-        sudo_bin="$(acfs_early_sudo_binary_path 2>/dev/null || true)"
+        sudo_bin="$(gtbi_early_sudo_binary_path 2>/dev/null || true)"
         if [[ -n "$sudo_bin" ]]; then
             sudo_cmd=("$sudo_bin")
         fi
@@ -2988,12 +2988,12 @@ install_checksums_yaml() {
 
     local mkdir_bin=""
     local tee_bin=""
-    mkdir_bin="$(acfs_early_system_binary_path mkdir 2>/dev/null || true)"
+    mkdir_bin="$(gtbi_early_system_binary_path mkdir 2>/dev/null || true)"
     if [[ -z "$mkdir_bin" ]]; then
         log_error "install_checksums_yaml: Unable to locate mkdir"
         return 1
     fi
-    tee_bin="$(acfs_early_system_binary_path tee 2>/dev/null || true)"
+    tee_bin="$(gtbi_early_system_binary_path tee 2>/dev/null || true)"
     if [[ -z "$tee_bin" ]]; then
         log_error "install_checksums_yaml: Unable to locate tee"
         return 1
@@ -3045,7 +3045,7 @@ run_as_target() {
     local passwd_entry=""
     local passwd_home=""
     local primary_bin_dir=""
-    local acfs_home_for_target=""
+    local gtbi_home_for_target=""
     local env_bin=""
     local bash_bin=""
     local sh_bin=""
@@ -3058,17 +3058,17 @@ run_as_target() {
         log_error "Invalid TARGET_USER '${user:-<empty>}' (expected: lowercase user name like 'ubuntu')"
         return 1
     fi
-    env_bin="$(acfs_early_system_binary_path env 2>/dev/null || true)"
+    env_bin="$(gtbi_early_system_binary_path env 2>/dev/null || true)"
     if [[ -z "$env_bin" ]]; then
         log_error "Unable to locate env for target-user command"
         return 1
     fi
-    bash_bin="$(acfs_early_system_binary_path bash 2>/dev/null || true)"
+    bash_bin="$(gtbi_early_system_binary_path bash 2>/dev/null || true)"
     if [[ -z "$bash_bin" ]]; then
         log_error "Unable to locate bash for target-user command"
         return 1
     fi
-    sh_bin="$(acfs_early_system_binary_path sh 2>/dev/null || true)"
+    sh_bin="$(gtbi_early_system_binary_path sh 2>/dev/null || true)"
     if [[ -z "$sh_bin" ]]; then
         log_error "Unable to locate sh for target-user command"
         return 1
@@ -3077,7 +3077,7 @@ run_as_target() {
     if [[ "$user" == "root" ]]; then
         user_home="/root"
     else
-        passwd_entry="$(acfs_early_getent_passwd_entry "$user" 2>/dev/null || true)"
+        passwd_entry="$(gtbi_early_getent_passwd_entry "$user" 2>/dev/null || true)"
         if [[ -n "$passwd_entry" ]]; then
             IFS=: read -r _ _ _ _ _ passwd_home _ <<< "$passwd_entry"
             if [[ -n "$passwd_home" ]] && [[ "$passwd_home" == /* ]] && [[ "$passwd_home" != "/" ]]; then
@@ -3092,14 +3092,14 @@ run_as_target() {
     fi
 
     if [[ -z "$user_home" ]]; then
-        user_home="$(acfs_home_for_user "$user" || true)"
+        user_home="$(gtbi_home_for_user "$user" || true)"
     fi
     if [[ -z "$user_home" ]] || [[ "$user_home" == "/" ]] || [[ "$user_home" != /* ]]; then
         log_error "Invalid TARGET_HOME for '$user': ${user_home:-<empty>} (must be an absolute path and cannot be '/')"
         return 1
     fi
 
-    primary_bin_dir="${ACFS_BIN_DIR:-$user_home/.local/bin}"
+    primary_bin_dir="${GTBI_BIN_DIR:-$user_home/.local/bin}"
     if [[ -n "$explicit_user_home_for_repair" ]] && [[ "$explicit_user_home_for_repair" != "$user_home" ]]; then
         case "$primary_bin_dir" in
             "$explicit_user_home_for_repair"|"$explicit_user_home_for_repair"/*)
@@ -3107,16 +3107,16 @@ run_as_target() {
                 ;;
         esac
     fi
-    acfs_home_for_target="${ACFS_HOME:-}"
+    gtbi_home_for_target="${GTBI_HOME:-}"
     if [[ -n "$explicit_user_home_for_repair" ]] && [[ "$explicit_user_home_for_repair" != "$user_home" ]]; then
-        case "$acfs_home_for_target" in
+        case "$gtbi_home_for_target" in
             "$explicit_user_home_for_repair"|"$explicit_user_home_for_repair"/*)
-                acfs_home_for_target="$user_home/.acfs"
+                gtbi_home_for_target="$user_home/.gtbi"
                 ;;
         esac
     fi
 
-    local target_path_prefix="$primary_bin_dir:$user_home/.local/bin:$user_home/.acfs/bin:$user_home/.cargo/bin:$user_home/.bun/bin:$user_home/.atuin/bin:$user_home/go/bin"
+    local target_path_prefix="$primary_bin_dir:$user_home/.local/bin:$user_home/.gtbi/bin:$user_home/.cargo/bin:$user_home/.bun/bin:$user_home/.atuin/bin:$user_home/go/bin"
     local current_path="${PATH:-/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin}"
 
     # Environment variables to set for target user commands
@@ -3131,7 +3131,7 @@ run_as_target() {
     local target_runtime_dir=""
     local id_bin=""
     local current_user=""
-    id_bin="$(acfs_early_system_binary_path id 2>/dev/null || true)"
+    id_bin="$(gtbi_early_system_binary_path id 2>/dev/null || true)"
     if [[ -n "$id_bin" ]] && target_uid="$($id_bin -u "$user" 2>/dev/null)"; then
         target_runtime_dir="/run/user/$target_uid"
         if [[ -d "$target_runtime_dir" ]]; then
@@ -3142,20 +3142,20 @@ run_as_target() {
         fi
     fi
 
-    # Pass ACFS context variables to target user environment
-    if [[ -n "$acfs_home_for_target" ]]; then env_args+=("ACFS_HOME=$acfs_home_for_target"); fi
-    if [[ -n "${ACFS_BIN_DIR:-}" ]]; then env_args+=("ACFS_BIN_DIR=$primary_bin_dir"); fi
-    if [[ -n "${ACFS_BOOTSTRAP_DIR:-}" ]]; then env_args+=("ACFS_BOOTSTRAP_DIR=$ACFS_BOOTSTRAP_DIR"); fi
-    if [[ -n "${ACFS_LIB_DIR:-}" ]]; then env_args+=("ACFS_LIB_DIR=$ACFS_LIB_DIR"); fi
-    if [[ -n "${ACFS_GENERATED_DIR:-}" ]]; then env_args+=("ACFS_GENERATED_DIR=$ACFS_GENERATED_DIR"); fi
-    if [[ -n "${ACFS_ASSETS_DIR:-}" ]]; then env_args+=("ACFS_ASSETS_DIR=$ACFS_ASSETS_DIR"); fi
-    if [[ -n "${ACFS_CHECKSUMS_YAML:-}" ]]; then env_args+=("ACFS_CHECKSUMS_YAML=$ACFS_CHECKSUMS_YAML"); fi
-    if [[ -n "${ACFS_MANIFEST_YAML:-}" ]]; then env_args+=("ACFS_MANIFEST_YAML=$ACFS_MANIFEST_YAML"); fi
+    # Pass GTBI context variables to target user environment
+    if [[ -n "$gtbi_home_for_target" ]]; then env_args+=("GTBI_HOME=$gtbi_home_for_target"); fi
+    if [[ -n "${GTBI_BIN_DIR:-}" ]]; then env_args+=("GTBI_BIN_DIR=$primary_bin_dir"); fi
+    if [[ -n "${GTBI_BOOTSTRAP_DIR:-}" ]]; then env_args+=("GTBI_BOOTSTRAP_DIR=$GTBI_BOOTSTRAP_DIR"); fi
+    if [[ -n "${GTBI_LIB_DIR:-}" ]]; then env_args+=("GTBI_LIB_DIR=$GTBI_LIB_DIR"); fi
+    if [[ -n "${GTBI_GENERATED_DIR:-}" ]]; then env_args+=("GTBI_GENERATED_DIR=$GTBI_GENERATED_DIR"); fi
+    if [[ -n "${GTBI_ASSETS_DIR:-}" ]]; then env_args+=("GTBI_ASSETS_DIR=$GTBI_ASSETS_DIR"); fi
+    if [[ -n "${GTBI_CHECKSUMS_YAML:-}" ]]; then env_args+=("GTBI_CHECKSUMS_YAML=$GTBI_CHECKSUMS_YAML"); fi
+    if [[ -n "${GTBI_MANIFEST_YAML:-}" ]]; then env_args+=("GTBI_MANIFEST_YAML=$GTBI_MANIFEST_YAML"); fi
     if [[ -n "${CHECKSUMS_FILE:-}" ]]; then env_args+=("CHECKSUMS_FILE=$CHECKSUMS_FILE"); fi
     if [[ -n "${SCRIPT_DIR:-}" ]]; then env_args+=("SCRIPT_DIR=$SCRIPT_DIR"); fi
-    if [[ -n "${ACFS_RAW:-}" ]]; then env_args+=("ACFS_RAW=$ACFS_RAW"); fi
-    if [[ -n "${ACFS_VERSION:-}" ]]; then env_args+=("ACFS_VERSION=$ACFS_VERSION"); fi
-    if [[ -n "${ACFS_REF:-}" ]]; then env_args+=("ACFS_REF=$ACFS_REF"); fi
+    if [[ -n "${GTBI_RAW:-}" ]]; then env_args+=("GTBI_RAW=$GTBI_RAW"); fi
+    if [[ -n "${GTBI_VERSION:-}" ]]; then env_args+=("GTBI_VERSION=$GTBI_VERSION"); fi
+    if [[ -n "${GTBI_REF:-}" ]]; then env_args+=("GTBI_REF=$GTBI_REF"); fi
 
     command_argv=("$@")
     if [[ ${#command_argv[@]} -gt 0 ]]; then
@@ -3185,7 +3185,7 @@ run_as_target() {
     fi
 
     # Already the target user
-    current_user="$(acfs_early_resolve_current_user 2>/dev/null || true)"
+    current_user="$(gtbi_early_resolve_current_user 2>/dev/null || true)"
     if [[ "${current_user:-}" == "$user" ]]; then
         (
             if ! cd "$user_home"; then
@@ -3208,7 +3208,7 @@ run_as_target() {
     # - First $@ expands inside sh -c to become positional params
     # - _ is $0 (script name placeholder)
     # - exec "$@" replaces sh with the target command, preserving stdin
-    sudo_bin="$(acfs_early_system_binary_path sudo 2>/dev/null || true)"
+    sudo_bin="$(gtbi_early_system_binary_path sudo 2>/dev/null || true)"
     if [[ -n "$sudo_bin" ]]; then
         # shellcheck disable=SC2016  # $HOME/$@ expand inside sh -c
         "$sudo_bin" -n -u "$user" "$env_bin" "${env_args[@]}" "$sh_bin" -c 'cd "$HOME" || exit 1; exec "$@"' _ "${command_argv[@]}"
@@ -3217,14 +3217,14 @@ run_as_target() {
 
     # Fallbacks (root-only typically)
     # Note: Avoid -l flag to prevent sourcing profiles
-    runuser_bin="$(acfs_early_system_binary_path runuser 2>/dev/null || true)"
+    runuser_bin="$(gtbi_early_system_binary_path runuser 2>/dev/null || true)"
     if [[ -n "$runuser_bin" ]]; then
         # shellcheck disable=SC2016  # $HOME/$@ expand inside sh -c
         "$runuser_bin" -u "$user" -- "$env_bin" "${env_args[@]}" "$sh_bin" -c 'cd "$HOME" || exit 1; exec "$@"' _ "${command_argv[@]}"
         return $?
     fi
 
-    su_bin="$(acfs_early_system_binary_path su 2>/dev/null || true)"
+    su_bin="$(gtbi_early_system_binary_path su 2>/dev/null || true)"
     if [[ -z "$su_bin" ]]; then
         log_error "Unable to locate sudo, runuser, or su for target-user command"
         return 1
@@ -3248,11 +3248,11 @@ run_as_target() {
 # Upstream installer verification (checksums.yaml)
 # ============================================================
 
-declare -A ACFS_UPSTREAM_URLS=()
-declare -A ACFS_UPSTREAM_SHA256=()
-ACFS_UPSTREAM_LOADED=false
+declare -A GTBI_UPSTREAM_URLS=()
+declare -A GTBI_UPSTREAM_SHA256=()
+GTBI_UPSTREAM_LOADED=false
 
-acfs_calculate_sha256() {
+gtbi_calculate_sha256() {
     if command_exists sha256sum; then
         sha256sum | cut -d' ' -f1
         return 0
@@ -3267,7 +3267,7 @@ acfs_calculate_sha256() {
     return 1
 }
 
-acfs_fetch_url_content() {
+gtbi_fetch_url_content() {
     local url="$1"
 
     if [[ "$url" != https://* ]]; then
@@ -3275,13 +3275,13 @@ acfs_fetch_url_content() {
         return 1
     fi
 
-    local sentinel="__ACFS_EOF_SENTINEL__"
-    local max_attempts="${#ACFS_CURL_RETRY_DELAYS[@]}"
+    local sentinel="__GTBI_EOF_SENTINEL__"
+    local max_attempts="${#GTBI_CURL_RETRY_DELAYS[@]}"
     local retries=$((max_attempts - 1))
 
     local attempt delay
     for ((attempt=0; attempt<max_attempts; attempt++)); do
-        delay="${ACFS_CURL_RETRY_DELAYS[$attempt]}"
+        delay="${GTBI_CURL_RETRY_DELAYS[$attempt]}"
         if (( attempt > 0 )); then
             log_info "Retry ${attempt}/${retries} for fetching upstream URL (waiting ${delay}s)..."
             sleep "$delay"
@@ -3291,7 +3291,7 @@ acfs_fetch_url_content() {
         # IMPORTANT: keep this `curl` call set -e-safe so transient failures
         # don't abort the installer before our retry loop can run.
         content="$(
-            acfs_curl "$url" 2>/dev/null || exit $?
+            gtbi_curl "$url" 2>/dev/null || exit $?
             printf '%s' "$sentinel"
         )" || status=$?
 
@@ -3301,7 +3301,7 @@ acfs_fetch_url_content() {
             return 0
         fi
 
-        if ! acfs_is_retryable_curl_exit_code "$status"; then
+        if ! gtbi_is_retryable_curl_exit_code "$status"; then
             log_error "Failed to fetch upstream URL: $url"
             return 1
         fi
@@ -3313,15 +3313,15 @@ acfs_fetch_url_content() {
 
 # Fetch checksums.yaml directly via GitHub API (bypasses CDN caching entirely).
 # This is used as a fallback when cached checksums don't match upstream.
-# Uses ACFS_CHECKSUMS_REF to avoid stale checksums when ACFS_REF is pinned.
+# Uses GTBI_CHECKSUMS_REF to avoid stale checksums when GTBI_REF is pinned.
 # Uses the raw content header to get the file directly without base64 encoding.
-acfs_fetch_fresh_checksums_via_api() {
-    local api_url="https://api.github.com/repos/${ACFS_REPO_OWNER}/${ACFS_REPO_NAME}/contents/checksums.yaml?ref=${ACFS_CHECKSUMS_REF}"
+gtbi_fetch_fresh_checksums_via_api() {
+    local api_url="https://api.github.com/repos/${GTBI_REPO_OWNER}/${GTBI_REPO_NAME}/contents/checksums.yaml?ref=${GTBI_CHECKSUMS_REF}"
     local curl_bin=""
 
     # Use application/vnd.github.raw to get raw file content directly (no base64)
     local content
-    curl_bin="$(acfs_early_system_binary_path curl 2>/dev/null || true)"
+    curl_bin="$(gtbi_early_system_binary_path curl 2>/dev/null || true)"
     if [[ -z "$curl_bin" ]]; then
         log_detail "curl unavailable for GitHub API request"
         return 1
@@ -3349,8 +3349,8 @@ acfs_fetch_fresh_checksums_via_api() {
 }
 
 # Parse checksums.yaml content into associative arrays.
-# Takes YAML content as argument, populates ACFS_UPSTREAM_URLS and ACFS_UPSTREAM_SHA256.
-acfs_parse_checksums_content() {
+# Takes YAML content as argument, populates GTBI_UPSTREAM_URLS and GTBI_UPSTREAM_SHA256.
+gtbi_parse_checksums_content() {
     local content="$1"
     local in_installers=false
     local installers_indent=0
@@ -3433,40 +3433,40 @@ acfs_parse_checksums_content() {
 
     # Commit parsed data only after the new content has at least one usable
     # checksum, so a malformed refresh cannot erase a previously loaded table.
-    ACFS_UPSTREAM_URLS=()
-    ACFS_UPSTREAM_SHA256=()
+    GTBI_UPSTREAM_URLS=()
+    GTBI_UPSTREAM_SHA256=()
     local tool
     for tool in "${!parsed_sha256[@]}"; do
-        ACFS_UPSTREAM_SHA256["$tool"]="${parsed_sha256[$tool]}"
+        GTBI_UPSTREAM_SHA256["$tool"]="${parsed_sha256[$tool]}"
         if [[ -n "${parsed_urls[$tool]:-}" ]]; then
-            ACFS_UPSTREAM_URLS["$tool"]="${parsed_urls[$tool]}"
+            GTBI_UPSTREAM_URLS["$tool"]="${parsed_urls[$tool]}"
         fi
     done
 
     return 0
 }
 
-acfs_required_upstream_tools() {
+gtbi_required_upstream_tools() {
     printf '%s\n' \
         atuin bun claude dolt gemini_patch nvm ohmyzsh opencode rust uv zoxide
 }
 
-acfs_validate_upstream_checksums() {
+gtbi_validate_upstream_checksums() {
     local missing_required_tools=false
     local tool
 
     while IFS= read -r tool; do
-        if [[ -z "${ACFS_UPSTREAM_URLS[$tool]:-}" ]] || [[ -z "${ACFS_UPSTREAM_SHA256[$tool]:-}" ]]; then
+        if [[ -z "${GTBI_UPSTREAM_URLS[$tool]:-}" ]] || [[ -z "${GTBI_UPSTREAM_SHA256[$tool]:-}" ]]; then
             log_error "checksums.yaml missing entry for '$tool'"
             missing_required_tools=true
         fi
-    done < <(acfs_required_upstream_tools)
+    done < <(gtbi_required_upstream_tools)
 
     [[ "$missing_required_tools" != "true" ]]
 }
 
-acfs_load_upstream_checksums() {
-    if [[ "$ACFS_UPSTREAM_LOADED" == "true" ]]; then
+gtbi_load_upstream_checksums() {
+    if [[ "$GTBI_UPSTREAM_LOADED" == "true" ]]; then
         return 0
     fi
 
@@ -3477,19 +3477,19 @@ acfs_load_upstream_checksums() {
 
     # If checksums ref differs from the install ref, avoid using bootstrapped/local
     # checksums which may be stale for fast-moving upstream installers.
-    if [[ -n "${ACFS_CHECKSUMS_REF:-}" && -n "${ACFS_REF_INPUT:-}" && "$ACFS_CHECKSUMS_REF" != "$ACFS_REF_INPUT" ]]; then
+    if [[ -n "${GTBI_CHECKSUMS_REF:-}" && -n "${GTBI_REF_INPUT:-}" && "$GTBI_CHECKSUMS_REF" != "$GTBI_REF_INPUT" ]]; then
         prefer_local_checksums=false
-        log_detail "Using checksums from ref '${ACFS_CHECKSUMS_REF}' (install ref: '${ACFS_REF_INPUT}')"
+        log_detail "Using checksums from ref '${GTBI_CHECKSUMS_REF}' (install ref: '${GTBI_REF_INPUT}')"
     fi
 
-    if [[ "$prefer_local_checksums" == "true" && -n "${ACFS_CHECKSUMS_YAML:-}" ]] && [[ -r "$ACFS_CHECKSUMS_YAML" ]]; then
-        checksums_file="$ACFS_CHECKSUMS_YAML"
+    if [[ "$prefer_local_checksums" == "true" && -n "${GTBI_CHECKSUMS_YAML:-}" ]] && [[ -r "$GTBI_CHECKSUMS_YAML" ]]; then
+        checksums_file="$GTBI_CHECKSUMS_YAML"
         checksums_source="bootstrap"
     elif [[ "$prefer_local_checksums" == "true" && -n "${SCRIPT_DIR:-}" ]] && [[ -r "$SCRIPT_DIR/checksums.yaml" ]]; then
         checksums_file="$SCRIPT_DIR/checksums.yaml"
         checksums_source="local"
-    elif [[ "$prefer_local_checksums" == "true" && -n "${ACFS_BOOTSTRAP_DIR:-}" ]] && [[ -r "$ACFS_BOOTSTRAP_DIR/checksums.yaml" ]]; then
-        checksums_file="$ACFS_BOOTSTRAP_DIR/checksums.yaml"
+    elif [[ "$prefer_local_checksums" == "true" && -n "${GTBI_BOOTSTRAP_DIR:-}" ]] && [[ -r "$GTBI_BOOTSTRAP_DIR/checksums.yaml" ]]; then
+        checksums_file="$GTBI_BOOTSTRAP_DIR/checksums.yaml"
         checksums_source="bootstrap"
     fi
 
@@ -3497,11 +3497,11 @@ acfs_load_upstream_checksums() {
         content="$(cat "$checksums_file")"
     else
         # Fetch via GitHub API (bypasses CDN caching entirely)
-        content="$(acfs_fetch_fresh_checksums_via_api)" || {
+        content="$(gtbi_fetch_fresh_checksums_via_api)" || {
             # Fallback to raw.githubusercontent.com with cache-bust
             local cb
             cb="$(date +%s)"
-            content="$(acfs_fetch_url_content "$ACFS_CHECKSUMS_RAW/checksums.yaml?cb=${cb}")" || {
+            content="$(gtbi_fetch_url_content "$GTBI_CHECKSUMS_RAW/checksums.yaml?cb=${cb}")" || {
                 log_error "Failed to fetch checksums.yaml from any source"
                 return 1
             }
@@ -3511,16 +3511,16 @@ acfs_load_upstream_checksums() {
         [[ "$checksums_source" == "unknown" ]] && checksums_source="github-api"
     fi
 
-    if ! acfs_parse_checksums_content "$content"; then
+    if ! gtbi_parse_checksums_content "$content"; then
         log_error "checksums.yaml contains no valid installer checksums"
         return 1
     fi
 
-    if ! acfs_validate_upstream_checksums; then
+    if ! gtbi_validate_upstream_checksums; then
         return 1
     fi
 
-    ACFS_UPSTREAM_LOADED=true
+    GTBI_UPSTREAM_LOADED=true
     return 0
 }
 
@@ -3529,9 +3529,9 @@ acfs_load_upstream_checksums() {
 # On checksum mismatch, we attempt a fresh fetch via GitHub API to handle CDN caching.
 # If still mismatched after fresh fetch, we fail closed (never execute unverified scripts).
 
-acfs_run_verified_upstream_script_as_target_with_env() {
+gtbi_run_verified_upstream_script_as_target_with_env() {
     if [[ $# -lt 2 ]]; then
-        log_error "acfs_run_verified_upstream_script_as_target_with_env requires a tool and runner"
+        log_error "gtbi_run_verified_upstream_script_as_target_with_env requires a tool and runner"
         return 1
     fi
 
@@ -3544,10 +3544,10 @@ acfs_run_verified_upstream_script_as_target_with_env() {
         set --
     fi
 
-    acfs_load_upstream_checksums || return $?
+    gtbi_load_upstream_checksums || return $?
 
-    local url="${ACFS_UPSTREAM_URLS[$tool]:-}"
-    local expected_sha256="${ACFS_UPSTREAM_SHA256[$tool]:-}"
+    local url="${GTBI_UPSTREAM_URLS[$tool]:-}"
+    local expected_sha256="${GTBI_UPSTREAM_SHA256[$tool]:-}"
     if [[ -z "$url" ]] || [[ -z "$expected_sha256" ]]; then
         log_error "No checksum recorded for upstream installer: $tool"
         return 1
@@ -3561,10 +3561,10 @@ acfs_run_verified_upstream_script_as_target_with_env() {
     # Bash command substitution trims trailing newlines, which would change the
     # checksum we compute vs the exact bytes we execute. Append an EOF sentinel
     # so the captured output never ends with a newline, then strip it.
-    local sentinel="__ACFS_EOF_SENTINEL__"
+    local sentinel="__GTBI_EOF_SENTINEL__"
     local content_with_sentinel
     content_with_sentinel="$(
-        acfs_fetch_url_content "$url" || exit $?
+        gtbi_fetch_url_content "$url" || exit $?
         printf '%s' "$sentinel"
     )" || return 1
 
@@ -3576,7 +3576,7 @@ acfs_run_verified_upstream_script_as_target_with_env() {
     local content="${content_with_sentinel%"$sentinel"}"
 
     local actual_sha256
-    actual_sha256="$(printf '%s' "$content" | acfs_calculate_sha256)" || return 1
+    actual_sha256="$(printf '%s' "$content" | gtbi_calculate_sha256)" || return 1
 
     if [[ "$actual_sha256" != "$expected_sha256" ]]; then
         # Checksum mismatch - but this might be due to CDN caching of our checksums.yaml.
@@ -3584,7 +3584,7 @@ acfs_run_verified_upstream_script_as_target_with_env() {
         log_detail "Checksum mismatch for '$tool' - fetching fresh checksums via GitHub API..."
 
         local fresh_content
-        fresh_content="$(acfs_fetch_fresh_checksums_via_api)" || {
+        fresh_content="$(gtbi_fetch_fresh_checksums_via_api)" || {
             log_detail "GitHub API fallback failed, cannot verify with fresh checksums"
             log_error "Security error: checksum mismatch for '$tool'"
             log_detail "URL: $url"
@@ -3598,12 +3598,12 @@ acfs_run_verified_upstream_script_as_target_with_env() {
         # URL can change during migrations, such as mcp_agent_mail ->
         # mcp_agent_mail_rust, so re-fetch before comparing against the fresh
         # hash when the contract moved.
-        if ! acfs_parse_checksums_content "$fresh_content"; then
+        if ! gtbi_parse_checksums_content "$fresh_content"; then
             log_error "Fresh checksums.yaml contains no valid installer checksums"
             return 1
         fi
-        local fresh_url="${ACFS_UPSTREAM_URLS[$tool]:-$url}"
-        local fresh_expected_sha256="${ACFS_UPSTREAM_SHA256[$tool]:-}"
+        local fresh_url="${GTBI_UPSTREAM_URLS[$tool]:-$url}"
+        local fresh_expected_sha256="${GTBI_UPSTREAM_SHA256[$tool]:-}"
 
         if [[ -z "$fresh_url" ]]; then
             log_error "Fresh checksums.yaml missing URL for '$tool'"
@@ -3617,7 +3617,7 @@ acfs_run_verified_upstream_script_as_target_with_env() {
         if [[ "$fresh_url" != "$url" ]]; then
             log_detail "Fresh checksums changed URL for '$tool'; refetching installer..."
             content_with_sentinel="$(
-                acfs_fetch_url_content "$fresh_url" || exit $?
+                gtbi_fetch_url_content "$fresh_url" || exit $?
                 printf '%s' "$sentinel"
             )" || return 1
 
@@ -3628,14 +3628,14 @@ acfs_run_verified_upstream_script_as_target_with_env() {
 
             url="$fresh_url"
             content="${content_with_sentinel%"$sentinel"}"
-            actual_sha256="$(printf '%s' "$content" | acfs_calculate_sha256)" || return 1
+            actual_sha256="$(printf '%s' "$content" | gtbi_calculate_sha256)" || return 1
         fi
         expected_sha256="$fresh_expected_sha256"
 
         # Re-verify with fresh checksum
         if [[ "$actual_sha256" == "$expected_sha256" ]]; then
             log_success "Verified '$tool' with fresh checksums from GitHub API"
-            # Note: ACFS_UPSTREAM_SHA256 already updated by acfs_parse_checksums_content above
+            # Note: GTBI_UPSTREAM_SHA256 already updated by gtbi_parse_checksums_content above
         else
             # Still doesn't match even with fresh checksums - this is a real problem
             log_error "Security error: checksum mismatch for '$tool' (verified with fresh checksums)"
@@ -3648,7 +3648,7 @@ acfs_run_verified_upstream_script_as_target_with_env() {
             log_error "  2. Potential tampering (investigate before proceeding)"
             log_error "  3. Network issue corrupting downloads (retry on different network)"
 
-            if [[ "${ACFS_STRICT_MODE:-false}" == "true" ]]; then
+            if [[ "${GTBI_STRICT_MODE:-false}" == "true" ]]; then
                 log_fatal "Strict mode: aborting due to checksum mismatch for '$tool'"
             fi
 
@@ -3663,9 +3663,9 @@ acfs_run_verified_upstream_script_as_target_with_env() {
     fi
 }
 
-acfs_run_verified_upstream_script_as_target() {
+gtbi_run_verified_upstream_script_as_target() {
     if [[ $# -lt 2 ]]; then
-        log_error "acfs_run_verified_upstream_script_as_target requires a tool and runner"
+        log_error "gtbi_run_verified_upstream_script_as_target requires a tool and runner"
         return 1
     fi
 
@@ -3676,13 +3676,13 @@ acfs_run_verified_upstream_script_as_target() {
     else
         set --
     fi
-    acfs_run_verified_upstream_script_as_target_with_env "$tool" "$runner" "" "$@"
+    gtbi_run_verified_upstream_script_as_target_with_env "$tool" "$runner" "" "$@"
 }
 
 ensure_root() {
     if [[ $EUID -ne 0 ]]; then
         local sudo_bin=""
-        sudo_bin="$(acfs_early_sudo_binary_path 2>/dev/null || true)"
+        sudo_bin="$(gtbi_early_sudo_binary_path 2>/dev/null || true)"
         if [[ -n "$sudo_bin" ]]; then
             SUDO="$sudo_bin"
         elif [[ "$DRY_RUN" == "true" ]]; then
@@ -3716,16 +3716,16 @@ disable_needrestart_apt_hook() {
         return 0
     fi
 
-    chmod_bin="$(acfs_early_system_binary_path chmod 2>/dev/null || true)"
-    mkdir_bin="$(acfs_early_system_binary_path mkdir 2>/dev/null || true)"
-    tee_bin="$(acfs_early_system_binary_path tee 2>/dev/null || true)"
+    chmod_bin="$(gtbi_early_system_binary_path chmod 2>/dev/null || true)"
+    mkdir_bin="$(gtbi_early_system_binary_path mkdir 2>/dev/null || true)"
+    tee_bin="$(gtbi_early_system_binary_path tee 2>/dev/null || true)"
     if [[ -z "$chmod_bin" || -z "$mkdir_bin" || -z "$tee_bin" ]]; then
         log_warn "Skipping needrestart apt hook hardening: required coreutils unavailable"
         return 0
     fi
     if [[ $EUID -ne 0 ]]; then
         local sudo_bin=""
-        sudo_bin="$(acfs_early_sudo_binary_path 2>/dev/null || true)"
+        sudo_bin="$(gtbi_early_sudo_binary_path 2>/dev/null || true)"
         [[ -n "$sudo_bin" ]] || return 0
         sudo_cmd=("$sudo_bin")
     fi
@@ -3738,24 +3738,24 @@ disable_needrestart_apt_hook() {
 
     # Method 2: Configure needrestart to auto-restart services without prompting
     if [[ -d "$nr_conf_dir" ]] || "${sudo_cmd[@]}" "$mkdir_bin" -p "$nr_conf_dir" 2>/dev/null; then
-        echo '$nrconf{restart} = '\''a'\'';' | "${sudo_cmd[@]}" "$tee_bin" "$nr_conf_dir/50-acfs-noninteractive.conf" >/dev/null 2>&1 || true
+        echo '$nrconf{restart} = '\''a'\'';' | "${sudo_cmd[@]}" "$tee_bin" "$nr_conf_dir/50-gtbi-noninteractive.conf" >/dev/null 2>&1 || true
     fi
 }
 
-acfs_chown_tree() {
+gtbi_chown_tree() {
     local owner_group="$1"
     local path="$2"
 
     if [[ -z "$owner_group" ]]; then
-        log_error "acfs_chown_tree: owner/group is required"
+        log_error "gtbi_chown_tree: owner/group is required"
         return 1
     fi
     if [[ -z "$path" ]]; then
-        log_error "acfs_chown_tree: path is required"
+        log_error "gtbi_chown_tree: path is required"
         return 1
     fi
     if [[ "$path" == "/" ]]; then
-        log_error "acfs_chown_tree: refusing to chown '/'"
+        log_error "gtbi_chown_tree: refusing to chown '/'"
         return 1
     fi
 
@@ -3765,12 +3765,12 @@ acfs_chown_tree() {
     local resolved="$path"
     if [[ -L "$path" ]]; then
         if ! command_exists readlink; then
-            log_error "acfs_chown_tree: readlink is required to resolve symlink: $path"
+            log_error "gtbi_chown_tree: readlink is required to resolve symlink: $path"
             return 1
         fi
         resolved="$(readlink -f "$path" 2>/dev/null || true)"
         if [[ -z "$resolved" ]] || [[ "$resolved" == "/" ]]; then
-            log_error "acfs_chown_tree: refusing to chown unresolved/unsafe symlink: $path"
+            log_error "gtbi_chown_tree: refusing to chown unresolved/unsafe symlink: $path"
             return 1
         fi
     fi
@@ -3779,13 +3779,13 @@ acfs_chown_tree() {
     # TARGET_HOME (or other paths) to a system directory.
     #
     # If you *really* need to chown one of these paths, you can override with:
-    #   ACFS_ALLOW_UNSAFE_CHOWN=1
-    if [[ "${ACFS_ALLOW_UNSAFE_CHOWN:-0}" != "1" ]]; then
+    #   GTBI_ALLOW_UNSAFE_CHOWN=1
+    if [[ "${GTBI_ALLOW_UNSAFE_CHOWN:-0}" != "1" ]]; then
         local unsafe_prefix=""
         for unsafe_prefix in /etc /usr /bin /sbin /lib /lib64 /boot /proc /sys /dev /run /var /opt; do
             if [[ "$resolved" == "$unsafe_prefix" || "$resolved" == "$unsafe_prefix/"* ]]; then
-                log_error "acfs_chown_tree: refusing to chown unsafe system path: $resolved"
-                log_error "If you intended this (rare), re-run with ACFS_ALLOW_UNSAFE_CHOWN=1"
+                log_error "gtbi_chown_tree: refusing to chown unsafe system path: $resolved"
+                log_error "If you intended this (rare), re-run with GTBI_ALLOW_UNSAFE_CHOWN=1"
                 return 1
             fi
         done
@@ -3799,10 +3799,10 @@ acfs_chown_tree() {
         local _real_err
         _real_err=$(printf '%s\n' "$_chown_err" | grep -v "No such file or directory" || true)
         if [[ -n "$_real_err" ]]; then
-            log_error "acfs_chown_tree: chown failed for $resolved"
+            log_error "gtbi_chown_tree: chown failed for $resolved"
             return 1
         fi
-        log_detail "acfs_chown_tree: transient file warnings during chown (safe to ignore)"
+        log_detail "gtbi_chown_tree: transient file warnings during chown (safe to ignore)"
     }
 }
 
@@ -3812,15 +3812,15 @@ confirm_or_exit() {
     fi
 
     if [[ "$HAS_GUM" == "true" ]] && [[ -r /dev/tty ]]; then
-        gum confirm "Proceed with ACFS install? (mode=$MODE)" < /dev/tty > /dev/tty || exit 1
+        gum confirm "Proceed with GTBI install? (mode=$MODE)" < /dev/tty > /dev/tty || exit 1
         return 0
     fi
 
     local reply=""
     if [[ -t 0 ]]; then
-        read -r -p "Proceed with ACFS install? (mode=$MODE) [y/N] " reply
+        read -r -p "Proceed with GTBI install? (mode=$MODE) [y/N] " reply
     elif [[ -r /dev/tty ]]; then
-        read -r -p "Proceed with ACFS install? (mode=$MODE) [y/N] " reply < /dev/tty
+        read -r -p "Proceed with GTBI install? (mode=$MODE) [y/N] " reply < /dev/tty
     else
         log_fatal "--yes is required when no TTY is available"
     fi
@@ -3831,7 +3831,7 @@ confirm_or_exit() {
 }
 
 # Resolve a user's home directory from NSS when possible.
-acfs_home_for_user() {
+gtbi_home_for_user() {
     local user="${1:-}"
     local expected_home="${2:-}"
     local passwd_entry=""
@@ -3851,7 +3851,7 @@ acfs_home_for_user() {
         return 0
     fi
 
-    passwd_entry="$(acfs_early_getent_passwd_entry "$user" 2>/dev/null || true)"
+    passwd_entry="$(gtbi_early_getent_passwd_entry "$user" 2>/dev/null || true)"
     if [[ -n "$passwd_entry" ]]; then
         IFS=: read -r _ _ _ _ _ passwd_home _ <<< "$passwd_entry"
         if [[ -n "$passwd_home" ]] && [[ "$passwd_home" == /* ]] && [[ "$passwd_home" != "/" ]]; then
@@ -3860,7 +3860,7 @@ acfs_home_for_user() {
         fi
     fi
 
-    current_user="$(acfs_early_resolve_current_user 2>/dev/null || true)"
+    current_user="$(gtbi_early_resolve_current_user 2>/dev/null || true)"
     if [[ "$current_user" == "$user" ]] && [[ -n "${HOME:-}" ]] && [[ "${HOME}" == /* ]] && [[ "${HOME}" != "/" ]]; then
         current_home="${HOME%/}"
         if [[ -z "$expected_home" ]] || [[ "$current_home" == "$expected_home" ]]; then
@@ -3872,7 +3872,7 @@ acfs_home_for_user() {
     return 1
 }
 
-acfs_default_home_for_new_user() {
+gtbi_default_home_for_new_user() {
     local user="${1:-}"
 
     [[ -n "$user" ]] || return 1
@@ -3902,17 +3902,17 @@ init_target_paths() {
         explicit_target_home="${explicit_target_home_raw%/}"
         [[ "$explicit_target_home" != "/" ]] || explicit_target_home=""
     fi
-    resolved_target_home="$(acfs_home_for_user "$TARGET_USER" "$explicit_target_home" 2>/dev/null || true)"
+    resolved_target_home="$(gtbi_home_for_user "$TARGET_USER" "$explicit_target_home" 2>/dev/null || true)"
     if [[ -n "$resolved_target_home" ]]; then
         TARGET_HOME="$resolved_target_home"
     elif [[ $EUID -eq 0 ]] && ! id "$TARGET_USER" &>/dev/null; then
         if [[ -n "$explicit_target_home" ]]; then
             TARGET_HOME="$explicit_target_home"
         else
-            TARGET_HOME="$(acfs_default_home_for_new_user "$TARGET_USER" 2>/dev/null || true)"
+            TARGET_HOME="$(gtbi_default_home_for_new_user "$TARGET_USER" 2>/dev/null || true)"
         fi
     elif [[ -n "$explicit_target_home" ]]; then
-        current_user="$(acfs_early_resolve_current_user 2>/dev/null || true)"
+        current_user="$(gtbi_early_resolve_current_user 2>/dev/null || true)"
         if [[ -n "$current_user" && "$TARGET_USER" == "$current_user" ]]; then
             TARGET_HOME="$explicit_target_home"
         else
@@ -3934,60 +3934,60 @@ init_target_paths() {
     fi
 
     # Configurable binary install directory (fixes #211).
-    # Override via ACFS_BIN_DIR for shared/multi-user machines:
-    #   ACFS_BIN_DIR=/usr/local/bin ./install.sh
-    ACFS_BIN_DIR="${ACFS_BIN_DIR:-$TARGET_HOME/.local/bin}"
+    # Override via GTBI_BIN_DIR for shared/multi-user machines:
+    #   GTBI_BIN_DIR=/usr/local/bin ./install.sh
+    GTBI_BIN_DIR="${GTBI_BIN_DIR:-$TARGET_HOME/.local/bin}"
     if [[ -n "$explicit_target_home" ]] && [[ "$explicit_target_home" != "$TARGET_HOME" ]]; then
-        case "$ACFS_BIN_DIR" in
+        case "$GTBI_BIN_DIR" in
             "$explicit_target_home"|"$explicit_target_home"/*)
-                ACFS_BIN_DIR="$TARGET_HOME/.local/bin"
+                GTBI_BIN_DIR="$TARGET_HOME/.local/bin"
                 ;;
         esac
     fi
-    if [[ -z "$ACFS_BIN_DIR" ]] || [[ "$ACFS_BIN_DIR" == "/" ]] || [[ "$ACFS_BIN_DIR" != /* ]]; then
-        log_fatal "ACFS_BIN_DIR must be an absolute path and cannot be '/' (got: ${ACFS_BIN_DIR:-<empty>})"
+    if [[ -z "$GTBI_BIN_DIR" ]] || [[ "$GTBI_BIN_DIR" == "/" ]] || [[ "$GTBI_BIN_DIR" != /* ]]; then
+        log_fatal "GTBI_BIN_DIR must be an absolute path and cannot be '/' (got: ${GTBI_BIN_DIR:-<empty>})"
     fi
 
-    # ACFS directories for target user
-    ACFS_HOME="${ACFS_HOME:-$TARGET_HOME/.acfs}"
+    # GTBI directories for target user
+    GTBI_HOME="${GTBI_HOME:-$TARGET_HOME/.gtbi}"
     if [[ -n "$explicit_target_home" ]] && [[ "$explicit_target_home" != "$TARGET_HOME" ]]; then
-        case "$ACFS_HOME" in
+        case "$GTBI_HOME" in
             "$explicit_target_home"|"$explicit_target_home"/*)
-                ACFS_HOME="$TARGET_HOME/.acfs"
+                GTBI_HOME="$TARGET_HOME/.gtbi"
                 ;;
         esac
     fi
-    ACFS_STATE_FILE="${ACFS_STATE_FILE:-$ACFS_HOME/state.json}"
+    GTBI_STATE_FILE="${GTBI_STATE_FILE:-$GTBI_HOME/state.json}"
     if [[ -n "$explicit_target_home" ]] && [[ "$explicit_target_home" != "$TARGET_HOME" ]]; then
-        case "$ACFS_STATE_FILE" in
+        case "$GTBI_STATE_FILE" in
             "$explicit_target_home"|"$explicit_target_home"/*)
-                ACFS_STATE_FILE="$ACFS_HOME/state.json"
+                GTBI_STATE_FILE="$GTBI_HOME/state.json"
                 ;;
         esac
     fi
 
-    # Basic hardening: refuse to use a symlinked ACFS_HOME when running with
+    # Basic hardening: refuse to use a symlinked GTBI_HOME when running with
     # elevated privileges (prevents clobbering arbitrary paths via symlink tricks).
-    if [[ -e "$ACFS_HOME" ]] && [[ -L "$ACFS_HOME" ]]; then
-        log_fatal "Refusing to use ACFS_HOME because it is a symlink: $ACFS_HOME"
+    if [[ -e "$GTBI_HOME" ]] && [[ -L "$GTBI_HOME" ]]; then
+        log_fatal "Refusing to use GTBI_HOME because it is a symlink: $GTBI_HOME"
     fi
 
     log_detail "Target user: $TARGET_USER"
     log_detail "Target home: $TARGET_HOME"
 
     # Export for generated installers (run via subshells).
-    export TARGET_USER TARGET_HOME ACFS_HOME ACFS_STATE_FILE ACFS_BIN_DIR
+    export TARGET_USER TARGET_HOME GTBI_HOME GTBI_STATE_FILE GTBI_BIN_DIR
 
     # Add target user's bin directories to PATH early so that tools installed
     # later (like Claude Code) see the correct PATH and don't warn about it.
-    export PATH="$ACFS_BIN_DIR:$TARGET_HOME/.local/bin:$TARGET_HOME/.acfs/bin:$TARGET_HOME/.cargo/bin:$TARGET_HOME/.bun/bin:$TARGET_HOME/.atuin/bin:$TARGET_HOME/go/bin:$PATH"
+    export PATH="$GTBI_BIN_DIR:$TARGET_HOME/.local/bin:$TARGET_HOME/.gtbi/bin:$TARGET_HOME/.cargo/bin:$TARGET_HOME/.bun/bin:$TARGET_HOME/.atuin/bin:$TARGET_HOME/go/bin:$PATH"
 }
 
-acfs_primary_bin_dir_uses_root() {
-    [[ -n "${ACFS_BIN_DIR:-}" ]] || return 1
+gtbi_primary_bin_dir_uses_root() {
+    [[ -n "${GTBI_BIN_DIR:-}" ]] || return 1
     [[ -n "${TARGET_HOME:-}" ]] || return 1
 
-    case "$ACFS_BIN_DIR" in
+    case "$GTBI_BIN_DIR" in
         "$TARGET_HOME"|"$TARGET_HOME"/*)
             return 1
             ;;
@@ -3997,23 +3997,23 @@ acfs_primary_bin_dir_uses_root() {
     esac
 }
 
-acfs_ensure_primary_bin_dir() {
-    if acfs_primary_bin_dir_uses_root; then
-        "$SUDO" mkdir -p "$ACFS_BIN_DIR"
+gtbi_ensure_primary_bin_dir() {
+    if gtbi_primary_bin_dir_uses_root; then
+        "$SUDO" mkdir -p "$GTBI_BIN_DIR"
         return $?
     fi
 
-    run_as_target mkdir -p "$ACFS_BIN_DIR"
+    run_as_target mkdir -p "$GTBI_BIN_DIR"
 }
 
-acfs_link_primary_bin_command() {
+gtbi_link_primary_bin_command() {
     local source_path="$1"
     local command_name="$2"
-    local dest_path="$ACFS_BIN_DIR/$command_name"
+    local dest_path="$GTBI_BIN_DIR/$command_name"
 
-    acfs_ensure_primary_bin_dir || return 1
+    gtbi_ensure_primary_bin_dir || return 1
 
-    if acfs_primary_bin_dir_uses_root; then
+    if gtbi_primary_bin_dir_uses_root; then
         "$SUDO" ln -sf "$source_path" "$dest_path"
         return $?
     fi
@@ -4021,7 +4021,7 @@ acfs_link_primary_bin_command() {
     run_as_target ln -sf "$source_path" "$dest_path"
 }
 
-acfs_link_global_bin_command() {
+gtbi_link_global_bin_command() {
     local source_path="$1"
     local command_name="$2"
     local dest_path="/usr/local/bin/$command_name"
@@ -4039,25 +4039,25 @@ acfs_link_global_bin_command() {
     ln -sf "$source_path" "$dest_path"
 }
 
-configure_acfs_nightly_timer() {
+configure_gtbi_nightly_timer() {
     local output=""
     local status=0
 
     output="$(run_as_target bash -c '
 set -euo pipefail
 
-acfs_home="${ACFS_HOME:-$HOME/.acfs}"
-service_src="$acfs_home/scripts/templates/acfs-nightly-update.service"
-timer_src="$acfs_home/scripts/templates/acfs-nightly-update.timer"
-wrapper="$acfs_home/scripts/nightly-update.sh"
+gtbi_home="${GTBI_HOME:-$HOME/.gtbi}"
+service_src="$gtbi_home/scripts/templates/gtbi-nightly-update.service"
+timer_src="$gtbi_home/scripts/templates/gtbi-nightly-update.timer"
+wrapper="$gtbi_home/scripts/nightly-update.sh"
 
 if ! command -v systemctl >/dev/null 2>&1; then
-    printf "%s\n" "ACFS_NIGHTLY_SYSTEMD_UNAVAILABLE: systemctl not found"
+    printf "%s\n" "GTBI_NIGHTLY_SYSTEMD_UNAVAILABLE: systemctl not found"
     exit 0
 fi
 
 if ! systemctl --user show-environment >/dev/null 2>&1; then
-    printf "%s\n" "ACFS_NIGHTLY_SYSTEMD_UNAVAILABLE: user systemd manager unavailable"
+    printf "%s\n" "GTBI_NIGHTLY_SYSTEMD_UNAVAILABLE: user systemd manager unavailable"
     exit 0
 fi
 
@@ -4069,41 +4069,41 @@ for required_path in "$service_src" "$timer_src" "$wrapper"; do
 done
 
 mkdir -p "$HOME/.config/systemd/user"
-cp "$service_src" "$HOME/.config/systemd/user/acfs-nightly-update.service"
-cp "$timer_src" "$HOME/.config/systemd/user/acfs-nightly-update.timer"
+cp "$service_src" "$HOME/.config/systemd/user/gtbi-nightly-update.service"
+cp "$timer_src" "$HOME/.config/systemd/user/gtbi-nightly-update.timer"
 chmod 755 "$wrapper"
 systemctl --user daemon-reload
-systemctl --user enable --now acfs-nightly-update.timer
-systemctl --user is-enabled acfs-nightly-update.timer >/dev/null
+systemctl --user enable --now gtbi-nightly-update.timer
+systemctl --user is-enabled gtbi-nightly-update.timer >/dev/null
 ' 2>&1)" || status=$?
 
     if [[ "$status" -ne 0 ]]; then
-        log_error "Failed to enable ACFS nightly update timer"
+        log_error "Failed to enable GTBI nightly update timer"
         if [[ -n "$output" ]]; then
             log_detail "$output"
         fi
         return "$status"
     fi
 
-    if [[ "$output" == *"ACFS_NIGHTLY_SYSTEMD_UNAVAILABLE"* ]]; then
-        log_warn "Skipping ACFS nightly update timer because user systemd is unavailable"
+    if [[ "$output" == *"GTBI_NIGHTLY_SYSTEMD_UNAVAILABLE"* ]]; then
+        log_warn "Skipping GTBI nightly update timer because user systemd is unavailable"
         if [[ -n "$output" ]]; then
             log_detail "$output"
         fi
         return 0
     fi
 
-    log_detail "ACFS nightly update timer enabled"
+    log_detail "GTBI nightly update timer enabled"
 }
 
-acfs_install_executable_into_primary_bin() {
+gtbi_install_executable_into_primary_bin() {
     local src_path="$1"
     local command_name="$2"
-    local dest_path="$ACFS_BIN_DIR/$command_name"
+    local dest_path="$GTBI_BIN_DIR/$command_name"
 
-    acfs_ensure_primary_bin_dir || return 1
+    gtbi_ensure_primary_bin_dir || return 1
 
-    if acfs_primary_bin_dir_uses_root; then
+    if gtbi_primary_bin_dir_uses_root; then
         "$SUDO" install -m 0755 "$src_path" "$dest_path"
         return $?
     fi
@@ -4130,14 +4130,14 @@ validate_target_user() {
 
 ensure_ubuntu() {
     if [[ ! -f /etc/os-release ]]; then
-        log_fatal "Cannot detect OS. ACFS supports Ubuntu 22.04+ only."
+        log_fatal "Cannot detect OS. GTBI supports Ubuntu 22.04+ only."
     fi
 
     # shellcheck disable=SC1091
     source /etc/os-release
 
     if [[ "${ID:-}" != "ubuntu" ]]; then
-        log_fatal "Unsupported OS: ${PRETTY_NAME:-${ID:-unknown}}. ACFS supports Ubuntu 22.04+ only."
+        log_fatal "Unsupported OS: ${PRETTY_NAME:-${ID:-unknown}}. GTBI supports Ubuntu 22.04+ only."
     fi
 
     local version_id="${VERSION_ID:-}"
@@ -4147,7 +4147,7 @@ ensure_ubuntu() {
 
     local VERSION_MAJOR="${version_id%%.*}"
     if [[ "$VERSION_MAJOR" -lt 22 ]]; then
-        log_fatal "Unsupported Ubuntu version: ${version_id}. ACFS supports Ubuntu 22.04+ only."
+        log_fatal "Unsupported Ubuntu version: ${version_id}. GTBI supports Ubuntu 22.04+ only."
     fi
 
     if [[ "$VERSION_MAJOR" -lt 24 ]]; then
@@ -4204,17 +4204,17 @@ run_ubuntu_upgrade_phase() {
     fi
 
     # CRITICAL: Ensure jq is installed for state tracking (state.sh depends on it).
-    if ! acfs_early_system_binary_path jq &>/dev/null; then
+    if ! gtbi_early_system_binary_path jq &>/dev/null; then
         log_detail "Installing jq for upgrade state tracking..."
         local apt_get_bin=""
-        apt_get_bin="$(acfs_early_system_binary_path apt-get 2>/dev/null || true)"
+        apt_get_bin="$(gtbi_early_system_binary_path apt-get 2>/dev/null || true)"
         if [[ -z "$apt_get_bin" ]]; then
             log_warn "apt-get not found; cannot install jq for upgrade state tracking"
         elif [[ $EUID -eq 0 ]]; then
             "$apt_get_bin" update -qq && "$apt_get_bin" install -y jq >/dev/null 2>&1 || true
         else
             local sudo_bin=""
-            sudo_bin="$(acfs_early_sudo_binary_path 2>/dev/null || true)"
+            sudo_bin="$(gtbi_early_sudo_binary_path 2>/dev/null || true)"
             if [[ -n "$sudo_bin" ]]; then
                 "$sudo_bin" -n "$apt_get_bin" update -qq && "$sudo_bin" -n "$apt_get_bin" install -y jq >/dev/null 2>&1 || true
             fi
@@ -4237,13 +4237,13 @@ run_ubuntu_upgrade_phase() {
     # Upgrade tracking state must survive reboots and cannot depend on the
     # target user's home existing yet (user normalization runs later).
     # Use a root-owned, persistent state file under the resume directory.
-    local upgrade_state_file="${ACFS_RESUME_DIR:-/var/lib/acfs}/state.json"
+    local upgrade_state_file="${GTBI_RESUME_DIR:-/var/lib/gtbi}/state.json"
     local had_state_file=false
-    local previous_state_file="${ACFS_STATE_FILE:-}"
-    if [[ "${ACFS_STATE_FILE+x}" == "x" ]]; then
+    local previous_state_file="${GTBI_STATE_FILE:-}"
+    if [[ "${GTBI_STATE_FILE+x}" == "x" ]]; then
         had_state_file=true
     fi
-    export ACFS_STATE_FILE="$upgrade_state_file"
+    export GTBI_STATE_FILE="$upgrade_state_file"
 
     # Convert target version string to number for comparison
     # TARGET_UBUNTU_VERSION is "25.10", need 2510
@@ -4266,10 +4266,10 @@ run_ubuntu_upgrade_phase() {
             log_error "Detected Ubuntu upgrade in progress (stage: $upgrade_stage)"
             log_error "Refusing to continue normal installation during an active upgrade."
             log_info "Monitoring:"
-            log_info "  - /var/lib/acfs/check_status.sh"
-            log_info "  - journalctl -u acfs-upgrade-resume -f"
-            log_info "  - tail -f /var/log/acfs/upgrade_resume.log"
-            restore_previous_acfs_state_file "$had_state_file" "$previous_state_file"
+            log_info "  - /var/lib/gtbi/check_status.sh"
+            log_info "  - journalctl -u gtbi-upgrade-resume -f"
+            log_info "  - tail -f /var/log/gtbi/upgrade_resume.log"
+            restore_previous_gtbi_state_file "$had_state_file" "$previous_state_file"
             return 1
             ;;
         pre_upgrade_reboot)
@@ -4279,12 +4279,12 @@ run_ubuntu_upgrade_phase() {
             if type -t state_update &>/dev/null; then
                 if ! state_update ".ubuntu_upgrade.current_stage = \"not_started\" | .ubuntu_upgrade.enabled = false"; then
                     log_error "Failed to clear pre_upgrade_reboot stage; aborting to prevent stale state."
-                    restore_previous_acfs_state_file "$had_state_file" "$previous_state_file"
+                    restore_previous_gtbi_state_file "$had_state_file" "$previous_state_file"
                     return 1
                 fi
             else
                 log_error "State tracking is unavailable; cannot continue upgrade safely."
-                restore_previous_acfs_state_file "$had_state_file" "$previous_state_file"
+                restore_previous_gtbi_state_file "$had_state_file" "$previous_state_file"
                 return 1
             fi
             # Set flag to skip redundant warning (user already confirmed before reboot)
@@ -4294,13 +4294,13 @@ run_ubuntu_upgrade_phase() {
         error)
             log_error "Previous Ubuntu upgrade attempt failed (stage: error)"
             log_error "Check logs:"
-            log_info "  journalctl -u acfs-upgrade-resume"
-            log_info "  tail -100 /var/log/acfs/upgrade_resume.log"
+            log_info "  journalctl -u gtbi-upgrade-resume"
+            log_info "  tail -100 /var/log/gtbi/upgrade_resume.log"
             log_error "To reset and retry upgrade:"
             log_info "  sudo mv -- '${upgrade_state_file}' '${upgrade_state_file}.backup.\$(date +%Y%m%d_%H%M%S)'"
             log_error "To proceed without upgrading:"
             log_info "  Re-run with --skip-ubuntu-upgrade (not recommended)"
-            restore_previous_acfs_state_file "$had_state_file" "$previous_state_file"
+            restore_previous_gtbi_state_file "$had_state_file" "$previous_state_file"
             return 1
             ;;
     esac
@@ -4308,17 +4308,17 @@ run_ubuntu_upgrade_phase() {
     # Check if upgrade is needed (using numeric comparison)
     if ubuntu_version_gte "$current_version_num" "$target_version_num"; then
         log_detail "Ubuntu $current_version_str meets target ($TARGET_UBUNTU_VERSION)"
-        restore_previous_acfs_state_file "$had_state_file" "$previous_state_file"
+        restore_previous_gtbi_state_file "$had_state_file" "$previous_state_file"
         return 0
     fi
 
     # Ubuntu distribution upgrades require root (do-release-upgrade, systemd units,
-    # /var/lib/acfs state). If the installer is being run as a sudo-capable user,
+    # /var/lib/gtbi state). If the installer is being run as a sudo-capable user,
     # abort with clear guidance rather than failing mid-upgrade.
     if [[ $EUID -ne 0 ]]; then
         log_error "Ubuntu auto-upgrade requires running the installer as root"
         log_info "Re-run as root (e.g., run 'sudo -i' then run the install command again), or use --skip-ubuntu-upgrade."
-        restore_previous_acfs_state_file "$had_state_file" "$previous_state_file"
+        restore_previous_gtbi_state_file "$had_state_file" "$previous_state_file"
         return 1
     fi
 
@@ -4329,7 +4329,7 @@ run_ubuntu_upgrade_phase() {
 
     if [[ -z "$upgrade_path" ]]; then
         log_detail "No upgrade path found from $current_version_str to $TARGET_UBUNTU_VERSION"
-        restore_previous_acfs_state_file "$had_state_file" "$previous_state_file"
+        restore_previous_gtbi_state_file "$had_state_file" "$previous_state_file"
         return 0
     fi
 
@@ -4361,8 +4361,8 @@ run_ubuntu_upgrade_phase() {
 
             if [[ ! "$response" =~ ^[Yy] ]]; then
                 log_info "Ubuntu upgrade skipped by user"
-                log_info "Continuing with ACFS installation on Ubuntu $current_version_str"
-                restore_previous_acfs_state_file "$had_state_file" "$previous_state_file"
+                log_info "Continuing with GTBI installation on Ubuntu $current_version_str"
+                restore_previous_gtbi_state_file "$had_state_file" "$previous_state_file"
                 return 0
             fi
         fi
@@ -4371,11 +4371,11 @@ run_ubuntu_upgrade_phase() {
     local upgrade_lock_acquired=false
     if ! type -t upgrade_acquire_lock &>/dev/null; then
         log_error "Ubuntu upgrade lock is unavailable; refusing to continue upgrade."
-        restore_previous_acfs_state_file "$had_state_file" "$previous_state_file"
+        restore_previous_gtbi_state_file "$had_state_file" "$previous_state_file"
         return 1
     fi
     if ! upgrade_acquire_lock; then
-        restore_previous_acfs_state_file "$had_state_file" "$previous_state_file"
+        restore_previous_gtbi_state_file "$had_state_file" "$previous_state_file"
         return 1
     fi
     upgrade_lock_acquired=true
@@ -4394,18 +4394,18 @@ run_ubuntu_upgrade_phase() {
             # Initialize state file early for tracking
             # Try without sudo first, fall back to sudo for system directories
             local mkdir_bin=""
-            mkdir_bin="$(acfs_early_system_binary_path mkdir 2>/dev/null || true)"
-            if [[ -n "$mkdir_bin" ]] && ! "$mkdir_bin" -p "${ACFS_RESUME_DIR:-/var/lib/acfs}" 2>/dev/null; then
+            mkdir_bin="$(gtbi_early_system_binary_path mkdir 2>/dev/null || true)"
+            if [[ -n "$mkdir_bin" ]] && ! "$mkdir_bin" -p "${GTBI_RESUME_DIR:-/var/lib/gtbi}" 2>/dev/null; then
                 local sudo_bin=""
                 local chown_bin=""
                 local id_bin=""
-                sudo_bin="$(acfs_early_sudo_binary_path 2>/dev/null || true)"
-                chown_bin="$(acfs_early_system_binary_path chown 2>/dev/null || true)"
-                id_bin="$(acfs_early_system_binary_path id 2>/dev/null || true)"
+                sudo_bin="$(gtbi_early_sudo_binary_path 2>/dev/null || true)"
+                chown_bin="$(gtbi_early_system_binary_path chown 2>/dev/null || true)"
+                id_bin="$(gtbi_early_system_binary_path id 2>/dev/null || true)"
                 if [[ $EUID -ne 0 && -n "$sudo_bin" ]]; then
-                    "$sudo_bin" -n "$mkdir_bin" -p "${ACFS_RESUME_DIR:-/var/lib/acfs}"
+                    "$sudo_bin" -n "$mkdir_bin" -p "${GTBI_RESUME_DIR:-/var/lib/gtbi}"
                     if [[ -n "$chown_bin" && -n "$id_bin" ]]; then
-                        "$sudo_bin" -n "$chown_bin" "$("$id_bin" -u):$("$id_bin" -g)" "${ACFS_RESUME_DIR:-/var/lib/acfs}" 2>/dev/null || true
+                        "$sudo_bin" -n "$chown_bin" "$("$id_bin" -u):$("$id_bin" -g)" "${GTBI_RESUME_DIR:-/var/lib/gtbi}" 2>/dev/null || true
                     fi
                 fi
             fi
@@ -4427,37 +4427,37 @@ run_ubuntu_upgrade_phase() {
                     log_error "Failed to record upgrade stage; cannot safely auto-reboot."
                     log_info "Please reboot manually and re-run the installer."
                     release_ubuntu_upgrade_lock_if_acquired "$upgrade_lock_acquired"
-                    restore_previous_acfs_state_file "$had_state_file" "$previous_state_file"
+                    restore_previous_gtbi_state_file "$had_state_file" "$previous_state_file"
                     return 1
                 fi
             else
                 log_error "State tracking is unavailable; cannot safely auto-reboot."
                 log_info "Please reboot manually and re-run the installer."
                 release_ubuntu_upgrade_lock_if_acquired "$upgrade_lock_acquired"
-                restore_previous_acfs_state_file "$had_state_file" "$previous_state_file"
+                restore_previous_gtbi_state_file "$had_state_file" "$previous_state_file"
                 return 1
             fi
 
             # Set up resume infrastructure
-            local acfs_source_dir=""
+            local gtbi_source_dir=""
             if [[ -n "${SCRIPT_DIR:-}" ]] && [[ -d "$SCRIPT_DIR" ]]; then
-                acfs_source_dir="$SCRIPT_DIR"
-            elif [[ -n "${ACFS_BOOTSTRAP_DIR:-}" ]] && [[ -d "$ACFS_BOOTSTRAP_DIR" ]]; then
-                acfs_source_dir="$ACFS_BOOTSTRAP_DIR"
+                gtbi_source_dir="$SCRIPT_DIR"
+            elif [[ -n "${GTBI_BOOTSTRAP_DIR:-}" ]] && [[ -d "$GTBI_BOOTSTRAP_DIR" ]]; then
+                gtbi_source_dir="$GTBI_BOOTSTRAP_DIR"
             fi
 
-            if [[ -z "$acfs_source_dir" ]] || ! type -t upgrade_setup_infrastructure &>/dev/null; then
+            if [[ -z "$gtbi_source_dir" ]] || ! type -t upgrade_setup_infrastructure &>/dev/null; then
                 log_error "Resume infrastructure is unavailable. Cannot safely auto-reboot."
                 log_info "Please reboot manually and re-run the installer."
                 release_ubuntu_upgrade_lock_if_acquired "$upgrade_lock_acquired"
-                restore_previous_acfs_state_file "$had_state_file" "$previous_state_file"
+                restore_previous_gtbi_state_file "$had_state_file" "$previous_state_file"
                 return 1
             fi
-            if ! upgrade_setup_infrastructure "$acfs_source_dir" "$@"; then
+            if ! upgrade_setup_infrastructure "$gtbi_source_dir" "$@"; then
                 log_error "Failed to set up resume infrastructure. Cannot safely reboot."
                 log_info "Please reboot manually and re-run the installer."
                 release_ubuntu_upgrade_lock_if_acquired "$upgrade_lock_acquired"
-                restore_previous_acfs_state_file "$had_state_file" "$previous_state_file"
+                restore_previous_gtbi_state_file "$had_state_file" "$previous_state_file"
                 return 1
             fi
 
@@ -4469,18 +4469,18 @@ run_ubuntu_upgrade_phase() {
             echo ""
             log_info "After reconnecting via SSH, the upgrade continues automatically in the background."
             log_info "To monitor progress:"
-            log_info "  journalctl -u acfs-upgrade-resume -f"
-            log_info "  tail -f /var/log/acfs/upgrade_resume.log"
+            log_info "  journalctl -u gtbi-upgrade-resume -f"
+            log_info "  tail -f /var/log/gtbi/upgrade_resume.log"
             echo ""
             sleep 10
-            shutdown -r now "ACFS: Rebooting to apply pending updates before Ubuntu upgrade"
+            shutdown -r now "GTBI: Rebooting to apply pending updates before Ubuntu upgrade"
             exit 0
         else
             log_error "Manual action required: reboot the system first"
             log_info "Run: sudo reboot"
-            log_info "Then re-run the ACFS installer"
+            log_info "Then re-run the GTBI installer"
             release_ubuntu_upgrade_lock_if_acquired "$upgrade_lock_acquired"
-            restore_previous_acfs_state_file "$had_state_file" "$previous_state_file"
+            restore_previous_gtbi_state_file "$had_state_file" "$previous_state_file"
             return 1
         fi
     fi
@@ -4491,7 +4491,7 @@ run_ubuntu_upgrade_phase() {
             log_error "Preflight checks failed. Cannot proceed with upgrade."
             log_info "Use --skip-ubuntu-upgrade to bypass (not recommended)"
             release_ubuntu_upgrade_lock_if_acquired "$upgrade_lock_acquired"
-            restore_previous_acfs_state_file "$had_state_file" "$previous_state_file"
+            restore_previous_gtbi_state_file "$had_state_file" "$previous_state_file"
             return 1
         fi
     fi
@@ -4503,7 +4503,7 @@ run_ubuntu_upgrade_phase() {
         if ! state_ensure_valid; then
             log_error "State validation failed. Aborting Ubuntu upgrade."
             release_ubuntu_upgrade_lock_if_acquired "$upgrade_lock_acquired"
-            restore_previous_acfs_state_file "$had_state_file" "$previous_state_file"
+            restore_previous_gtbi_state_file "$had_state_file" "$previous_state_file"
             return 1
         fi
     fi
@@ -4513,7 +4513,7 @@ run_ubuntu_upgrade_phase() {
             if ! state_init; then
                 log_error "Failed to initialize state file. Aborting Ubuntu upgrade."
                 release_ubuntu_upgrade_lock_if_acquired "$upgrade_lock_acquired"
-                restore_previous_acfs_state_file "$had_state_file" "$previous_state_file"
+                restore_previous_gtbi_state_file "$had_state_file" "$previous_state_file"
                 return 1
             fi
         fi
@@ -4526,20 +4526,20 @@ run_ubuntu_upgrade_phase() {
     if type -t ubuntu_start_upgrade_sequence &>/dev/null; then
         # Provide a source directory so we can copy upgrade-resume assets.
         # Local checkout: SCRIPT_DIR is set.
-        # curl|bash: bootstrap_repo_archive prepared ACFS_BOOTSTRAP_DIR.
-        local acfs_source_dir=""
+        # curl|bash: bootstrap_repo_archive prepared GTBI_BOOTSTRAP_DIR.
+        local gtbi_source_dir=""
         if [[ -n "${SCRIPT_DIR:-}" ]] && [[ -d "$SCRIPT_DIR" ]]; then
-            acfs_source_dir="$SCRIPT_DIR"
-        elif [[ -n "${ACFS_BOOTSTRAP_DIR:-}" ]] && [[ -d "$ACFS_BOOTSTRAP_DIR" ]]; then
-            acfs_source_dir="$ACFS_BOOTSTRAP_DIR"
+            gtbi_source_dir="$SCRIPT_DIR"
+        elif [[ -n "${GTBI_BOOTSTRAP_DIR:-}" ]] && [[ -d "$GTBI_BOOTSTRAP_DIR" ]]; then
+            gtbi_source_dir="$GTBI_BOOTSTRAP_DIR"
         else
-            acfs_source_dir="."
+            gtbi_source_dir="."
         fi
 
-        if ! ubuntu_start_upgrade_sequence "$acfs_source_dir" "$@"; then
+        if ! ubuntu_start_upgrade_sequence "$gtbi_source_dir" "$@"; then
             log_error "Ubuntu upgrade failed to start"
             release_ubuntu_upgrade_lock_if_acquired "$upgrade_lock_acquired"
-            restore_previous_acfs_state_file "$had_state_file" "$previous_state_file"
+            restore_previous_gtbi_state_file "$had_state_file" "$previous_state_file"
             return 1
         fi
 
@@ -4550,9 +4550,9 @@ run_ubuntu_upgrade_phase() {
         exit 0
     else
         log_warn "ubuntu_start_upgrade_sequence not available"
-        log_warn "Continuing with ACFS installation on current Ubuntu version"
+        log_warn "Continuing with GTBI installation on current Ubuntu version"
         release_ubuntu_upgrade_lock_if_acquired "$upgrade_lock_acquired"
-        restore_previous_acfs_state_file "$had_state_file" "$previous_state_file"
+        restore_previous_gtbi_state_file "$had_state_file" "$previous_state_file"
         return 0
     fi
 }
@@ -4564,14 +4564,14 @@ release_ubuntu_upgrade_lock_if_acquired() {
     fi
 }
 
-restore_previous_acfs_state_file() {
+restore_previous_gtbi_state_file() {
     local had_state_file=${1:-false}
     local previous_state_file=${2-}
 
     if [[ "$had_state_file" == "true" ]]; then
-        export ACFS_STATE_FILE="$previous_state_file"
+        export GTBI_STATE_FILE="$previous_state_file"
     else
-        unset ACFS_STATE_FILE
+        unset GTBI_STATE_FILE
     fi
 }
 
@@ -4581,9 +4581,9 @@ ensure_base_deps() {
     local apt_get_bin=""
     local -a sudo_cmd=()
 
-    if acfs_use_generated_category "base"; then
+    if gtbi_use_generated_category "base"; then
         log_detail "Using generated installers for base (phase 1)"
-        acfs_run_generated_category_phase "base" "1" || return 1
+        gtbi_run_generated_category_phase "base" "1" || return 1
         return 0
     fi
 
@@ -4598,14 +4598,14 @@ ensure_base_deps() {
         return 0
     fi
 
-    apt_get_bin="$(acfs_early_system_binary_path apt-get 2>/dev/null || true)"
+    apt_get_bin="$(gtbi_early_system_binary_path apt-get 2>/dev/null || true)"
     if [[ -z "$apt_get_bin" ]]; then
         log_error "apt-get not found; cannot install base dependencies"
         return 1
     fi
     if [[ $EUID -ne 0 ]]; then
         local sudo_bin=""
-        sudo_bin="$(acfs_early_sudo_binary_path 2>/dev/null || true)"
+        sudo_bin="$(gtbi_early_sudo_binary_path 2>/dev/null || true)"
         if [[ -z "$sudo_bin" ]]; then
             log_error "sudo not found; cannot install base dependencies"
             return 1
@@ -4623,7 +4623,7 @@ ensure_base_deps() {
 # ============================================================
 # Phase 1: User normalization
 # ============================================================
-acfs_generate_random_password() {
+gtbi_generate_random_password() {
     local password=""
     local digest=""
 
@@ -4675,9 +4675,9 @@ normalize_user() {
         fi
     fi
 
-    if acfs_use_generated_category "users"; then
+    if gtbi_use_generated_category "users"; then
         log_detail "Using generated installers for users (phase 2)"
-        acfs_run_generated_category_phase "users" "2" || return 1
+        gtbi_run_generated_category_phase "users" "2" || return 1
         log_success "User normalization complete"
         return 0
     fi
@@ -4692,9 +4692,9 @@ setup_filesystem() {
     set_phase "filesystem" "Filesystem Setup"
     log_step "2/9" "Setting up filesystem..."
 
-    if acfs_use_generated_category "filesystem"; then
+    if gtbi_use_generated_category "filesystem"; then
         log_detail "Using generated installers for filesystem (phase 3)"
-        acfs_run_generated_category_phase "filesystem" "3" || return 1
+        gtbi_run_generated_category_phase "filesystem" "3" || return 1
         log_success "Filesystem setup complete"
         return 0
     fi
@@ -4705,7 +4705,7 @@ setup_filesystem() {
 # ============================================================
 # Phase 3: Shell setup (zsh + oh-my-zsh + p10k)
 # ============================================================
-acfs_get_local_passwd_entry() {
+gtbi_get_local_passwd_entry() {
     local user="${1:-}"
     local passwd_line=""
     local passwd_user=""
@@ -4723,20 +4723,20 @@ acfs_get_local_passwd_entry() {
 
     return 1
 }
-acfs_is_externally_managed_user() {
+gtbi_is_externally_managed_user() {
     local user="${1:-}"
     local passwd_entry=""
     local local_entry=""
 
     [[ -n "$user" ]] || return 1
-    passwd_entry="$(acfs_early_getent_passwd_entry "$user" 2>/dev/null || true)"
+    passwd_entry="$(gtbi_early_getent_passwd_entry "$user" 2>/dev/null || true)"
     [[ -n "$passwd_entry" ]] || return 1
 
-    local_entry="$(acfs_get_local_passwd_entry "$user" || true)"
+    local_entry="$(gtbi_get_local_passwd_entry "$user" || true)"
     [[ -z "$local_entry" ]]
 }
 
-acfs_external_shell_handoff_configured() {
+gtbi_external_shell_handoff_configured() {
     local target_home="${1:-}"
     local bashrc_path=""
 
@@ -4745,15 +4745,15 @@ acfs_external_shell_handoff_configured() {
     [[ -f "$bashrc_path" ]] || return 1
 
     awk '
-        $0 == "# ACFS externally-managed shell handoff" { marker=1; next }
+        $0 == "# GTBI externally-managed shell handoff" { marker=1; next }
         marker && $0 ~ /^[[:space:]]*#/ { next }
-        marker && index($0, "command -v zsh") && index($0, "ACFS_ZSH_HANDOFF_ACTIVE") { found=1; exit }
+        marker && index($0, "command -v zsh") && index($0, "GTBI_ZSH_HANDOFF_ACTIVE") { found=1; exit }
         marker && $0 !~ /^[[:space:]]*$/ { marker=0 }
         END { exit(found ? 0 : 1) }
     ' "$bashrc_path" 2>/dev/null
 }
 
-acfs_append_external_shell_handoff() {
+gtbi_append_external_shell_handoff() {
     local bashrc_path="${1:-}"
     [[ -n "$bashrc_path" ]] || return 1
 
@@ -4766,26 +4766,26 @@ acfs_append_external_shell_handoff() {
     fi
 
     cat >> "$bashrc_path" << 'EOF'
-# ACFS externally-managed shell handoff
-if [[ $- == *i* ]] && [[ -t 0 ]] && command -v zsh >/dev/null 2>&1 && [[ -z "${ACFS_ZSH_HANDOFF_ACTIVE:-}" ]]; then
-    export ACFS_ZSH_HANDOFF_ACTIVE=1
+# GTBI externally-managed shell handoff
+if [[ $- == *i* ]] && [[ -t 0 ]] && command -v zsh >/dev/null 2>&1 && [[ -z "${GTBI_ZSH_HANDOFF_ACTIVE:-}" ]]; then
+    export GTBI_ZSH_HANDOFF_ACTIVE=1
     exec "$(command -v zsh)" -l
 fi
 EOF
 }
 
-acfs_configure_external_shell_handoff() {
+gtbi_configure_external_shell_handoff() {
     local target_home="${1:-}"
     local target_user="${2:-}"
 
     [[ -n "$target_home" ]] || return 1
     [[ -n "$target_user" ]] || return 1
 
-    if acfs_external_shell_handoff_configured "$target_home"; then
+    if gtbi_external_shell_handoff_configured "$target_home"; then
         return 0
     fi
 
-    acfs_append_external_shell_handoff "$target_home/.bashrc" || return 1
+    gtbi_append_external_shell_handoff "$target_home/.bashrc" || return 1
 
     $SUDO chown "$target_user:$target_user" "$target_home/.bashrc" 2>/dev/null || true
     return 0
@@ -4809,7 +4809,7 @@ profile_path_sed_literal() {
     printf '%s' "$1" | sed 's/[][\\.^$*|]/\\&/g'
 }
 
-acfs_zshrc_is_managed_loader() {
+gtbi_zshrc_is_managed_loader() {
     local file="${1:-}"
 
     [[ -f "$file" ]] || return 1
@@ -4818,8 +4818,8 @@ acfs_zshrc_is_managed_loader() {
         { lines[++line_count]=$0 }
         END {
             if (line_count == 2 &&
-                lines[1] ~ /^# ACFS loader/ &&
-                lines[2] == "source \"$HOME/.acfs/zsh/acfs.zshrc\"") {
+                lines[1] ~ /^# GTBI loader/ &&
+                lines[2] == "source \"$HOME/.gtbi/zsh/gtbi.zshrc\"") {
                 exit 0
             }
             exit 1
@@ -4831,9 +4831,9 @@ setup_shell() {
     set_phase "shell_setup" "Shell Setup"
     log_step "3/9" "Setting up shell..."
 
-    if acfs_use_generated_category "shell"; then
+    if gtbi_use_generated_category "shell"; then
         log_detail "Using generated installers for shell (phase 4)"
-        acfs_run_generated_category_phase "shell" "4" || return 1
+        gtbi_run_generated_category_phase "shell" "4" || return 1
         log_success "Shell setup complete"
         return 0
     fi
@@ -4851,22 +4851,22 @@ install_cli_tools() {
     local used_generated_cli=false
     local used_generated_network=false
 
-    if acfs_use_generated_category "cli"; then
+    if gtbi_use_generated_category "cli"; then
         log_detail "Using generated installers for cli (phase 5)"
-        acfs_run_generated_category_phase "cli" "5" || return 1
+        gtbi_run_generated_category_phase "cli" "5" || return 1
         used_generated_cli=true
     fi
 
-    if acfs_use_generated_category "network"; then
+    if gtbi_use_generated_category "network"; then
         log_detail "Using generated installers for network (phase 5)"
-        acfs_run_generated_category_phase "network" "5" || return 1
+        gtbi_run_generated_category_phase "network" "5" || return 1
         used_generated_network=true
     fi
 
     # tools phase 5: lazygit, lazydocker — bug #146 audit follow-up
-    if acfs_use_generated_category "tools"; then
+    if gtbi_use_generated_category "tools"; then
         log_detail "Using generated installers for tools (phase 5)"
-        acfs_run_generated_category_phase "tools" "5" || return 1
+        gtbi_run_generated_category_phase "tools" "5" || return 1
     fi
 
     log_success "CLI tools installed"
@@ -4880,14 +4880,14 @@ install_languages() {
     set_phase "languages" "Language Runtimes"
     log_step "5/9" "Installing language runtimes..."
 
-    if acfs_use_generated_category "lang"; then
+    if gtbi_use_generated_category "lang"; then
         log_detail "Using generated installers for lang (phase 6)"
-        acfs_run_generated_category_phase "lang" "6" || return 1
+        gtbi_run_generated_category_phase "lang" "6" || return 1
     fi
 
-    if acfs_use_generated_category "tools"; then
+    if gtbi_use_generated_category "tools"; then
         log_detail "Using generated installers for tools (phase 6)"
-        acfs_run_generated_category_phase "tools" "6" || return 1
+        gtbi_run_generated_category_phase "tools" "6" || return 1
     fi
 
     log_success "Language runtimes installed"
@@ -4901,15 +4901,15 @@ install_agents_phase() {
     set_phase "agents" "Coding Agents"
     log_step "6/9" "Installing coding agents..."
 
-    if acfs_use_generated_category "agents"; then
+    if gtbi_use_generated_category "agents"; then
         log_detail "Using generated installers for agents (phase 7)"
-        acfs_run_generated_category_phase "agents" "7" || return 1
+        gtbi_run_generated_category_phase "agents" "7" || return 1
 
         # CI/doctor expectations: ensure `claude` resolves to ~/.local/bin/claude.
         # The native installer can choose non-standard paths, and bun installs land in ~/.bun/bin.
-        local claude_bin_local="$ACFS_BIN_DIR/claude"
+        local claude_bin_local="$GTBI_BIN_DIR/claude"
         if [[ ! -x "$claude_bin_local" ]]; then
-            acfs_ensure_primary_bin_dir 2>/dev/null || true
+            gtbi_ensure_primary_bin_dir 2>/dev/null || true
 
             local claude_candidate=""
             local candidates=(
@@ -4929,7 +4929,7 @@ install_agents_phase() {
             fi
 
             if [[ -n "$claude_candidate" ]] && [[ -x "$claude_candidate" ]]; then
-                try_step "Linking Claude Code into $ACFS_BIN_DIR" acfs_link_primary_bin_command "$claude_candidate" "claude" || true
+                try_step "Linking Claude Code into $GTBI_BIN_DIR" gtbi_link_primary_bin_command "$claude_candidate" "claude" || true
             fi
         fi
 
@@ -4954,19 +4954,19 @@ install_cloud_db() {
         codename="${VERSION_CODENAME:-noble}"
     fi
 
-    if acfs_use_generated_category "db"; then
+    if gtbi_use_generated_category "db"; then
         log_detail "Using generated installers for db (phase 8)"
-        acfs_run_generated_category_phase "db" "8" || return 1
+        gtbi_run_generated_category_phase "db" "8" || return 1
     fi
 
-    if acfs_use_generated_category "tools"; then
+    if gtbi_use_generated_category "tools"; then
         log_detail "Using generated installers for tools (phase 8)"
-        acfs_run_generated_category_phase "tools" "8" || return 1
+        gtbi_run_generated_category_phase "tools" "8" || return 1
     fi
 
-    if acfs_use_generated_category "cloud"; then
+    if gtbi_use_generated_category "cloud"; then
         log_detail "Using generated installers for cloud (phase 8)"
-        acfs_run_generated_category_phase "cloud" "8" || return 1
+        gtbi_run_generated_category_phase "cloud" "8" || return 1
     fi
 
     log_success "Cloud & database tools phase complete"
@@ -4990,12 +4990,12 @@ binary_path() {
         *[!A-Za-z0-9._+-]*) return 1 ;;
     esac
 
-    primary_bin="${ACFS_BIN_DIR:-$TARGET_HOME/.local/bin}"
+    primary_bin="${GTBI_BIN_DIR:-$TARGET_HOME/.local/bin}"
 
     for candidate in \
         "$primary_bin/$name" \
         "$TARGET_HOME/.local/bin/$name" \
-        "$TARGET_HOME/.acfs/bin/$name" \
+        "$TARGET_HOME/.gtbi/bin/$name" \
         "$TARGET_HOME/.cargo/bin/$name" \
         "$TARGET_HOME/.bun/bin/$name" \
         "$TARGET_HOME/.atuin/bin/$name" \
@@ -5025,14 +5025,14 @@ install_stack_phase() {
     log_step "8/9" "Installing Gastown stack..."
 
     # Install any tools-category modules at phase 9 (e.g. utils.*)
-    if acfs_use_generated_category "tools"; then
+    if gtbi_use_generated_category "tools"; then
         log_detail "Using generated installers for tools (phase 9)"
-        acfs_run_generated_category_phase "tools" "9" || return 1
+        gtbi_run_generated_category_phase "tools" "9" || return 1
     fi
 
-    if acfs_use_generated_category "stack"; then
+    if gtbi_use_generated_category "stack"; then
         log_detail "Using generated installers for stack (phase 9)"
-        acfs_run_generated_category_phase "stack" "9" || return 1
+        gtbi_run_generated_category_phase "stack" "9" || return 1
         log_success "Gastown stack installed"
         return 0
     fi
@@ -5051,13 +5051,13 @@ install_stack_phase() {
 _smoke_target_path() {
     local user_home="${TARGET_HOME:-}"
     if [[ -z "$user_home" ]]; then
-        user_home="$(acfs_home_for_user "$TARGET_USER" || true)"
+        user_home="$(gtbi_home_for_user "$TARGET_USER" || true)"
     fi
     if [[ -z "$user_home" ]] || [[ "$user_home" != /* ]]; then
         return 1
     fi
 
-    printf '%s\n' "${ACFS_BIN_DIR:-$user_home/.local/bin}:$user_home/.local/bin:$user_home/.acfs/bin:$user_home/.cargo/bin:$user_home/.bun/bin:$user_home/.atuin/bin:$user_home/go/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin"
+    printf '%s\n' "${GTBI_BIN_DIR:-$user_home/.local/bin}:$user_home/.local/bin:$user_home/.gtbi/bin:$user_home/.cargo/bin:$user_home/.bun/bin:$user_home/.atuin/bin:$user_home/go/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin"
 }
 
 
@@ -5069,7 +5069,7 @@ _smoke_run_as_target() {
     run_as_target env "PATH=$smoke_path" bash -c "set -euo pipefail; $cmd"
 }
 
-acfs_smoke_install_fix_command() {
+gtbi_smoke_install_fix_command() {
     local install_url="https://agent-flywheel.com/install"
     local install_url_q=""
     local flags=""
@@ -5081,12 +5081,12 @@ acfs_smoke_install_fix_command() {
         fix_args+=(--only "$module_id")
     done
 
-    if [[ -n "${ACFS_COMMIT_SHA_FULL:-}" ]]; then
-        install_url="https://raw.githubusercontent.com/${ACFS_REPO_OWNER}/${ACFS_REPO_NAME}/${ACFS_COMMIT_SHA_FULL}/install.sh"
-        fix_args+=(--ref "$ACFS_COMMIT_SHA_FULL")
-    elif [[ -n "${ACFS_REF_INPUT:-}" && "${ACFS_REF_INPUT}" != "main" ]]; then
-        install_url="https://raw.githubusercontent.com/${ACFS_REPO_OWNER}/${ACFS_REPO_NAME}/${ACFS_REF_INPUT}/install.sh"
-        fix_args+=(--ref "$ACFS_REF_INPUT")
+    if [[ -n "${GTBI_COMMIT_SHA_FULL:-}" ]]; then
+        install_url="https://raw.githubusercontent.com/${GTBI_REPO_OWNER}/${GTBI_REPO_NAME}/${GTBI_COMMIT_SHA_FULL}/install.sh"
+        fix_args+=(--ref "$GTBI_COMMIT_SHA_FULL")
+    elif [[ -n "${GTBI_REF_INPUT:-}" && "${GTBI_REF_INPUT}" != "main" ]]; then
+        install_url="https://raw.githubusercontent.com/${GTBI_REPO_OWNER}/${GTBI_REPO_NAME}/${GTBI_REF_INPUT}/install.sh"
+        fix_args+=(--ref "$GTBI_REF_INPUT")
     fi
 
     printf -v install_url_q '%q' "$install_url"
@@ -5109,7 +5109,7 @@ run_smoke_test() {
     local smoke_id_bin=""
     local target_shell=""
     local target_shell_entry=""
-    smoke_id_bin="$(acfs_early_system_binary_path id 2>/dev/null || true)"
+    smoke_id_bin="$(gtbi_early_system_binary_path id 2>/dev/null || true)"
     if [[ -n "$smoke_id_bin" ]] && "$smoke_id_bin" "$TARGET_USER" &>/dev/null; then
         echo "✅ User: $TARGET_USER" >&2
         ((critical_passed += 1))
@@ -5120,20 +5120,20 @@ run_smoke_test() {
     fi
 
     # 2) Shell is zsh
-    target_shell_entry="$(acfs_early_getent_passwd_entry "$TARGET_USER" 2>/dev/null || true)"
+    target_shell_entry="$(gtbi_early_getent_passwd_entry "$TARGET_USER" 2>/dev/null || true)"
     if [[ -n "$target_shell_entry" ]]; then
         IFS=: read -r _ _ _ _ _ _ target_shell <<< "$target_shell_entry"
     fi
     if [[ "$target_shell" == *"zsh"* ]]; then
         echo "✅ Shell: zsh" >&2
         ((critical_passed += 1))
-    elif acfs_is_externally_managed_user "$TARGET_USER"; then
-        if acfs_external_shell_handoff_configured "$TARGET_HOME"; then
+    elif gtbi_is_externally_managed_user "$TARGET_USER"; then
+        if gtbi_external_shell_handoff_configured "$TARGET_HOME"; then
             echo "✅ Shell: externally managed login hands off to zsh" >&2
             ((critical_passed += 1))
         else
             echo "⚠ Shell: externally managed account reports ${target_shell:-unknown}" >&2
-            echo "    Note: local chsh is not valid here; configure the identity provider shell or add the ACFS bash-to-zsh handoff." >&2
+            echo "    Note: local chsh is not valid here; configure the identity provider shell or add the GTBI bash-to-zsh handoff." >&2
             ((warnings += 1))
         fi
     else
@@ -5179,7 +5179,7 @@ run_smoke_test() {
     # 5) bun, uv, cargo, go available
     local missing_lang=()
     [[ -x "$TARGET_HOME/.bun/bin/bun" ]] || missing_lang+=("bun")
-    [[ -x "$ACFS_BIN_DIR/uv" || -x "$TARGET_HOME/.cargo/bin/uv" ]] || missing_lang+=("uv")
+    [[ -x "$GTBI_BIN_DIR/uv" || -x "$TARGET_HOME/.cargo/bin/uv" ]] || missing_lang+=("uv")
     [[ -x "$TARGET_HOME/.cargo/bin/cargo" ]] || missing_lang+=("cargo")
     binary_installed "go" || missing_lang+=("go")
     if [[ ${#missing_lang[@]} -eq 0 ]]; then
@@ -5187,21 +5187,21 @@ run_smoke_test() {
         ((critical_passed += 1))
     else
         echo "✖ Languages: missing ${missing_lang[*]}" >&2
-        echo "    Fix: $(acfs_smoke_install_fix_command lang.bun lang.uv lang.rust lang.go)" >&2
+        echo "    Fix: $(gtbi_smoke_install_fix_command lang.bun lang.uv lang.rust lang.go)" >&2
         ((critical_failed += 1))
     fi
 
     # 6) claude, codex, gemini commands exist
     local missing_agents=()
-    [[ -x "$ACFS_BIN_DIR/claude" || -x "$TARGET_HOME/.bun/bin/claude" ]] || missing_agents+=("claude")
-    [[ -x "$TARGET_HOME/.bun/bin/codex" || -x "$ACFS_BIN_DIR/codex" ]] || missing_agents+=("codex")
-    [[ -x "$TARGET_HOME/.bun/bin/gemini" || -x "$ACFS_BIN_DIR/gemini" ]] || missing_agents+=("gemini")
+    [[ -x "$GTBI_BIN_DIR/claude" || -x "$TARGET_HOME/.bun/bin/claude" ]] || missing_agents+=("claude")
+    [[ -x "$TARGET_HOME/.bun/bin/codex" || -x "$GTBI_BIN_DIR/codex" ]] || missing_agents+=("codex")
+    [[ -x "$TARGET_HOME/.bun/bin/gemini" || -x "$GTBI_BIN_DIR/gemini" ]] || missing_agents+=("gemini")
     if [[ ${#missing_agents[@]} -eq 0 ]]; then
         echo "✅ Agents: claude, codex, gemini" >&2
         ((critical_passed += 1))
     else
         echo "✖ Agents: missing ${missing_agents[*]}" >&2
-        echo "    Fix: $(acfs_smoke_install_fix_command agents.claude agents.codex agents.gemini)" >&2
+        echo "    Fix: $(gtbi_smoke_install_fix_command agents.claude agents.codex agents.gemini)" >&2
         ((critical_failed += 1))
     fi
 
@@ -5211,17 +5211,17 @@ run_smoke_test() {
         ((critical_passed += 1))
     else
         echo "✖ Dolt: not working" >&2
-        echo "    Fix: $(acfs_smoke_install_fix_command stack.dolt)" >&2
+        echo "    Fix: $(gtbi_smoke_install_fix_command stack.dolt)" >&2
         ((critical_failed += 1))
     fi
 
     # 8) onboard command exists
-    if [[ -x "$ACFS_BIN_DIR/onboard" ]]; then
+    if [[ -x "$GTBI_BIN_DIR/onboard" ]]; then
         echo "✅ Onboard: installed" >&2
         ((critical_passed += 1))
     else
         echo "✖ Onboard: missing" >&2
-        echo "    Fix: $(acfs_smoke_install_fix_command acfs.onboard)" >&2
+        echo "    Fix: $(gtbi_smoke_install_fix_command gtbi.onboard)" >&2
         ((critical_failed += 1))
     fi
 
@@ -5229,7 +5229,7 @@ run_smoke_test() {
     if _smoke_run_as_target "command -v bd >/dev/null && bd --version >/dev/null 2>&1"; then
         echo "✅ beads (bd): working" >&2
     else
-        echo "⚠️ beads (bd): not working (re-run: $(acfs_smoke_install_fix_command stack.bd))" >&2
+        echo "⚠️ beads (bd): not working (re-run: $(gtbi_smoke_install_fix_command stack.bd))" >&2
         ((warnings += 1))
     fi
 
@@ -5295,13 +5295,13 @@ print_summary() {
                 echo ""
                 gum style \
                     --border double \
-                    --border-foreground "$ACFS_WARNING" \
+                    --border-foreground "$GTBI_WARNING" \
                     --padding "1 3" \
                     --margin "1 0" \
                     --align left \
-                    "$(gum style --foreground "$ACFS_WARNING" --bold '🧪 ACFS Dry Run Complete (no changes made)')
+                    "$(gum style --foreground "$GTBI_WARNING" --bold '🧪 GTBI Dry Run Complete (no changes made)')
 
-Version: $ACFS_VERSION
+Version: $GTBI_VERSION
 Mode:    $MODE
 
 No commands were executed. To actually install, re-run without --dry-run.
@@ -5309,10 +5309,10 @@ Tip: use --print to see upstream install scripts that will be fetched."
             else
                 echo ""
                 echo -e "${YELLOW}╔════════════════════════════════════════════════════════════╗${NC}"
-                echo -e "${YELLOW}║          🧪 ACFS Dry Run Complete (no changes made)        ║${NC}"
+                echo -e "${YELLOW}║          🧪 GTBI Dry Run Complete (no changes made)        ║${NC}"
                 echo -e "${YELLOW}╠════════════════════════════════════════════════════════════╣${NC}"
                 echo ""
-                echo -e "Version: ${BLUE}$ACFS_VERSION${NC}"
+                echo -e "Version: ${BLUE}$GTBI_VERSION${NC}"
                 echo -e "Mode:    ${BLUE}$MODE${NC}"
                 echo ""
                 echo -e "${GRAY}No commands were executed. Re-run without --dry-run to install.${NC}"
@@ -5340,9 +5340,9 @@ Tip: use --print to see upstream install scripts that will be fetched."
         fi
     fi
 
-    local target_ssh_command="ssh -i ~/.ssh/acfs_ed25519 ${TARGET_USER}@YOUR_SERVER_IP"
-    local target_ssh_copy_command="ssh-copy-id -i ~/.ssh/acfs_ed25519.pub ${TARGET_USER}@YOUR_SERVER_IP"
-    local target_user_ssh_repair_command="cat ~/.ssh/acfs_ed25519.pub | ssh ${TARGET_USER}@YOUR_SERVER_IP \"read -r acfs_pubkey && test ! -L ~/.ssh && install -d -m 700 ~/.ssh && chmod 700 ~/.ssh && test ! -L ~/.ssh/authorized_keys && touch ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys && { [ ! -s ~/.ssh/authorized_keys ] || tail -c 1 ~/.ssh/authorized_keys | od -An -t u1 | grep -qw 10 || printf '\\n' >> ~/.ssh/authorized_keys; } && if ! grep -qxF \\\"\\\$acfs_pubkey\\\" ~/.ssh/authorized_keys; then printf '%s\\n' \\\"\\\$acfs_pubkey\\\" >> ~/.ssh/authorized_keys; fi\""
+    local target_ssh_command="ssh -i ~/.ssh/gtbi_ed25519 ${TARGET_USER}@YOUR_SERVER_IP"
+    local target_ssh_copy_command="ssh-copy-id -i ~/.ssh/gtbi_ed25519.pub ${TARGET_USER}@YOUR_SERVER_IP"
+    local target_user_ssh_repair_command="cat ~/.ssh/gtbi_ed25519.pub | ssh ${TARGET_USER}@YOUR_SERVER_IP \"read -r gtbi_pubkey && test ! -L ~/.ssh && install -d -m 700 ~/.ssh && chmod 700 ~/.ssh && test ! -L ~/.ssh/authorized_keys && touch ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys && { [ ! -s ~/.ssh/authorized_keys ] || tail -c 1 ~/.ssh/authorized_keys | od -An -t u1 | grep -qw 10 || printf '\\n' >> ~/.ssh/authorized_keys; } && if ! grep -qxF \\\"\\\$gtbi_pubkey\\\" ~/.ssh/authorized_keys; then printf '%s\\n' \\\"\\\$gtbi_pubkey\\\" >> ~/.ssh/authorized_keys; fi\""
     local target_home_for_summary="${TARGET_HOME:-/home/$TARGET_USER}"
     local target_ssh_dir_for_summary="$target_home_for_summary/.ssh"
     local target_authorized_keys_for_summary="$target_home_for_summary/.ssh/authorized_keys"
@@ -5355,14 +5355,14 @@ Tip: use --print to see upstream install scripts that will be fetched."
     printf -v target_authorized_keys_for_summary_q '%q' "$target_authorized_keys_for_summary"
     printf -v target_user_for_summary_q '%q' "$TARGET_USER"
     printf -v target_owner_for_summary_q '%q' "$target_owner_for_summary"
-    local target_ssh_remote_command="read -r acfs_pubkey && test ! -L $target_ssh_dir_for_summary_q && install -d -m 700 -o $target_user_for_summary_q -g $target_user_for_summary_q $target_ssh_dir_for_summary_q && test ! -L $target_authorized_keys_for_summary_q && touch $target_authorized_keys_for_summary_q && { [ ! -s $target_authorized_keys_for_summary_q ] || tail -c 1 $target_authorized_keys_for_summary_q | od -An -t u1 | grep -qw 10 || printf \"\\n\" >> $target_authorized_keys_for_summary_q; } && if ! grep -qxF \"\$acfs_pubkey\" $target_authorized_keys_for_summary_q; then printf \"%s\\n\" \"\$acfs_pubkey\" >> $target_authorized_keys_for_summary_q; fi && chown $target_owner_for_summary_q $target_authorized_keys_for_summary_q && chmod 600 $target_authorized_keys_for_summary_q"
+    local target_ssh_remote_command="read -r gtbi_pubkey && test ! -L $target_ssh_dir_for_summary_q && install -d -m 700 -o $target_user_for_summary_q -g $target_user_for_summary_q $target_ssh_dir_for_summary_q && test ! -L $target_authorized_keys_for_summary_q && touch $target_authorized_keys_for_summary_q && { [ ! -s $target_authorized_keys_for_summary_q ] || tail -c 1 $target_authorized_keys_for_summary_q | od -An -t u1 | grep -qw 10 || printf \"\\n\" >> $target_authorized_keys_for_summary_q; } && if ! grep -qxF \"\$gtbi_pubkey\" $target_authorized_keys_for_summary_q; then printf \"%s\\n\" \"\$gtbi_pubkey\" >> $target_authorized_keys_for_summary_q; fi && chown $target_owner_for_summary_q $target_authorized_keys_for_summary_q && chmod 600 $target_authorized_keys_for_summary_q"
     local target_ssh_remote_command_q="$target_ssh_remote_command"
     target_ssh_remote_command_q=${target_ssh_remote_command_q//\'/\'\\\'\'}
     printf -v target_ssh_remote_command_q "'%s'" "$target_ssh_remote_command_q"
-    local target_ssh_repair_command="cat ~/.ssh/acfs_ed25519.pub | ssh root@YOUR_SERVER_IP $target_ssh_remote_command_q"
+    local target_ssh_repair_command="cat ~/.ssh/gtbi_ed25519.pub | ssh root@YOUR_SERVER_IP $target_ssh_remote_command_q"
 
     local ssh_key_warning_section=""
-    if [[ "${ACFS_SSH_KEY_WARNING:-false}" == "true" ]]; then
+    if [[ "${GTBI_SSH_KEY_WARNING:-false}" == "true" ]]; then
         ssh_key_warning_section="SSH key setup required for $TARGET_USER:
 
   You connected with a password, so no SSH key was copied to $TARGET_USER.
@@ -5385,7 +5385,7 @@ Tip: use --print to see upstream install scripts that will be fetched."
     fi
 
     local next_steps_content=""
-    if [[ "${ACFS_SSH_KEY_WARNING:-false}" == "true" ]]; then
+    if [[ "${GTBI_SSH_KEY_WARNING:-false}" == "true" ]]; then
         next_steps_content="Next steps:
 
   1. Set up SSH key access for $TARGET_USER using the command above.
@@ -5398,7 +5398,7 @@ Tip: use --print to see upstream install scripts that will be fetched."
      onboard
 
   4. Check everything is working:
-     acfs doctor
+     gtbi doctor
 
   5. Start an agent session:
      bd ready  # find work to do"
@@ -5413,13 +5413,13 @@ Tip: use --print to see upstream install scripts that will be fetched."
      onboard
 
   3. Check everything is working:
-     acfs doctor
+     gtbi doctor
 
   4. Start an agent session:
      bd ready  # find work to do"
     fi
 
-    local summary_content="Version: $ACFS_VERSION
+    local summary_content="Version: $GTBI_VERSION
 Mode:    $MODE
 
 ${tailscale_section:+Service Authentication:
@@ -5433,20 +5433,20 @@ $tailscale_section
             echo ""
             gum style \
                 --border double \
-                --border-foreground "$ACFS_SUCCESS" \
+                --border-foreground "$GTBI_SUCCESS" \
                 --padding "1 3" \
                 --margin "1 0" \
                 --align left \
-                "$(gum style --foreground "$ACFS_SUCCESS" --bold '🎉 ACFS Installation Complete!')
+                "$(gum style --foreground "$GTBI_SUCCESS" --bold '🎉 GTBI Installation Complete!')
 
 $summary_content"
         else
             echo ""
             echo -e "${GREEN}╔════════════════════════════════════════════════════════════╗${NC}"
-            echo -e "${GREEN}║            🎉 ACFS Installation Complete!                   ║${NC}"
+            echo -e "${GREEN}║            🎉 GTBI Installation Complete!                   ║${NC}"
             echo -e "${GREEN}╠════════════════════════════════════════════════════════════╣${NC}"
             echo ""
-            echo -e "Version: ${BLUE}$ACFS_VERSION${NC}"
+            echo -e "Version: ${BLUE}$GTBI_VERSION${NC}"
             echo -e "Mode:    ${BLUE}$MODE${NC}"
             echo ""
             # Show Tailscale auth section if applicable
@@ -5466,7 +5466,7 @@ $summary_content"
                 echo ""
             fi
             # Show SSH key warning if password-only connection was detected
-            if [[ "${ACFS_SSH_KEY_WARNING:-false}" == "true" ]]; then
+            if [[ "${GTBI_SSH_KEY_WARNING:-false}" == "true" ]]; then
                 echo -e "${RED}════════════════════════════════════════════════════════════${NC}"
                 echo -e "${RED}  ⚠  SSH KEY SETUP REQUIRED FOR TARGET USER${NC}"
                 echo -e "${RED}════════════════════════════════════════════════════════════${NC}"
@@ -5488,7 +5488,7 @@ $summary_content"
                 echo -e "    ${BLUE}$target_ssh_repair_command${NC}"
                 echo ""
                 echo -e "  This asks for the VPS root password once, then installs your local"
-                echo -e "  ACFS public key for $TARGET_USER."
+                echo -e "  GTBI public key for $TARGET_USER."
                 echo ""
                 echo -e "  ${YELLOW}ssh-copy-id is optional and only works if you know the $TARGET_USER Linux account password:${NC}"
                 echo ""
@@ -5498,7 +5498,7 @@ $summary_content"
             fi
             echo -e "${YELLOW}Next steps:${NC}"
             echo ""
-            if [[ "${ACFS_SSH_KEY_WARNING:-false}" == "true" ]]; then
+            if [[ "${GTBI_SSH_KEY_WARNING:-false}" == "true" ]]; then
                 echo "  1. Set up SSH key for $TARGET_USER user (see warning above)"
                 echo ""
                 echo "  2. Then reconnect as $TARGET_USER:"
@@ -5509,7 +5509,7 @@ $summary_content"
             echo -e "     ${GRAY}$target_ssh_command${NC}"
             echo ""
             local step_num=2
-            if [[ "${ACFS_SSH_KEY_WARNING:-false}" == "true" ]]; then
+            if [[ "${GTBI_SSH_KEY_WARNING:-false}" == "true" ]]; then
                 step_num=3
             fi
             echo "  $step_num. Run the onboarding tutorial:"
@@ -5517,7 +5517,7 @@ $summary_content"
             echo ""
             ((step_num++))
             echo "  $step_num. Check everything is working:"
-            echo -e "     ${BLUE}acfs doctor${NC}"
+            echo -e "     ${BLUE}gtbi doctor${NC}"
             echo ""
             ((step_num++))
             echo "  $step_num. Start an agent session:"
@@ -5534,13 +5534,13 @@ $summary_content"
 # ============================================================
 main() {
     parse_args "$@"
-    acfs_require_ref_arg_value "ACFS_REF" "${ACFS_REF:-}" "main"
-    acfs_require_ref_arg_value "ACFS_CHECKSUMS_REF" "${ACFS_CHECKSUMS_REF:-}" "main"
+    gtbi_require_ref_arg_value "GTBI_REF" "${GTBI_REF:-}" "main"
+    gtbi_require_ref_arg_value "GTBI_CHECKSUMS_REF" "${GTBI_CHECKSUMS_REF:-}" "main"
     normalize_read_only_modes
 
     # --yes should always behave non-interactively (skip prompts), regardless of flag order.
     if [[ "$YES_MODE" == "true" ]]; then
-        export ACFS_INTERACTIVE=false
+        export GTBI_INTERACTIVE=false
     fi
 
     # Handle --pin-ref early (before any heavy setup) - just resolve SHA and exit
@@ -5550,29 +5550,29 @@ main() {
         exit 0
     fi
 
-    acfs_normalize_offline_pack_configuration
+    gtbi_normalize_offline_pack_configuration
 
     if [[ -z "${SCRIPT_DIR:-}" ]]; then
-        # Resolve ACFS_REF to a specific commit SHA early to prevent mixed-ref installs.
+        # Resolve GTBI_REF to a specific commit SHA early to prevent mixed-ref installs.
         # Without this, we could download a tarball for one commit and later fetch commit metadata
         # (or resume scripts) from a newer commit if the branch/tag moves mid-install.
         fetch_commit_sha
-        if [[ -n "${ACFS_COMMIT_SHA_FULL:-}" ]]; then
-            ACFS_REF="$ACFS_COMMIT_SHA_FULL"
-            ACFS_RAW="https://raw.githubusercontent.com/${ACFS_REPO_OWNER}/${ACFS_REPO_NAME}/${ACFS_REF}"
-            export ACFS_REF ACFS_RAW
+        if [[ -n "${GTBI_COMMIT_SHA_FULL:-}" ]]; then
+            GTBI_REF="$GTBI_COMMIT_SHA_FULL"
+            GTBI_RAW="https://raw.githubusercontent.com/${GTBI_REPO_OWNER}/${GTBI_REPO_NAME}/${GTBI_REF}"
+            export GTBI_REF GTBI_RAW
         fi
         # Download and extract the repo archive for curl-pipe mode.
-        # This sets ACFS_BOOTSTRAP_DIR and related paths. If it fails, we cannot continue
+        # This sets GTBI_BOOTSTRAP_DIR and related paths. If it fails, we cannot continue
         # because the library files (install_helpers.sh, etc.) won't be available.
         if ! bootstrap_repo_archive; then
             log_error "Bootstrap failed. Cannot continue without library files."
             log_error "Try again, or run from a local checkout instead of curl|bash."
             exit 1
         fi
-        # Verify bootstrap succeeded - ACFS_BOOTSTRAP_DIR must be set for curl-pipe mode
-        if [[ -z "${ACFS_BOOTSTRAP_DIR:-}" ]]; then
-            log_error "Bootstrap did not set ACFS_BOOTSTRAP_DIR. This is a bug."
+        # Verify bootstrap succeeded - GTBI_BOOTSTRAP_DIR must be set for curl-pipe mode
+        if [[ -z "${GTBI_BOOTSTRAP_DIR:-}" ]]; then
+            log_error "Bootstrap did not set GTBI_BOOTSTRAP_DIR. This is a bug."
             exit 1
         fi
     fi
@@ -5586,43 +5586,43 @@ main() {
     # Read-only modes (--list-modules, --print-plan, --dry-run, --print) skip locking.
     if [[ "$LIST_MODULES" != "true" ]] && [[ "$PRINT_PLAN_MODE" != "true" ]] \
        && [[ "$DRY_RUN" != "true" ]] && [[ "$PRINT_MODE" != "true" ]]; then
-        local _acfs_lock_home="${TARGET_HOME:-}"
-        if [[ -z "$_acfs_lock_home" ]]; then
-            _acfs_lock_home="$(acfs_home_for_user "${TARGET_USER:-ubuntu}" || true)"
+        local _gtbi_lock_home="${TARGET_HOME:-}"
+        if [[ -z "$_gtbi_lock_home" ]]; then
+            _gtbi_lock_home="$(gtbi_home_for_user "${TARGET_USER:-ubuntu}" || true)"
         fi
-        if [[ -z "$_acfs_lock_home" ]] && [[ $EUID -eq 0 ]] && ! id "${TARGET_USER:-ubuntu}" &>/dev/null; then
-            _acfs_lock_home="$(acfs_default_home_for_new_user "${TARGET_USER:-ubuntu}" 2>/dev/null || true)"
+        if [[ -z "$_gtbi_lock_home" ]] && [[ $EUID -eq 0 ]] && ! id "${TARGET_USER:-ubuntu}" &>/dev/null; then
+            _gtbi_lock_home="$(gtbi_default_home_for_new_user "${TARGET_USER:-ubuntu}" 2>/dev/null || true)"
         fi
-        if [[ -z "$_acfs_lock_home" ]] || [[ "$_acfs_lock_home" != /* ]]; then
+        if [[ -z "$_gtbi_lock_home" ]] || [[ "$_gtbi_lock_home" != /* ]]; then
             log_error "Unable to resolve TARGET_HOME for '${TARGET_USER:-ubuntu}'; export TARGET_HOME explicitly"
             exit 1
         fi
-        local _acfs_lock_dir="${ACFS_HOME:-${_acfs_lock_home}/.acfs}"
-        if ! mkdir -p "$_acfs_lock_dir" 2>/dev/null; then
-            log_error "Unable to create ACFS install lock directory: $_acfs_lock_dir"
+        local _gtbi_lock_dir="${GTBI_HOME:-${_gtbi_lock_home}/.gtbi}"
+        if ! mkdir -p "$_gtbi_lock_dir" 2>/dev/null; then
+            log_error "Unable to create GTBI install lock directory: $_gtbi_lock_dir"
             exit 1
         fi
-        local _acfs_lock_file="$_acfs_lock_dir/.install.lock"
+        local _gtbi_lock_file="$_gtbi_lock_dir/.install.lock"
         # NOTE: On bash 5.3+, `exec N>file` under set -e exits the script
         # before `if` can catch the failure. We test in a subshell first,
         # then only exec in the main shell if the subshell succeeded.
-        local _acfs_lock_fd=""
-        if (exec 199>"$_acfs_lock_file") 2>/dev/null; then
-            exec 199>"$_acfs_lock_file"
-            _acfs_lock_fd=199
-        elif (exec 198>"$_acfs_lock_file") 2>/dev/null; then
-            exec 198>"$_acfs_lock_file"
-            _acfs_lock_fd=198
+        local _gtbi_lock_fd=""
+        if (exec 199>"$_gtbi_lock_file") 2>/dev/null; then
+            exec 199>"$_gtbi_lock_file"
+            _gtbi_lock_fd=199
+        elif (exec 198>"$_gtbi_lock_file") 2>/dev/null; then
+            exec 198>"$_gtbi_lock_file"
+            _gtbi_lock_fd=198
         fi
-        if [[ -n "$_acfs_lock_fd" ]]; then
-            if ! flock -n "$_acfs_lock_fd"; then
-                log_error "Another ACFS installer is already running."
-                log_error "Wait for it to finish, then retry. Lock file: $_acfs_lock_file"
+        if [[ -n "$_gtbi_lock_fd" ]]; then
+            if ! flock -n "$_gtbi_lock_fd"; then
+                log_error "Another GTBI installer is already running."
+                log_error "Wait for it to finish, then retry. Lock file: $_gtbi_lock_file"
                 exit 1
             fi
-            acfs_remember_install_lock "$_acfs_lock_fd" "$_acfs_lock_file"
+            gtbi_remember_install_lock "$_gtbi_lock_fd" "$_gtbi_lock_file"
         else
-            log_error "Unable to open ACFS install lock file: $_acfs_lock_file"
+            log_error "Unable to open GTBI install lock file: $_gtbi_lock_file"
             exit 1
         fi
     fi
@@ -5636,14 +5636,14 @@ main() {
     # Map legacy --skip-* flags to SKIP_MODULES (mjt.5.5)
     # This allows --skip-postgres, --skip-vault, --skip-cloud to work
     # through the manifest-driven selection engine
-    acfs_apply_legacy_skips
+    gtbi_apply_legacy_skips
 
     # Resolve module selection (mjt.5.4)
-    # Computes ACFS_EFFECTIVE_PLAN and ACFS_EFFECTIVE_RUN based on:
+    # Computes GTBI_EFFECTIVE_PLAN and GTBI_EFFECTIVE_RUN based on:
     # - CLI flags (--only, --skip, --no-deps, --only-phase)
     # - Legacy flags mapped above
     # - Manifest defaults and dependency graph
-    if ! acfs_resolve_selection; then
+    if ! gtbi_resolve_selection; then
         exit 1
     fi
 
@@ -5661,16 +5661,16 @@ main() {
 
     # Handle --reset-state: move state file aside and exit
     if [[ "$RESET_STATE_ONLY" == "true" ]]; then
-        echo "Resetting ACFS state..." >&2
+        echo "Resetting GTBI state..." >&2
         local state_file=""
-        if [[ -n "${ACFS_HOME:-}" ]]; then
-            state_file="${ACFS_HOME}/state.json"
+        if [[ -n "${GTBI_HOME:-}" ]]; then
+            state_file="${GTBI_HOME}/state.json"
         else
             local base_home=""
             if [[ -n "${TARGET_HOME:-}" ]]; then
                 base_home="$TARGET_HOME"
             else
-                base_home="$(acfs_home_for_user "${TARGET_USER:-ubuntu}" || true)"
+                base_home="$(gtbi_home_for_user "${TARGET_USER:-ubuntu}" || true)"
             fi
 
             if [[ -z "$base_home" ]]; then
@@ -5687,13 +5687,13 @@ main() {
                 exit 1
             fi
 
-            state_file="${base_home}/.acfs/state.json"
+            state_file="${base_home}/.gtbi/state.json"
         fi
         if [[ -f "$state_file" ]]; then
             if type -t state_backup_and_remove &>/dev/null; then
                 local state_dir
                 state_dir="$(dirname "$state_file")"
-                if ! ACFS_HOME="$state_dir" ACFS_STATE_FILE="$state_file" state_backup_and_remove; then
+                if ! GTBI_HOME="$state_dir" GTBI_STATE_FILE="$state_file" state_backup_and_remove; then
                     echo "ERROR: Failed to move state file out of the way: $state_file" >&2
                     exit 1
                 fi
@@ -5766,22 +5766,22 @@ main() {
     # jq and curl may be missing. Install them before anything else so that
     # later phases (state management, JSON parsing, gum install) don't fail.
     # Also covers the case where sudo is available but $SUDO isn't set yet.
-    if [[ $EUID -eq 0 ]] || [[ -n "${SUDO:-}" ]] || acfs_early_sudo_binary_path &>/dev/null; then
+    if [[ $EUID -eq 0 ]] || [[ -n "${SUDO:-}" ]] || gtbi_early_sudo_binary_path &>/dev/null; then
         local _need_early_apt=false
-        acfs_early_system_binary_path curl &>/dev/null || _need_early_apt=true
-        acfs_early_system_binary_path jq &>/dev/null   || _need_early_apt=true
-        acfs_early_system_binary_path git &>/dev/null   || _need_early_apt=true
+        gtbi_early_system_binary_path curl &>/dev/null || _need_early_apt=true
+        gtbi_early_system_binary_path jq &>/dev/null   || _need_early_apt=true
+        gtbi_early_system_binary_path git &>/dev/null   || _need_early_apt=true
         if [[ "$_need_early_apt" == "true" ]]; then
             echo -e "${YELLOW}Installing minimal bootstrap dependencies (curl, jq, git)...${NC}" >&2
             local -a _sudo_cmd=()
             local apt_get_bin=""
-            apt_get_bin="$(acfs_early_system_binary_path apt-get 2>/dev/null || true)"
+            apt_get_bin="$(gtbi_early_system_binary_path apt-get 2>/dev/null || true)"
             if [[ -z "$apt_get_bin" ]]; then
                 log_warn "apt-get not found; cannot install bootstrap dependencies"
             else
                 if [[ $EUID -ne 0 ]]; then
                     local sudo_bin=""
-                    sudo_bin="$(acfs_early_sudo_binary_path 2>/dev/null || true)"
+                    sudo_bin="$(gtbi_early_sudo_binary_path 2>/dev/null || true)"
                     [[ -n "$sudo_bin" ]] && _sudo_cmd=("$sudo_bin")
                 fi
                 if [[ $EUID -eq 0 || ${#_sudo_cmd[@]} -gt 0 ]]; then
@@ -5795,7 +5795,7 @@ main() {
     disable_needrestart_apt_hook  # Prevent apt hangs on Ubuntu 22.04+ (issue #70)
     validate_target_user
     init_target_paths
-    acfs_log_init   # Start capturing stderr to log file (uses ACFS_HOME/logs)
+    gtbi_log_init   # Start capturing stderr to log file (uses GTBI_HOME/logs)
     ensure_ubuntu
 
     # Ensure base dependencies (like jq) are installed before upgrade logic
@@ -5821,9 +5821,9 @@ main() {
     # State Management and Resume Logic (mjt.5.8)
     # ============================================================
     # Initialize state file location (uses TARGET_USER's home)
-    ACFS_HOME="${ACFS_HOME:-$TARGET_HOME/.acfs}"
-    ACFS_STATE_FILE="${ACFS_STATE_FILE:-$ACFS_HOME/state.json}"
-    export ACFS_HOME ACFS_STATE_FILE
+    GTBI_HOME="${GTBI_HOME:-$TARGET_HOME/.gtbi}"
+    GTBI_STATE_FILE="${GTBI_STATE_FILE:-$GTBI_HOME/state.json}"
+    export GTBI_HOME GTBI_STATE_FILE
 
     # Validate and handle existing state file
     if type -t state_ensure_valid &>/dev/null; then
@@ -5916,22 +5916,22 @@ main() {
         # Always update checksums.yaml and VERSION after all phases complete
         # This ensures resume installs get fresh metadata even if finalize was previously completed
         # Related: PR #44 - fix checksums.yaml becoming stale on resume installs
-        if [[ -n "${ACFS_BOOTSTRAP_DIR:-}" ]] && [[ -d "$ACFS_BOOTSTRAP_DIR" ]]; then
-            if [[ -f "$ACFS_BOOTSTRAP_DIR/checksums.yaml" ]]; then
-                if [[ -n "${ACFS_CHECKSUMS_REF:-}" && -n "${ACFS_REF_INPUT:-}" && "$ACFS_CHECKSUMS_REF" != "$ACFS_REF_INPUT" ]]; then
-                    log_detail "Refreshing checksums.yaml from ref '${ACFS_CHECKSUMS_REF}'"
-                    install_checksums_yaml "$ACFS_HOME/checksums.yaml" || true
-                    $SUDO chown "$TARGET_USER:$TARGET_USER" "$ACFS_HOME/checksums.yaml" 2>/dev/null || true
+        if [[ -n "${GTBI_BOOTSTRAP_DIR:-}" ]] && [[ -d "$GTBI_BOOTSTRAP_DIR" ]]; then
+            if [[ -f "$GTBI_BOOTSTRAP_DIR/checksums.yaml" ]]; then
+                if [[ -n "${GTBI_CHECKSUMS_REF:-}" && -n "${GTBI_REF_INPUT:-}" && "$GTBI_CHECKSUMS_REF" != "$GTBI_REF_INPUT" ]]; then
+                    log_detail "Refreshing checksums.yaml from ref '${GTBI_CHECKSUMS_REF}'"
+                    install_checksums_yaml "$GTBI_HOME/checksums.yaml" || true
+                    $SUDO chown "$TARGET_USER:$TARGET_USER" "$GTBI_HOME/checksums.yaml" 2>/dev/null || true
                 else
                     log_detail "Ensuring checksums.yaml is up to date"
-                    $SUDO cp -f "$ACFS_BOOTSTRAP_DIR/checksums.yaml" "$ACFS_HOME/checksums.yaml" 2>/dev/null || true
-                    $SUDO chown "$TARGET_USER:$TARGET_USER" "$ACFS_HOME/checksums.yaml" 2>/dev/null || true
+                    $SUDO cp -f "$GTBI_BOOTSTRAP_DIR/checksums.yaml" "$GTBI_HOME/checksums.yaml" 2>/dev/null || true
+                    $SUDO chown "$TARGET_USER:$TARGET_USER" "$GTBI_HOME/checksums.yaml" 2>/dev/null || true
                 fi
             fi
-            if [[ -f "$ACFS_BOOTSTRAP_DIR/VERSION" ]]; then
+            if [[ -f "$GTBI_BOOTSTRAP_DIR/VERSION" ]]; then
                 log_detail "Ensuring VERSION is up to date"
-                $SUDO cp -f "$ACFS_BOOTSTRAP_DIR/VERSION" "$ACFS_HOME/VERSION" 2>/dev/null || true
-                $SUDO chown "$TARGET_USER:$TARGET_USER" "$ACFS_HOME/VERSION" 2>/dev/null || true
+                $SUDO cp -f "$GTBI_BOOTSTRAP_DIR/VERSION" "$GTBI_HOME/VERSION" 2>/dev/null || true
+                $SUDO chown "$TARGET_USER:$TARGET_USER" "$GTBI_HOME/VERSION" 2>/dev/null || true
             fi
         fi
 
@@ -5951,21 +5951,21 @@ main() {
         fi
 
         # Emit install summary JSON (bd-31ps.3.2)
-        acfs_summary_emit "success" "$total_seconds" 2>/dev/null || true
+        gtbi_summary_emit "success" "$total_seconds" 2>/dev/null || true
 
         # Send webhook notification if configured (bd-2zqr)
         if type -t webhook_notify &>/dev/null; then
-            webhook_notify "success" "${ACFS_SUMMARY_FILE:-}" 2>/dev/null || true
+            webhook_notify "success" "${GTBI_SUMMARY_FILE:-}" 2>/dev/null || true
         fi
         # Send ntfy.sh notification if configured (bd-2igt6)
-        if type -t acfs_notify_install_success &>/dev/null; then
-            acfs_notify_install_success 2>/dev/null || true
+        if type -t gtbi_notify_install_success &>/dev/null; then
+            gtbi_notify_install_success 2>/dev/null || true
         fi
 
         # Skip the post-install smoke test when --only / --only-phase was
         # used: the user asked for a targeted subset, so the full-stack
         # checks (agents, ntm, onboard, languages, …) will fail by design.
-        # They can still run `acfs doctor` if they want a broader health check.
+        # They can still run `gtbi doctor` if they want a broader health check.
         SMOKE_TEST_FAILED=false
         if [[ ${#ONLY_MODULES[@]} -eq 0 ]] && [[ ${#ONLY_PHASES[@]} -eq 0 ]]; then
             if ! run_smoke_test; then

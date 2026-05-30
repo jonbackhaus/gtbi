@@ -22,12 +22,12 @@ RUSTC_RCH_RE='(^|[^[:alnum:]_./-])rustc([[:space:]]|$|[^[:alnum:]_-])'
 DEFAULT_TARGETS=(
     "AGENTS.md"
     "README.md"
-    "acfs/AGENTS.md"
+    "gtbi/AGENTS.md"
     "scripts/generate-root-agents-md.sh"
     "scripts/lib/newproj_agents.sh"
-    "acfs/onboard/lessons/17_rch.md"
-    "acfs/onboard/lessons/21_git_strategy.md"
-    "acfs/onboard/lessons/22_swarm_coordination.md"
+    "gtbi/onboard/lessons/17_rch.md"
+    "gtbi/onboard/lessons/21_git_strategy.md"
+    "gtbi/onboard/lessons/22_swarm_coordination.md"
     "apps/web/components/lessons/agents-md-lesson.tsx"
     "apps/web/components/lessons/swarm-coordination-lesson.tsx"
 )

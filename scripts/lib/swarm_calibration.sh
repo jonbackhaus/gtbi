@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-# ACFS Swarm Calibration - artifact-backed capacity review
+# GTBI Swarm Calibration - artifact-backed capacity review
 #
 # Reads local swarm simulation/rehearsal artifacts plus optional RCH timing
 # evidence, then explains whether the static capacity assumptions look
@@ -17,13 +17,13 @@ SWARM_CAL_ARTIFACT_DIRS=()
 
 swarm_calibration_usage() {
     cat <<'EOF'
-Usage: acfs swarm calibration [OPTIONS]
+Usage: gtbi swarm calibration [OPTIONS]
 
 Options:
   --json                Emit machine-readable JSON
   --markdown            Emit Markdown output (default)
   --artifact-dir DIR    Read a simulation run directory or parent artifact dir
-                        (repeatable; defaults to ~/.acfs/logs/swarm-simulations)
+                        (repeatable; defaults to ~/.gtbi/logs/swarm-simulations)
   --rch-file FILE       Optional local RCH timing/status JSON evidence
   --help, -h            Show this help
 
@@ -66,14 +66,14 @@ swarm_calibration_parse_args() {
                 ;;
             *)
                 echo "Error: unknown option: $1" >&2
-                echo "Run 'acfs swarm calibration --help' for usage." >&2
+                echo "Run 'gtbi swarm calibration --help' for usage." >&2
                 return 2
                 ;;
         esac
     done
 
     if [[ ${#SWARM_CAL_ARTIFACT_DIRS[@]} -eq 0 ]]; then
-        SWARM_CAL_ARTIFACT_DIRS+=("${ACFS_SWARM_CALIBRATION_ARTIFACT_DIR:-${ACFS_SWARM_SIM_BASE_DIR:-${HOME:-/tmp}/.acfs/logs/swarm-simulations}}")
+        SWARM_CAL_ARTIFACT_DIRS+=("${GTBI_SWARM_CALIBRATION_ARTIFACT_DIR:-${GTBI_SWARM_SIM_BASE_DIR:-${HOME:-/tmp}/.gtbi/logs/swarm-simulations}}")
     fi
 }
 
@@ -417,7 +417,7 @@ swarm_calibration_build_report() {
           elif $posture == "aggressive_near_limit" then "Keep default profiles conservative and repeat rehearsals under representative load before increasing agent counts."
           elif $posture == "conservative" then "The static recommendation appears conservative for observed artifacts; consider a larger real rehearsal before changing defaults."
           elif $posture == "aligned" then "Static capacity assumptions match the observed local artifacts."
-          else "Run acfs swarm simulate --mock-rehearsal and rerun this calibration with its artifact directory." end;
+          else "Run gtbi swarm simulate --mock-rehearsal and rerun this calibration with its artifact directory." end;
         def rch_metrics($rch):
           if $rch.status != "present" then {
               status: $rch.status,
@@ -508,11 +508,11 @@ swarm_calibration_build_report() {
             warnings: $warnings,
             next_commands: (
               if ($valid | length) == 0 then
-                ["acfs swarm simulate --mock-rehearsal --artifact-dir <dir>", "acfs swarm calibration --artifact-dir <dir>"]
+                ["gtbi swarm simulate --mock-rehearsal --artifact-dir <dir>", "gtbi swarm calibration --artifact-dir <dir>"]
               elif $posture == "too_aggressive" or $posture == "aggressive_near_limit" then
-                ["acfs swarm simulate --mock-rehearsal --counts 10 --artifact-dir <dir>", "acfs capacity --json --recommend-ntm"]
+                ["gtbi swarm simulate --mock-rehearsal --counts 10 --artifact-dir <dir>", "gtbi capacity --json --recommend-ntm"]
               else
-                ["acfs swarm simulate --mock-rehearsal --counts 10 --artifact-dir <dir>", "acfs swarm calibration --artifact-dir <dir>"]
+                ["gtbi swarm simulate --mock-rehearsal --counts 10 --artifact-dir <dir>", "gtbi swarm calibration --artifact-dir <dir>"]
               end
             )
           }
@@ -524,7 +524,7 @@ swarm_calibration_emit_markdown() {
     local jq_bin="$2"
 
     "$jq_bin" -r '
-        "ACFS Swarm Capacity Calibration",
+        "GTBI Swarm Capacity Calibration",
         "Status: \(.status)",
         "Posture: \(.calibration.posture)",
         "Recommendation: \(.calibration.recommendation)",

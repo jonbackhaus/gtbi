@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-# ACFS Swarm Convergence - epic success criteria audit
+# GTBI Swarm Convergence - epic success criteria audit
 #
 # Builds a read-only report that maps an epic's success criteria to child
 # Beads and commit evidence. It suggests follow-up Bead titles but never
@@ -17,7 +17,7 @@ SWARM_CONVERGENCE_COMMITS_FILE=""
 
 swarm_convergence_usage() {
     cat <<'EOF'
-Usage: acfs swarm convergence --epic ID [OPTIONS]
+Usage: gtbi swarm convergence --epic ID [OPTIONS]
 
 Options:
   --json               Emit machine-readable JSON
@@ -82,7 +82,7 @@ swarm_convergence_parse_args() {
                 ;;
             *)
                 echo "Error: unknown option: $1" >&2
-                echo "Run 'acfs swarm convergence --help' for usage." >&2
+                echo "Run 'gtbi swarm convergence --help' for usage." >&2
                 return 2
                 ;;
         esac
@@ -358,7 +358,7 @@ swarm_convergence_emit_markdown() {
     local report="$1"
     local jq_bin="$2"
 
-    printf '# ACFS Swarm Convergence Audit\n\n'
+    printf '# GTBI Swarm Convergence Audit\n\n'
     printf 'Advisory only: this command did not create, update, or close Beads; send Agent Mail; claim reservations; or launch agents.\n\n'
     "$jq_bin" -r '
       "Epic: `\(.epic.id)` \(.epic.title)",

@@ -63,7 +63,7 @@ teardown() {
 }
 
 @test "session library: sources under set -u without HOME" {
-    run env -i PATH="/usr/bin:/bin" bash -c 'set -euo pipefail; source "$1"; printf "<%s>\n" "${ACFS_SESSIONS_DIR:-}"' _ "$PROJECT_ROOT/scripts/lib/session.sh"
+    run env -i PATH="/usr/bin:/bin" bash -c 'set -euo pipefail; source "$1"; printf "<%s>\n" "${GTBI_SESSIONS_DIR:-}"' _ "$PROJECT_ROOT/scripts/lib/session.sh"
     assert_success
     assert_output "<>"
 }
@@ -72,9 +72,9 @@ teardown() {
     local target_home
     target_home="$(create_temp_dir)"
 
-    run env -i PATH="/usr/bin:/bin" TARGET_HOME="$target_home" bash -c 'set -euo pipefail; source "$1"; printf "%s\n" "$ACFS_SESSIONS_DIR"' _ "$PROJECT_ROOT/scripts/lib/session.sh"
+    run env -i PATH="/usr/bin:/bin" TARGET_HOME="$target_home" bash -c 'set -euo pipefail; source "$1"; printf "%s\n" "$GTBI_SESSIONS_DIR"' _ "$PROJECT_ROOT/scripts/lib/session.sh"
     assert_success
-    assert_output "$target_home/.acfs/sessions"
+    assert_output "$target_home/.gtbi/sessions"
 }
 
 @test "session library: TARGET_HOME beats caller HOME for default storage" {
@@ -82,13 +82,13 @@ teardown() {
     caller_home="$(create_temp_dir)"
     target_home="$(create_temp_dir)"
 
-    run env -i PATH="/usr/bin:/bin" HOME="$caller_home" TARGET_HOME="$target_home" bash -c 'set -euo pipefail; source "$1"; printf "%s\n" "$ACFS_SESSIONS_DIR"' _ "$PROJECT_ROOT/scripts/lib/session.sh"
+    run env -i PATH="/usr/bin:/bin" HOME="$caller_home" TARGET_HOME="$target_home" bash -c 'set -euo pipefail; source "$1"; printf "%s\n" "$GTBI_SESSIONS_DIR"' _ "$PROJECT_ROOT/scripts/lib/session.sh"
     assert_success
-    assert_output "$target_home/.acfs/sessions"
+    assert_output "$target_home/.gtbi/sessions"
 }
 
 @test "native session helpers fail clearly without any home context" {
-    run env -i PATH="/usr/bin:/bin" bash -c 'set -euo pipefail; source "$1"; session_project_dir_key_gemini "/tmp/acfs-project"' _ "$PROJECT_ROOT/scripts/lib/session.sh"
+    run env -i PATH="/usr/bin:/bin" bash -c 'set -euo pipefail; source "$1"; session_project_dir_key_gemini "/tmp/gtbi-project"' _ "$PROJECT_ROOT/scripts/lib/session.sh"
     assert_failure
     assert_output --partial "Unable to resolve GEMINI_HOME"
     refute_output --partial "unbound variable"
@@ -98,7 +98,7 @@ teardown() {
     local target_home
     target_home="$(create_temp_dir)"
 
-    run env -i PATH="/usr/bin:/bin" TARGET_HOME="$target_home" bash -c 'set -euo pipefail; source "$1"; acfs_session_provider_home_dir CLAUDE_HOME ".claude"; acfs_session_provider_home_dir CODEX_HOME ".codex"; acfs_session_provider_home_dir GEMINI_HOME ".gemini"' _ "$PROJECT_ROOT/scripts/lib/session.sh"
+    run env -i PATH="/usr/bin:/bin" TARGET_HOME="$target_home" bash -c 'set -euo pipefail; source "$1"; gtbi_session_provider_home_dir CLAUDE_HOME ".claude"; gtbi_session_provider_home_dir CODEX_HOME ".codex"; gtbi_session_provider_home_dir GEMINI_HOME ".gemini"' _ "$PROJECT_ROOT/scripts/lib/session.sh"
     assert_success
     assert_output "$target_home/.claude
 $target_home/.codex
@@ -224,7 +224,7 @@ exit 1
 EOF
     cat > "$STUB_DIR/mv" <<'EOF'
 #!/bin/bash
-if [[ "${ACFS_FAIL_SANITIZED_MV:-}" == "1" ]]; then
+if [[ "${GTBI_FAIL_SANITIZED_MV:-}" == "1" ]]; then
     for arg in "$@"; do
         if [[ "$arg" == *.sanitized ]]; then
             exit 1
@@ -238,7 +238,7 @@ exec /bin/mv "$@"
 EOF
     chmod +x "$STUB_DIR/cass" "$STUB_DIR/mv"
 
-    export ACFS_FAIL_SANITIZED_MV=1
+    export GTBI_FAIL_SANITIZED_MV=1
     run export_session "$file" --format markdown
     assert_failure
     assert_output --partial "Sanitization failed; refusing to output unsanitized export"
@@ -363,7 +363,7 @@ EOF
     assert_output --partial "sanitize-caller-return-fired"
 }
 
-@test "import_session: rejects malformed ACFS exports" {
+@test "import_session: rejects malformed GTBI exports" {
     local malformed='{
         "schema_version": 1
     }'
@@ -379,7 +379,7 @@ EOF
     local test_home
     test_home=$(create_temp_dir)
     export HOME="$test_home"
-    export ACFS_SESSIONS_DIR="$HOME/.acfs/sessions"
+    export GTBI_SESSIONS_DIR="$HOME/.gtbi/sessions"
 
     local valid='{
         "schema_version": 1,
@@ -414,12 +414,12 @@ EOF
 
     local codex_src="$test_home/source_codex.jsonl"
     cat > "$codex_src" <<'EOF'
-{"timestamp":"2026-03-03T01:00:00Z","type":"session_meta","payload":{"id":"src-codex-id","cwd":"/data/projects/agentic_coding_flywheel_setup"}}
+{"timestamp":"2026-03-03T01:00:00Z","type":"session_meta","payload":{"id":"src-codex-id","cwd":"/data/projects/gastown_batteries_included"}}
 {"timestamp":"2026-03-03T01:00:01Z","type":"event_msg","payload":{"type":"user_message","message":"hello from codex"}}
 {"timestamp":"2026-03-03T01:00:02Z","type":"response_item","payload":{"role":"assistant","content":[{"type":"output_text","text":"hello from assistant"}]}}
 EOF
 
-    run convert_session_native "$codex_src" --from codex --to claude-code --workspace "/data/projects/agentic_coding_flywheel_setup" --json
+    run convert_session_native "$codex_src" --from codex --to claude-code --workspace "/data/projects/gastown_batteries_included" --json
     assert_success
 
     local written_path target_session_id resume_command
@@ -428,13 +428,13 @@ EOF
     resume_command="$(jq -r '.resume_command' <<<"$output")"
 
     [[ -f "$written_path" ]]
-    [[ "$written_path" == "$HOME/.claude/projects/-data-projects-agentic-coding-flywheel-setup/"*".jsonl" ]]
+    [[ "$written_path" == "$HOME/.claude/projects/-data-projects-gastown-batteries-included/"*".jsonl" ]]
 
     run jq -r 'select(.type=="user" or .type=="assistant") | .type' "$written_path"
     assert_output --partial "user"
     assert_output --partial "assistant"
 
-    local index_file="$HOME/.claude/projects/-data-projects-agentic-coding-flywheel-setup/sessions-index.json"
+    local index_file="$HOME/.claude/projects/-data-projects-gastown-batteries-included/sessions-index.json"
     [[ -f "$index_file" ]]
     run jq -r --arg sid "$target_session_id" '.entries[] | select(.sessionId == $sid) | .fullPath' "$index_file"
     assert_success
@@ -452,14 +452,14 @@ EOF
 
     local codex_src="$test_home/source_codex_return_trap.jsonl"
     cat > "$codex_src" <<'EOF'
-{"timestamp":"2026-03-03T01:00:00Z","type":"session_meta","payload":{"id":"src-codex-id","cwd":"/data/projects/agentic_coding_flywheel_setup"}}
+{"timestamp":"2026-03-03T01:00:00Z","type":"session_meta","payload":{"id":"src-codex-id","cwd":"/data/projects/gastown_batteries_included"}}
 {"timestamp":"2026-03-03T01:00:01Z","type":"event_msg","payload":{"type":"user_message","message":"hello from codex"}}
 {"timestamp":"2026-03-03T01:00:02Z","type":"response_item","payload":{"role":"assistant","content":[{"type":"output_text","text":"hello from assistant"}]}}
 EOF
 
     caller_wrapper() {
         trap 'printf "%s\n" convert-caller-return-fired' RETURN
-        convert_session_native "$codex_src" --from codex --to claude-code --workspace "/data/projects/agentic_coding_flywheel_setup" --json >/dev/null || return 1
+        convert_session_native "$codex_src" --from codex --to claude-code --workspace "/data/projects/gastown_batteries_included" --json >/dev/null || return 1
         trap -p RETURN
     }
 
@@ -478,11 +478,11 @@ EOF
 
     local claude_src="$test_home/source_claude.jsonl"
     cat > "$claude_src" <<'EOF'
-{"parentUuid":null,"isSidechain":false,"userType":"external","cwd":"/data/projects/agentic_coding_flywheel_setup","sessionId":"src-claude-id","version":"2.1.32","gitBranch":"main","type":"user","message":{"role":"user","content":"hello from claude"},"uuid":"u1","timestamp":"2026-03-03T01:10:00Z"}
-{"parentUuid":"u1","isSidechain":false,"userType":"external","cwd":"/data/projects/agentic_coding_flywheel_setup","sessionId":"src-claude-id","version":"2.1.32","gitBranch":"main","type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"assistant reply"}]},"uuid":"u2","timestamp":"2026-03-03T01:10:01Z"}
+{"parentUuid":null,"isSidechain":false,"userType":"external","cwd":"/data/projects/gastown_batteries_included","sessionId":"src-claude-id","version":"2.1.32","gitBranch":"main","type":"user","message":{"role":"user","content":"hello from claude"},"uuid":"u1","timestamp":"2026-03-03T01:10:00Z"}
+{"parentUuid":"u1","isSidechain":false,"userType":"external","cwd":"/data/projects/gastown_batteries_included","sessionId":"src-claude-id","version":"2.1.32","gitBranch":"main","type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"assistant reply"}]},"uuid":"u2","timestamp":"2026-03-03T01:10:01Z"}
 EOF
 
-    run convert_session_native "$claude_src" --from claude-code --to codex --workspace "/data/projects/agentic_coding_flywheel_setup" --json
+    run convert_session_native "$claude_src" --from claude-code --to codex --workspace "/data/projects/gastown_batteries_included" --json
     assert_success
 
     local written_path target_session_id resume_command
@@ -514,12 +514,12 @@ EOF
 
     local codex_src="$test_home/source_codex_for_gemini.jsonl"
     cat > "$codex_src" <<'EOF'
-{"timestamp":"2026-03-03T02:00:00Z","type":"session_meta","payload":{"id":"src-codex-id-2","cwd":"/data/projects/agentic_coding_flywheel_setup"}}
+{"timestamp":"2026-03-03T02:00:00Z","type":"session_meta","payload":{"id":"src-codex-id-2","cwd":"/data/projects/gastown_batteries_included"}}
 {"timestamp":"2026-03-03T02:00:01Z","type":"event_msg","payload":{"type":"user_message","message":"gemini please continue"}}
 {"timestamp":"2026-03-03T02:00:02Z","type":"response_item","payload":{"role":"assistant","content":[{"type":"output_text","text":"continuing now"}]}}
 EOF
 
-    run convert_session_native "$codex_src" --from codex --to gemini --workspace "/data/projects/agentic_coding_flywheel_setup" --json
+    run convert_session_native "$codex_src" --from codex --to gemini --workspace "/data/projects/gastown_batteries_included" --json
     assert_success
 
     local written_path target_session_id
@@ -527,7 +527,7 @@ EOF
     target_session_id="$(jq -r '.target_session_id' <<<"$output")"
 
     [[ -f "$written_path" ]]
-    [[ "$written_path" == "$HOME/.gemini/tmp/agentic-coding-flywheel-setup/chats/session-"*".json" ]]
+    [[ "$written_path" == "$HOME/.gemini/tmp/gastown-batteries-included/chats/session-"*".json" ]]
 
     run jq -r '.sessionId' "$written_path"
     assert_equal "$output" "$target_session_id"

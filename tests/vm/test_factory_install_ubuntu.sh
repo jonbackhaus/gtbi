@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-# ACFS Factory Ubuntu Installer E2E
+# GTBI Factory Ubuntu Installer E2E
 #
 # Authoritative system-level check for the beginner path on a real
 # systemd-capable Ubuntu host:
@@ -17,25 +17,25 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
-SSH_TARGET="${ACFS_FACTORY_SSH_TARGET:-}"
-SSH_KEY="${ACFS_FACTORY_SSH_KEY:-}"
-SSH_PORT="${ACFS_FACTORY_SSH_PORT:-}"
-REF="${ACFS_REF:-main}"
-MODE="${ACFS_FACTORY_MODE:-vibe}"
-EXPECT_UBUNTU_VERSION="${ACFS_FACTORY_EXPECT_UBUNTU_VERSION:-25.10}"
-EXPECT_FINAL_UBUNTU_VERSION="${ACFS_FACTORY_EXPECT_FINAL_UBUNTU_VERSION:-25.10}"
-EXPECT_NO_UBUNTU="${ACFS_FACTORY_EXPECT_NO_UBUNTU:-true}"
-INSTALL_TIMEOUT_SECONDS="${ACFS_FACTORY_INSTALL_TIMEOUT_SECONDS:-14400}"
-POST_REBOOT_TIMEOUT_SECONDS="${ACFS_FACTORY_POST_REBOOT_TIMEOUT_SECONDS:-14400}"
-ALLOW_INSTALL_REBOOT="${ACFS_FACTORY_ALLOW_INSTALL_REBOOT:-false}"
-PUBLIC_KEY_FILE="${ACFS_FACTORY_PUBLIC_KEY_FILE:-}"
-INSTALL_URL="${ACFS_FACTORY_INSTALL_URL:-}"
-ARTIFACTS_DIR="${ACFS_FACTORY_ARTIFACTS_DIR:-}"
+SSH_TARGET="${GTBI_FACTORY_SSH_TARGET:-}"
+SSH_KEY="${GTBI_FACTORY_SSH_KEY:-}"
+SSH_PORT="${GTBI_FACTORY_SSH_PORT:-}"
+REF="${GTBI_REF:-main}"
+MODE="${GTBI_FACTORY_MODE:-vibe}"
+EXPECT_UBUNTU_VERSION="${GTBI_FACTORY_EXPECT_UBUNTU_VERSION:-25.10}"
+EXPECT_FINAL_UBUNTU_VERSION="${GTBI_FACTORY_EXPECT_FINAL_UBUNTU_VERSION:-25.10}"
+EXPECT_NO_UBUNTU="${GTBI_FACTORY_EXPECT_NO_UBUNTU:-true}"
+INSTALL_TIMEOUT_SECONDS="${GTBI_FACTORY_INSTALL_TIMEOUT_SECONDS:-14400}"
+POST_REBOOT_TIMEOUT_SECONDS="${GTBI_FACTORY_POST_REBOOT_TIMEOUT_SECONDS:-14400}"
+ALLOW_INSTALL_REBOOT="${GTBI_FACTORY_ALLOW_INSTALL_REBOOT:-false}"
+PUBLIC_KEY_FILE="${GTBI_FACTORY_PUBLIC_KEY_FILE:-}"
+INSTALL_URL="${GTBI_FACTORY_INSTALL_URL:-}"
+ARTIFACTS_DIR="${GTBI_FACTORY_ARTIFACTS_DIR:-}"
 TIMESTAMP="$(date -u +%Y%m%dT%H%M%SZ)"
 
 usage() {
     cat <<'EOF'
-tests/vm/test_factory_install_ubuntu.sh - authoritative ACFS factory-host E2E
+tests/vm/test_factory_install_ubuntu.sh - authoritative GTBI factory-host E2E
 
 Usage:
   tests/vm/test_factory_install_ubuntu.sh --ssh-target root@HOST [options]
@@ -46,7 +46,7 @@ Required:
 Options:
   --ssh-key <path>            Private key for SSH/scp.
   --ssh-port <port>           SSH port.
-  --ref <ref>                 ACFS ref to install (default: ACFS_REF or main).
+  --ref <ref>                 GTBI ref to install (default: GTBI_REF or main).
   --mode <mode>               Install mode: vibe or safe (default: vibe).
   --expect-ubuntu <version>   Required initial VERSION_ID from /etc/os-release (default: 25.10).
   --expect-final-ubuntu <ver> Required final VERSION_ID after install/resume (default: 25.10).
@@ -60,19 +60,19 @@ Options:
   --help                      Show this help.
 
 Environment equivalents:
-  ACFS_FACTORY_SSH_TARGET
-  ACFS_FACTORY_SSH_KEY
-  ACFS_FACTORY_SSH_PORT
-  ACFS_FACTORY_MODE
-  ACFS_FACTORY_EXPECT_UBUNTU_VERSION
-  ACFS_FACTORY_EXPECT_FINAL_UBUNTU_VERSION
-  ACFS_FACTORY_EXPECT_NO_UBUNTU
-  ACFS_FACTORY_ALLOW_INSTALL_REBOOT
-  ACFS_FACTORY_PUBLIC_KEY_FILE
-  ACFS_FACTORY_INSTALL_TIMEOUT_SECONDS
-  ACFS_FACTORY_POST_REBOOT_TIMEOUT_SECONDS
-  ACFS_FACTORY_INSTALL_URL
-  ACFS_FACTORY_ARTIFACTS_DIR
+  GTBI_FACTORY_SSH_TARGET
+  GTBI_FACTORY_SSH_KEY
+  GTBI_FACTORY_SSH_PORT
+  GTBI_FACTORY_MODE
+  GTBI_FACTORY_EXPECT_UBUNTU_VERSION
+  GTBI_FACTORY_EXPECT_FINAL_UBUNTU_VERSION
+  GTBI_FACTORY_EXPECT_NO_UBUNTU
+  GTBI_FACTORY_ALLOW_INSTALL_REBOOT
+  GTBI_FACTORY_PUBLIC_KEY_FILE
+  GTBI_FACTORY_INSTALL_TIMEOUT_SECONDS
+  GTBI_FACTORY_POST_REBOOT_TIMEOUT_SECONDS
+  GTBI_FACTORY_INSTALL_URL
+  GTBI_FACTORY_ARTIFACTS_DIR
 
 Notes:
   - This test is meant for a disposable, freshly provisioned VM/VPS.
@@ -186,7 +186,7 @@ if [[ -n "$PUBLIC_KEY_FILE" && ! -r "$PUBLIC_KEY_FILE" ]]; then
 fi
 
 if [[ -z "$INSTALL_URL" ]]; then
-    INSTALL_URL="https://raw.githubusercontent.com/Dicklesworthstone/agentic_coding_flywheel_setup/${REF}/install.sh?acfs_factory_e2e=${TIMESTAMP}"
+    INSTALL_URL="https://raw.githubusercontent.com/jonbackhaus/gtbi/${REF}/install.sh?gtbi_factory_e2e=${TIMESTAMP}"
 fi
 
 if [[ -z "$ARTIFACTS_DIR" ]]; then
@@ -231,7 +231,7 @@ if [[ -n "$PUBLIC_KEY_FILE" ]]; then
     fi
 fi
 
-remote_dir="/var/log/acfs/factory-e2e-${TIMESTAMP}"
+remote_dir="/var/log/gtbi/factory-e2e-${TIMESTAMP}"
 remote_runner="${remote_dir}/remote-runner.sh"
 local_runner="${ARTIFACTS_DIR}/remote-runner.sh"
 
@@ -250,23 +250,23 @@ cat > "$local_runner" <<'REMOTE_RUNNER'
 #!/usr/bin/env bash
 set -euo pipefail
 
-: "${ACFS_FACTORY_REMOTE_DIR:?}"
-: "${ACFS_FACTORY_INSTALL_URL:?}"
-: "${ACFS_FACTORY_REF:?}"
-: "${ACFS_FACTORY_MODE:?}"
-: "${ACFS_FACTORY_EXPECT_UBUNTU_VERSION:?}"
-: "${ACFS_FACTORY_EXPECT_FINAL_UBUNTU_VERSION:?}"
-: "${ACFS_FACTORY_EXPECT_NO_UBUNTU:?}"
-: "${ACFS_FACTORY_INSTALL_TIMEOUT_SECONDS:?}"
-: "${ACFS_FACTORY_POST_REBOOT_TIMEOUT_SECONDS:?}"
-: "${ACFS_FACTORY_RUN_MODE:?}"
+: "${GTBI_FACTORY_REMOTE_DIR:?}"
+: "${GTBI_FACTORY_INSTALL_URL:?}"
+: "${GTBI_FACTORY_REF:?}"
+: "${GTBI_FACTORY_MODE:?}"
+: "${GTBI_FACTORY_EXPECT_UBUNTU_VERSION:?}"
+: "${GTBI_FACTORY_EXPECT_FINAL_UBUNTU_VERSION:?}"
+: "${GTBI_FACTORY_EXPECT_NO_UBUNTU:?}"
+: "${GTBI_FACTORY_INSTALL_TIMEOUT_SECONDS:?}"
+: "${GTBI_FACTORY_POST_REBOOT_TIMEOUT_SECONDS:?}"
+: "${GTBI_FACTORY_RUN_MODE:?}"
 
-REMOTE_LOG="${ACFS_FACTORY_REMOTE_DIR}/factory-e2e.log"
-REMOTE_JSONL="${ACFS_FACTORY_REMOTE_DIR}/factory-e2e.jsonl"
-INSTALL_LOG="${ACFS_FACTORY_REMOTE_DIR}/install.log"
-IDEMPOTENCY_LOG="${ACFS_FACTORY_REMOTE_DIR}/idempotency.log"
+REMOTE_LOG="${GTBI_FACTORY_REMOTE_DIR}/factory-e2e.log"
+REMOTE_JSONL="${GTBI_FACTORY_REMOTE_DIR}/factory-e2e.jsonl"
+INSTALL_LOG="${GTBI_FACTORY_REMOTE_DIR}/install.log"
+IDEMPOTENCY_LOG="${GTBI_FACTORY_REMOTE_DIR}/idempotency.log"
 
-mkdir -p "$ACFS_FACTORY_REMOTE_DIR"
+mkdir -p "$GTBI_FACTORY_REMOTE_DIR"
 exec > >(tee -a "$REMOTE_LOG") 2>&1
 
 json_escape() {
@@ -321,10 +321,10 @@ run_target_step() {
 
     target_home="$(getent passwd ubuntu | cut -d: -f6)"
     [[ -n "$target_home" ]] || fail "$phase" "unable to resolve ubuntu home"
-    target_path="$target_home/.local/bin:$target_home/.acfs/bin:$target_home/.cargo/bin:$target_home/.bun/bin:$target_home/.atuin/bin:$target_home/go/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin"
+    target_path="$target_home/.local/bin:$target_home/.gtbi/bin:$target_home/.cargo/bin:$target_home/.bun/bin:$target_home/.atuin/bin:$target_home/go/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin"
 
     log_event "$phase" "start" "$script"
-    if sudo -n -u ubuntu env ACFS_DOCTOR_CI=true HOME="$target_home" PATH="$target_path" bash -lc "$script"; then
+    if sudo -n -u ubuntu env GTBI_DOCTOR_CI=true HOME="$target_home" PATH="$target_path" bash -lc "$script"; then
         pass "$phase" "$script"
     else
         local rc=$?
@@ -338,7 +338,7 @@ require_command() {
 }
 
 append_public_key_to_root() {
-    local key_b64="${ACFS_FACTORY_PUBLIC_KEY_B64:-}"
+    local key_b64="${GTBI_FACTORY_PUBLIC_KEY_B64:-}"
     local public_key=""
     local last_char=""
 
@@ -374,10 +374,10 @@ run_install_once() {
 
     log_event "$phase" "start" "curl public installer"
     set +e
-    timeout "$ACFS_FACTORY_INSTALL_TIMEOUT_SECONDS" bash -s -- \
-        "$ACFS_FACTORY_INSTALL_URL" \
-        "$ACFS_FACTORY_MODE" \
-        "$ACFS_FACTORY_REF" > "$log_file" 2>&1 <<'INSTALL_SCRIPT'
+    timeout "$GTBI_FACTORY_INSTALL_TIMEOUT_SECONDS" bash -s -- \
+        "$GTBI_FACTORY_INSTALL_URL" \
+        "$GTBI_FACTORY_MODE" \
+        "$GTBI_FACTORY_REF" > "$log_file" 2>&1 <<'INSTALL_SCRIPT'
 set -euo pipefail
 install_url="$1"
 mode="$2"
@@ -424,7 +424,7 @@ assert_systemd_host() {
 
 assert_fresh_user_state() {
     if id ubuntu >/dev/null 2>&1; then
-        if [[ "$ACFS_FACTORY_EXPECT_NO_UBUNTU" == "true" ]]; then
+        if [[ "$GTBI_FACTORY_EXPECT_NO_UBUNTU" == "true" ]]; then
             fail "preflight.fresh_user" "ubuntu user already exists before install"
         fi
         pass "preflight.fresh_user" "ubuntu user pre-exists and was allowed"
@@ -446,7 +446,7 @@ assert_target_user() {
 }
 
 assert_ssh_key_merge() {
-    local key_b64="${ACFS_FACTORY_PUBLIC_KEY_B64:-}"
+    local key_b64="${GTBI_FACTORY_PUBLIC_KEY_B64:-}"
     local public_key=""
     local count=""
     local last_char=""
@@ -478,17 +478,17 @@ systemctl --user is-active --quiet agent-mail.service
 '
 }
 
-assert_acfs_surface() {
+assert_gtbi_surface() {
     require_command sudo
-    if [[ "$ACFS_FACTORY_MODE" == "vibe" ]]; then
+    if [[ "$GTBI_FACTORY_MODE" == "vibe" ]]; then
         run_target_step "post.sudo_nopasswd" 'sudo -n true'
     else
         pass "post.sudo_nopasswd" "safe mode does not require passwordless sudo"
     fi
-    run_target_step "post.path_core" 'for cmd in acfs acfs-update onboard; do command -v "$cmd" >/dev/null; done'
-    run_target_step "post.shell_startup" 'zsh -ic "command -v acfs >/dev/null && command -v onboard >/dev/null"'
+    run_target_step "post.path_core" 'for cmd in gtbi gtbi-update onboard; do command -v "$cmd" >/dev/null; done'
+    run_target_step "post.shell_startup" 'zsh -ic "command -v gtbi >/dev/null && command -v onboard >/dev/null"'
     run_target_step "post.doctor" '
-doctor_json="$(acfs doctor --json)"
+doctor_json="$(gtbi doctor --json)"
 printf "%s\n" "$doctor_json" | jq -e ".summary.fail == 0 and .summary.warn == 0" >/dev/null || {
     printf "%s\n" "$doctor_json"
     exit 1
@@ -502,31 +502,31 @@ uid="$(id -u)"
 runtime_dir="/run/user/$uid"
 export XDG_RUNTIME_DIR="$runtime_dir"
 export DBUS_SESSION_BUS_ADDRESS="unix:path=$runtime_dir/bus"
-systemctl --user is-enabled acfs-nightly-update.timer >/dev/null
+systemctl --user is-enabled gtbi-nightly-update.timer >/dev/null
 '
 }
 
 redact_factory_artifacts() {
-    local support_lib="/home/ubuntu/.acfs/scripts/lib/support.sh"
-    local stage="${ACFS_FACTORY_REMOTE_DIR}/redacted-artifacts-$(date +%s)"
+    local support_lib="/home/ubuntu/.gtbi/scripts/lib/support.sh"
+    local stage="${GTBI_FACTORY_REMOTE_DIR}/redacted-artifacts-$(date +%s)"
     local file=""
 
     [[ -r "$support_lib" ]] || fail "artifacts.redaction" "support redaction library missing: $support_lib"
 
     mkdir -p \
         "$stage/factory" \
-        "$stage/var-log-acfs" \
-        "$stage/home-ubuntu-acfs-logs"
+        "$stage/var-log-gtbi" \
+        "$stage/home-ubuntu-gtbi-logs"
 
     for file in "$REMOTE_LOG" "$REMOTE_JSONL" "$INSTALL_LOG" "$IDEMPOTENCY_LOG"; do
         [[ -f "$file" ]] || continue
         cp -f "$file" "$stage/factory/"
     done
-    if [[ -d /var/log/acfs ]]; then
-        cp -a /var/log/acfs/. "$stage/var-log-acfs/" 2>/dev/null || true
+    if [[ -d /var/log/gtbi ]]; then
+        cp -a /var/log/gtbi/. "$stage/var-log-gtbi/" 2>/dev/null || true
     fi
-    if [[ -d /home/ubuntu/.acfs/logs ]]; then
-        cp -a /home/ubuntu/.acfs/logs/. "$stage/home-ubuntu-acfs-logs/" 2>/dev/null || true
+    if [[ -d /home/ubuntu/.gtbi/logs ]]; then
+        cp -a /home/ubuntu/.gtbi/logs/. "$stage/home-ubuntu-gtbi-logs/" 2>/dev/null || true
     fi
 
     # shellcheck source=/dev/null
@@ -541,7 +541,7 @@ redact_factory_artifacts() {
 }
 
 collect_artifacts() {
-    local archive="${ACFS_FACTORY_REMOTE_DIR}/factory-e2e-artifacts.tar.gz"
+    local archive="${GTBI_FACTORY_REMOTE_DIR}/factory-e2e-artifacts.tar.gz"
 
     redact_factory_artifacts
     [[ -n "$FACTORY_REDACTED_ARTIFACT_DIR" ]] || fail "artifacts.archive" "redacted artifact directory was not created"
@@ -551,35 +551,35 @@ collect_artifacts() {
 }
 
 wait_for_post_install_ready() {
-    local deadline=$((SECONDS + ACFS_FACTORY_POST_REBOOT_TIMEOUT_SECONDS))
-    local target_path="/home/ubuntu/.local/bin:/home/ubuntu/.acfs/bin:/home/ubuntu/.cargo/bin:/home/ubuntu/.bun/bin:/home/ubuntu/.atuin/bin:/home/ubuntu/go/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin"
+    local deadline=$((SECONDS + GTBI_FACTORY_POST_REBOOT_TIMEOUT_SECONDS))
+    local target_path="/home/ubuntu/.local/bin:/home/ubuntu/.gtbi/bin:/home/ubuntu/.cargo/bin:/home/ubuntu/.bun/bin:/home/ubuntu/.atuin/bin:/home/ubuntu/go/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin"
 
     while [[ "$SECONDS" -lt "$deadline" ]]; do
         if id ubuntu >/dev/null 2>&1 \
-            && [[ -f /home/ubuntu/.acfs/VERSION ]] \
-            && sudo -n -u ubuntu env ACFS_DOCTOR_CI=true HOME=/home/ubuntu PATH="$target_path" bash -lc 'command -v acfs >/dev/null' >/dev/null 2>&1; then
-            pass "post.wait_ready" "ACFS files and ubuntu user are present"
+            && [[ -f /home/ubuntu/.gtbi/VERSION ]] \
+            && sudo -n -u ubuntu env GTBI_DOCTOR_CI=true HOME=/home/ubuntu PATH="$target_path" bash -lc 'command -v gtbi >/dev/null' >/dev/null 2>&1; then
+            pass "post.wait_ready" "GTBI files and ubuntu user are present"
             return 0
         fi
         log_event "post.wait_ready" "wait" "installation/resume still in progress"
         sleep 30
     done
 
-    fail "post.wait_ready" "timed out waiting for ACFS install/resume to finish"
+    fail "post.wait_ready" "timed out waiting for GTBI install/resume to finish"
 }
 
 post_install_assertions() {
     wait_for_post_install_ready
-    assert_ubuntu_version "post.final" "$ACFS_FACTORY_EXPECT_FINAL_UBUNTU_VERSION"
+    assert_ubuntu_version "post.final" "$GTBI_FACTORY_EXPECT_FINAL_UBUNTU_VERSION"
     assert_target_user
     assert_ssh_key_merge
-    assert_acfs_surface
+    assert_gtbi_surface
 
     run_install_once "install.idempotency_run" "$IDEMPOTENCY_LOG"
-    assert_ubuntu_version "post.idempotency_final" "$ACFS_FACTORY_EXPECT_FINAL_UBUNTU_VERSION"
+    assert_ubuntu_version "post.idempotency_final" "$GTBI_FACTORY_EXPECT_FINAL_UBUNTU_VERSION"
     assert_target_user
     assert_ssh_key_merge
-    assert_acfs_surface
+    assert_gtbi_surface
 }
 
 main() {
@@ -601,14 +601,14 @@ main() {
     require_command timeout
     require_command tr
 
-    if [[ "$ACFS_FACTORY_RUN_MODE" == "post-only" ]]; then
+    if [[ "$GTBI_FACTORY_RUN_MODE" == "post-only" ]]; then
         post_install_assertions
         collect_artifacts
         pass "complete" "factory E2E post-install assertions passed"
         return 0
     fi
 
-    assert_ubuntu_version "preflight.initial" "$ACFS_FACTORY_EXPECT_UBUNTU_VERSION"
+    assert_ubuntu_version "preflight.initial" "$GTBI_FACTORY_EXPECT_UBUNTU_VERSION"
     assert_systemd_host
     assert_fresh_user_state
     append_public_key_to_root
@@ -631,17 +631,17 @@ run_remote_runner() {
     local remote_command_string=""
     local -a remote_command=(
         env
-        "ACFS_FACTORY_REMOTE_DIR=$remote_dir"
-        "ACFS_FACTORY_INSTALL_URL=$INSTALL_URL"
-        "ACFS_FACTORY_REF=$REF"
-        "ACFS_FACTORY_MODE=$MODE"
-        "ACFS_FACTORY_EXPECT_UBUNTU_VERSION=$EXPECT_UBUNTU_VERSION"
-        "ACFS_FACTORY_EXPECT_FINAL_UBUNTU_VERSION=$EXPECT_FINAL_UBUNTU_VERSION"
-        "ACFS_FACTORY_EXPECT_NO_UBUNTU=$EXPECT_NO_UBUNTU"
-        "ACFS_FACTORY_INSTALL_TIMEOUT_SECONDS=$INSTALL_TIMEOUT_SECONDS"
-        "ACFS_FACTORY_POST_REBOOT_TIMEOUT_SECONDS=$POST_REBOOT_TIMEOUT_SECONDS"
-        "ACFS_FACTORY_PUBLIC_KEY_B64=$public_key_b64"
-        "ACFS_FACTORY_RUN_MODE=$run_mode"
+        "GTBI_FACTORY_REMOTE_DIR=$remote_dir"
+        "GTBI_FACTORY_INSTALL_URL=$INSTALL_URL"
+        "GTBI_FACTORY_REF=$REF"
+        "GTBI_FACTORY_MODE=$MODE"
+        "GTBI_FACTORY_EXPECT_UBUNTU_VERSION=$EXPECT_UBUNTU_VERSION"
+        "GTBI_FACTORY_EXPECT_FINAL_UBUNTU_VERSION=$EXPECT_FINAL_UBUNTU_VERSION"
+        "GTBI_FACTORY_EXPECT_NO_UBUNTU=$EXPECT_NO_UBUNTU"
+        "GTBI_FACTORY_INSTALL_TIMEOUT_SECONDS=$INSTALL_TIMEOUT_SECONDS"
+        "GTBI_FACTORY_POST_REBOOT_TIMEOUT_SECONDS=$POST_REBOOT_TIMEOUT_SECONDS"
+        "GTBI_FACTORY_PUBLIC_KEY_B64=$public_key_b64"
+        "GTBI_FACTORY_RUN_MODE=$run_mode"
         bash
         "$remote_runner"
     )

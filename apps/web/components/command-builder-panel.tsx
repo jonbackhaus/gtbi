@@ -18,7 +18,7 @@ import {
   useUserOS,
   useInstallMode,
   useSSHUsername,
-  useACFSRef,
+  useGTBIRef,
   isValidIP,
   normalizeGitRef,
   normalizeSSHUsername,
@@ -154,7 +154,7 @@ export function CommandBuilderPanel() {
   const [os] = useUserOS();
   const [mode, setMode] = useInstallMode();
   const [username, setUsername] = useSSHUsername();
-  const [ref, setRef] = useACFSRef();
+  const [ref, setRef] = useGTBIRef();
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
   const shareResetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);

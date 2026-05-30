@@ -1210,7 +1210,7 @@ If you are just getting started, you do not need to master all of this immediate
 - big prompt libraries
 - advanced launch tooling like `ntm`
 - the full exhaustive planning doctrine
-- every supporting tool in ACFS
+- every supporting tool in GTBI
 
 Those things help. Some help a lot. But they are multipliers on top of the core loop, not prerequisites for understanding it.
 

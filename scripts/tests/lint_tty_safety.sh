@@ -6,7 +6,7 @@
 # (no stdin/TTY), it fails or hangs. This caused issue #85.
 #
 # This linter detects `read -r` calls in lib files that lack both:
-#   - A YES_MODE / ACFS_INTERACTIVE guard, AND
+#   - A YES_MODE / GTBI_INTERACTIVE guard, AND
 #   - A /dev/tty redirect
 #
 # Scope: scripts/lib/*.sh (excluding test files)
@@ -70,7 +70,7 @@ for file in "$LIB_DIR"/*.sh; do
         # Skip read -ra (read into array from string, not interactive)
         [[ "$line" == *"read -ra"* ]] && continue
 
-        # Check if there's a YES_MODE or ACFS_INTERACTIVE guard in the
+        # Check if there's a YES_MODE or GTBI_INTERACTIVE guard in the
         # surrounding context (within 10 lines before this read)
         has_guard=false
         start_line=$((lineno - 10))
@@ -80,7 +80,7 @@ for file in "$LIB_DIR"/*.sh; do
         context=$(sed -n "${start_line},${lineno}p" "$file" 2>/dev/null) || context=""
 
         # Check for common guard patterns
-        if echo "$context" | grep -qE 'YES_MODE|ACFS_INTERACTIVE|--yes|non.interactive|is_interactive|is_ci_environment'; then
+        if echo "$context" | grep -qE 'YES_MODE|GTBI_INTERACTIVE|--yes|non.interactive|is_interactive|is_ci_environment'; then
             has_guard=true
         fi
 
@@ -95,7 +95,7 @@ for file in "$LIB_DIR"/*.sh; do
 
         echo "WARN: $basename_file:$lineno: read -r without YES_MODE guard or /dev/tty redirect"
         echo "  $line"
-        echo "  Fix: Add YES_MODE/ACFS_INTERACTIVE check or redirect from /dev/tty"
+        echo "  Fix: Add YES_MODE/GTBI_INTERACTIVE check or redirect from /dev/tty"
         echo ""
         ((warnings++)) || true
     done < <(grep -nE '^\s*read\s+-r' "$file" || true)

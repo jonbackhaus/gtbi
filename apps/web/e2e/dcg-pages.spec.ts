@@ -55,7 +55,7 @@ test.describe.serial("DCG Website Pages", () => {
       // Unlock lesson 21 (DCG)
       await page.goto("/");
       await page.evaluate(() => {
-        localStorage.setItem("acfs-learning-hub-completed-lessons", JSON.stringify(Array.from({ length: 21 }, (_, i) => i)));
+        localStorage.setItem("gtbi-learning-hub-completed-lessons", JSON.stringify(Array.from({ length: 21 }, (_, i) => i)));
       });
 
       await page.goto("/learn/dcg");
@@ -72,7 +72,7 @@ test.describe.serial("DCG Website Pages", () => {
       // Unlock lesson 21 (DCG)
       await page.goto("/");
       await page.evaluate(() => {
-        localStorage.setItem("acfs-learning-hub-completed-lessons", JSON.stringify(Array.from({ length: 21 }, (_, i) => i)));
+        localStorage.setItem("gtbi-learning-hub-completed-lessons", JSON.stringify(Array.from({ length: 21 }, (_, i) => i)));
       });
 
       await page.goto("/learn/dcg");

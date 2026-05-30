@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-# ACFS Update - Update All Components
+# GTBI Update - Update All Components
 # Updates system packages, agents, cloud CLIs, and stack tools
 # ============================================================
 
@@ -15,10 +15,10 @@ export DEBIAN_FRONTEND=noninteractive
 export NEEDRESTART_MODE=a
 export NEEDRESTART_SUSPEND=1
 
-ACFS_VERSION="${ACFS_VERSION:-0.1.0}"
-ACFS_REPO_OWNER="${ACFS_REPO_OWNER:-Dicklesworthstone}"
-ACFS_REPO_NAME="${ACFS_REPO_NAME:-agentic_coding_flywheel_setup}"
-ACFS_CHECKSUMS_REF="${ACFS_CHECKSUMS_REF:-main}"
+GTBI_VERSION="${GTBI_VERSION:-0.1.0}"
+GTBI_REPO_OWNER="${GTBI_REPO_OWNER:-Dicklesworthstone}"
+GTBI_REPO_NAME="${GTBI_REPO_NAME:-gastown_batteries_included}"
+GTBI_CHECKSUMS_REF="${GTBI_CHECKSUMS_REF:-main}"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
@@ -170,8 +170,8 @@ _update_early_runtime_home() {
 }
 
 _UPDATE_INITIAL_ENV_HOME="$(_update_initial_existing_home "${HOME:-}" 2>/dev/null || true)"
-ACFS_INITIAL_ENV_HOME="${ACFS_INITIAL_ENV_HOME:-$_UPDATE_INITIAL_ENV_HOME}"
-export ACFS_INITIAL_ENV_HOME
+GTBI_INITIAL_ENV_HOME="${GTBI_INITIAL_ENV_HOME:-$_UPDATE_INITIAL_ENV_HOME}"
+export GTBI_INITIAL_ENV_HOME
 _UPDATE_EARLY_HOME="$(_update_early_runtime_home 2>/dev/null || true)"
 if [[ -n "$_UPDATE_EARLY_HOME" ]]; then
     HOME="$_UPDATE_EARLY_HOME"
@@ -179,11 +179,11 @@ if [[ -n "$_UPDATE_EARLY_HOME" ]]; then
 fi
 unset _UPDATE_EARLY_HOME
 
-# Discover ACFS_REPO_ROOT: prefer a real git repo over the tarball install dir.
-# On fleet machines, update.sh runs from ~/.acfs/scripts/lib/ (no .git) but
-# the authoritative source repo lives at /data/projects/agentic_coding_flywheel_setup.
+# Discover GTBI_REPO_ROOT: prefer a real git repo over the tarball install dir.
+# On fleet machines, update.sh runs from ~/.gtbi/scripts/lib/ (no .git) but
+# the authoritative source repo lives at /data/projects/gastown_batteries_included.
 # Without this, self-update can't pull new code and deployed scripts go stale.
-_acfs_discover_repo_root() {
+_gtbi_discover_repo_root() {
     local script_root
     script_root="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
@@ -193,13 +193,13 @@ _acfs_discover_repo_root() {
         return 0
     fi
 
-    # Search well-known locations for a git-based ACFS checkout
+    # Search well-known locations for a git-based GTBI checkout
     local -a candidates=(
-        "/data/projects/agentic_coding_flywheel_setup"
-        "/dp/agentic_coding_flywheel_setup"
+        "/data/projects/gastown_batteries_included"
+        "/dp/gastown_batteries_included"
     )
     if [[ -n "${HOME:-}" ]]; then
-        candidates+=("$HOME/agentic_coding_flywheel_setup")
+        candidates+=("$HOME/gastown_batteries_included")
     fi
     for candidate in "${candidates[@]}"; do
         if [[ -d "$candidate/.git" ]] && [[ -f "$candidate/scripts/lib/update.sh" ]]; then
@@ -212,26 +212,26 @@ _acfs_discover_repo_root() {
     # self-update is skipped unless the caller explicitly opts into bootstrap.
     printf '%s\n' "$script_root"
 }
-ACFS_REPO_ROOT="$(_acfs_discover_repo_root)"
+GTBI_REPO_ROOT="$(_gtbi_discover_repo_root)"
 
 # Track if self-update already ran (prevents re-exec loops)
-ACFS_SELF_UPDATE_DONE="${ACFS_SELF_UPDATE_DONE:-false}"
+GTBI_SELF_UPDATE_DONE="${GTBI_SELF_UPDATE_DONE:-false}"
 
-if [[ -f "$ACFS_REPO_ROOT/VERSION" ]]; then
-    ACFS_VERSION="$(cat "$ACFS_REPO_ROOT/VERSION" 2>/dev/null || echo "$ACFS_VERSION")"
+if [[ -f "$GTBI_REPO_ROOT/VERSION" ]]; then
+    GTBI_VERSION="$(cat "$GTBI_REPO_ROOT/VERSION" 2>/dev/null || echo "$GTBI_VERSION")"
 fi
 
 # Build display version: v0.7.0+a7598d0 (with short commit hash when available)
-_acfs_short_hash=""
-if command -v git &>/dev/null && [[ -d "$ACFS_REPO_ROOT/.git" ]]; then
-    _acfs_short_hash=$(git -C "$ACFS_REPO_ROOT" rev-parse --short HEAD 2>/dev/null) || true
+_gtbi_short_hash=""
+if command -v git &>/dev/null && [[ -d "$GTBI_REPO_ROOT/.git" ]]; then
+    _gtbi_short_hash=$(git -C "$GTBI_REPO_ROOT" rev-parse --short HEAD 2>/dev/null) || true
 fi
-if [[ -n "$_acfs_short_hash" ]]; then
-    ACFS_VERSION_DISPLAY="v${ACFS_VERSION}+${_acfs_short_hash}"
+if [[ -n "$_gtbi_short_hash" ]]; then
+    GTBI_VERSION_DISPLAY="v${GTBI_VERSION}+${_gtbi_short_hash}"
 else
-    ACFS_VERSION_DISPLAY="v${ACFS_VERSION}"
+    GTBI_VERSION_DISPLAY="v${GTBI_VERSION}"
 fi
-unset _acfs_short_hash
+unset _gtbi_short_hash
 
 # Colors - respect NO_COLOR standard (https://no-color.org/)
 # Related: bd-39ye
@@ -277,7 +277,7 @@ ABORT_ON_FAILURE=false
 REBOOT_REQUIRED=false
 
 # Logging
-UPDATE_LOG_DIR="${UPDATE_LOG_DIR:-${HOME:-/tmp}/.acfs/logs/updates}"
+UPDATE_LOG_DIR="${UPDATE_LOG_DIR:-${HOME:-/tmp}/.gtbi/logs/updates}"
 UPDATE_LOG_FILE=""
 
 # Version tracking
@@ -317,7 +317,7 @@ update_validate_bin_dir_for_home() {
 
     case "$bin_dir" in
         */.local/bin) hinted_home="${bin_dir%/.local/bin}" ;;
-        */.acfs/bin) hinted_home="${bin_dir%/.acfs/bin}" ;;
+        */.gtbi/bin) hinted_home="${bin_dir%/.gtbi/bin}" ;;
         */.bun/bin) hinted_home="${bin_dir%/.bun/bin}" ;;
         */.cargo/bin) hinted_home="${bin_dir%/.cargo/bin}" ;;
         */.atuin/bin) hinted_home="${bin_dir%/.atuin/bin}" ;;
@@ -358,13 +358,13 @@ ensure_path() {
     local sanitized_primary_bin=""
     local _primary_bin=""
 
-    sanitized_primary_bin="$(update_validate_bin_dir_for_home "${ACFS_BIN_DIR:-}" "${HOME:-}" 2>/dev/null || true)"
+    sanitized_primary_bin="$(update_validate_bin_dir_for_home "${GTBI_BIN_DIR:-}" "${HOME:-}" 2>/dev/null || true)"
     _primary_bin="${sanitized_primary_bin:-$HOME/.local/bin}"
 
     for dir in \
         "$_primary_bin" \
         "$HOME/.local/bin" \
-        "$HOME/.acfs/bin" \
+        "$HOME/.gtbi/bin" \
         "$HOME/.bun/bin" \
         "$HOME/.cargo/bin" \
         "$HOME/.atuin/bin" \
@@ -409,7 +409,7 @@ update_clear_stack_agent_mail_helpers() {
 }
 
 update_source_stack_lib() {
-    local runtime_acfs_home=""
+    local runtime_gtbi_home=""
     local candidate=""
     local -a candidates=()
 
@@ -417,13 +417,13 @@ update_source_stack_lib() {
         return 0
     fi
 
-    runtime_acfs_home="$(update_runtime_acfs_home 2>/dev/null || true)"
+    runtime_gtbi_home="$(update_runtime_gtbi_home 2>/dev/null || true)"
     candidates+=("$SCRIPT_DIR/stack.sh")
-    [[ -n "$runtime_acfs_home" ]] && candidates+=("$runtime_acfs_home/scripts/lib/stack.sh")
+    [[ -n "$runtime_gtbi_home" ]] && candidates+=("$runtime_gtbi_home/scripts/lib/stack.sh")
     candidates+=(
-        "$ACFS_REPO_ROOT/scripts/lib/stack.sh"
-        "/data/projects/agentic_coding_flywheel_setup/scripts/lib/stack.sh"
-        "/dp/agentic_coding_flywheel_setup/scripts/lib/stack.sh"
+        "$GTBI_REPO_ROOT/scripts/lib/stack.sh"
+        "/data/projects/gastown_batteries_included/scripts/lib/stack.sh"
+        "/dp/gastown_batteries_included/scripts/lib/stack.sh"
     )
 
     for candidate in "${candidates[@]}"; do
@@ -453,35 +453,35 @@ update_preferred_user_bin_dir() {
     local target_home=""
     local current_user=""
     local current_state_file=""
-    local acfs_home_state_file=""
+    local gtbi_home_state_file=""
     local target_state_file=""
     local explicit_bin_dir=""
     local explicit_state_file=""
-    local sanitized_acfs_home=""
+    local sanitized_gtbi_home=""
 
     target_user="$(update_target_user)"
     target_home="$(update_target_home "$target_user" 2>/dev/null || true)"
-    explicit_bin_dir="$(update_validate_bin_dir_for_home "${ACFS_BIN_DIR:-}" "$target_home" 2>/dev/null || true)"
+    explicit_bin_dir="$(update_validate_bin_dir_for_home "${GTBI_BIN_DIR:-}" "$target_home" 2>/dev/null || true)"
     if [[ -n "$explicit_bin_dir" ]]; then
         printf '%s\n' "$explicit_bin_dir"
         return 0
     fi
 
     current_user="$(update_current_user)"
-    explicit_state_file="$(update_sanitize_abs_nonroot_path "${ACFS_STATE_FILE:-}" 2>/dev/null || true)"
-    sanitized_acfs_home="$(update_sanitize_abs_nonroot_path "${ACFS_HOME:-}" 2>/dev/null || true)"
-    [[ -n "$sanitized_acfs_home" ]] && acfs_home_state_file="$sanitized_acfs_home/state.json"
-    [[ -n "$target_home" ]] && target_state_file="$target_home/.acfs/state.json"
+    explicit_state_file="$(update_sanitize_abs_nonroot_path "${GTBI_STATE_FILE:-}" 2>/dev/null || true)"
+    sanitized_gtbi_home="$(update_sanitize_abs_nonroot_path "${GTBI_HOME:-}" 2>/dev/null || true)"
+    [[ -n "$sanitized_gtbi_home" ]] && gtbi_home_state_file="$sanitized_gtbi_home/state.json"
+    [[ -n "$target_home" ]] && target_state_file="$target_home/.gtbi/state.json"
     if [[ "$target_user" == "$current_user" ]] && [[ -n "${HOME:-}" ]] && [[ "${HOME}" == /* ]] && [[ "${HOME}" != "/" ]]; then
-        current_state_file="$HOME/.acfs/state.json"
+        current_state_file="$HOME/.gtbi/state.json"
     fi
 
     for state_file in \
         "$explicit_state_file" \
-        "$acfs_home_state_file" \
+        "$gtbi_home_state_file" \
         "$target_state_file" \
         "$current_state_file" \
-        "/var/lib/acfs/state.json"; do
+        "/var/lib/gtbi/state.json"; do
         [[ -n "$state_file" && -f "$state_file" ]] || continue
 
         bin_dir="$(update_read_state_string_from_file "$state_file" "bin_dir" 2>/dev/null || true)"
@@ -574,7 +574,7 @@ update_runtime_primary_bin_dir() {
     fi
     if [[ -z "$primary_bin" ]]; then
         runtime_home="$(update_existing_home "${HOME:-}" 2>/dev/null || true)"
-        primary_bin="$(update_validate_bin_dir_for_home "${ACFS_BIN_DIR:-}" "$runtime_home" 2>/dev/null || true)"
+        primary_bin="$(update_validate_bin_dir_for_home "${GTBI_BIN_DIR:-}" "$runtime_home" 2>/dev/null || true)"
     fi
     if [[ -z "$primary_bin" ]]; then
         runtime_home="$(update_existing_home "${HOME:-}" 2>/dev/null || true)"
@@ -588,13 +588,13 @@ update_runtime_primary_bin_dir() {
 }
 
 
-update_runtime_acfs_home() {
+update_runtime_gtbi_home() {
     local target_user_raw="${TARGET_USER:-}"
     local target_user=""
     local current_user=""
     local target_home=""
     local runtime_home=""
-    local explicit_acfs_home=""
+    local explicit_gtbi_home=""
 
     target_user="$(update_target_user 2>/dev/null || true)"
     current_user="$(update_current_user)"
@@ -603,12 +603,12 @@ update_runtime_acfs_home() {
     fi
 
     if [[ -n "$target_home" ]]; then
-        explicit_acfs_home="$(update_sanitize_abs_nonroot_path "${ACFS_HOME:-}" 2>/dev/null || true)"
-        if [[ "$explicit_acfs_home" == "$target_home/.acfs" ]]; then
-            printf '%s\n' "$explicit_acfs_home"
+        explicit_gtbi_home="$(update_sanitize_abs_nonroot_path "${GTBI_HOME:-}" 2>/dev/null || true)"
+        if [[ "$explicit_gtbi_home" == "$target_home/.gtbi" ]]; then
+            printf '%s\n' "$explicit_gtbi_home"
             return 0
         fi
-        printf '%s\n' "$target_home/.acfs"
+        printf '%s\n' "$target_home/.gtbi"
         return 0
     fi
 
@@ -622,13 +622,13 @@ update_runtime_acfs_home() {
     runtime_home="$(update_existing_home "${HOME:-}" 2>/dev/null || true)"
     [[ -n "$runtime_home" ]] || return 1
 
-    explicit_acfs_home="$(update_sanitize_abs_nonroot_path "${ACFS_HOME:-}" 2>/dev/null || true)"
-    if [[ "$explicit_acfs_home" == "$runtime_home/.acfs" ]]; then
-        printf '%s\n' "$explicit_acfs_home"
+    explicit_gtbi_home="$(update_sanitize_abs_nonroot_path "${GTBI_HOME:-}" 2>/dev/null || true)"
+    if [[ "$explicit_gtbi_home" == "$runtime_home/.gtbi" ]]; then
+        printf '%s\n' "$explicit_gtbi_home"
         return 0
     fi
 
-    printf '%s\n' "$runtime_home/.acfs"
+    printf '%s\n' "$runtime_home/.gtbi"
 }
 
 update_runtime_shell_home() {
@@ -771,7 +771,7 @@ update_ensure_gemini_patch_node() {
     update_has_nvm_node
 }
 
-is_expected_acfs_origin_url() {
+is_expected_gtbi_origin_url() {
     local url="$1"
     local normalized="$url"
     normalized="${normalized%/}"
@@ -794,7 +794,7 @@ is_expected_acfs_origin_url() {
     normalized="${normalized%.git}"
     normalized="${normalized,,}"
 
-    local expected="${ACFS_REPO_OWNER}/${ACFS_REPO_NAME}"
+    local expected="${GTBI_REPO_OWNER}/${GTBI_REPO_NAME}"
     expected="${expected,,}"
     [[ "$normalized" == "$expected" ]]
 }
@@ -815,10 +815,10 @@ init_logging() {
     # Write log header
     {
         echo "==============================================="
-        echo "ACFS Update Log"
+        echo "GTBI Update Log"
         echo "Started: $(date -Iseconds)"
         echo "User: $(update_current_user 2>/dev/null || true)"
-        echo "Version: $ACFS_VERSION_DISPLAY"
+        echo "Version: $GTBI_VERSION_DISPLAY"
         echo "==============================================="
         echo ""
     } >> "$UPDATE_LOG_FILE"
@@ -1082,7 +1082,7 @@ log_item() {
 # Always returns 0 so callers can safely use this as the last statement of a
 # function under `set -euo pipefail`. The naive idiom
 # `[[ "$QUIET" != "true" ]] && printf …` propagates exit 1 when QUIET=true,
-# which killed acfs-nightly-update on any night a per-tool function actually
+# which killed gtbi-nightly-update on any night a per-tool function actually
 # upgraded a tool (issue #279).
 update_say() {
     if [[ "${QUIET:-false}" != "true" ]]; then
@@ -1270,7 +1270,7 @@ update_repair_zoxide_install() {
     primary_dir="$(update_preferred_user_bin_dir 2>/dev/null || true)"
     user_bin="$(update_default_user_bin_dir 2>/dev/null || true)"
 
-    # The upstream zoxide installer writes to ~/.local/bin by default. When ACFS
+    # The upstream zoxide installer writes to ~/.local/bin by default. When GTBI
     # uses a custom bin_dir that comes earlier in PATH, keep that shim pointed at
     # the freshly reinstalled binary so shells don't continue resolving a stale
     # copy from the custom directory.
@@ -1299,7 +1299,7 @@ update_repair_uv_install() {
     user_bin="$(update_default_user_bin_dir 2>/dev/null || true)"
 
     # The official uv installer writes uv/uvx to ~/.local/bin by default.
-    # If ACFS has a custom bin_dir earlier in PATH, keep that directory pointed
+    # If GTBI has a custom bin_dir earlier in PATH, keep that directory pointed
     # at the freshly installed target-user binaries.
     if [[ -n "$primary_dir" && -n "$user_bin" && "$primary_dir" != "$user_bin" ]]; then
         local preferred_src=""
@@ -1406,7 +1406,7 @@ update_create_target_readable_temp_file() {
         return 1
     fi
 
-    candidate_dirs+=("${ACFS_UPDATE_TMPDIR:-}")
+    candidate_dirs+=("${GTBI_UPDATE_TMPDIR:-}")
     candidate_dirs+=("${TMPDIR:-}")
     candidate_dirs+=("/data/tmp" "/var/tmp" "/tmp")
 
@@ -1662,7 +1662,7 @@ update_is_transient_failure_output() {
 }
 
 update_retry_max_attempts() {
-    local raw="${ACFS_UPDATE_RETRY_MAX_ATTEMPTS:-3}"
+    local raw="${GTBI_UPDATE_RETRY_MAX_ATTEMPTS:-3}"
 
     if [[ -z "$raw" || ! "$raw" =~ ^[0-9]+$ ]]; then
         printf '3\n'
@@ -1702,9 +1702,9 @@ update_retry_sleep_seconds() {
         fi
     fi
 
-    if [[ -n "${ACFS_UPDATE_RETRY_SLEEP_SECONDS:-}" ]]; then
-        if [[ "$ACFS_UPDATE_RETRY_SLEEP_SECONDS" =~ ^[0-9]+$ ]]; then
-            local raw_sleep="$ACFS_UPDATE_RETRY_SLEEP_SECONDS"
+    if [[ -n "${GTBI_UPDATE_RETRY_SLEEP_SECONDS:-}" ]]; then
+        if [[ "$GTBI_UPDATE_RETRY_SLEEP_SECONDS" =~ ^[0-9]+$ ]]; then
+            local raw_sleep="$GTBI_UPDATE_RETRY_SLEEP_SECONDS"
             while [[ "${#raw_sleep}" -gt 1 && "$raw_sleep" == 0* ]]; do
                 raw_sleep="${raw_sleep#0}"
             done
@@ -2160,7 +2160,7 @@ update_target_path() {
     local path_prefix=""
     local -a path_entries=()
 
-    configured_bin="$(update_validate_bin_dir_for_home "${ACFS_BIN_DIR:-}" "$target_home" 2>/dev/null || true)"
+    configured_bin="$(update_validate_bin_dir_for_home "${GTBI_BIN_DIR:-}" "$target_home" 2>/dev/null || true)"
     target_bin="${configured_bin:-$target_home/.local/bin}"
 
     [[ -n "$target_home" ]] || return 1
@@ -2173,7 +2173,7 @@ update_target_path() {
     for dir in \
         "$target_bin" \
         "$target_home/.local/bin" \
-        "$target_home/.acfs/bin" \
+        "$target_home/.gtbi/bin" \
         "$target_home/.bun/bin" \
         "$target_home/.cargo/bin" \
         "$target_home/.atuin/bin" \
@@ -2225,7 +2225,7 @@ update_binary_path() {
     [[ -n "$target_home" ]] || return 1
 
     primary_bin="$(update_preferred_user_bin_dir 2>/dev/null || true)"
-    configured_bin="$(update_validate_bin_dir_for_home "${ACFS_BIN_DIR:-}" "$target_home" 2>/dev/null || true)"
+    configured_bin="$(update_validate_bin_dir_for_home "${GTBI_BIN_DIR:-}" "$target_home" 2>/dev/null || true)"
     if [[ -z "$primary_bin" ]] || [[ "$primary_bin" != /* ]] || [[ "$primary_bin" == "/" ]]; then
         primary_bin="${configured_bin:-$target_home/.local/bin}"
     fi
@@ -2233,7 +2233,7 @@ update_binary_path() {
     for candidate in \
         "$primary_bin/$tool" \
         "$target_home/.local/bin/$tool" \
-        "$target_home/.acfs/bin/$tool" \
+        "$target_home/.gtbi/bin/$tool" \
         "$target_home/.bun/bin/$tool" \
         "$target_home/.cargo/bin/$tool" \
         "$target_home/.atuin/bin/$tool" \
@@ -2278,12 +2278,12 @@ update_run_in_target_context() {
         return 1
     }
 
-    local sanitized_acfs_home=""
+    local sanitized_gtbi_home=""
     local -a env_args=("UV_NO_CONFIG=1" "HOME=$target_home" "PATH=$target_path")
     [[ -n "$target_user" ]] && env_args+=("TARGET_USER=$target_user")
     [[ -n "$target_home" ]] && env_args+=("TARGET_HOME=$target_home")
-    sanitized_acfs_home="$(update_sanitize_abs_nonroot_path "${ACFS_HOME:-}" 2>/dev/null || true)"
-    [[ -n "$sanitized_acfs_home" ]] && env_args+=("ACFS_HOME=$sanitized_acfs_home")
+    sanitized_gtbi_home="$(update_sanitize_abs_nonroot_path "${GTBI_HOME:-}" 2>/dev/null || true)"
+    [[ -n "$sanitized_gtbi_home" ]] && env_args+=("GTBI_HOME=$sanitized_gtbi_home")
     [[ -n "$bash_env_assignment" ]] && env_args+=("$bash_env_assignment")
 
     local env_bin=""
@@ -2369,7 +2369,7 @@ cleanup_legacy_git_safety_guard() {
         local hooks_dir=""
         local legacy_file=""
 
-        for hooks_dir in "$runtime_home/.acfs/claude/hooks" "$runtime_home/.claude/hooks"; do
+        for hooks_dir in "$runtime_home/.gtbi/claude/hooks" "$runtime_home/.claude/hooks"; do
             for legacy_file in git_safety_guard.py git_safety_guard.sh; do
                 if [[ -f "$hooks_dir/$legacy_file" ]]; then
                     would_clean=true
@@ -2389,7 +2389,7 @@ cleanup_legacy_git_safety_guard() {
 
     local cleaned=false
     local hooks_dirs=(
-        "$runtime_home/.acfs/claude/hooks"
+        "$runtime_home/.gtbi/claude/hooks"
         "$runtime_home/.claude/hooks"
     )
     local legacy_files=(
@@ -2413,7 +2413,7 @@ cleanup_legacy_git_safety_guard() {
     done
 
     # Clean parent directories if empty
-    for parent in "$runtime_home/.acfs/claude" "$runtime_home/.claude"; do
+    for parent in "$runtime_home/.gtbi/claude" "$runtime_home/.claude"; do
         if [[ -d "$parent" ]] && [[ -z "$(ls -A "$parent" 2>/dev/null)" ]]; then
             rmdir "$parent" 2>/dev/null || true
             log_to_file "Removed empty directory: $parent"
@@ -2424,7 +2424,7 @@ cleanup_legacy_git_safety_guard() {
     local settings_file="$runtime_home/.claude/settings.json"
     if update_claude_settings_has_legacy_git_safety_guard_hook "$settings_file"; then
         local tmp_settings
-        tmp_settings=$(mktemp "${TMPDIR:-/tmp}/acfs_settings.XXXXXX" 2>/dev/null) || tmp_settings=""
+        tmp_settings=$(mktemp "${TMPDIR:-/tmp}/gtbi_settings.XXXXXX" 2>/dev/null) || tmp_settings=""
         if [[ -n "$tmp_settings" ]]; then
             if jq '
               def legacy_git_safety_guard_command:
@@ -2505,9 +2505,9 @@ cleanup_legacy_bv_alias() {
         return 0
     fi
 
-    # The bv() function in acfs.zshrc handles beads_viewer PATH resolution.
+    # The bv() function in gtbi.zshrc handles beads_viewer PATH resolution.
     # Any leftover "alias bv=" in .zshrc.local causes zsh parse errors
-    # ("defining function based on alias 'bv'") when acfs.zshrc tries to
+    # ("defining function based on alias 'bv'") when gtbi.zshrc tries to
     # define the bv() function after .zshrc.local has already created an alias.
     #
     # The alias was typically inside an if/elif/fi block like:
@@ -2540,39 +2540,39 @@ cleanup_legacy_bv_alias() {
     fi
 }
 
-# Fix stale aliases in deployed acfs.zshrc
+# Fix stale aliases in deployed gtbi.zshrc
 # Older versions aliased br='bun run dev', which shadows beads_rust (br).
 cleanup_legacy_br_alias() {
     local runtime_home=""
     runtime_home="$(update_runtime_shell_home 2>/dev/null || true)"
     [[ -n "$runtime_home" ]] || return 0
-    local deployed="$runtime_home/.acfs/zsh/acfs.zshrc"
+    local deployed="$runtime_home/.gtbi/zsh/gtbi.zshrc"
     [[ -f "$deployed" ]] || return 0
 
     if update_is_read_only_mode; then
         if grep -q "^alias br='bun run dev'" "$deployed" 2>/dev/null; then
-            log_item "skip" "legacy cleanup" "dry-run: would fix br alias conflict in deployed acfs.zshrc"
+            log_item "skip" "legacy cleanup" "dry-run: would fix br alias conflict in deployed gtbi.zshrc"
         fi
         return 0
     fi
 
     # Check for the exact problematic alias (uncommented)
     if grep -q "^alias br='bun run dev'" "$deployed" 2>/dev/null; then
-        # Comment out the old alias (sync_acfs_zshrc will deploy the correct version later;
+        # Comment out the old alias (sync_gtbi_zshrc will deploy the correct version later;
         # this sed is a safety net for when the repo isn't available)
         sed -i "s|^alias br='bun run dev'|# alias br='bun run dev'  # disabled - conflicts with beads_rust (br)|" "$deployed"
-        log_item "ok" "legacy cleanup" "fixed br alias conflict in deployed acfs.zshrc"
+        log_item "ok" "legacy cleanup" "fixed br alias conflict in deployed gtbi.zshrc"
         log_to_file "Commented out alias br='bun run dev' in $deployed"
     fi
 }
 
-# Re-deploy acfs.zshrc from repo to ~/.acfs/ if repo copy is newer
-sync_acfs_zshrc() {
-    local repo_zshrc="$ACFS_REPO_ROOT/acfs/zsh/acfs.zshrc"
+# Re-deploy gtbi.zshrc from repo to ~/.gtbi/ if repo copy is newer
+sync_gtbi_zshrc() {
+    local repo_zshrc="$GTBI_REPO_ROOT/gtbi/zsh/gtbi.zshrc"
     local runtime_home=""
     runtime_home="$(update_runtime_shell_home 2>/dev/null || true)"
     [[ -n "$runtime_home" ]] || return 0
-    local deployed_zshrc="$runtime_home/.acfs/zsh/acfs.zshrc"
+    local deployed_zshrc="$runtime_home/.gtbi/zsh/gtbi.zshrc"
 
     [[ -f "$repo_zshrc" ]] || return 0
 
@@ -2582,27 +2582,27 @@ sync_acfs_zshrc() {
     fi
 
     if [[ "$DRY_RUN" == "true" ]]; then
-        log_item "ok" "acfs.zshrc" "would sync from repo (changed)"
+        log_item "ok" "gtbi.zshrc" "would sync from repo (changed)"
         return 0
     fi
 
     mkdir -p "$(dirname "$deployed_zshrc")"
     cp "$repo_zshrc" "$deployed_zshrc"
-    log_item "ok" "acfs.zshrc" "synced from repo"
+    log_item "ok" "gtbi.zshrc" "synced from repo"
     log_to_file "Deployed $repo_zshrc -> $deployed_zshrc"
 }
 
-sync_acfs_zsh_loader() {
+sync_gtbi_zsh_loader() {
     local runtime_home=""
     runtime_home="$(update_runtime_shell_home 2>/dev/null || true)"
     [[ -n "$runtime_home" ]] || return 0
     local user_zshrc="$runtime_home/.zshrc"
-    local acfs_loader_source='source "$HOME/.acfs/zsh/acfs.zshrc"'
+    local gtbi_loader_source='source "$HOME/.gtbi/zsh/gtbi.zshrc"'
     local stale_local_source='[ -f "$HOME/.zshrc.local" ] && source "$HOME/.zshrc.local"'
 
     [[ -f "$user_zshrc" ]] || return 0
 
-    if ! _update_file_has_active_exact_line "$user_zshrc" "$acfs_loader_source"; then
+    if ! _update_file_has_active_exact_line "$user_zshrc" "$gtbi_loader_source"; then
         return 0
     fi
 
@@ -2611,12 +2611,12 @@ sync_acfs_zsh_loader() {
     fi
 
     if [[ "$DRY_RUN" == "true" ]]; then
-        log_item "ok" "acfs.zsh loader" "would remove duplicate ~/.zshrc.local sourcing from ~/.zshrc"
+        log_item "ok" "gtbi.zsh loader" "would remove duplicate ~/.zshrc.local sourcing from ~/.zshrc"
         return 0
     fi
 
     sed -i '\|^[[:space:]]*\[ -f "\$HOME/\.zshrc\.local" \] && source "\$HOME/\.zshrc\.local"[[:space:]]*$|d' "$user_zshrc"
-    log_item "ok" "acfs.zsh loader" "removed duplicate ~/.zshrc.local sourcing from ~/.zshrc"
+    log_item "ok" "gtbi.zsh loader" "removed duplicate ~/.zshrc.local sourcing from ~/.zshrc"
     log_to_file "Removed duplicate .zshrc.local sourcing from $user_zshrc"
 }
 
@@ -2656,7 +2656,7 @@ _update_sed_literal() {
     printf '%s' "$1" | sed 's/[][\\.^$*|]/\\&/g'
 }
 
-sync_acfs_profile_paths() {
+sync_gtbi_profile_paths() {
     local runtime_home=""
     runtime_home="$(update_runtime_shell_home 2>/dev/null || true)"
     [[ -n "$runtime_home" ]] || return 0
@@ -2667,7 +2667,7 @@ sync_acfs_profile_paths() {
 
     if [[ ! -f "$user_profile" ]]; then
         if [[ "$DRY_RUN" == "true" ]]; then
-            log_item "ok" "acfs.profile" "would create login PATH including ~/.atuin/bin"
+            log_item "ok" "gtbi.profile" "would create login PATH including ~/.atuin/bin"
             return 0
         fi
 
@@ -2677,21 +2677,21 @@ sync_acfs_profile_paths() {
             printf '# User binary paths\n'
             printf '%s\n' "$current_path_line"
         } > "$user_profile"
-        log_item "ok" "acfs.profile" "created login PATH including ~/.atuin/bin"
-        log_to_file "Created ACFS-managed PATH line in $user_profile"
+        log_item "ok" "gtbi.profile" "created login PATH including ~/.atuin/bin"
+        log_to_file "Created GTBI-managed PATH line in $user_profile"
         return 0
     fi
 
     if grep -Fxq "$legacy_path_line" "$user_profile" 2>/dev/null; then
         if [[ "$DRY_RUN" == "true" ]]; then
-            log_item "ok" "acfs.profile" "would update login PATH to include ~/.atuin/bin"
+            log_item "ok" "gtbi.profile" "would update login PATH to include ~/.atuin/bin"
             return 0
         fi
 
         escaped_legacy_path_line="$(_update_sed_literal "$legacy_path_line")"
         sed -i "s|^$escaped_legacy_path_line$|$current_path_line|" "$user_profile"
-        log_item "ok" "acfs.profile" "updated login PATH to include ~/.atuin/bin"
-        log_to_file "Updated ACFS-managed PATH line in $user_profile"
+        log_item "ok" "gtbi.profile" "updated login PATH to include ~/.atuin/bin"
+        log_to_file "Updated GTBI-managed PATH line in $user_profile"
         return 0
     fi
 
@@ -2701,20 +2701,20 @@ sync_acfs_profile_paths() {
     fi
 
     if [[ "$DRY_RUN" == "true" ]]; then
-        log_item "ok" "acfs.profile" "would add login PATH including ~/.atuin/bin"
+        log_item "ok" "gtbi.profile" "would add login PATH including ~/.atuin/bin"
         return 0
     fi
 
     {
         printf '\n'
-        printf '# Added by ACFS - user binary paths\n'
+        printf '# Added by GTBI - user binary paths\n'
         printf '%s\n' "$current_path_line"
     } >> "$user_profile"
-    log_item "ok" "acfs.profile" "added login PATH including ~/.atuin/bin"
-    log_to_file "Added ACFS-managed PATH line to $user_profile"
+    log_item "ok" "gtbi.profile" "added login PATH including ~/.atuin/bin"
+    log_to_file "Added GTBI-managed PATH line to $user_profile"
 }
 
-sync_acfs_zprofile_paths() {
+sync_gtbi_zprofile_paths() {
     local runtime_home=""
     runtime_home="$(update_runtime_shell_home 2>/dev/null || true)"
     [[ -n "$runtime_home" ]] || return 0
@@ -2725,7 +2725,7 @@ sync_acfs_zprofile_paths() {
 
     if [[ ! -f "$user_zprofile" ]]; then
         if [[ "$DRY_RUN" == "true" ]]; then
-            log_item "ok" "acfs.zprofile" "would create login PATH including ~/.atuin/bin"
+            log_item "ok" "gtbi.zprofile" "would create login PATH including ~/.atuin/bin"
             return 0
         fi
 
@@ -2735,21 +2735,21 @@ sync_acfs_zprofile_paths() {
             printf '# User binary paths\n'
             printf '%s\n' "$current_path_line"
         } > "$user_zprofile"
-        log_item "ok" "acfs.zprofile" "created login PATH including ~/.atuin/bin"
-        log_to_file "Created ACFS-managed PATH line in $user_zprofile"
+        log_item "ok" "gtbi.zprofile" "created login PATH including ~/.atuin/bin"
+        log_to_file "Created GTBI-managed PATH line in $user_zprofile"
         return 0
     fi
 
     if grep -Fxq "$legacy_path_line" "$user_zprofile" 2>/dev/null; then
         if [[ "$DRY_RUN" == "true" ]]; then
-            log_item "ok" "acfs.zprofile" "would update login PATH to include ~/.atuin/bin"
+            log_item "ok" "gtbi.zprofile" "would update login PATH to include ~/.atuin/bin"
             return 0
         fi
 
         escaped_legacy_path_line="$(_update_sed_literal "$legacy_path_line")"
         sed -i "s|^$escaped_legacy_path_line$|$current_path_line|" "$user_zprofile"
-        log_item "ok" "acfs.zprofile" "updated login PATH to include ~/.atuin/bin"
-        log_to_file "Updated ACFS-managed PATH line in $user_zprofile"
+        log_item "ok" "gtbi.zprofile" "updated login PATH to include ~/.atuin/bin"
+        log_to_file "Updated GTBI-managed PATH line in $user_zprofile"
         return 0
     fi
 
@@ -2759,38 +2759,38 @@ sync_acfs_zprofile_paths() {
     fi
 
     if [[ "$DRY_RUN" == "true" ]]; then
-        log_item "ok" "acfs.zprofile" "would add login PATH including ~/.atuin/bin"
+        log_item "ok" "gtbi.zprofile" "would add login PATH including ~/.atuin/bin"
         return 0
     fi
 
     {
         printf '\n'
-        printf '# Added by ACFS - user binary paths\n'
+        printf '# Added by GTBI - user binary paths\n'
         printf '%s\n' "$current_path_line"
     } >> "$user_zprofile"
-    log_item "ok" "acfs.zprofile" "added login PATH including ~/.atuin/bin"
-    log_to_file "Added ACFS-managed PATH line to $user_zprofile"
+    log_item "ok" "gtbi.zprofile" "added login PATH including ~/.atuin/bin"
+    log_to_file "Added GTBI-managed PATH line to $user_zprofile"
 }
 
-# Sync critical scripts from the git repo to ~/.acfs/ so that subsequent
-# runs of 'acfs update' (invoked from ~/.acfs/scripts/lib/update.sh) use
+# Sync critical scripts from the git repo to ~/.gtbi/ so that subsequent
+# runs of 'gtbi update' (invoked from ~/.gtbi/scripts/lib/update.sh) use
 # the latest code.  Without this, fleet machines that run from the
-# tarball-installed ~/.acfs/ never pick up fixes to update.sh, security.sh,
+# tarball-installed ~/.gtbi/ never pick up fixes to update.sh, security.sh,
 # or checksums.yaml — the self-update pulls into the git repo but the
-# deployed copies at ~/.acfs/ remain stale.
-sync_acfs_deployed() {
+# deployed copies at ~/.gtbi/ remain stale.
+sync_gtbi_deployed() {
     local source_ref="${1:-}"
-    local acfs_home=""
-    acfs_home="$(update_runtime_acfs_home 2>/dev/null || true)"
-    [[ -n "$acfs_home" ]] || return 0
+    local gtbi_home=""
+    gtbi_home="$(update_runtime_gtbi_home 2>/dev/null || true)"
+    [[ -n "$gtbi_home" ]] || return 0
 
-    # Only sync when the repo is a different directory from ~/.acfs
+    # Only sync when the repo is a different directory from ~/.gtbi
     local resolved_repo resolved_home
-    resolved_repo="$(realpath "$ACFS_REPO_ROOT" 2>/dev/null || printf '%s\n' "$ACFS_REPO_ROOT")"
-    resolved_home="$(realpath "$acfs_home" 2>/dev/null || printf '%s\n' "$acfs_home")"
+    resolved_repo="$(realpath "$GTBI_REPO_ROOT" 2>/dev/null || printf '%s\n' "$GTBI_REPO_ROOT")"
+    resolved_home="$(realpath "$gtbi_home" 2>/dev/null || printf '%s\n' "$gtbi_home")"
     [[ "$resolved_repo" != "$resolved_home" ]] || return 0
 
-    _acfs_deployed_path_is_git_tracked() {
+    _gtbi_deployed_path_is_git_tracked() {
         local deployed_root="$1"
         local deployed_rel="$2"
 
@@ -2798,24 +2798,24 @@ sync_acfs_deployed() {
         git -C "$deployed_root" ls-files --error-unmatch -- "$deployed_rel" >/dev/null 2>&1
     }
 
-    _acfs_deployed_source_mode() {
+    _gtbi_deployed_source_mode() {
         local repo_rel="$1"
 
         [[ -n "$source_ref" ]] || return 0
-        git -C "$ACFS_REPO_ROOT" ls-tree "$source_ref" -- "$repo_rel" 2>/dev/null | awk 'NR == 1 { print $1 }'
+        git -C "$GTBI_REPO_ROOT" ls-tree "$source_ref" -- "$repo_rel" 2>/dev/null | awk 'NR == 1 { print $1 }'
     }
 
-    _acfs_deployed_target_mode_override() {
+    _gtbi_deployed_target_mode_override() {
         local deployed_rel="$1"
 
         case "$deployed_rel" in
-            bin/acfs|bin/acfs-update|bin/flywheel-update-agents-md|onboard/onboard.sh|scripts/generated/*.sh|scripts/lib/*.sh|scripts/nightly-update.sh|scripts/services-setup.sh)
+            bin/gtbi|bin/gtbi-update|bin/flywheel-update-agents-md|onboard/onboard.sh|scripts/generated/*.sh|scripts/lib/*.sh|scripts/nightly-update.sh|scripts/services-setup.sh)
                 printf '%s\n' "755"
                 ;;
         esac
     }
 
-    _acfs_deployed_target_mode_is_healthy() {
+    _gtbi_deployed_target_mode_is_healthy() {
         local deployed_file="$1"
         local target_mode="${2:-}"
 
@@ -2826,38 +2826,38 @@ sync_acfs_deployed() {
     }
 
     local synced=0
-    _acfs_sync_deployed_file() {
+    _gtbi_sync_deployed_file() {
         local repo_rel="$1"
         local deployed_rel="$2"
-        local deployed_file="$acfs_home/$deployed_rel"
+        local deployed_file="$gtbi_home/$deployed_rel"
         local source_file=""
         local source_tmp=""
         local source_label="$repo_rel"
         local source_mode=""
         local target_mode_override=""
 
-        if _acfs_deployed_path_is_git_tracked "$acfs_home" "$deployed_rel"; then
+        if _gtbi_deployed_path_is_git_tracked "$gtbi_home" "$deployed_rel"; then
             log_to_file "Skipped syncing $source_label -> $deployed_file (target is git-managed)"
             return 0
         fi
 
         if [[ -n "$source_ref" ]]; then
-            source_tmp="$(mktemp "${TMPDIR:-/tmp}/acfs-deploy-sync.XXXXXX" 2>/dev/null)" || return 0
-            if ! git -C "$ACFS_REPO_ROOT" show "${source_ref}:${repo_rel}" > "$source_tmp" 2>/dev/null; then
+            source_tmp="$(mktemp "${TMPDIR:-/tmp}/gtbi-deploy-sync.XXXXXX" 2>/dev/null)" || return 0
+            if ! git -C "$GTBI_REPO_ROOT" show "${source_ref}:${repo_rel}" > "$source_tmp" 2>/dev/null; then
                 rm -f "$source_tmp" 2>/dev/null || true
                 return 0
             fi
             source_file="$source_tmp"
             source_label="${source_ref}:${repo_rel}"
-            source_mode="$(_acfs_deployed_source_mode "$repo_rel")"
+            source_mode="$(_gtbi_deployed_source_mode "$repo_rel")"
         else
-            source_file="$ACFS_REPO_ROOT/$repo_rel"
+            source_file="$GTBI_REPO_ROOT/$repo_rel"
             [[ -f "$source_file" ]] || return 0
         fi
-        target_mode_override="$(_acfs_deployed_target_mode_override "$deployed_rel")"
+        target_mode_override="$(_gtbi_deployed_target_mode_override "$deployed_rel")"
 
         # Skip only when content and required deployed mode are both healthy.
-        if [[ -f "$deployed_file" ]] && cmp -s "$source_file" "$deployed_file" && _acfs_deployed_target_mode_is_healthy "$deployed_file" "$target_mode_override"; then
+        if [[ -f "$deployed_file" ]] && cmp -s "$source_file" "$deployed_file" && _gtbi_deployed_target_mode_is_healthy "$deployed_file" "$target_mode_override"; then
             if [[ -n "$source_tmp" ]]; then
                 rm -f "$source_tmp" 2>/dev/null || true
             fi
@@ -2895,11 +2895,11 @@ sync_acfs_deployed() {
 
     local -a file_pairs=(
         # repo-relative-path : deployed-relative-path
-        "acfs/tmux/tmux.conf:tmux/tmux.conf"
+        "gtbi/tmux/tmux.conf:tmux/tmux.conf"
         "packages/onboard/onboard.sh:onboard/onboard.sh"
         "scripts/lib/doctor.sh:scripts/lib/doctor.sh"
-        "scripts/lib/doctor.sh:bin/acfs"
-        "scripts/acfs-update:bin/acfs-update"
+        "scripts/lib/doctor.sh:bin/gtbi"
+        "scripts/gtbi-update:bin/gtbi-update"
         "scripts/generate-root-agents-md.sh:bin/flywheel-update-agents-md"
         "scripts/services-setup.sh:scripts/services-setup.sh"
         "scripts/lib/info.sh:scripts/lib/info.sh"
@@ -2960,18 +2960,18 @@ sync_acfs_deployed() {
         "scripts/lib/newproj_screens/screen_success.sh:scripts/lib/newproj_screens/screen_success.sh"
         "scripts/lib/newproj_screens/screen_tech_stack.sh:scripts/lib/newproj_screens/screen_tech_stack.sh"
         "scripts/lib/newproj_screens/screen_welcome.sh:scripts/lib/newproj_screens/screen_welcome.sh"
-        "scripts/templates/acfs-nightly-update.service:scripts/templates/acfs-nightly-update.service"
-        "scripts/templates/acfs-nightly-update.timer:scripts/templates/acfs-nightly-update.timer"
+        "scripts/templates/gtbi-nightly-update.service:scripts/templates/gtbi-nightly-update.service"
+        "scripts/templates/gtbi-nightly-update.timer:scripts/templates/gtbi-nightly-update.timer"
         "checksums.yaml:checksums.yaml"
-        "acfs/zsh/acfs.zshrc:zsh/acfs.zshrc"
-        "acfs/zsh/p10k.zsh:zsh/p10k.zsh"
+        "gtbi/zsh/gtbi.zshrc:zsh/gtbi.zshrc"
+        "gtbi/zsh/p10k.zsh:zsh/p10k.zsh"
         "VERSION:VERSION"
     )
 
     for pair in "${file_pairs[@]}"; do
         local repo_rel="${pair%%:*}"
         local deployed_rel="${pair##*:}"
-        _acfs_sync_deployed_file "$repo_rel" "$deployed_rel"
+        _gtbi_sync_deployed_file "$repo_rel" "$deployed_rel"
     done
 
     local generated_script=""
@@ -2980,13 +2980,13 @@ sync_acfs_deployed() {
         while IFS= read -r generated_script; do
             [[ "$generated_script" == scripts/generated/*.sh ]] || continue
             generated_name="$(basename "$generated_script")"
-            _acfs_sync_deployed_file "$generated_script" "scripts/generated/$generated_name"
-        done < <(git -C "$ACFS_REPO_ROOT" ls-tree -r --name-only "$source_ref" -- scripts/generated 2>/dev/null || true)
+            _gtbi_sync_deployed_file "$generated_script" "scripts/generated/$generated_name"
+        done < <(git -C "$GTBI_REPO_ROOT" ls-tree -r --name-only "$source_ref" -- scripts/generated 2>/dev/null || true)
     else
-        for generated_script in "$ACFS_REPO_ROOT/scripts/generated/"*.sh; do
+        for generated_script in "$GTBI_REPO_ROOT/scripts/generated/"*.sh; do
             [[ -f "$generated_script" ]] || continue
             generated_name="$(basename "$generated_script")"
-            _acfs_sync_deployed_file "scripts/generated/$generated_name" "scripts/generated/$generated_name"
+            _gtbi_sync_deployed_file "scripts/generated/$generated_name" "scripts/generated/$generated_name"
         done
     fi
 
@@ -2994,39 +2994,39 @@ sync_acfs_deployed() {
     local lesson_name=""
     if [[ -n "$source_ref" ]]; then
         while IFS= read -r lesson_file; do
-            [[ "$lesson_file" == acfs/onboard/lessons/*.md ]] || continue
+            [[ "$lesson_file" == gtbi/onboard/lessons/*.md ]] || continue
             lesson_name="$(basename "$lesson_file")"
-            _acfs_sync_deployed_file "$lesson_file" "onboard/lessons/$lesson_name"
-        done < <(git -C "$ACFS_REPO_ROOT" ls-tree -r --name-only "$source_ref" -- acfs/onboard/lessons 2>/dev/null || true)
+            _gtbi_sync_deployed_file "$lesson_file" "onboard/lessons/$lesson_name"
+        done < <(git -C "$GTBI_REPO_ROOT" ls-tree -r --name-only "$source_ref" -- gtbi/onboard/lessons 2>/dev/null || true)
     else
-        for lesson_file in "$ACFS_REPO_ROOT/acfs/onboard/lessons/"*.md; do
+        for lesson_file in "$GTBI_REPO_ROOT/gtbi/onboard/lessons/"*.md; do
             [[ -f "$lesson_file" ]] || continue
             lesson_name="$(basename "$lesson_file")"
-            _acfs_sync_deployed_file "acfs/onboard/lessons/$lesson_name" "onboard/lessons/$lesson_name"
+            _gtbi_sync_deployed_file "gtbi/onboard/lessons/$lesson_name" "onboard/lessons/$lesson_name"
         done
     fi
 
     if [[ $synced -gt 0 ]]; then
         if [[ -n "$source_ref" ]]; then
-            log_to_file "Synced $synced file(s) from $source_ref to $acfs_home"
+            log_to_file "Synced $synced file(s) from $source_ref to $gtbi_home"
         else
-            log_to_file "Synced $synced file(s) from repo to $acfs_home"
+            log_to_file "Synced $synced file(s) from repo to $gtbi_home"
         fi
     fi
 }
 
-sync_acfs_global_wrapper() {
+sync_gtbi_global_wrapper() {
     local source_ref="${1:-}"
-    local deployed_file="${2:-/usr/local/bin/acfs}"
-    local repo_rel="scripts/acfs-global"
-    local source_file="$ACFS_REPO_ROOT/$repo_rel"
+    local deployed_file="${2:-/usr/local/bin/gtbi}"
+    local repo_rel="scripts/gtbi-global"
+    local source_file="$GTBI_REPO_ROOT/$repo_rel"
     local source_tmp=""
     local source_label="$repo_rel"
     local install_cmd=()
 
     if [[ -n "$source_ref" ]]; then
-        source_tmp="$(mktemp "${TMPDIR:-/tmp}/acfs-global-sync.XXXXXX" 2>/dev/null)" || return 0
-        if ! git -C "$ACFS_REPO_ROOT" show "${source_ref}:$repo_rel" > "$source_tmp" 2>/dev/null; then
+        source_tmp="$(mktemp "${TMPDIR:-/tmp}/gtbi-global-sync.XXXXXX" 2>/dev/null)" || return 0
+        if ! git -C "$GTBI_REPO_ROOT" show "${source_ref}:$repo_rel" > "$source_tmp" 2>/dev/null; then
             rm -f "$source_tmp" 2>/dev/null || true
             return 0
         fi
@@ -3079,21 +3079,21 @@ sync_acfs_global_wrapper() {
     return 0
 }
 
-sync_acfs_global_command_links() {
-    local acfs_home=""
-    local global_bin_dir="${ACFS_GLOBAL_BIN_DIR:-/usr/local/bin}"
+sync_gtbi_global_command_links() {
+    local gtbi_home=""
+    local global_bin_dir="${GTBI_GLOBAL_BIN_DIR:-/usr/local/bin}"
     local spec=""
     local source_path=""
     local dest_path=""
     local sudo_bin=""
 
-    acfs_home="$(update_runtime_acfs_home 2>/dev/null || true)"
-    [[ -n "$acfs_home" ]] || return 0
+    gtbi_home="$(update_runtime_gtbi_home 2>/dev/null || true)"
+    [[ -n "$gtbi_home" ]] || return 0
     [[ -n "$global_bin_dir" && "$global_bin_dir" == /* && "$global_bin_dir" != "/" ]] || return 0
 
     for spec in \
-        "$acfs_home/bin/acfs-update:$global_bin_dir/acfs-update" \
-        "$acfs_home/onboard/onboard.sh:$global_bin_dir/onboard"
+        "$gtbi_home/bin/gtbi-update:$global_bin_dir/gtbi-update" \
+        "$gtbi_home/onboard/onboard.sh:$global_bin_dir/onboard"
     do
         source_path="${spec%%:*}"
         dest_path="${spec#*:}"
@@ -3139,23 +3139,23 @@ sync_acfs_global_command_links() {
 # Checksums Refresh (Auto-update from GitHub)
 # ============================================================
 
-CHECKSUMS_LOCAL="${ACFS_HOME:-$HOME/.acfs}/checksums.yaml"
+CHECKSUMS_LOCAL="${GTBI_HOME:-$HOME/.gtbi}/checksums.yaml"
 
 update_resolve_checksums_file() {
     local installed_checksums=""
     local repo_checksums=""
-    local default_acfs_home=""
-    default_acfs_home="$(update_runtime_acfs_home 2>/dev/null || true)"
-    [[ -n "$default_acfs_home" ]] && installed_checksums="$default_acfs_home/checksums.yaml"
+    local default_gtbi_home=""
+    default_gtbi_home="$(update_runtime_gtbi_home 2>/dev/null || true)"
+    [[ -n "$default_gtbi_home" ]] && installed_checksums="$default_gtbi_home/checksums.yaml"
 
-    if [[ -n "${ACFS_REPO_ROOT:-}" ]] && [[ -r "${ACFS_REPO_ROOT}/checksums.yaml" ]]; then
-        repo_checksums="${ACFS_REPO_ROOT}/checksums.yaml"
+    if [[ -n "${GTBI_REPO_ROOT:-}" ]] && [[ -r "${GTBI_REPO_ROOT}/checksums.yaml" ]]; then
+        repo_checksums="${GTBI_REPO_ROOT}/checksums.yaml"
     fi
 
     # When running update.sh from a repo checkout, prefer the repo's committed
-    # checksums over any installed ~/.acfs cache so local development does not
-    # inherit stale metadata from an older ACFS install.
-    if [[ -n "$repo_checksums" ]] && [[ "${ACFS_REPO_ROOT}" != "$default_acfs_home" ]]; then
+    # checksums over any installed ~/.gtbi cache so local development does not
+    # inherit stale metadata from an older GTBI install.
+    if [[ -n "$repo_checksums" ]] && [[ "${GTBI_REPO_ROOT}" != "$default_gtbi_home" ]]; then
         printf '%s\n' "$repo_checksums"
         return 0
     fi
@@ -3347,11 +3347,11 @@ update_checksums_file_has_required_metadata() {
 
 # Refresh checksums.yaml from GitHub before verifying installers
 # This ensures we always have the latest checksums without requiring
-# a full ACFS re-install.
+# a full GTBI re-install.
 refresh_checksums() {
     local quiet="${1:-false}"
     local checksums_local=""
-    local checksums_ref="${ACFS_CHECKSUMS_REF:-main}"
+    local checksums_ref="${GTBI_CHECKSUMS_REF:-main}"
     local date_bin=""
     local mkdir_bin=""
     local mktemp_bin=""
@@ -3359,7 +3359,7 @@ refresh_checksums() {
     local chmod_bin=""
     local rm_bin=""
     local cache_buster=""
-    local api_url="https://api.github.com/repos/${ACFS_REPO_OWNER}/${ACFS_REPO_NAME}/contents/checksums.yaml?ref=${checksums_ref}"
+    local api_url="https://api.github.com/repos/${GTBI_REPO_OWNER}/${GTBI_REPO_NAME}/contents/checksums.yaml?ref=${checksums_ref}"
     local raw_url=""
     local fetched_source=""
     local fetched_valid=false
@@ -3382,11 +3382,11 @@ refresh_checksums() {
     else
         cache_buster="0"
     fi
-    raw_url="https://raw.githubusercontent.com/${ACFS_REPO_OWNER}/${ACFS_REPO_NAME}/${checksums_ref}/checksums.yaml?cb=${cache_buster}"
+    raw_url="https://raw.githubusercontent.com/${GTBI_REPO_OWNER}/${GTBI_REPO_NAME}/${checksums_ref}/checksums.yaml?cb=${cache_buster}"
 
-    checksums_local="$(update_runtime_acfs_home 2>/dev/null || true)"
+    checksums_local="$(update_runtime_gtbi_home 2>/dev/null || true)"
     if [[ -z "$checksums_local" ]]; then
-        log_to_file "Checksums refresh skipped: unable to resolve runtime ACFS home"
+        log_to_file "Checksums refresh skipped: unable to resolve runtime GTBI home"
         return 1
     fi
     checksums_local="$checksums_local/checksums.yaml"
@@ -3400,7 +3400,7 @@ refresh_checksums() {
 
     # Download with timeout and retry
     local tmp_checksums
-    tmp_checksums=$("$mktemp_bin" "${TMPDIR:-/tmp}/acfs-checksums.XXXXXX" 2>/dev/null || true)
+    tmp_checksums=$("$mktemp_bin" "${TMPDIR:-/tmp}/gtbi-checksums.XXXXXX" 2>/dev/null || true)
     if [[ -z "$tmp_checksums" ]]; then
         [[ "$quiet" != "true" ]] && log_item "warn" "checksums refresh" "failed to create temp file, using cached"
         log_to_file "Checksums refresh failed: mktemp failed"
@@ -3471,14 +3471,14 @@ update_require_security() {
     local security_script=""
     local candidate=""
     local primary_bin=""
-    local runtime_acfs_home=""
+    local runtime_gtbi_home=""
     primary_bin="$(update_runtime_primary_bin_dir 2>/dev/null || true)"
-    runtime_acfs_home="$(update_runtime_acfs_home 2>/dev/null || true)"
+    runtime_gtbi_home="$(update_runtime_gtbi_home 2>/dev/null || true)"
     local -a security_candidates=()
     [[ -n "$primary_bin" ]] && security_candidates+=("$primary_bin/security.sh")
-    [[ -n "$runtime_acfs_home" ]] && security_candidates+=("$runtime_acfs_home/scripts/lib/security.sh")
-    if [[ -n "${ACFS_REPO_ROOT:-}" ]]; then
-        security_candidates+=("${ACFS_REPO_ROOT}/scripts/lib/security.sh")
+    [[ -n "$runtime_gtbi_home" ]] && security_candidates+=("$runtime_gtbi_home/scripts/lib/security.sh")
+    if [[ -n "${GTBI_REPO_ROOT:-}" ]]; then
+        security_candidates+=("${GTBI_REPO_ROOT}/scripts/lib/security.sh")
     fi
 
     for candidate in "${security_candidates[@]}"; do
@@ -3501,10 +3501,10 @@ update_require_security() {
         printf '    - %s\n' "${security_candidates[@]}" >&2
         echo "" >&2
         echo "  This usually means:" >&2
-        echo "    1. You have an older ACFS installation, OR" >&2
+        echo "    1. You have an older GTBI installation, OR" >&2
         echo "    2. The installation didn't complete fully" >&2
         echo "" >&2
-        echo "  TO FIX: Re-run the ACFS installer:" >&2
+        echo "  TO FIX: Re-run the GTBI installer:" >&2
         echo "" >&2
         echo "    curl -fsSL https://agent-flywheel.com/install | bash -s -- --yes" >&2
         echo "" >&2
@@ -3558,9 +3558,9 @@ update_is_valid_fsfs_version() {
 }
 
 update_resolve_fsfs_latest_version() {
-    if [[ -n "${ACFS_FSFS_VERSION:-}" ]]; then
-        update_is_valid_fsfs_version "$ACFS_FSFS_VERSION" || return 1
-        printf '%s\n' "$ACFS_FSFS_VERSION"
+    if [[ -n "${GTBI_FSFS_VERSION:-}" ]]; then
+        update_is_valid_fsfs_version "$GTBI_FSFS_VERSION" || return 1
+        printf '%s\n' "$GTBI_FSFS_VERSION"
         return 0
     fi
 
@@ -3606,9 +3606,9 @@ update_resolve_fsfs_artifact_contract() {
         return 1
     fi
 
-    if [[ -n "${ACFS_FSFS_VERSION:-}" ]]; then
-        update_is_valid_fsfs_version "$ACFS_FSFS_VERSION" || return 1
-        candidates+=("$ACFS_FSFS_VERSION")
+    if [[ -n "${GTBI_FSFS_VERSION:-}" ]]; then
+        update_is_valid_fsfs_version "$GTBI_FSFS_VERSION" || return 1
+        candidates+=("$GTBI_FSFS_VERSION")
     else
         while IFS= read -r candidate; do
             [[ -n "$candidate" ]] || continue
@@ -3728,7 +3728,7 @@ update_run_cargo_git_source_install() {
     build_cmd="$(cat <<'EOF'
 set -euo pipefail
 mkdir -p "$HOME/.cargo/bin"
-make_acfs_cargo_tmp_dir() {
+make_gtbi_cargo_tmp_dir() {
     local candidate=""
     local tmp_dir=""
     local tmpdir_value="${TMPDIR:-}"
@@ -3739,9 +3739,9 @@ make_acfs_cargo_tmp_dir() {
         non_default_tmpdir="${tmpdir_value%/}"
     fi
 
-    [[ -n "${ACFS_UPDATE_TMPDIR:-}" ]] && candidates+=("${ACFS_UPDATE_TMPDIR%/}")
+    [[ -n "${GTBI_UPDATE_TMPDIR:-}" ]] && candidates+=("${GTBI_UPDATE_TMPDIR%/}")
     [[ -n "$non_default_tmpdir" ]] && candidates+=("$non_default_tmpdir")
-    candidates+=("/data/tmp" "$HOME/.cache/acfs/tmp")
+    candidates+=("/data/tmp" "$HOME/.cache/gtbi/tmp")
     [[ -n "$tmpdir_value" ]] && candidates+=("${tmpdir_value%/}")
     candidates+=("/tmp")
 
@@ -3750,22 +3750,22 @@ make_acfs_cargo_tmp_dir() {
         [[ "$candidate" != "/" ]] || continue
         mkdir -p "$candidate" 2>/dev/null || continue
         [[ -d "$candidate" && -w "$candidate" ]] || continue
-        tmp_dir="$(mktemp -d "$candidate/acfs_cargo_build.XXXXXX" 2>/dev/null)" || continue
+        tmp_dir="$(mktemp -d "$candidate/gtbi_cargo_build.XXXXXX" 2>/dev/null)" || continue
         printf '%s\n' "$tmp_dir"
         return 0
     done
 
     return 1
 }
-ACFS_TMP_DIR="$(make_acfs_cargo_tmp_dir)" || {
+GTBI_TMP_DIR="$(make_gtbi_cargo_tmp_dir)" || {
     echo "No writable temporary directory available for cargo source build" >&2
     exit 1
 }
-trap '[ -n "$ACFS_TMP_DIR" ] && rm -rf "$ACFS_TMP_DIR"' EXIT
-git clone --depth 1 "$1" "$ACFS_TMP_DIR/src"
-cd "$ACFS_TMP_DIR/src"
-cargo build --release --target-dir "$ACFS_TMP_DIR/target"
-install -m 0755 "$ACFS_TMP_DIR/target/release/$2" "$HOME/.cargo/bin/$2"
+trap '[ -n "$GTBI_TMP_DIR" ] && rm -rf "$GTBI_TMP_DIR"' EXIT
+git clone --depth 1 "$1" "$GTBI_TMP_DIR/src"
+cd "$GTBI_TMP_DIR/src"
+cargo build --release --target-dir "$GTBI_TMP_DIR/target"
+install -m 0755 "$GTBI_TMP_DIR/target/release/$2" "$HOME/.cargo/bin/$2"
 EOF
 )"
     update_run_in_target_context "" bash -c "$build_cmd" _ "$repo_url" "$binary_name"
@@ -3824,7 +3824,7 @@ update_run_verified_installer_with_env() {
     fi
 
     local tmp_install=""
-    tmp_install="$(update_create_target_readable_temp_file "acfs-update-${tool}" 2>/dev/null)" || tmp_install=""
+    tmp_install="$(update_create_target_readable_temp_file "gtbi-update-${tool}" 2>/dev/null)" || tmp_install=""
     if [[ -z "$tmp_install" ]]; then
         echo "Failed to create target-readable temp file for verified $tool installer" >&2
         return 1
@@ -3892,7 +3892,7 @@ update_prepare_target_installer_tmpdir() {
         return 1
     fi
 
-    tmpdir_parent="$target_home/.cache/acfs/installer-tmp"
+    tmpdir_parent="$target_home/.cache/gtbi/installer-tmp"
     tmpdir_template="$tmpdir_parent/${tool}.XXXXXX"
     case "$tmpdir_template" in
         *[[:space:]]*)
@@ -4045,24 +4045,24 @@ update_run_pcr_installer_and_verify() {
 # Stale installed copies shadow the repo because
 # update_require_security() searches installed paths first.
 #
-# Note: sync_acfs_deployed() also syncs security.sh, but this
+# Note: sync_gtbi_deployed() also syncs security.sh, but this
 # function provides a targeted safety net with hardcoded paths
-# that works even before sync_acfs_deployed was introduced.
+# that works even before sync_gtbi_deployed was introduced.
 # ------------------------------------------------------------
 update_refresh_installed_security() {
     local installed_security=""
-    local runtime_acfs_home=""
-    runtime_acfs_home="$(update_runtime_acfs_home 2>/dev/null || true)"
-    [[ -n "$runtime_acfs_home" ]] || return 0
-    installed_security="$runtime_acfs_home/scripts/lib/security.sh"
+    local runtime_gtbi_home=""
+    runtime_gtbi_home="$(update_runtime_gtbi_home 2>/dev/null || true)"
+    [[ -n "$runtime_gtbi_home" ]] || return 0
+    installed_security="$runtime_gtbi_home/scripts/lib/security.sh"
     [[ -f "$installed_security" ]] || return 0
 
-    # Find the authoritative repo checkout (may differ from ACFS_REPO_ROOT
-    # when running from the installed copy at ~/.acfs).
+    # Find the authoritative repo checkout (may differ from GTBI_REPO_ROOT
+    # when running from the installed copy at ~/.gtbi).
     local repo_security=""
     local -a repo_candidates=(
-        "/data/projects/agentic_coding_flywheel_setup/scripts/lib/security.sh"
-        "${ACFS_REPO_ROOT}/scripts/lib/security.sh"
+        "/data/projects/gastown_batteries_included/scripts/lib/security.sh"
+        "${GTBI_REPO_ROOT}/scripts/lib/security.sh"
     )
     for candidate in "${repo_candidates[@]}"; do
         # Skip if it resolves to the same file as the installed copy
@@ -4089,9 +4089,9 @@ update_refresh_installed_security() {
 # checksums and URLs so verified-installer checks don't break.
 # Requires: git fetch origin main has already succeeded.
 # ------------------------------------------------------------
-_acfs_refresh_security_from_fetched_remote() {
+_gtbi_refresh_security_from_fetched_remote() {
     # First arg is the canonical primary remote branch. Defaults to `main`
-    # for backward compatibility, but callers in update_acfs_self() pass the
+    # for backward compatibility, but callers in update_gtbi_self() pass the
     # branch the install is checked out on (main or master — the two are
     # maintained as parallel refs with identical SHAs).
     local _sec_remote_branch="${1:-main}"
@@ -4099,10 +4099,10 @@ _acfs_refresh_security_from_fetched_remote() {
     local _sec_files_refreshed=false
     local _sec_relpath
     for _sec_relpath in checksums.yaml scripts/lib/security.sh; do
-        local _sec_target="$ACFS_REPO_ROOT/$_sec_relpath"
+        local _sec_target="$GTBI_REPO_ROOT/$_sec_relpath"
         local _sec_tmp=""
-        _sec_tmp="$(mktemp "${TMPDIR:-/tmp}/acfs-sec-refresh.XXXXXX" 2>/dev/null)" || continue
-        if git -C "$ACFS_REPO_ROOT" show "origin/${_sec_remote_branch}:$_sec_relpath" > "$_sec_tmp" 2>/dev/null; then
+        _sec_tmp="$(mktemp "${TMPDIR:-/tmp}/gtbi-sec-refresh.XXXXXX" 2>/dev/null)" || continue
+        if git -C "$GTBI_REPO_ROOT" show "origin/${_sec_remote_branch}:$_sec_relpath" > "$_sec_tmp" 2>/dev/null; then
             if [[ -s "$_sec_tmp" ]] && ! cmp -s "$_sec_tmp" "$_sec_target" 2>/dev/null; then
                 cp -f "$_sec_tmp" "$_sec_target" 2>/dev/null && _sec_files_refreshed=true
                 log_to_file "Refreshed $_sec_relpath from origin/${_sec_remote_branch} (bypassing full pull)"
@@ -4112,124 +4112,124 @@ _acfs_refresh_security_from_fetched_remote() {
     done
 
     if [[ "$_sec_files_refreshed" == "true" ]]; then
-        log_item "ok" "ACFS checksums" "refreshed from remote"
+        log_item "ok" "GTBI checksums" "refreshed from remote"
         update_refresh_installed_security
     fi
     if [[ "$_sec_sync_deployed_from_remote" == "true" ]]; then
-        sync_acfs_deployed "origin/${_sec_remote_branch}"
-        sync_acfs_global_wrapper "origin/${_sec_remote_branch}"
-        sync_acfs_global_command_links
+        sync_gtbi_deployed "origin/${_sec_remote_branch}"
+        sync_gtbi_global_wrapper "origin/${_sec_remote_branch}"
+        sync_gtbi_global_command_links
     elif [[ "$_sec_files_refreshed" == "true" ]]; then
-        sync_acfs_deployed
-        sync_acfs_global_wrapper
-        sync_acfs_global_command_links
+        sync_gtbi_deployed
+        sync_gtbi_global_wrapper
+        sync_gtbi_global_command_links
     fi
 }
 
-_acfs_remote_main_head() {
+_gtbi_remote_main_head() {
     # First arg is the canonical primary remote branch. Defaults to `main`
     # for backward compatibility (e.g. for any callers that haven't been
     # updated to pass it explicitly).
     local _head_remote_branch="${1:-main}"
-    git -C "$ACFS_REPO_ROOT" ls-remote --heads origin "$_head_remote_branch" 2>/dev/null | awk 'NR==1 { print $1 }'
+    git -C "$GTBI_REPO_ROOT" ls-remote --heads origin "$_head_remote_branch" 2>/dev/null | awk 'NR==1 { print $1 }'
 }
 
-_acfs_repo_root_is_runtime_acfs_home() {
-    local runtime_acfs_home=""
+_gtbi_repo_root_is_runtime_gtbi_home() {
+    local runtime_gtbi_home=""
     local resolved_repo=""
     local resolved_runtime=""
 
-    runtime_acfs_home="$(update_runtime_acfs_home 2>/dev/null || true)"
-    [[ -n "$runtime_acfs_home" ]] || return 1
+    runtime_gtbi_home="$(update_runtime_gtbi_home 2>/dev/null || true)"
+    [[ -n "$runtime_gtbi_home" ]] || return 1
 
-    resolved_repo="$(realpath "$ACFS_REPO_ROOT" 2>/dev/null || printf '%s\n' "$ACFS_REPO_ROOT")"
-    resolved_runtime="$(realpath "$runtime_acfs_home" 2>/dev/null || printf '%s\n' "$runtime_acfs_home")"
+    resolved_repo="$(realpath "$GTBI_REPO_ROOT" 2>/dev/null || printf '%s\n' "$GTBI_REPO_ROOT")"
+    resolved_runtime="$(realpath "$runtime_gtbi_home" 2>/dev/null || printf '%s\n' "$runtime_gtbi_home")"
     [[ "$resolved_repo" == "$resolved_runtime" ]]
 }
 
-_acfs_append_unique_path() {
-    local -n _acfs_paths_ref="$1"
-    local _acfs_candidate="$2"
-    local _acfs_existing=""
+_gtbi_append_unique_path() {
+    local -n _gtbi_paths_ref="$1"
+    local _gtbi_candidate="$2"
+    local _gtbi_existing=""
 
-    for _acfs_existing in "${_acfs_paths_ref[@]}"; do
-        [[ "$_acfs_existing" == "$_acfs_candidate" ]] && return 0
+    for _gtbi_existing in "${_gtbi_paths_ref[@]}"; do
+        [[ "$_gtbi_existing" == "$_gtbi_candidate" ]] && return 0
     done
 
-    _acfs_paths_ref+=("$_acfs_candidate")
+    _gtbi_paths_ref+=("$_gtbi_candidate")
 }
 
-_acfs_collect_tracked_dirty_paths() {
-    local -n _acfs_dirty_paths_ref="$1"
-    local _acfs_dirty_path=""
+_gtbi_collect_tracked_dirty_paths() {
+    local -n _gtbi_dirty_paths_ref="$1"
+    local _gtbi_dirty_path=""
 
-    _acfs_dirty_paths_ref=()
-    while IFS= read -r -d '' _acfs_dirty_path; do
-        _acfs_append_unique_path _acfs_dirty_paths_ref "$_acfs_dirty_path"
-    done < <(git -C "$ACFS_REPO_ROOT" diff --name-only -z -- 2>/dev/null || true)
+    _gtbi_dirty_paths_ref=()
+    while IFS= read -r -d '' _gtbi_dirty_path; do
+        _gtbi_append_unique_path _gtbi_dirty_paths_ref "$_gtbi_dirty_path"
+    done < <(git -C "$GTBI_REPO_ROOT" diff --name-only -z -- 2>/dev/null || true)
 
-    while IFS= read -r -d '' _acfs_dirty_path; do
-        _acfs_append_unique_path _acfs_dirty_paths_ref "$_acfs_dirty_path"
-    done < <(git -C "$ACFS_REPO_ROOT" diff --cached --name-only -z -- 2>/dev/null || true)
+    while IFS= read -r -d '' _gtbi_dirty_path; do
+        _gtbi_append_unique_path _gtbi_dirty_paths_ref "$_gtbi_dirty_path"
+    done < <(git -C "$GTBI_REPO_ROOT" diff --cached --name-only -z -- 2>/dev/null || true)
 }
 
-_acfs_worktree_path_matches_upstream_history() {
-    local _acfs_path="$1"
-    local _acfs_remote_branch="${2:-main}"
-    local _acfs_work_hash=""
-    local _acfs_ref=""
-    local _acfs_blob=""
-    local _acfs_commit=""
+_gtbi_worktree_path_matches_upstream_history() {
+    local _gtbi_path="$1"
+    local _gtbi_remote_branch="${2:-main}"
+    local _gtbi_work_hash=""
+    local _gtbi_ref=""
+    local _gtbi_blob=""
+    local _gtbi_commit=""
 
-    [[ -f "$ACFS_REPO_ROOT/$_acfs_path" ]] || return 1
-    _acfs_work_hash="$(git -C "$ACFS_REPO_ROOT" hash-object -- "$_acfs_path" 2>/dev/null)" || return 1
-    [[ -n "$_acfs_work_hash" ]] || return 1
+    [[ -f "$GTBI_REPO_ROOT/$_gtbi_path" ]] || return 1
+    _gtbi_work_hash="$(git -C "$GTBI_REPO_ROOT" hash-object -- "$_gtbi_path" 2>/dev/null)" || return 1
+    [[ -n "$_gtbi_work_hash" ]] || return 1
 
-    for _acfs_ref in HEAD "origin/${_acfs_remote_branch}"; do
-        _acfs_blob="$(git -C "$ACFS_REPO_ROOT" rev-parse "$_acfs_ref:$_acfs_path" 2>/dev/null || true)"
-        [[ "$_acfs_blob" == "$_acfs_work_hash" ]] && return 0
+    for _gtbi_ref in HEAD "origin/${_gtbi_remote_branch}"; do
+        _gtbi_blob="$(git -C "$GTBI_REPO_ROOT" rev-parse "$_gtbi_ref:$_gtbi_path" 2>/dev/null || true)"
+        [[ "$_gtbi_blob" == "$_gtbi_work_hash" ]] && return 0
     done
 
-    while IFS= read -r _acfs_commit; do
-        [[ -n "$_acfs_commit" ]] || continue
-        _acfs_blob="$(git -C "$ACFS_REPO_ROOT" rev-parse "$_acfs_commit:$_acfs_path" 2>/dev/null || true)"
-        [[ "$_acfs_blob" == "$_acfs_work_hash" ]] && return 0
-    done < <(git -C "$ACFS_REPO_ROOT" rev-list --ancestry-path "HEAD..origin/${_acfs_remote_branch}" -- "$_acfs_path" 2>/dev/null || true)
+    while IFS= read -r _gtbi_commit; do
+        [[ -n "$_gtbi_commit" ]] || continue
+        _gtbi_blob="$(git -C "$GTBI_REPO_ROOT" rev-parse "$_gtbi_commit:$_gtbi_path" 2>/dev/null || true)"
+        [[ "$_gtbi_blob" == "$_gtbi_work_hash" ]] && return 0
+    done < <(git -C "$GTBI_REPO_ROOT" rev-list --ancestry-path "HEAD..origin/${_gtbi_remote_branch}" -- "$_gtbi_path" 2>/dev/null || true)
 
     return 1
 }
 
-_acfs_dirty_paths_are_upstream_derived() {
-    local _acfs_remote_branch="$1"
-    local _acfs_dirty_path=""
+_gtbi_dirty_paths_are_upstream_derived() {
+    local _gtbi_remote_branch="$1"
+    local _gtbi_dirty_path=""
     shift || true
 
     (($# > 0)) || return 1
-    git -C "$ACFS_REPO_ROOT" merge-base --is-ancestor HEAD "origin/${_acfs_remote_branch}" >/dev/null 2>&1 || return 1
+    git -C "$GTBI_REPO_ROOT" merge-base --is-ancestor HEAD "origin/${_gtbi_remote_branch}" >/dev/null 2>&1 || return 1
 
-    for _acfs_dirty_path in "$@"; do
-        _acfs_worktree_path_matches_upstream_history "$_acfs_dirty_path" "$_acfs_remote_branch" || return 1
+    for _gtbi_dirty_path in "$@"; do
+        _gtbi_worktree_path_matches_upstream_history "$_gtbi_dirty_path" "$_gtbi_remote_branch" || return 1
     done
 }
 
-_acfs_try_upstream_derived_dirty_fast_forward() {
+_gtbi_try_upstream_derived_dirty_fast_forward() {
     local current_branch="$1"
     local local_head="$2"
     local remote_head="$3"
     local remote_branch="${4:-main}"
     local -a dirty_paths=()
 
-    _acfs_repo_root_is_runtime_acfs_home || return 1
+    _gtbi_repo_root_is_runtime_gtbi_home || return 1
 
-    _acfs_collect_tracked_dirty_paths dirty_paths
+    _gtbi_collect_tracked_dirty_paths dirty_paths
     ((${#dirty_paths[@]} > 0)) || return 1
-    _acfs_dirty_paths_are_upstream_derived "$remote_branch" "${dirty_paths[@]}" || return 1
+    _gtbi_dirty_paths_are_upstream_derived "$remote_branch" "${dirty_paths[@]}" || return 1
 
-    log_item "fix" "ACFS self-update" "tracked changes match upstream history; completing fast-forward"
+    log_item "fix" "GTBI self-update" "tracked changes match upstream history; completing fast-forward"
     log_to_file "Repairing upstream-derived dirty checkout with ${#dirty_paths[@]} tracked path(s)"
 
-    if git -C "$ACFS_REPO_ROOT" checkout -f -B "$current_branch" "$remote_head" >/dev/null 2>&1; then
-        git -C "$ACFS_REPO_ROOT" branch --set-upstream-to="origin/${remote_branch}" "$current_branch" >/dev/null 2>&1 || true
+    if git -C "$GTBI_REPO_ROOT" checkout -f -B "$current_branch" "$remote_head" >/dev/null 2>&1; then
+        git -C "$GTBI_REPO_ROOT" branch --set-upstream-to="origin/${remote_branch}" "$current_branch" >/dev/null 2>&1 || true
         log_to_file "Completed managed dirty fast-forward from $local_head to $remote_head"
         return 0
     fi
@@ -4239,103 +4239,103 @@ _acfs_try_upstream_derived_dirty_fast_forward() {
 }
 
 # ------------------------------------------------------------
-# Self-Update: Update ACFS itself before anything else
+# Self-Update: Update GTBI itself before anything else
 # ------------------------------------------------------------
 # This ensures users always have the latest update logic,
 # security fixes, and new tool definitions.
 # ------------------------------------------------------------
-update_acfs_self() {
-    log_section "ACFS Self-Update"
+update_gtbi_self() {
+    log_section "GTBI Self-Update"
 
     # Skip if disabled
     if [[ "$UPDATE_SELF" != "true" ]]; then
-        log_item "skip" "ACFS self-update" "disabled via --no-self-update"
+        log_item "skip" "GTBI self-update" "disabled via --no-self-update"
         return 0
     fi
 
     # Skip if already done (prevents infinite re-exec loops)
-    if [[ "$ACFS_SELF_UPDATE_DONE" == "true" ]]; then
-        log_item "info" "ACFS self-update" "already completed"
-        if [[ -d "$ACFS_REPO_ROOT/.git" ]]; then
+    if [[ "$GTBI_SELF_UPDATE_DONE" == "true" ]]; then
+        log_item "info" "GTBI self-update" "already completed"
+        if [[ -d "$GTBI_REPO_ROOT/.git" ]]; then
             local done_origin_url=""
-            done_origin_url=$(git -C "$ACFS_REPO_ROOT" remote get-url origin 2>/dev/null || true)
-            if is_expected_acfs_origin_url "$done_origin_url"; then
-                sync_acfs_deployed
+            done_origin_url=$(git -C "$GTBI_REPO_ROOT" remote get-url origin 2>/dev/null || true)
+            if is_expected_gtbi_origin_url "$done_origin_url"; then
+                sync_gtbi_deployed
             fi
         fi
         return 0
     fi
 
     # Recovery for orphaned git init (issue #200)
-    if [[ -d "$ACFS_REPO_ROOT/.git" ]] && ! git -C "$ACFS_REPO_ROOT" rev-parse HEAD &>/dev/null; then
+    if [[ -d "$GTBI_REPO_ROOT/.git" ]] && ! git -C "$GTBI_REPO_ROOT" rev-parse HEAD &>/dev/null; then
         if [[ "$DRY_RUN" == "true" ]]; then
-            log_item "ok" "ACFS self-update" "would recover incomplete git bootstrap"
+            log_item "ok" "GTBI self-update" "would recover incomplete git bootstrap"
             return 0
         fi
         log_to_file "Detected incomplete git bootstrap — attempting recovery..."
         local actual_origin
-        actual_origin=$(git -C "$ACFS_REPO_ROOT" remote get-url origin 2>/dev/null || true)
-        if is_expected_acfs_origin_url "$actual_origin"; then
-            if ! git -C "$ACFS_REPO_ROOT" fetch origin main --quiet 2>/dev/null; then
-                log_item "warn" "ACFS self-update" "git recovery fetch failed; leaving existing .git untouched"
+        actual_origin=$(git -C "$GTBI_REPO_ROOT" remote get-url origin 2>/dev/null || true)
+        if is_expected_gtbi_origin_url "$actual_origin"; then
+            if ! git -C "$GTBI_REPO_ROOT" fetch origin main --quiet 2>/dev/null; then
+                log_item "warn" "GTBI self-update" "git recovery fetch failed; leaving existing .git untouched"
                 return 0
             fi
 
-            if git -C "$ACFS_REPO_ROOT" checkout -f -B main --track origin/main; then
+            if git -C "$GTBI_REPO_ROOT" checkout -f -B main --track origin/main; then
                 log_to_file "Git bootstrap recovery succeeded"
             else
-                log_item "warn" "ACFS self-update" "git recovery checkout failed; leaving existing .git untouched"
+                log_item "warn" "GTBI self-update" "git recovery checkout failed; leaving existing .git untouched"
                 return 0
             fi
         else
-            log_item "warn" "ACFS self-update" "unexpected origin during git recovery: ${actual_origin:-<unset>}"
+            log_item "warn" "GTBI self-update" "unexpected origin during git recovery: ${actual_origin:-<unset>}"
             return 0
         fi
     fi
 
-    # Check if ACFS repo exists and is a git repo.
+    # Check if GTBI repo exists and is a git repo.
     # If installed via tarball (no .git dir), require an explicit opt-in before
     # converting the install into a git checkout. Automatic bootstrap can
-    # overwrite local files under ~/.acfs, which is too surprising for routine
+    # overwrite local files under ~/.gtbi, which is too surprising for routine
     # update and nightly flows.
-    if [[ ! -d "$ACFS_REPO_ROOT/.git" ]]; then
+    if [[ ! -d "$GTBI_REPO_ROOT/.git" ]]; then
         if [[ "$BOOTSTRAP_SELF_UPDATE" != "true" ]]; then
-            log_item "skip" "ACFS self-update" "installed tree is not a git checkout; skipping to avoid overwriting local files (use --bootstrap-self-update to opt in)"
+            log_item "skip" "GTBI self-update" "installed tree is not a git checkout; skipping to avoid overwriting local files (use --bootstrap-self-update to opt in)"
             return 0
         fi
 
         if [[ "$DRY_RUN" == "true" ]]; then
-            log_item "ok" "ACFS self-update" "would bootstrap git checkout from https://github.com/${ACFS_REPO_OWNER}/${ACFS_REPO_NAME}.git"
+            log_item "ok" "GTBI self-update" "would bootstrap git checkout from https://github.com/${GTBI_REPO_OWNER}/${GTBI_REPO_NAME}.git"
             return 0
         fi
 
-        log_to_file "No .git directory found at $ACFS_REPO_ROOT — bootstrapping git repo for self-update..."
+        log_to_file "No .git directory found at $GTBI_REPO_ROOT — bootstrapping git repo for self-update..."
 
         # Check if git is available before attempting bootstrap
         if ! command -v git &>/dev/null; then
-            log_item "skip" "ACFS self-update" "git not found, cannot bootstrap"
+            log_item "skip" "GTBI self-update" "git not found, cannot bootstrap"
             return 0
         fi
 
-        if ! git -C "$ACFS_REPO_ROOT" init -b main 2>/dev/null; then
-            log_item "warn" "ACFS self-update" "git init failed at $ACFS_REPO_ROOT"
+        if ! git -C "$GTBI_REPO_ROOT" init -b main 2>/dev/null; then
+            log_item "warn" "GTBI self-update" "git init failed at $GTBI_REPO_ROOT"
             return 0
         fi
 
         local expected_origin
-        expected_origin="https://github.com/${ACFS_REPO_OWNER}/${ACFS_REPO_NAME}.git"
-        if ! git -C "$ACFS_REPO_ROOT" remote add origin "$expected_origin" 2>/dev/null; then
+        expected_origin="https://github.com/${GTBI_REPO_OWNER}/${GTBI_REPO_NAME}.git"
+        if ! git -C "$GTBI_REPO_ROOT" remote add origin "$expected_origin" 2>/dev/null; then
             # Remote may already exist from a partial prior run; verify it points to the right URL
             local existing_url
-            existing_url=$(git -C "$ACFS_REPO_ROOT" remote get-url origin 2>/dev/null) || true
-            if ! is_expected_acfs_origin_url "$existing_url"; then
-                log_item "warn" "ACFS self-update" "unexpected origin remote: $existing_url"
+            existing_url=$(git -C "$GTBI_REPO_ROOT" remote get-url origin 2>/dev/null) || true
+            if ! is_expected_gtbi_origin_url "$existing_url"; then
+                log_item "warn" "GTBI self-update" "unexpected origin remote: $existing_url"
                 return 0
             fi
         fi
 
-        if ! git -C "$ACFS_REPO_ROOT" fetch origin main --quiet 2>/dev/null; then
-            log_item "warn" "ACFS self-update" "git fetch failed during bootstrap (network issue?)"
+        if ! git -C "$GTBI_REPO_ROOT" fetch origin main --quiet 2>/dev/null; then
+            log_item "warn" "GTBI self-update" "git fetch failed during bootstrap (network issue?)"
             return 0
         fi
 
@@ -4343,40 +4343,40 @@ update_acfs_self() {
         # origin/main exactly (tarball files are replaced with the real repo state).
         # -f is required because the tarball-installed files appear as untracked
         # and git refuses to overwrite them without force.
-        if ! git -C "$ACFS_REPO_ROOT" checkout -f -B main --track origin/main; then
-            log_item "warn" "ACFS self-update" "git checkout failed during bootstrap"
+        if ! git -C "$GTBI_REPO_ROOT" checkout -f -B main --track origin/main; then
+            log_item "warn" "GTBI self-update" "git checkout failed during bootstrap"
             return 0
         fi
 
-        log_item "ok" "ACFS" "git repo bootstrapped from tarball install"
-        log_to_file "ACFS git repo initialized at $ACFS_REPO_ROOT — continuing with self-update"
+        log_item "ok" "GTBI" "git repo bootstrapped from tarball install"
+        log_to_file "GTBI git repo initialized at $GTBI_REPO_ROOT — continuing with self-update"
     fi
 
     # Check if git is available
     if ! command -v git &>/dev/null; then
-        log_item "skip" "ACFS self-update" "git not found"
+        log_item "skip" "GTBI self-update" "git not found"
         return 0
     fi
 
-    # Security: verify we are pulling from the expected ACFS origin.
+    # Security: verify we are pulling from the expected GTBI origin.
     # Do this for normal runs too (not only bootstrap mode) to prevent
     # accidental or malicious self-update from an unexpected remote.
     local origin_url
-    origin_url=$(git -C "$ACFS_REPO_ROOT" remote get-url origin 2>/dev/null || true)
+    origin_url=$(git -C "$GTBI_REPO_ROOT" remote get-url origin 2>/dev/null || true)
     if [[ -z "$origin_url" ]]; then
-        log_item "warn" "ACFS self-update" "origin remote not configured"
+        log_item "warn" "GTBI self-update" "origin remote not configured"
         return 0
     fi
-    if ! is_expected_acfs_origin_url "$origin_url"; then
-        log_item "warn" "ACFS self-update" "unexpected origin remote: $origin_url"
+    if ! is_expected_gtbi_origin_url "$origin_url"; then
+        log_item "warn" "GTBI self-update" "unexpected origin remote: $origin_url"
         return 0
     fi
 
     # Get current branch
     local current_branch=""
-    current_branch=$(git -C "$ACFS_REPO_ROOT" branch --show-current 2>/dev/null) || true
+    current_branch=$(git -C "$GTBI_REPO_ROOT" branch --show-current 2>/dev/null) || true
     if [[ -z "$current_branch" ]] || [[ "$current_branch" == "HEAD" ]]; then
-        log_item "warn" "ACFS self-update" "failed to get current branch"
+        log_item "warn" "GTBI self-update" "failed to get current branch"
         return 0
     fi
 
@@ -4386,7 +4386,7 @@ update_acfs_self() {
     # Prefer origin/HEAD when resolvable as the source-of-truth ref.
     local remote_branch="main"
     local _origin_head_ref=""
-    _origin_head_ref=$(git -C "$ACFS_REPO_ROOT" symbolic-ref --quiet refs/remotes/origin/HEAD 2>/dev/null) || true
+    _origin_head_ref=$(git -C "$GTBI_REPO_ROOT" symbolic-ref --quiet refs/remotes/origin/HEAD 2>/dev/null) || true
     if [[ -n "$_origin_head_ref" ]]; then
         # Strip the literal `refs/remotes/origin/` prefix. Use shortest-match
         # `#` rather than longest-match `##*/` so branch names containing
@@ -4398,13 +4398,13 @@ update_acfs_self() {
     # (main or master — they're parallel and share SHAs). Still refresh
     # security files in the skip path so checksums stay fresh.
     if [[ "$current_branch" != "main" && "$current_branch" != "master" ]]; then
-        log_item "skip" "ACFS self-update" "not on main branch (on: $current_branch)"
+        log_item "skip" "GTBI self-update" "not on main branch (on: $current_branch)"
         if update_is_read_only_mode; then
             return 0
         fi
         # Still fetch and refresh security files so checksums stay fresh
-        if git -C "$ACFS_REPO_ROOT" fetch origin "$remote_branch" --quiet 2>/dev/null; then
-            _acfs_refresh_security_from_fetched_remote "$remote_branch"
+        if git -C "$GTBI_REPO_ROOT" fetch origin "$remote_branch" --quiet 2>/dev/null; then
+            _gtbi_refresh_security_from_fetched_remote "$remote_branch"
         fi
         return 0
     fi
@@ -4416,19 +4416,19 @@ update_acfs_self() {
 
     local local_head=""
     local remote_head=""
-    local_head=$(git -C "$ACFS_REPO_ROOT" rev-parse HEAD 2>/dev/null) || true
+    local_head=$(git -C "$GTBI_REPO_ROOT" rev-parse HEAD 2>/dev/null) || true
 
     if update_is_read_only_mode; then
-        remote_head="$(_acfs_remote_main_head "$remote_branch")"
+        remote_head="$(_gtbi_remote_main_head "$remote_branch")"
         if [[ -z "$local_head" ]] || [[ -z "$remote_head" ]]; then
-            log_item "warn" "ACFS self-update" "failed to compare versions in dry-run"
+            log_item "warn" "GTBI self-update" "failed to compare versions in dry-run"
             return 0
         fi
 
         if [[ "$local_head" == "$remote_head" ]]; then
-            log_item "ok" "ACFS $ACFS_VERSION_DISPLAY" "already up to date"
+            log_item "ok" "GTBI $GTBI_VERSION_DISPLAY" "already up to date"
         else
-            log_item "ok" "ACFS" "would update (remote ${remote_branch} differs)"
+            log_item "ok" "GTBI" "would update (remote ${remote_branch} differs)"
         fi
         return 0
     fi
@@ -4442,40 +4442,40 @@ update_acfs_self() {
 
     # Fetch latest from origin
     log_to_file "Fetching from origin..."
-    if ! git -C "$ACFS_REPO_ROOT" fetch origin "$remote_branch" --quiet 2>/dev/null; then
-        log_item "warn" "ACFS self-update" "git fetch failed (network issue?)"
+    if ! git -C "$GTBI_REPO_ROOT" fetch origin "$remote_branch" --quiet 2>/dev/null; then
+        log_item "warn" "GTBI self-update" "git fetch failed (network issue?)"
         return 0
     fi
 
     # Compare local HEAD with remote
-    local_head=$(git -C "$ACFS_REPO_ROOT" rev-parse HEAD 2>/dev/null) || true
-    remote_head=$(git -C "$ACFS_REPO_ROOT" rev-parse "origin/$remote_branch" 2>/dev/null) || true
+    local_head=$(git -C "$GTBI_REPO_ROOT" rev-parse HEAD 2>/dev/null) || true
+    remote_head=$(git -C "$GTBI_REPO_ROOT" rev-parse "origin/$remote_branch" 2>/dev/null) || true
 
     if [[ -z "$local_head" ]] || [[ -z "$remote_head" ]]; then
-        log_item "warn" "ACFS self-update" "failed to compare versions"
+        log_item "warn" "GTBI self-update" "failed to compare versions"
         return 0
     fi
 
     if [[ "$local_head" == "$remote_head" ]]; then
-        log_item "ok" "ACFS $ACFS_VERSION_DISPLAY" "already up to date"
+        log_item "ok" "GTBI $GTBI_VERSION_DISPLAY" "already up to date"
         update_refresh_installed_security
-        sync_acfs_deployed
+        sync_gtbi_deployed
         return 0
     fi
 
     # Show what's coming
     local commit_count
-    commit_count=$(git -C "$ACFS_REPO_ROOT" rev-list --count "HEAD..origin/$remote_branch" 2>/dev/null) || commit_count="?"
+    commit_count=$(git -C "$GTBI_REPO_ROOT" rev-list --count "HEAD..origin/$remote_branch" 2>/dev/null) || commit_count="?"
     log_to_file "Found $commit_count new commit(s)"
 
     # Dry run mode
     if [[ "$DRY_RUN" == "true" ]]; then
-        log_item "ok" "ACFS" "would update ($commit_count new commits)"
+        log_item "ok" "GTBI" "would update ($commit_count new commits)"
         return 0
     fi
 
     # Skip full git pull if tracked files have local modifications to avoid
-    # merge conflicts. Use --untracked-files=no because ~/.acfs/ contains
+    # merge conflicts. Use --untracked-files=no because ~/.gtbi/ contains
     # runtime state files (state.json, logs/, cache/, autofix/) that are
     # not in the git repo — these must not block self-update since
     # git pull --ff-only never touches untracked files.
@@ -4483,16 +4483,16 @@ update_acfs_self() {
     # Even when we can't pull, we STILL extract security-critical files
     # (checksums.yaml, security.sh) from the fetched remote and sync deployed
     # runtime helpers from that fetched ref. Without this, machines with local
-    # modifications run with stale checksums or stale ~/.acfs scripts
+    # modifications run with stale checksums or stale ~/.gtbi scripts
     # indefinitely, causing constant installer failures.
     local self_update_completed=false
-    if [[ -n "$(git -C "$ACFS_REPO_ROOT" status --porcelain --untracked-files=no 2>/dev/null)" ]]; then
-        if _acfs_try_upstream_derived_dirty_fast_forward "$current_branch" "$local_head" "$remote_head" "$remote_branch"; then
+    if [[ -n "$(git -C "$GTBI_REPO_ROOT" status --porcelain --untracked-files=no 2>/dev/null)" ]]; then
+        if _gtbi_try_upstream_derived_dirty_fast_forward "$current_branch" "$local_head" "$remote_head" "$remote_branch"; then
             self_update_completed=true
         else
-            log_item "warn" "ACFS self-update" "tracked files have local modifications; skipping full pull"
+            log_item "warn" "GTBI self-update" "tracked files have local modifications; skipping full pull"
             log_to_file "Self-update skipped: working tree has tracked modifications — refreshing fetched runtime files"
-            _acfs_refresh_security_from_fetched_remote "$remote_branch" true
+            _gtbi_refresh_security_from_fetched_remote "$remote_branch" true
             return 0
         fi
     fi
@@ -4500,38 +4500,38 @@ update_acfs_self() {
     if [[ "$self_update_completed" != "true" ]]; then
         # Pull updates
         log_to_file "Pulling updates..."
-        if ! git -C "$ACFS_REPO_ROOT" pull --ff-only origin "$remote_branch" 2>/dev/null; then
-            log_item "warn" "ACFS self-update" "ff-only pull failed (branch divergence?); refreshing fetched runtime files"
+        if ! git -C "$GTBI_REPO_ROOT" pull --ff-only origin "$remote_branch" 2>/dev/null; then
+            log_item "warn" "GTBI self-update" "ff-only pull failed (branch divergence?); refreshing fetched runtime files"
             log_to_file "Self-update skipped: git pull --ff-only failed — refreshing fetched runtime files"
-            _acfs_refresh_security_from_fetched_remote "$remote_branch" true
+            _gtbi_refresh_security_from_fetched_remote "$remote_branch" true
             return 0
         fi
     fi
 
     # Refresh version display with new commit hash after pull
     local _new_short_hash=""
-    _new_short_hash=$(git -C "$ACFS_REPO_ROOT" rev-parse --short HEAD 2>/dev/null) || true
+    _new_short_hash=$(git -C "$GTBI_REPO_ROOT" rev-parse --short HEAD 2>/dev/null) || true
     if [[ -n "$_new_short_hash" ]]; then
         # Re-read VERSION in case it changed
-        if [[ -f "$ACFS_REPO_ROOT/VERSION" ]]; then
-            ACFS_VERSION="$(cat "$ACFS_REPO_ROOT/VERSION" 2>/dev/null || echo "$ACFS_VERSION")"
+        if [[ -f "$GTBI_REPO_ROOT/VERSION" ]]; then
+            GTBI_VERSION="$(cat "$GTBI_REPO_ROOT/VERSION" 2>/dev/null || echo "$GTBI_VERSION")"
         fi
-        ACFS_VERSION_DISPLAY="v${ACFS_VERSION}+${_new_short_hash}"
+        GTBI_VERSION_DISPLAY="v${GTBI_VERSION}+${_new_short_hash}"
     fi
 
-    log_item "ok" "ACFS $ACFS_VERSION_DISPLAY" "updated ($commit_count commits)"
-    log_to_file "ACFS updated from $local_head to $remote_head"
+    log_item "ok" "GTBI $GTBI_VERSION_DISPLAY" "updated ($commit_count commits)"
+    log_to_file "GTBI updated from $local_head to $remote_head"
 
     update_refresh_installed_security
 
-    # Sync critical scripts from repo to ~/.acfs/ so the deployed copies
+    # Sync critical scripts from repo to ~/.gtbi/ so the deployed copies
     # stay fresh.  This MUST happen before the re-exec check below, because
-    # $update_script points to ~/.acfs/scripts/lib/update.sh — if we don't
+    # $update_script points to ~/.gtbi/scripts/lib/update.sh — if we don't
     # copy the new version there first, the hash comparison won't trigger
     # the re-exec and future runs will use the old code.
-    sync_acfs_deployed
-    sync_acfs_global_wrapper
-    sync_acfs_global_command_links
+    sync_gtbi_deployed
+    sync_gtbi_global_wrapper
+    sync_gtbi_global_command_links
 
     # Check if update.sh itself changed - if so, re-exec
     local new_hash=""
@@ -4546,7 +4546,7 @@ update_acfs_self() {
         echo ""
 
         # Re-exec with same args, but mark self-update as done
-        export ACFS_SELF_UPDATE_DONE=true
+        export GTBI_SELF_UPDATE_DONE=true
         exec "$update_script" "$@"
         # exec replaces this process, so we never reach here
     fi
@@ -4562,7 +4562,7 @@ update_acfs_self() {
 update_disable_needrestart_apt_hook() {
     local apt_hook="/usr/lib/needrestart/apt-pinvoke"
     local nr_conf_dir="/etc/needrestart/conf.d"
-    local nr_conf_file="$nr_conf_dir/50-acfs-noninteractive.conf"
+    local nr_conf_file="$nr_conf_dir/50-gtbi-noninteractive.conf"
 
     [[ "${DRY_RUN:-false}" == "true" ]] && return 0
     command -v apt-get &>/dev/null || return 0
@@ -5121,7 +5121,7 @@ _run_claude_installer_with_timeout() {
 # Helper for Claude update with proper error handling
 # FIX(bd-gsjqf.2): Replaced bare "claude update --channel latest" (flag does not exist)
 # with update_run_verified_installer which uses the official install.sh script.
-# See: https://github.com/Dicklesworthstone/agentic_coding_flywheel_setup/issues/125
+# See: https://github.com/jonbackhaus/gtbi/issues/125
 run_cmd_claude_update() {
     local desc="Claude Code (verified installer)"
     local cmd_display="update_run_verified_installer claude latest"
@@ -5292,9 +5292,9 @@ tarball="supabase_linux_${arch}.tar.gz"
 checksums_new="checksums.txt"
 checksums_legacy="supabase_${version}_checksums.txt"
 
-tmp_dir="$(mktemp -d "${TMPDIR:-/tmp}/acfs-supabase.XXXXXX" 2>/dev/null)" || tmp_dir=""
-tmp_tgz="$(mktemp "${TMPDIR:-/tmp}/acfs-supabase.tgz.XXXXXX" 2>/dev/null)" || tmp_tgz=""
-tmp_checksums="$(mktemp "${TMPDIR:-/tmp}/acfs-supabase.sha.XXXXXX" 2>/dev/null)" || tmp_checksums=""
+tmp_dir="$(mktemp -d "${TMPDIR:-/tmp}/gtbi-supabase.XXXXXX" 2>/dev/null)" || tmp_dir=""
+tmp_tgz="$(mktemp "${TMPDIR:-/tmp}/gtbi-supabase.tgz.XXXXXX" 2>/dev/null)" || tmp_tgz=""
+tmp_checksums="$(mktemp "${TMPDIR:-/tmp}/gtbi-supabase.sha.XXXXXX" 2>/dev/null)" || tmp_checksums=""
 extracted_bin=""
 
 if [[ -z "$tmp_dir" ]] || [[ -z "$tmp_tgz" ]] || [[ -z "$tmp_checksums" ]]; then
@@ -5357,16 +5357,16 @@ if [[ -z "$extracted_bin" ]] || [[ ! -f "$extracted_bin" ]]; then
   exit 1
 fi
 
-mkdir -p "${ACFS_PRIMARY_BIN_DIR:-${ACFS_BIN_DIR:-$HOME/.local/bin}}"
-install -m 0755 "$extracted_bin" "${ACFS_PRIMARY_BIN_DIR:-${ACFS_BIN_DIR:-$HOME/.local/bin}}/supabase"
+mkdir -p "${GTBI_PRIMARY_BIN_DIR:-${GTBI_BIN_DIR:-$HOME/.local/bin}}"
+install -m 0755 "$extracted_bin" "${GTBI_PRIMARY_BIN_DIR:-${GTBI_BIN_DIR:-$HOME/.local/bin}}/supabase"
 
 if command -v timeout &>/dev/null; then
-  timeout 5 "${ACFS_PRIMARY_BIN_DIR:-${ACFS_BIN_DIR:-$HOME/.local/bin}}/supabase" --version >/dev/null 2>&1 || {
+  timeout 5 "${GTBI_PRIMARY_BIN_DIR:-${GTBI_BIN_DIR:-$HOME/.local/bin}}/supabase" --version >/dev/null 2>&1 || {
     echo "Supabase CLI: installed but failed to run" >&2
     exit 1
   }
 else
-  "${ACFS_PRIMARY_BIN_DIR:-${ACFS_BIN_DIR:-$HOME/.local/bin}}/supabase" --version >/dev/null 2>&1 || {
+  "${GTBI_PRIMARY_BIN_DIR:-${GTBI_BIN_DIR:-$HOME/.local/bin}}/supabase" --version >/dev/null 2>&1 || {
     echo "Supabase CLI: installed but failed to run" >&2
     exit 1
   }
@@ -5405,7 +5405,7 @@ update_cloud() {
         if [[ -z "$supabase_primary_bin" ]]; then
             log_item "fail" "Supabase CLI" "unable to resolve target install bin"
         else
-            run_cmd "Supabase CLI" update_run_in_target_context "ACFS_PRIMARY_BIN_DIR=$supabase_primary_bin" bash -c "$(supabase_release_update_script)"
+            run_cmd "Supabase CLI" update_run_in_target_context "GTBI_PRIMARY_BIN_DIR=$supabase_primary_bin" bash -c "$(supabase_release_update_script)"
             # Refresh PATH in case the target bin was created during install.
             ensure_path
             if capture_version_after "supabase"; then
@@ -5636,7 +5636,7 @@ update_stack() {
         return 0
     fi
 
-    # Brenner Bot - skip all toolchain deps (NTM, CASS, CM) because ACFS
+    # Brenner Bot - skip all toolchain deps (NTM, CASS, CM) because GTBI
     # installs/updates them individually below.  Previously only --skip-cass
     # was passed, causing brenner's install_toolchain() to redundantly rebuild
     # NTM and CM from source — a 5+ hour hang on slow machines (fixes #210).
@@ -5664,7 +5664,7 @@ update_stack() {
         log_item "skip" "MCP Agent Mail" "dry-run: verified install + service refresh"
     elif [[ -n "$url" ]] && [[ -n "$expected_sha256" ]]; then
         local tmp_install
-        tmp_install="$(update_create_target_readable_temp_file "acfs-install-am" 2>/dev/null)" || tmp_install=""
+        tmp_install="$(update_create_target_readable_temp_file "gtbi-install-am" 2>/dev/null)" || tmp_install=""
         if [[ -z "$tmp_install" ]]; then
             log_item "fail" "MCP Agent Mail" "failed to create target-readable temp file for verified installer"
         else
@@ -5698,11 +5698,11 @@ update_stack() {
                         update_finish_cmd_fail "MCP Agent Mail" "$target_context_error"
                     elif update_run_logged_passthrough update_run_in_target_context "AM_INSTALL_SKIP_MCP_SETUP=1" bash "$tmp_install" --dest "$target_home/mcp_agent_mail" --yes; then
                         if update_source_stack_lib; then
-                            ACFS_STACK_TRUST_TARGET_HOME=true TARGET_USER="$target_user" TARGET_HOME="$target_home" _stack_repair_agent_mail_cli_symlink >/dev/null 2>&1 || true
+                            GTBI_STACK_TRUST_TARGET_HOME=true TARGET_USER="$target_user" TARGET_HOME="$target_home" _stack_repair_agent_mail_cli_symlink >/dev/null 2>&1 || true
                         fi
                         if update_source_stack_lib && \
-                           ACFS_STACK_TRUST_TARGET_HOME=true TARGET_USER="$target_user" TARGET_HOME="$target_home" _stack_configure_agent_mail_service && \
-                           ACFS_STACK_TRUST_TARGET_HOME=true TARGET_USER="$target_user" TARGET_HOME="$target_home" _stack_wait_for_agent_mail_health; then
+                           GTBI_STACK_TRUST_TARGET_HOME=true TARGET_USER="$target_user" TARGET_HOME="$target_home" _stack_configure_agent_mail_service && \
+                           GTBI_STACK_TRUST_TARGET_HOME=true TARGET_USER="$target_user" TARGET_HOME="$target_home" _stack_wait_for_agent_mail_health; then
                             if [[ "$QUIET" != "true" ]] && [[ "$VERBOSE" != "true" ]]; then
                                 printf "\033[1A\033[2K  ${GREEN}[ok]${NC} %s\n" "MCP Agent Mail"
                             elif [[ "$QUIET" != "true" ]]; then
@@ -5758,8 +5758,8 @@ update_stack() {
     run_cmd "Beads Rust" update_run_verified_installer br
 
     # CASS - always install/update. Its upstream installer uses a lock inside
-    # TMPDIR; give it an ACFS-owned target-user temp root so stale shared
-    # /tmp or /data/tmp locks cannot make only CASS fail during `acfs update`.
+    # TMPDIR; give it an GTBI-owned target-user temp root so stale shared
+    # /tmp or /data/tmp locks cannot make only CASS fail during `gtbi update`.
     update_run_verified_installer_with_target_tmpdir_or_existing_on_transient "CASS" cass cass cass --easy-mode --verify || true
 
     # CASS Memory - always install/update, but do not trust installer exit 0
@@ -5906,14 +5906,14 @@ update_root_agents_md() {
         local generator=""
         local candidate=""
         local primary_bin=""
-        local runtime_acfs_home=""
+        local runtime_gtbi_home=""
         primary_bin="$(update_runtime_primary_bin_dir 2>/dev/null || true)"
-        runtime_acfs_home="$(update_runtime_acfs_home 2>/dev/null || true)"
+        runtime_gtbi_home="$(update_runtime_gtbi_home 2>/dev/null || true)"
         local -a security_candidates=()
         [[ -n "$primary_bin" ]] && security_candidates+=("$primary_bin/flywheel-update-agents-md")
-        [[ -n "$runtime_acfs_home" ]] && security_candidates+=("$runtime_acfs_home/bin/flywheel-update-agents-md")
-        if [[ -n "${ACFS_REPO_ROOT:-}" ]]; then
-            security_candidates+=("${ACFS_REPO_ROOT}/scripts/generate-root-agents-md.sh")
+        [[ -n "$runtime_gtbi_home" ]] && security_candidates+=("$runtime_gtbi_home/bin/flywheel-update-agents-md")
+        if [[ -n "${GTBI_REPO_ROOT:-}" ]]; then
+            security_candidates+=("${GTBI_REPO_ROOT}/scripts/generate-root-agents-md.sh")
         fi
 
         for candidate in "${security_candidates[@]}"; do
@@ -6201,14 +6201,14 @@ update_shell() {
     update_atuin
     update_zoxide
 
-    # Keep deployed files in sync with repo (acfs.zshrc, update.sh, etc.)
-    sync_acfs_profile_paths
-    sync_acfs_zprofile_paths
-    sync_acfs_zsh_loader
-    sync_acfs_zshrc
-    sync_acfs_deployed
-    sync_acfs_global_wrapper
-    sync_acfs_global_command_links
+    # Keep deployed files in sync with repo (gtbi.zshrc, update.sh, etc.)
+    sync_gtbi_profile_paths
+    sync_gtbi_zprofile_paths
+    sync_gtbi_zsh_loader
+    sync_gtbi_zshrc
+    sync_gtbi_deployed
+    sync_gtbi_global_wrapper
+    sync_gtbi_global_command_links
 }
 
 # ============================================================
@@ -6281,11 +6281,11 @@ print_summary() {
 
 usage() {
     cat << 'EOF'
-acfs update - Update all ACFS components
+gtbi update - Update all GTBI components
 
 USAGE:
-  acfs-update [options]
-  acfs update [options]    (if acfs wrapper is installed)
+  gtbi-update [options]
+  gtbi update [options]    (if gtbi wrapper is installed)
 
 CATEGORY OPTIONS (select what to update):
   --apt-only         Only update system packages (apt)
@@ -6297,7 +6297,7 @@ CATEGORY OPTIONS (select what to update):
   --stack            Include Dicklesworthstone stack tools (enabled by default)
 
 SKIP OPTIONS (exclude categories from update):
-  --no-self-update   Skip ACFS self-update
+  --no-self-update   Skip GTBI self-update
   --no-apt           Skip apt update/upgrade
   --no-agents        Skip coding agent updates
   --no-cloud         Skip cloud CLI updates
@@ -6307,7 +6307,7 @@ SKIP OPTIONS (exclude categories from update):
 
 BEHAVIOR OPTIONS:
   --bootstrap-self-update
-                     Convert a non-git ACFS install into a git checkout before self-update
+                     Convert a non-git GTBI install into a git checkout before self-update
   --force            Force reinstallation even if already up to date
   --dry-run          Preview changes without making them
   --yes, -y          Non-interactive mode, skip all prompts
@@ -6319,37 +6319,37 @@ BEHAVIOR OPTIONS:
 
 EXAMPLES:
   # Standard update (EVERYTHING: apt, runtimes, shell, agents, cloud, stack)
-  acfs-update
+  gtbi-update
 
   # Skip Dicklesworthstone stack updates (faster)
-  acfs-update --no-stack
+  gtbi-update --no-stack
 
   # Only update agents
-  acfs-update --agents-only
+  gtbi-update --agents-only
 
   # Only update runtimes
-  acfs-update --runtime-only
+  gtbi-update --runtime-only
 
   # Only update Dicklesworthstone stack tools
-  acfs-update --stack-only
+  gtbi-update --stack-only
 
   # Update everything except apt (faster)
-  acfs-update --no-apt
+  gtbi-update --no-apt
 
   # Preview what would be updated
-  acfs-update --dry-run
+  gtbi-update --dry-run
 
   # Automated CI/cron mode
-  acfs-update --yes --quiet
+  gtbi-update --yes --quiet
 
   # Explicitly convert a tarball install into a git checkout for self-updates
-  acfs-update --bootstrap-self-update
+  gtbi-update --bootstrap-self-update
 
   # Strict mode: stop on first error
-  acfs-update --abort-on-failure
+  gtbi-update --abort-on-failure
 
 WHAT EACH CATEGORY UPDATES:
-  self:     ACFS itself (git pull) - runs FIRST to ensure latest update logic
+  self:     GTBI itself (git pull) - runs FIRST to ensure latest update logic
             If update.sh changes, automatically re-executes with new version
             Tarball/non-git installs skip this unless --bootstrap-self-update is used
   apt:      System packages via apt update && apt upgrade && apt autoremove
@@ -6370,14 +6370,14 @@ WHAT EACH CATEGORY UPDATES:
             Exception: JFP requires subscription, only updated if already installed
 
 LOGS:
-  Update logs are saved to: ~/.acfs/logs/updates/
+  Update logs are saved to: ~/.gtbi/logs/updates/
   Log files are timestamped: YYYY-MM-DD-HHMMSS.log
 
-  Example: tail -f ~/.acfs/logs/updates/$(ls -1t ~/.acfs/logs/updates | head -1)
+  Example: tail -f ~/.gtbi/logs/updates/$(ls -1t ~/.gtbi/logs/updates | head -1)
 
 ENVIRONMENT VARIABLES:
-  ACFS_HOME          Base directory for ACFS (default: ~/.acfs)
-  ACFS_VERSION       Override version string in logs
+  GTBI_HOME          Base directory for GTBI (default: ~/.gtbi)
+  GTBI_VERSION       Override version string in logs
 
 TROUBLESHOOTING:
   - If apt is locked: wait for other package operations to finish.
@@ -6399,11 +6399,11 @@ TROUBLESHOOTING:
     git -C ~/.oh-my-zsh remote -v
 
   - View recent logs:
-    ls -lt ~/.acfs/logs/updates/ | head -5
-    cat ~/.acfs/logs/updates/LATEST_LOG_FILE
+    ls -lt ~/.gtbi/logs/updates/ | head -5
+    cat ~/.gtbi/logs/updates/LATEST_LOG_FILE
 
   - Force reinstall a specific tool:
-    acfs-update --force --agents-only
+    gtbi-update --force --agents-only
 EOF
 }
 
@@ -6412,7 +6412,7 @@ main() {
     ensure_path
 
     # Save original arguments before parsing (for re-exec after self-update)
-    local -a ACFS_UPDATE_ARGS=("$@")
+    local -a GTBI_UPDATE_ARGS=("$@")
 
     # Parse arguments
     while [[ $# -gt 0 ]]; do
@@ -6541,17 +6541,17 @@ main() {
                 ;;
             *)
                 echo "Unknown option: $1" >&2
-                echo "Try: acfs update --help" >&2
+                echo "Try: gtbi update --help" >&2
                 exit 1
                 ;;
         esac
     done
 
-    # Guard against running as root (unless ACFS is actually installed in /root)
+    # Guard against running as root (unless GTBI is actually installed in /root)
     # This check is placed after argument parsing so --yes works correctly
     if [[ $EUID -eq 0 ]] && [[ "${HOME}" != "/root" ]]; then
         echo -e "${YELLOW}Warning: Running as root but HOME is $HOME.${NC}"
-        echo "ACFS update should typically be run as the target user (e.g. ubuntu)."
+        echo "GTBI update should typically be run as the target user (e.g. ubuntu)."
         if [[ "$YES_MODE" != "true" ]]; then
             echo -n "Continue anyway? [y/N] "
             read -r response < /dev/tty || true
@@ -6561,10 +6561,10 @@ main() {
         fi
     fi
 
-    # Self-update ACFS before touching any other components.
+    # Self-update GTBI before touching any other components.
     # This runs BEFORE init_logging so we get the latest update logic ASAP.
     # Pass original args so re-exec (if update.sh changed) uses the same arguments.
-    update_acfs_self "${ACFS_UPDATE_ARGS[@]}"
+    update_gtbi_self "${GTBI_UPDATE_ARGS[@]}"
 
     # Initialize logging
     init_logging
@@ -6572,7 +6572,7 @@ main() {
     # Header
     if [[ "$QUIET" != "true" ]]; then
         echo ""
-        echo -e "${BOLD}ACFS Update $ACFS_VERSION_DISPLAY${NC}"
+        echo -e "${BOLD}GTBI Update $GTBI_VERSION_DISPLAY${NC}"
         echo -e "User: $(update_current_user 2>/dev/null || true)"
         echo -e "Date: $(date '+%Y-%m-%d %H:%M')"
 
@@ -6583,7 +6583,7 @@ main() {
 
     # Set non-interactive mode if --yes was passed
     if [[ "$YES_MODE" == "true" ]]; then
-        export ACFS_INTERACTIVE=false
+        export GTBI_INTERACTIVE=false
     fi
 
     # Ensure jq is available (issue #180): on minimal Ubuntu installs jq may

@@ -1,5 +1,5 @@
 # ===========================================
-# ACFS - Agentic Coding Flywheel Setup
+# GTBI - Agentic Coding Flywheel Setup
 # ===========================================
 
 # ----- Dependencies -----
@@ -149,7 +149,7 @@ research_screenshots/
 /docs/assets/gh_og_share_image.png
 /apps/web/public/og-home.jpg
 /apps/web/public/og-flywheel.jpg
-/acfs/onboard/assets/diagrams/.gitkeep
+/gtbi/onboard/assets/diagrams/.gitkeep
 
 # ----- Installer test outputs -----
 *.log
@@ -214,7 +214,7 @@ storage.sqlite3.corrupt-*
 storage.sqlite3-shm.corrupt-*
 storage.sqlite3-wal.corrupt-*
 
-# ACFS ephemeral patterns (auto-generated agent artifacts)
+# GTBI ephemeral patterns (auto-generated agent artifacts)
 codex.mcp.json
 cursor.mcp.json
 gemini.mcp.json
@@ -282,7 +282,7 @@ packages/manifest/apps/
 packages/manifest/scripts/
 packages/manifest/test-*.ts
 
-# ACFS install-time generated files (created inside ~/.acfs git clone)
+# GTBI install-time generated files (created inside ~/.gtbi git clone)
 # These are runtime artifacts, not source — ignoring them prevents
 # the self-update check from seeing a dirty worktree.
 /bin/

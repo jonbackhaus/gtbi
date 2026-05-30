@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-# Unit tests for ACFS guidance/template policy lint
+# Unit tests for GTBI guidance/template policy lint
 # ============================================================
 
 set -euo pipefail
@@ -10,7 +10,7 @@ POLICY_LINT_SH="$REPO_ROOT/scripts/lib/policy_lint.sh"
 
 TESTS_PASSED=0
 TESTS_FAILED=0
-ARTIFACT_DIR="${ACFS_POLICY_LINT_TEST_ARTIFACTS_DIR:-${TMPDIR:-/tmp}/acfs-policy-lint-test-artifacts-$(date +%Y%m%d-%H%M%S)-$$}"
+ARTIFACT_DIR="${GTBI_POLICY_LINT_TEST_ARTIFACTS_DIR:-${TMPDIR:-/tmp}/gtbi-policy-lint-test-artifacts-$(date +%Y%m%d-%H%M%S)-$$}"
 
 mkdir -p "$ARTIFACT_DIR"
 
@@ -66,7 +66,7 @@ Before editing, reserve files with Agent Mail using `file_reservation_paths`.
     bash "$POLICY_LINT_SH" --json --file "$fixture" > "$output" || return 1
     jq -e '.status == "pass" and .summary.violations == 0 and .summary.files_scanned == 1' "$output" >/dev/null || return 1
     bash "$POLICY_LINT_SH" --file "$fixture" > "$human_output" || return 1
-    grep -Fq "PASS: ACFS policy lint" "$human_output" || return 1
+    grep -Fq "PASS: GTBI policy lint" "$human_output" || return 1
 
     pass "valid_agents_policy_passes"
 }
@@ -95,7 +95,7 @@ test_detects_destructive_cleanup_example() {
 
     write_fixture "$fixture" '# Cleanup
 
-After tests, run `rm -rf /tmp/acfs-build-output`.
+After tests, run `rm -rf /tmp/gtbi-build-output`.
 '
 
     if bash "$POLICY_LINT_SH" --json --file "$fixture" > "$output"; then
@@ -187,7 +187,7 @@ test_policy_matrix_reports_expected_policy_ids() {
 
 Agents should edit code carefully before editing files.
 The default branch is master.
-Run `rm -rf /tmp/acfs-build-output` after experiments.
+Run `rm -rf /tmp/gtbi-build-output` after experiments.
 Use `npm install` before website checks.
 ```bash
 bv

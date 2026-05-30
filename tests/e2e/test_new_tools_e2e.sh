@@ -5,7 +5,7 @@
 #   - 7 First-class flywheel tools: br, ms, rch, wa, brenner, dcg, ru
 #   - 6 Newly integrated stack tools: fsfs, sbh, casr, dsr, asb, pcr
 #   - 9 Utility tools: tru, rust_proxy, rano, xf, mdwb, pt, aadc, s2p, caut
-#   - Integration: acfs doctor, flywheel.ts, br primary command
+#   - Integration: gtbi doctor, flywheel.ts, br primary command
 #
 # Related: bd-g5d5s, bd-c4qox, bd-edpee, bd-xmvz0, bd-iy874, bd-q9auy, bd-abul4
 
@@ -13,8 +13,8 @@ set -uo pipefail
 # Note: Not using -e to allow tests to continue after failures
 
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-LOG_FILE="/tmp/acfs_e2e_tools_${TIMESTAMP}.log"
-JSON_FILE="/tmp/acfs_e2e_results_${TIMESTAMP}.json"
+LOG_FILE="/tmp/gtbi_e2e_tools_${TIMESTAMP}.log"
+JSON_FILE="/tmp/gtbi_e2e_results_${TIMESTAMP}.json"
 PASS_COUNT=0
 FAIL_COUNT=0
 SKIP_COUNT=0
@@ -95,7 +95,7 @@ file_details() {
 
 create_beads_probe_workspace() {
     local probe_dir
-    if ! probe_dir=$(mktemp -d "${TMPDIR:-/tmp}/acfs_beads_e2e.XXXXXX" 2>>"$LOG_FILE"); then
+    if ! probe_dir=$(mktemp -d "${TMPDIR:-/tmp}/gtbi_beads_e2e.XXXXXX" 2>>"$LOG_FILE"); then
         printf '[%s] [FAIL] [beads_probe] mktemp failed while creating probe workspace\n' "$(date '+%Y-%m-%d %H:%M:%S')" >>"$LOG_FILE"
         return 1
     fi
@@ -164,7 +164,7 @@ test_tool_probe() {
     local binary="$2"
     local description="$3"
     local required="${4:-false}"
-    local probe_timeout="${ACFS_E2E_PROBE_TIMEOUT:-20}"
+    local probe_timeout="${GTBI_E2E_PROBE_TIMEOUT:-20}"
     shift 4
 
     if ! command -v "$binary" >/dev/null 2>&1; then
@@ -333,7 +333,7 @@ test_additional_stack_tools() {
     # agent_settings_backup (asb)
     log "INFO" "asb" "Testing agent_settings_backup (asb)..."
     if test_tool_basic "agent_settings_backup" "asb" "false"; then
-        local asb_timeout="${ACFS_E2E_ASB_TIMEOUT:-20}"
+        local asb_timeout="${GTBI_E2E_ASB_TIMEOUT:-20}"
         local asb_config_output=""
         local asb_backup_root=""
         local asb_version_output=""
@@ -579,46 +579,46 @@ test_integration() {
     log "INFO" "SECTION" "INTEGRATION TESTS"
     log "INFO" "SECTION" "========================================"
 
-    # Test 1: acfs doctor runs without errors
-    log "INFO" "doctor" "Testing acfs doctor..."
-    if command -v acfs >/dev/null 2>&1; then
+    # Test 1: gtbi doctor runs without errors
+    log "INFO" "doctor" "Testing gtbi doctor..."
+    if command -v gtbi >/dev/null 2>&1; then
         local doctor_output=""
         local doctor_exit=0
-        # acfs doctor can legitimately take several minutes when the local
+        # gtbi doctor can legitimately take several minutes when the local
         # machine is under load, so keep the default timeout generous.
-        local doctor_timeout="${ACFS_E2E_DOCTOR_TIMEOUT:-600}"
+        local doctor_timeout="${GTBI_E2E_DOCTOR_TIMEOUT:-600}"
 
         if command -v timeout >/dev/null 2>&1; then
-            doctor_output=$(timeout "$doctor_timeout" env ACFS_DOCTOR_CI=true acfs doctor 2>&1)
+            doctor_output=$(timeout "$doctor_timeout" env GTBI_DOCTOR_CI=true gtbi doctor 2>&1)
             doctor_exit=$?
         else
-            doctor_output=$(ACFS_DOCTOR_CI=true acfs doctor 2>&1)
+            doctor_output=$(GTBI_DOCTOR_CI=true gtbi doctor 2>&1)
             doctor_exit=$?
         fi
 
         if [[ $doctor_exit -eq 0 ]]; then
-            pass "doctor_runs" "acfs doctor completed without fatal errors"
+            pass "doctor_runs" "gtbi doctor completed without fatal errors"
         elif [[ $doctor_exit -eq 124 ]]; then
-            fail "doctor_runs" "acfs doctor timed out after ${doctor_timeout}s"
+            fail "doctor_runs" "gtbi doctor timed out after ${doctor_timeout}s"
         else
-            fail "doctor_runs" "acfs doctor failed (exit=$doctor_exit)"
+            fail "doctor_runs" "gtbi doctor failed (exit=$doctor_exit)"
         fi
 
         # Check for DCG in doctor output without a pipe so pipefail cannot
         # turn an early grep match into a false negative.
         local doctor_output_lc="${doctor_output,,}"
         if [[ "$doctor_output_lc" =~ dcg|destructive[[:space:]-]+command ]]; then
-            pass "doctor_dcg_check" "acfs doctor includes DCG health check"
+            pass "doctor_dcg_check" "gtbi doctor includes DCG health check"
         else
             skip "doctor_dcg_check" "DCG check not visible in doctor output"
         fi
 
         # Legacy hook cleanup is validated in the dedicated
-        # removal test suite. acfs doctor may still
+        # removal test suite. gtbi doctor may still
         # mention legacy status in its current output.
     else
-        skip "doctor_runs" "acfs command not found"
-        skip "doctor_dcg_check" "acfs command not found"
+        skip "doctor_runs" "gtbi command not found"
+        skip "doctor_dcg_check" "gtbi command not found"
     fi
 
     # Test 2: br is the primary command (bd alias was removed)
@@ -635,9 +635,9 @@ test_integration() {
 
     # Test 3: flywheel.ts contains the core tool entries used by the page
     log "INFO" "flywheel_ts" "Testing flywheel.ts tool entries..."
-    local flywheel_file="${ACFS_REPO:-$HOME/agentic_coding_flywheel_setup}/apps/web/lib/flywheel.ts"
+    local flywheel_file="${GTBI_REPO:-$HOME/gastown_batteries_included}/apps/web/lib/flywheel.ts"
     if [[ ! -f "$flywheel_file" ]]; then
-        flywheel_file="/data/projects/agentic_coding_flywheel_setup/apps/web/lib/flywheel.ts"
+        flywheel_file="/data/projects/gastown_batteries_included/apps/web/lib/flywheel.ts"
     fi
 
     if [[ -f "$flywheel_file" ]]; then
@@ -709,7 +709,7 @@ write_json_results() {
 
     cat > "$JSON_FILE" <<EOF
 {
-  "test_suite": "ACFS New Tools E2E",
+  "test_suite": "GTBI New Tools E2E",
   "timestamp": "$(date -Iseconds)",
   "log_file": "$LOG_FILE",
   "summary": {
@@ -773,7 +773,7 @@ parse_args() {
 
 print_summary() {
     log "INFO" "SUMMARY" "========================================"
-    log "INFO" "SUMMARY" "ACFS NEW TOOLS E2E TEST SUMMARY"
+    log "INFO" "SUMMARY" "GTBI NEW TOOLS E2E TEST SUMMARY"
     log "INFO" "SUMMARY" "========================================"
     log "INFO" "SUMMARY" "Passed:  $PASS_COUNT"
     log "INFO" "SUMMARY" "Failed:  $FAIL_COUNT"
@@ -801,7 +801,7 @@ main() {
     parse_args "$@"
 
     log "INFO" "START" "========================================"
-    log "INFO" "START" "ACFS New Tools E2E Test Suite"
+    log "INFO" "START" "GTBI New Tools E2E Test Suite"
     log "INFO" "START" "Started: $(date -Iseconds)"
     log "INFO" "START" "========================================"
 

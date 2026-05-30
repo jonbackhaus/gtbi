@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 /**
- * ACFS Manifest-to-Installer Generator
- * Generates bash installer scripts and doctor checks from acfs.manifest.yaml
+ * GTBI Manifest-to-Installer Generator
+ * Generates bash installer scripts and doctor checks from gtbi.manifest.yaml
  *
  * Usage:
  *   bun run packages/manifest/src/generate.ts [--dry-run] [--verbose]
@@ -35,7 +35,7 @@ import type { Module, ModuleCategory, Manifest } from './types.js';
 
 const SCRIPT_FILE = fileURLToPath(import.meta.url);
 const PROJECT_ROOT = resolve(dirname(SCRIPT_FILE), '../../..');
-const MANIFEST_PATH = join(PROJECT_ROOT, 'acfs.manifest.yaml');
+const MANIFEST_PATH = join(PROJECT_ROOT, 'gtbi.manifest.yaml');
 const OUTPUT_DIR = join(PROJECT_ROOT, 'scripts/generated');
 const WEB_OUTPUT_DIR = join(PROJECT_ROOT, 'apps/web/lib/generated');
 const CHECKSUMS_PATH = join(PROJECT_ROOT, 'checksums.yaml');
@@ -43,18 +43,18 @@ const CHECKSUMS_PATH = join(PROJECT_ROOT, 'checksums.yaml');
 const HEADER = `#!/usr/bin/env bash
 # shellcheck disable=SC1091
 # ============================================================
-# AUTO-GENERATED FROM acfs.manifest.yaml - DO NOT EDIT
+# AUTO-GENERATED FROM gtbi.manifest.yaml - DO NOT EDIT
 # Regenerate: bun run generate (from packages/manifest)
 # ============================================================
 
 set -euo pipefail
 
 # Resolve relative helper paths first.
-ACFS_GENERATED_SCRIPT_DIR="\$(cd "\$(dirname "\${BASH_SOURCE[0]}")" && pwd)"
+GTBI_GENERATED_SCRIPT_DIR="\$(cd "\$(dirname "\${BASH_SOURCE[0]}")" && pwd)"
 
 # Ensure logging functions available
-if [[ -f "\$ACFS_GENERATED_SCRIPT_DIR/../lib/logging.sh" ]]; then
-    source "\$ACFS_GENERATED_SCRIPT_DIR/../lib/logging.sh"
+if [[ -f "\$GTBI_GENERATED_SCRIPT_DIR/../lib/logging.sh" ]]; then
+    source "\$GTBI_GENERATED_SCRIPT_DIR/../lib/logging.sh"
 else
     # Fallback logging functions if logging.sh not found
     # Progress/status output should go to stderr so stdout stays clean for piping.
@@ -67,11 +67,11 @@ else
 fi
 
 # Source install helpers (run_as_*_shell, selection helpers)
-if [[ -f "\$ACFS_GENERATED_SCRIPT_DIR/../lib/install_helpers.sh" ]]; then
-    source "\$ACFS_GENERATED_SCRIPT_DIR/../lib/install_helpers.sh"
+if [[ -f "\$GTBI_GENERATED_SCRIPT_DIR/../lib/install_helpers.sh" ]]; then
+    source "\$GTBI_GENERATED_SCRIPT_DIR/../lib/install_helpers.sh"
 fi
 
-acfs_generated_system_binary_path() {
+gtbi_generated_system_binary_path() {
     local name="\${1:-}"
     local candidate=""
 
@@ -101,18 +101,18 @@ acfs_generated_system_binary_path() {
     return 1
 }
 
-acfs_generated_resolve_current_user() {
+gtbi_generated_resolve_current_user() {
     local current_user=""
     local id_bin=""
     local whoami_bin=""
 
-    id_bin="\$(acfs_generated_system_binary_path id 2>/dev/null || true)"
+    id_bin="\$(gtbi_generated_system_binary_path id 2>/dev/null || true)"
     if [[ -n "\$id_bin" ]]; then
         current_user="\$("\$id_bin" -un 2>/dev/null || true)"
     fi
 
     if [[ -z "\$current_user" ]]; then
-        whoami_bin="\$(acfs_generated_system_binary_path whoami 2>/dev/null || true)"
+        whoami_bin="\$(gtbi_generated_system_binary_path whoami 2>/dev/null || true)"
         if [[ -n "\$whoami_bin" ]]; then
             current_user="\$("\$whoami_bin" 2>/dev/null || true)"
         fi
@@ -122,14 +122,14 @@ acfs_generated_resolve_current_user() {
     printf '%s\\n' "\$current_user"
 }
 
-acfs_generated_getent_passwd_entry() {
+gtbi_generated_getent_passwd_entry() {
     local user="\${1-}"
     local getent_bin=""
     local passwd_entry=""
     local passwd_line=""
     local printed_any=false
 
-    getent_bin="\$(acfs_generated_system_binary_path getent 2>/dev/null || true)"
+    getent_bin="\$(gtbi_generated_system_binary_path getent 2>/dev/null || true)"
     if [[ -z "\$user" ]]; then
         if [[ -n "\$getent_bin" ]]; then
             while IFS= read -r passwd_line; do
@@ -164,7 +164,7 @@ acfs_generated_getent_passwd_entry() {
     printf '%s\\n' "\$passwd_entry"
 }
 
-acfs_generated_passwd_home_from_entry() {
+gtbi_generated_passwd_home_from_entry() {
     local passwd_entry="\${1:-}"
     local passwd_home=""
 
@@ -178,17 +178,17 @@ acfs_generated_passwd_home_from_entry() {
     return 1
 }
 
-acfs_generated_target_user_exists() {
+gtbi_generated_target_user_exists() {
     local user="\${1:-}"
     local id_bin=""
 
     [[ -n "\$user" ]] || return 1
-    id_bin="\$(acfs_generated_system_binary_path id 2>/dev/null || true)"
+    id_bin="\$(gtbi_generated_system_binary_path id 2>/dev/null || true)"
     [[ -n "\$id_bin" ]] || return 1
     "\$id_bin" "\$user" >/dev/null 2>&1
 }
 
-acfs_generated_default_home_for_new_user() {
+gtbi_generated_default_home_for_new_user() {
     local user="\${1:-}"
 
     [[ -n "\$user" ]] || return 1
@@ -203,29 +203,29 @@ acfs_generated_default_home_for_new_user() {
 }
 
 # When running a generated installer directly (not sourced by install.sh),
-# set sane defaults and derive ACFS paths from the script location so
+# set sane defaults and derive GTBI paths from the script location so
 # contract validation passes and local assets are discoverable.
 if [[ "\${BASH_SOURCE[0]}" = "\${0}" ]]; then
     # Match install.sh defaults
     if [[ -z "\${TARGET_USER:-}" ]]; then
         if [[ \$EUID -eq 0 ]] && [[ -z "\${SUDO_USER:-}" ]]; then
-            _ACFS_DETECTED_USER="ubuntu"
+            _GTBI_DETECTED_USER="ubuntu"
         else
-            _ACFS_DETECTED_USER="\${SUDO_USER:-}"
-            if [[ -z "\$_ACFS_DETECTED_USER" ]]; then
-                _ACFS_DETECTED_USER="\$(acfs_generated_resolve_current_user 2>/dev/null || true)"
+            _GTBI_DETECTED_USER="\${SUDO_USER:-}"
+            if [[ -z "\$_GTBI_DETECTED_USER" ]]; then
+                _GTBI_DETECTED_USER="\$(gtbi_generated_resolve_current_user 2>/dev/null || true)"
             fi
-            if [[ -z "\$_ACFS_DETECTED_USER" ]]; then
+            if [[ -z "\$_GTBI_DETECTED_USER" ]]; then
                 log_error "Unable to resolve the current user for TARGET_USER"
                 exit 1
             fi
         fi
-        TARGET_USER="\$_ACFS_DETECTED_USER"
+        TARGET_USER="\$_GTBI_DETECTED_USER"
     fi
-    unset _ACFS_DETECTED_USER
+    unset _GTBI_DETECTED_USER
 
-    if declare -f _acfs_validate_target_user >/dev/null 2>&1; then
-        _acfs_validate_target_user "\${TARGET_USER}" "TARGET_USER" || exit 1
+    if declare -f _gtbi_validate_target_user >/dev/null 2>&1; then
+        _gtbi_validate_target_user "\${TARGET_USER}" "TARGET_USER" || exit 1
     elif [[ -z "\${TARGET_USER:-}" ]] || [[ ! "\${TARGET_USER}" =~ ^[a-z_][a-z0-9._-]*$ ]]; then
         log_error "Invalid TARGET_USER '\${TARGET_USER:-<empty>}' (expected: lowercase user name like 'ubuntu')"
         exit 1
@@ -233,45 +233,45 @@ if [[ "\${BASH_SOURCE[0]}" = "\${0}" ]]; then
 
     MODE="\${MODE:-vibe}"
 
-    _ACFS_EXPLICIT_TARGET_HOME="\${TARGET_HOME:-}"
-    if [[ -n "\$_ACFS_EXPLICIT_TARGET_HOME" ]]; then
-        _ACFS_EXPLICIT_TARGET_HOME="\${_ACFS_EXPLICIT_TARGET_HOME%/}"
+    _GTBI_EXPLICIT_TARGET_HOME="\${TARGET_HOME:-}"
+    if [[ -n "\$_GTBI_EXPLICIT_TARGET_HOME" ]]; then
+        _GTBI_EXPLICIT_TARGET_HOME="\${_GTBI_EXPLICIT_TARGET_HOME%/}"
     fi
-    _ACFS_RESOLVED_TARGET_HOME=""
-    if declare -f _acfs_resolve_target_home >/dev/null 2>&1; then
-        _ACFS_RESOLVED_TARGET_HOME="\$(_acfs_resolve_target_home "\${TARGET_USER}" "\$_ACFS_EXPLICIT_TARGET_HOME" || true)"
+    _GTBI_RESOLVED_TARGET_HOME=""
+    if declare -f _gtbi_resolve_target_home >/dev/null 2>&1; then
+        _GTBI_RESOLVED_TARGET_HOME="\$(_gtbi_resolve_target_home "\${TARGET_USER}" "\$_GTBI_EXPLICIT_TARGET_HOME" || true)"
     else
         if [[ "\${TARGET_USER}" == "root" ]]; then
-            _ACFS_RESOLVED_TARGET_HOME="/root"
+            _GTBI_RESOLVED_TARGET_HOME="/root"
         else
-            _acfs_passwd_entry="\$(acfs_generated_getent_passwd_entry "\${TARGET_USER}" 2>/dev/null || true)"
-            if [[ -n "\$_acfs_passwd_entry" ]]; then
-                _ACFS_RESOLVED_TARGET_HOME="\$(acfs_generated_passwd_home_from_entry "\$_acfs_passwd_entry" 2>/dev/null || true)"
+            _gtbi_passwd_entry="\$(gtbi_generated_getent_passwd_entry "\${TARGET_USER}" 2>/dev/null || true)"
+            if [[ -n "\$_gtbi_passwd_entry" ]]; then
+                _GTBI_RESOLVED_TARGET_HOME="\$(gtbi_generated_passwd_home_from_entry "\$_gtbi_passwd_entry" 2>/dev/null || true)"
             else
-                _acfs_current_user="\$(acfs_generated_resolve_current_user 2>/dev/null || true)"
-                _acfs_current_home="\${HOME:-}"
-                if [[ -n "\$_acfs_current_home" ]]; then
-                    _acfs_current_home="\${_acfs_current_home%/}"
+                _gtbi_current_user="\$(gtbi_generated_resolve_current_user 2>/dev/null || true)"
+                _gtbi_current_home="\${HOME:-}"
+                if [[ -n "\$_gtbi_current_home" ]]; then
+                    _gtbi_current_home="\${_gtbi_current_home%/}"
                 fi
-                if [[ "\${_acfs_current_user:-}" == "\${TARGET_USER}" ]] && [[ -n "\$_acfs_current_home" ]] && [[ "\$_acfs_current_home" == /* ]] && [[ "\$_acfs_current_home" != "/" ]] && { [[ -z "\$_ACFS_EXPLICIT_TARGET_HOME" ]] || [[ "\$_acfs_current_home" == "\$_ACFS_EXPLICIT_TARGET_HOME" ]]; }; then
-                    _ACFS_RESOLVED_TARGET_HOME="\$_acfs_current_home"
+                if [[ "\${_gtbi_current_user:-}" == "\${TARGET_USER}" ]] && [[ -n "\$_gtbi_current_home" ]] && [[ "\$_gtbi_current_home" == /* ]] && [[ "\$_gtbi_current_home" != "/" ]] && { [[ -z "\$_GTBI_EXPLICIT_TARGET_HOME" ]] || [[ "\$_gtbi_current_home" == "\$_GTBI_EXPLICIT_TARGET_HOME" ]]; }; then
+                    _GTBI_RESOLVED_TARGET_HOME="\$_gtbi_current_home"
                 fi
-                unset _acfs_current_user _acfs_current_home
+                unset _gtbi_current_user _gtbi_current_home
             fi
-            unset _acfs_passwd_entry
+            unset _gtbi_passwd_entry
         fi
     fi
-    if [[ -z "\$_ACFS_RESOLVED_TARGET_HOME" ]] && [[ \$EUID -eq 0 ]] && ! acfs_generated_target_user_exists "\${TARGET_USER}"; then
-        if [[ -n "\$_ACFS_EXPLICIT_TARGET_HOME" ]] && [[ "\$_ACFS_EXPLICIT_TARGET_HOME" == /* ]] && [[ "\$_ACFS_EXPLICIT_TARGET_HOME" != "/" ]]; then
-            _ACFS_RESOLVED_TARGET_HOME="\$_ACFS_EXPLICIT_TARGET_HOME"
+    if [[ -z "\$_GTBI_RESOLVED_TARGET_HOME" ]] && [[ \$EUID -eq 0 ]] && ! gtbi_generated_target_user_exists "\${TARGET_USER}"; then
+        if [[ -n "\$_GTBI_EXPLICIT_TARGET_HOME" ]] && [[ "\$_GTBI_EXPLICIT_TARGET_HOME" == /* ]] && [[ "\$_GTBI_EXPLICIT_TARGET_HOME" != "/" ]]; then
+            _GTBI_RESOLVED_TARGET_HOME="\$_GTBI_EXPLICIT_TARGET_HOME"
         else
-            _ACFS_RESOLVED_TARGET_HOME="\$(acfs_generated_default_home_for_new_user "\${TARGET_USER}" 2>/dev/null || true)"
+            _GTBI_RESOLVED_TARGET_HOME="\$(gtbi_generated_default_home_for_new_user "\${TARGET_USER}" 2>/dev/null || true)"
         fi
     fi
-    if [[ -n "\$_ACFS_RESOLVED_TARGET_HOME" ]]; then
-        TARGET_HOME="\${_ACFS_RESOLVED_TARGET_HOME%/}"
+    if [[ -n "\$_GTBI_RESOLVED_TARGET_HOME" ]]; then
+        TARGET_HOME="\${_GTBI_RESOLVED_TARGET_HOME%/}"
     fi
-    unset _ACFS_EXPLICIT_TARGET_HOME _ACFS_RESOLVED_TARGET_HOME
+    unset _GTBI_EXPLICIT_TARGET_HOME _GTBI_RESOLVED_TARGET_HOME
 
     if [[ -z "\${TARGET_HOME:-}" ]] || [[ "\${TARGET_HOME}" == "/" ]] || [[ "\${TARGET_HOME}" != /* ]]; then
         log_error "Invalid TARGET_HOME for '\${TARGET_USER}': \${TARGET_HOME:-<empty>} (must be an absolute path and cannot be '/')"
@@ -279,54 +279,54 @@ if [[ "\${BASH_SOURCE[0]}" = "\${0}" ]]; then
     fi
 
     # Derive "bootstrap" paths from the repo layout (scripts/generated/.. -> repo root).
-    if [[ -z "\${ACFS_BOOTSTRAP_DIR:-}" ]]; then
-        ACFS_BOOTSTRAP_DIR="\$(cd "\$ACFS_GENERATED_SCRIPT_DIR/../.." && pwd)"
+    if [[ -z "\${GTBI_BOOTSTRAP_DIR:-}" ]]; then
+        GTBI_BOOTSTRAP_DIR="\$(cd "\$GTBI_GENERATED_SCRIPT_DIR/../.." && pwd)"
     fi
 
-    ACFS_BIN_DIR="\${ACFS_BIN_DIR:-\$TARGET_HOME/.local/bin}"
-    if [[ -z "\${ACFS_BIN_DIR:-}" ]] || [[ "\${ACFS_BIN_DIR}" == "/" ]] || [[ "\${ACFS_BIN_DIR}" != /* ]]; then
-        log_error "ACFS_BIN_DIR must be an absolute path and cannot be '/' (got: \${ACFS_BIN_DIR:-<empty>})"
+    GTBI_BIN_DIR="\${GTBI_BIN_DIR:-\$TARGET_HOME/.local/bin}"
+    if [[ -z "\${GTBI_BIN_DIR:-}" ]] || [[ "\${GTBI_BIN_DIR}" == "/" ]] || [[ "\${GTBI_BIN_DIR}" != /* ]]; then
+        log_error "GTBI_BIN_DIR must be an absolute path and cannot be '/' (got: \${GTBI_BIN_DIR:-<empty>})"
         exit 1
     fi
-    ACFS_LIB_DIR="\${ACFS_LIB_DIR:-\$ACFS_BOOTSTRAP_DIR/scripts/lib}"
-    ACFS_GENERATED_DIR="\${ACFS_GENERATED_DIR:-\$ACFS_BOOTSTRAP_DIR/scripts/generated}"
-    ACFS_ASSETS_DIR="\${ACFS_ASSETS_DIR:-\$ACFS_BOOTSTRAP_DIR/acfs}"
-    ACFS_CHECKSUMS_YAML="\${ACFS_CHECKSUMS_YAML:-\$ACFS_BOOTSTRAP_DIR/checksums.yaml}"
-    ACFS_MANIFEST_YAML="\${ACFS_MANIFEST_YAML:-\$ACFS_BOOTSTRAP_DIR/acfs.manifest.yaml}"
+    GTBI_LIB_DIR="\${GTBI_LIB_DIR:-\$GTBI_BOOTSTRAP_DIR/scripts/lib}"
+    GTBI_GENERATED_DIR="\${GTBI_GENERATED_DIR:-\$GTBI_BOOTSTRAP_DIR/scripts/generated}"
+    GTBI_ASSETS_DIR="\${GTBI_ASSETS_DIR:-\$GTBI_BOOTSTRAP_DIR/gtbi}"
+    GTBI_CHECKSUMS_YAML="\${GTBI_CHECKSUMS_YAML:-\$GTBI_BOOTSTRAP_DIR/checksums.yaml}"
+    GTBI_MANIFEST_YAML="\${GTBI_MANIFEST_YAML:-\$GTBI_BOOTSTRAP_DIR/gtbi.manifest.yaml}"
 
-    export TARGET_USER TARGET_HOME MODE ACFS_BIN_DIR
-    export ACFS_BOOTSTRAP_DIR ACFS_LIB_DIR ACFS_GENERATED_DIR ACFS_ASSETS_DIR ACFS_CHECKSUMS_YAML ACFS_MANIFEST_YAML
+    export TARGET_USER TARGET_HOME MODE GTBI_BIN_DIR
+    export GTBI_BOOTSTRAP_DIR GTBI_LIB_DIR GTBI_GENERATED_DIR GTBI_ASSETS_DIR GTBI_CHECKSUMS_YAML GTBI_MANIFEST_YAML
 fi
 
 # Source contract validation
-if [[ -f "\$ACFS_GENERATED_SCRIPT_DIR/../lib/contract.sh" ]]; then
-    source "\$ACFS_GENERATED_SCRIPT_DIR/../lib/contract.sh"
+if [[ -f "\$GTBI_GENERATED_SCRIPT_DIR/../lib/contract.sh" ]]; then
+    source "\$GTBI_GENERATED_SCRIPT_DIR/../lib/contract.sh"
 fi
 
 # Optional security verification for upstream installer scripts.
-# Scripts that need it should call: acfs_security_init
-ACFS_SECURITY_READY=false
-acfs_security_init() {
-    if [[ "\${ACFS_SECURITY_READY}" = "true" ]]; then
+# Scripts that need it should call: gtbi_security_init
+GTBI_SECURITY_READY=false
+gtbi_security_init() {
+    if [[ "\${GTBI_SECURITY_READY}" = "true" ]]; then
         return 0
     fi
 
-    local security_lib="\$ACFS_GENERATED_SCRIPT_DIR/../lib/security.sh"
+    local security_lib="\$GTBI_GENERATED_SCRIPT_DIR/../lib/security.sh"
     if [[ ! -f "\$security_lib" ]]; then
         log_error "Security library not found: \$security_lib"
         return 1
     fi
 
-    # Use ACFS_CHECKSUMS_YAML if set by install.sh bootstrap (overrides security.sh default)
-    if [[ -n "\${ACFS_CHECKSUMS_YAML:-}" ]]; then
-        export CHECKSUMS_FILE="\${ACFS_CHECKSUMS_YAML}"
+    # Use GTBI_CHECKSUMS_YAML if set by install.sh bootstrap (overrides security.sh default)
+    if [[ -n "\${GTBI_CHECKSUMS_YAML:-}" ]]; then
+        export CHECKSUMS_FILE="\${GTBI_CHECKSUMS_YAML}"
     fi
 
     # shellcheck source=../lib/security.sh
     # shellcheck disable=SC1091  # runtime relative source
     source "\$security_lib"
     load_checksums || { log_error "Failed to load checksums.yaml"; return 1; }
-    ACFS_SECURITY_READY=true
+    GTBI_SECURITY_READY=true
     return 0
 }
 `;
@@ -334,7 +334,7 @@ acfs_security_init() {
 const MANIFEST_INDEX_HEADER = `#!/usr/bin/env bash
 # shellcheck disable=SC2034
 # ============================================================
-# AUTO-GENERATED FROM acfs.manifest.yaml - DO NOT EDIT
+# AUTO-GENERATED FROM gtbi.manifest.yaml - DO NOT EDIT
 # Regenerate: bun run generate (from packages/manifest)
 # ============================================================
 # Data-only manifest index. Safe to source.
@@ -371,8 +371,8 @@ const INTERNAL_SCRIPTS_TO_CHECKSUM = [
   'scripts/lib/user.sh',
   'scripts/lib/tools.sh',
   'scripts/lib/export-config.sh',
-  'scripts/acfs-global',
-  'scripts/acfs-update',
+  'scripts/gtbi-global',
+  'scripts/gtbi-update',
 ] as const;
 
 // ============================================================
@@ -643,7 +643,7 @@ function moduleFailureLines(module: Module, reason: string): string[] {
 }
 
 function generatedHelperPreludeLines(): string[] {
-  const startMarker = 'acfs_generated_system_binary_path() {';
+  const startMarker = 'gtbi_generated_system_binary_path() {';
   const endMarker = '\n# When running a generated installer directly';
   const start = HEADER.indexOf(startMarker);
   const end = HEADER.indexOf(endMarker, start);
@@ -656,8 +656,8 @@ function generatedHelperPreludeLines(): string[] {
 }
 
 function generatedSystemBinaryPreludeLines(): string[] {
-  const startMarker = 'acfs_generated_system_binary_path() {';
-  const endMarker = '\n\nacfs_generated_resolve_current_user() {';
+  const startMarker = 'gtbi_generated_system_binary_path() {';
+  const endMarker = '\n\ngtbi_generated_resolve_current_user() {';
   const start = HEADER.indexOf(startMarker);
   const end = HEADER.indexOf(endMarker, start);
 
@@ -669,20 +669,20 @@ function generatedSystemBinaryPreludeLines(): string[] {
 }
 
 function commandLinesNeedGeneratedHelpers(commandLines: string[]): boolean {
-  return commandLines.some((line) => line.includes('acfs_generated_'));
+  return commandLines.some((line) => line.includes('gtbi_generated_'));
 }
 
 function commandLinesNeedPrimaryBinHelpers(commandLines: string[]): boolean {
   return commandLines.some(
     (line) =>
-      line.includes('acfs_link_primary_bin_command') ||
-      line.includes('acfs_install_executable_into_primary_bin')
+      line.includes('gtbi_link_primary_bin_command') ||
+      line.includes('gtbi_install_executable_into_primary_bin')
   );
 }
 
 function primaryBinHelperPreludeLines(): string[] {
   return [
-    'acfs_child_log_error() {',
+    'gtbi_child_log_error() {',
     '    if declare -f log_error >/dev/null 2>&1; then',
     '        log_error "$@"',
     '    else',
@@ -690,27 +690,27 @@ function primaryBinHelperPreludeLines(): string[] {
     '    fi',
     '}',
     '',
-    'acfs_child_primary_bin_dir() {',
-    '    local primary_bin_dir="${ACFS_BIN_DIR:-}"',
+    'gtbi_child_primary_bin_dir() {',
+    '    local primary_bin_dir="${GTBI_BIN_DIR:-}"',
     '    local fallback_home="${HOME:-}"',
     '',
     '    if [[ -z "$primary_bin_dir" ]]; then',
     '        if [[ -z "$fallback_home" ]] || [[ "$fallback_home" == "/" ]] || [[ "$fallback_home" != /* ]]; then',
-    '            acfs_child_log_error "ACFS_BIN_DIR is unset and HOME is not a usable absolute path"',
+    '            gtbi_child_log_error "GTBI_BIN_DIR is unset and HOME is not a usable absolute path"',
     '            return 1',
     '        fi',
     '        primary_bin_dir="$fallback_home/.local/bin"',
     '    fi',
     '',
     '    if [[ -z "$primary_bin_dir" ]] || [[ "$primary_bin_dir" == "/" ]] || [[ "$primary_bin_dir" != /* ]]; then',
-    '        acfs_child_log_error "ACFS_BIN_DIR must be an absolute path and cannot be \'/\' (got: ${primary_bin_dir:-<empty>})"',
+    '        gtbi_child_log_error "GTBI_BIN_DIR must be an absolute path and cannot be \'/\' (got: ${primary_bin_dir:-<empty>})"',
     '        return 1',
     '    fi',
     '',
     '    printf \'%s\\n\' "$primary_bin_dir"',
     '}',
     '',
-    'acfs_child_primary_bin_requires_root() {',
+    'gtbi_child_primary_bin_requires_root() {',
     '    local primary_bin_dir="$1"',
     '    local target_home="${TARGET_HOME:-${HOME:-}}"',
     '',
@@ -721,9 +721,9 @@ function primaryBinHelperPreludeLines(): string[] {
     '    esac',
     '}',
     '',
-    'acfs_child_run_root_bin_command() {',
+    'gtbi_child_run_root_bin_command() {',
     '    if [[ -z "${1:-}" || "${1:-}" != /* ]]; then',
-    '        acfs_child_log_error "Root primary bin command must be an absolute trusted path (got: ${1:-<empty>})"',
+    '        gtbi_child_log_error "Root primary bin command must be an absolute trusted path (got: ${1:-<empty>})"',
     '        return 1',
     '    fi',
     '',
@@ -733,77 +733,77 @@ function primaryBinHelperPreludeLines(): string[] {
     '    fi',
     '',
     '    local sudo_bin=""',
-    '    sudo_bin="$(acfs_generated_system_binary_path sudo 2>/dev/null || true)"',
+    '    sudo_bin="$(gtbi_generated_system_binary_path sudo 2>/dev/null || true)"',
     '    if [[ -n "$sudo_bin" ]]; then',
     '        "$sudo_bin" -n "$@"',
     '        return $?',
     '    fi',
     '',
-    '    acfs_child_log_error "Primary bin dir requires root, but sudo is unavailable: ${ACFS_BIN_DIR:-<unset>}"',
+    '    gtbi_child_log_error "Primary bin dir requires root, but sudo is unavailable: ${GTBI_BIN_DIR:-<unset>}"',
     '    return 1',
     '}',
     '',
-    'acfs_child_primary_bin_tool_path() {',
+    'gtbi_child_primary_bin_tool_path() {',
     '    local name="${1:-}"',
     '    local tool_path=""',
     '',
-    '    tool_path="$(acfs_generated_system_binary_path "$name" 2>/dev/null || true)"',
+    '    tool_path="$(gtbi_generated_system_binary_path "$name" 2>/dev/null || true)"',
     '    if [[ -z "$tool_path" ]]; then',
-    '        acfs_child_log_error "Unable to locate trusted $name for primary bin operation"',
+    '        gtbi_child_log_error "Unable to locate trusted $name for primary bin operation"',
     '        return 1',
     '    fi',
     '',
     '    printf \'%s\\n\' "$tool_path"',
     '}',
     '',
-    'acfs_child_ensure_primary_bin_dir() {',
+    'gtbi_child_ensure_primary_bin_dir() {',
     '    local primary_bin_dir="$1"',
     '    local mkdir_bin=""',
     '',
-    '    mkdir_bin="$(acfs_child_primary_bin_tool_path mkdir)" || return 1',
+    '    mkdir_bin="$(gtbi_child_primary_bin_tool_path mkdir)" || return 1',
     '',
-    '    if acfs_child_primary_bin_requires_root "$primary_bin_dir"; then',
-    '        acfs_child_run_root_bin_command "$mkdir_bin" -p "$primary_bin_dir"',
+    '    if gtbi_child_primary_bin_requires_root "$primary_bin_dir"; then',
+    '        gtbi_child_run_root_bin_command "$mkdir_bin" -p "$primary_bin_dir"',
     '        return $?',
     '    fi',
     '',
     '    "$mkdir_bin" -p "$primary_bin_dir"',
     '}',
     '',
-    'acfs_link_primary_bin_command() {',
+    'gtbi_link_primary_bin_command() {',
     '    local source_path="$1"',
     '    local command_name="$2"',
     '    local primary_bin_dir=""',
     '    local dest_path=""',
     '    local ln_bin=""',
     '',
-    '    primary_bin_dir="$(acfs_child_primary_bin_dir)" || return 1',
+    '    primary_bin_dir="$(gtbi_child_primary_bin_dir)" || return 1',
     '    dest_path="$primary_bin_dir/$command_name"',
-    '    acfs_child_ensure_primary_bin_dir "$primary_bin_dir" || return 1',
-    '    ln_bin="$(acfs_child_primary_bin_tool_path ln)" || return 1',
+    '    gtbi_child_ensure_primary_bin_dir "$primary_bin_dir" || return 1',
+    '    ln_bin="$(gtbi_child_primary_bin_tool_path ln)" || return 1',
     '',
-    '    if acfs_child_primary_bin_requires_root "$primary_bin_dir"; then',
-    '        acfs_child_run_root_bin_command "$ln_bin" -sf "$source_path" "$dest_path"',
+    '    if gtbi_child_primary_bin_requires_root "$primary_bin_dir"; then',
+    '        gtbi_child_run_root_bin_command "$ln_bin" -sf "$source_path" "$dest_path"',
     '        return $?',
     '    fi',
     '',
     '    "$ln_bin" -sf "$source_path" "$dest_path"',
     '}',
     '',
-    'acfs_install_executable_into_primary_bin() {',
+    'gtbi_install_executable_into_primary_bin() {',
     '    local src_path="$1"',
     '    local command_name="$2"',
     '    local primary_bin_dir=""',
     '    local dest_path=""',
     '    local install_bin=""',
     '',
-    '    primary_bin_dir="$(acfs_child_primary_bin_dir)" || return 1',
+    '    primary_bin_dir="$(gtbi_child_primary_bin_dir)" || return 1',
     '    dest_path="$primary_bin_dir/$command_name"',
-    '    acfs_child_ensure_primary_bin_dir "$primary_bin_dir" || return 1',
-    '    install_bin="$(acfs_child_primary_bin_tool_path install)" || return 1',
+    '    gtbi_child_ensure_primary_bin_dir "$primary_bin_dir" || return 1',
+    '    install_bin="$(gtbi_child_primary_bin_tool_path install)" || return 1',
     '',
-    '    if acfs_child_primary_bin_requires_root "$primary_bin_dir"; then',
-    '        acfs_child_run_root_bin_command "$install_bin" -m 0755 "$src_path" "$dest_path"',
+    '    if gtbi_child_primary_bin_requires_root "$primary_bin_dir"; then',
+    '        gtbi_child_run_root_bin_command "$install_bin" -m 0755 "$src_path" "$dest_path"',
     '        return $?',
     '    fi',
     '',
@@ -1067,7 +1067,7 @@ function generateVerifiedInstallerSnippet(module: Module): string[] {
   // If run_in_tmux is true, we run the installer in a detached tmux session
   // This prevents blocking when the installer starts a long-running server
   if (runInTmux) {
-    const tmuxSession = 'acfs-services';
+    const tmuxSession = 'gtbi-services';
     const lines: string[] = [
       '# Run installer in detached tmux session (run_in_tmux: true)',
       '# This prevents blocking when the installer starts a long-running service',
@@ -1078,7 +1078,7 @@ function generateVerifiedInstallerSnippet(module: Module): string[] {
       'local url=""',
       'local expected_sha256=""',
       'local known_installers_decl=""',
-      'if acfs_security_init; then',
+      'if gtbi_security_init; then',
       '    known_installers_decl="$(declare -p KNOWN_INSTALLERS 2>/dev/null || true)"',
       '    if [[ "$known_installers_decl" == declare\\ -A* ]]; then',
       '        url="${KNOWN_INSTALLERS[$tool]:-}"',
@@ -1090,7 +1090,7 @@ function generateVerifiedInstallerSnippet(module: Module): string[] {
       `        log_error "${escapeBash(module.id)}: KNOWN_INSTALLERS array not available"`,
       '    fi',
       'else',
-      `    log_error "${escapeBash(module.id)}: acfs_security_init failed - check security.sh and checksums.yaml"`,
+      `    log_error "${escapeBash(module.id)}: gtbi_security_init failed - check security.sh and checksums.yaml"`,
       'fi',
       '',
       'if [[ -z "$url" ]]; then',
@@ -1104,7 +1104,7 @@ function generateVerifiedInstallerSnippet(module: Module): string[] {
       '',
       '# Download verified installer to a temp file (so tmux can exec it without pipes)',
       'local tmp_install',
-      'tmp_install="$(mktemp "${TMPDIR:-/tmp}/acfs-install-${tool}.XXXXXX" 2>/dev/null)" || tmp_install=""',
+      'tmp_install="$(mktemp "${TMPDIR:-/tmp}/gtbi-install-${tool}.XXXXXX" 2>/dev/null)" || tmp_install=""',
       'if [[ -z "$tmp_install" ]]; then',
       `    log_error "Failed to create temp installer for ${module.id}"`,
       '    false',
@@ -1218,18 +1218,18 @@ function generateVerifiedInstallerSnippet(module: Module): string[] {
   }
 
   const securityInitCondition = hasTmpdirEnv
-    ? 'if [[ "$verified_installer_env_ready" = "true" ]] && acfs_security_init; then'
-    : 'if acfs_security_init; then';
+    ? 'if [[ "$verified_installer_env_ready" = "true" ]] && gtbi_security_init; then'
+    : 'if gtbi_security_init; then';
   const securityInitFailureLines = hasTmpdirEnv
     ? [
         '    if [[ "$verified_installer_env_ready" != "true" ]]; then',
         `        log_error "${escapeBash(module.id)}: verified installer environment setup failed"`,
         '    else',
-        `        log_error "${escapeBash(module.id)}: acfs_security_init failed - check security.sh and checksums.yaml"`,
+        `        log_error "${escapeBash(module.id)}: gtbi_security_init failed - check security.sh and checksums.yaml"`,
         '    fi',
       ]
     : [
-        `    log_error "${escapeBash(module.id)}: acfs_security_init failed - check security.sh and checksums.yaml"`,
+        `    log_error "${escapeBash(module.id)}: gtbi_security_init failed - check security.sh and checksums.yaml"`,
       ];
 
   const verifiedInstallAttemptLines: string[] = [
@@ -1278,7 +1278,7 @@ function generateVerifiedInstallerSnippet(module: Module): string[] {
     ? `run_as_target_runner ${shellQuote(vi.runner)} '-s' '--' "\${fsfs_installer_args[@]}"`
     : `${shellQuote(vi.runner)} -s -- "\${fsfs_installer_args[@]}"`;
   const fsfsVerifiedInstallAttemptLines: string[] = [
-    'if acfs_security_init; then',
+    'if gtbi_security_init; then',
     '    local known_installers_decl=""',
     '    # Check if KNOWN_INSTALLERS is available as an associative array (declare -A)',
     '    known_installers_decl="$(declare -p KNOWN_INSTALLERS 2>/dev/null || true)"',
@@ -1318,8 +1318,8 @@ function generateVerifiedInstallerSnippet(module: Module): string[] {
     '                    fsfs_can_run=false',
     `                    log_warn "${escapeBash(module.id)}: FrankenSearch Linux binary artifact unavailable for this architecture; skipping source-build fallback"`,
     '                else',
-    '                    if [[ -n "${ACFS_FSFS_VERSION:-}" ]]; then',
-    '                        fsfs_candidates+=("$ACFS_FSFS_VERSION")',
+    '                    if [[ -n "${GTBI_FSFS_VERSION:-}" ]]; then',
+    '                        fsfs_candidates+=("$GTBI_FSFS_VERSION")',
     '                    else',
     '                        while IFS= read -r fsfs_candidate; do',
     '                            [[ -n "$fsfs_candidate" ]] || continue',
@@ -1327,9 +1327,9 @@ function generateVerifiedInstallerSnippet(module: Module): string[] {
     '                                *" $fsfs_candidate "*) ;;',
     '                                *) fsfs_candidates+=("$fsfs_candidate") ;;',
     '                            esac',
-    '                        done < <(acfs_curl --connect-timeout 30 --max-time 60 -H "Accept: application/vnd.github.v3+json" "https://api.github.com/repos/Dicklesworthstone/frankensearch/releases?per_page=10" 2>/dev/null | sed -n \'s/.*"tag_name"[[:space:]]*:[[:space:]]*"\\([^"]*\\)".*/\\1/p\' || true)',
+    '                        done < <(gtbi_curl --connect-timeout 30 --max-time 60 -H "Accept: application/vnd.github.v3+json" "https://api.github.com/repos/Dicklesworthstone/frankensearch/releases?per_page=10" 2>/dev/null | sed -n \'s/.*"tag_name"[[:space:]]*:[[:space:]]*"\\([^"]*\\)".*/\\1/p\' || true)',
     '',
-    '                        fsfs_candidate="$(acfs_curl --connect-timeout 30 --max-time 60 -o /dev/null -w \'%{url_effective}\' "https://github.com/Dicklesworthstone/frankensearch/releases/latest" 2>/dev/null | sed -E \'s|.*/tag/||\' || true)"',
+    '                        fsfs_candidate="$(gtbi_curl --connect-timeout 30 --max-time 60 -o /dev/null -w \'%{url_effective}\' "https://github.com/Dicklesworthstone/frankensearch/releases/latest" 2>/dev/null | sed -E \'s|.*/tag/||\' || true)"',
     '                        if [[ "$fsfs_candidate" =~ ^v[0-9][A-Za-z0-9._-]*$ ]]; then',
     '                            case " ${fsfs_candidates[*]} " in',
     '                                *" $fsfs_candidate "*) ;;',
@@ -1346,7 +1346,7 @@ function generateVerifiedInstallerSnippet(module: Module): string[] {
     '                            [[ "$fsfs_version" =~ ^v[0-9][A-Za-z0-9._-]*$ ]] || continue',
     '                            fsfs_version_bare="${fsfs_version#v}"',
     '                            fsfs_artifact_url="https://github.com/Dicklesworthstone/frankensearch/releases/download/${fsfs_version}/fsfs-lite-${fsfs_version_bare}-${fsfs_target}.tar.xz"',
-    '                            fsfs_checksum="$(acfs_curl --connect-timeout 30 --max-time 60 "${fsfs_artifact_url}.sha256" 2>/dev/null | awk \'NR == 1 { print $1 }\' || true)"',
+    '                            fsfs_checksum="$(gtbi_curl --connect-timeout 30 --max-time 60 "${fsfs_artifact_url}.sha256" 2>/dev/null | awk \'NR == 1 { print $1 }\' || true)"',
     '                            if [[ "$fsfs_checksum" =~ ^[0-9A-Fa-f]{64}$ ]]; then',
     '                                fsfs_installer_args+=(',
     '                                    --version "$fsfs_version"',
@@ -1385,7 +1385,7 @@ function generateVerifiedInstallerSnippet(module: Module): string[] {
     `        log_error "${escapeBash(module.id)}: KNOWN_INSTALLERS array not available"`,
     '    fi',
     'else',
-    `    log_error "${escapeBash(module.id)}: acfs_security_init failed - check security.sh and checksums.yaml"`,
+    `    log_error "${escapeBash(module.id)}: gtbi_security_init failed - check security.sh and checksums.yaml"`,
     'fi',
   ];
 
@@ -1684,10 +1684,10 @@ function generateManifestIndex(manifest: Manifest, manifestSha256: string): stri
   const orderedModules = sortModulesByPhaseAndDependency(manifest);
   const lines: string[] = [MANIFEST_INDEX_HEADER];
 
-  lines.push(`ACFS_MANIFEST_SHA256="${manifestSha256}"`);
+  lines.push(`GTBI_MANIFEST_SHA256="${manifestSha256}"`);
   lines.push('');
 
-  lines.push('ACFS_MODULES_IN_ORDER=(');
+  lines.push('GTBI_MODULES_IN_ORDER=(');
   for (const module of orderedModules) {
     lines.push(`  "${module.id}"`);
   }
@@ -1697,28 +1697,28 @@ function generateManifestIndex(manifest: Manifest, manifestSha256: string): stri
   // Note: Associative array keys must NOT use double quotes inside [] with set -u
   // Using ["key"] causes bash to try variable expansion on $key, failing with "unbound variable"
   // Correct: [key]="value" or ['key']="value"
-  lines.push('declare -gA ACFS_MODULE_PHASE=(');
+  lines.push('declare -gA GTBI_MODULE_PHASE=(');
   for (const module of orderedModules) {
     lines.push(`  ['${module.id}']="${getModulePhase(module)}"`);
   }
   lines.push(')');
   lines.push('');
 
-  lines.push('declare -gA ACFS_MODULE_DEPS=(');
+  lines.push('declare -gA GTBI_MODULE_DEPS=(');
   for (const module of orderedModules) {
     lines.push(`  ['${module.id}']="${escapeBash(joinList(module.dependencies))}"`);
   }
   lines.push(')');
   lines.push('');
 
-  lines.push('declare -gA ACFS_MODULE_FUNC=(');
+  lines.push('declare -gA GTBI_MODULE_FUNC=(');
   for (const module of orderedModules) {
     lines.push(`  ['${module.id}']="${toFunctionName(module.id)}"`);
   }
   lines.push(')');
   lines.push('');
 
-  lines.push('declare -gA ACFS_MODULE_CATEGORY=(');
+  lines.push('declare -gA GTBI_MODULE_CATEGORY=(');
   for (const module of orderedModules) {
     const category = module.category ?? getModuleCategory(module.id);
     lines.push(`  ['${module.id}']="${escapeBash(category)}"`);
@@ -1726,14 +1726,14 @@ function generateManifestIndex(manifest: Manifest, manifestSha256: string): stri
   lines.push(')');
   lines.push('');
 
-  lines.push('declare -gA ACFS_MODULE_TAGS=(');
+  lines.push('declare -gA GTBI_MODULE_TAGS=(');
   for (const module of orderedModules) {
     lines.push(`  ['${module.id}']="${escapeBash(joinList(module.tags))}"`);
   }
   lines.push(')');
   lines.push('');
 
-  lines.push('declare -gA ACFS_MODULE_DEFAULT=(');
+  lines.push('declare -gA GTBI_MODULE_DEFAULT=(');
   for (const module of orderedModules) {
     lines.push(`  ['${module.id}']="${module.enabled_by_default ? '1' : '0'}"`);
   }
@@ -1741,7 +1741,7 @@ function generateManifestIndex(manifest: Manifest, manifestSha256: string): stri
   lines.push('');
 
   // Module descriptions for progress display (bd-21kh)
-  lines.push('declare -gA ACFS_MODULE_DESC=(');
+  lines.push('declare -gA GTBI_MODULE_DESC=(');
   for (const module of orderedModules) {
     lines.push(`  ['${module.id}']="${escapeBash(module.description || module.id)}"`);
   }
@@ -1749,7 +1749,7 @@ function generateManifestIndex(manifest: Manifest, manifestSha256: string): stri
   lines.push('');
 
   // Installed check commands for skip-if-present logic (bd-1eop)
-  lines.push('declare -gA ACFS_MODULE_INSTALLED_CHECK=(');
+  lines.push('declare -gA GTBI_MODULE_INSTALLED_CHECK=(');
   for (const module of orderedModules) {
     if (module.installed_check?.command) {
       lines.push(`  ['${module.id}']="${escapeBash(module.installed_check.command)}"`);
@@ -1759,7 +1759,7 @@ function generateManifestIndex(manifest: Manifest, manifestSha256: string): stri
   lines.push('');
 
   // Installed check run_as context (bd-1eop)
-  lines.push('declare -gA ACFS_MODULE_INSTALLED_CHECK_RUN_AS=(');
+  lines.push('declare -gA GTBI_MODULE_INSTALLED_CHECK_RUN_AS=(');
   for (const module of orderedModules) {
     if (module.installed_check?.run_as) {
       lines.push(`  ['${module.id}']="${escapeBash(module.installed_check.run_as)}"`);
@@ -1768,8 +1768,8 @@ function generateManifestIndex(manifest: Manifest, manifestSha256: string): stri
   lines.push(')');
   lines.push('');
 
-  // Mark that the index is fully loaded (used by acfs_resolve_selection)
-  lines.push('ACFS_MANIFEST_INDEX_LOADED=true');
+  // Mark that the index is fully loaded (used by gtbi_resolve_selection)
+  lines.push('GTBI_MANIFEST_INDEX_LOADED=true');
   lines.push('');
 
   return lines.join('\n');
@@ -1782,7 +1782,7 @@ function generateManifestIndex(manifest: Manifest, manifestSha256: string): stri
 function generateInternalChecksums(): string {
   const lines: string[] = [INTERNAL_CHECKSUMS_HEADER];
 
-  lines.push('declare -gA ACFS_INTERNAL_CHECKSUMS=(');
+  lines.push('declare -gA GTBI_INTERNAL_CHECKSUMS=(');
   for (const relPath of INTERNAL_SCRIPTS_TO_CHECKSUM) {
     const absPath = join(PROJECT_ROOT, relPath);
     if (existsSync(absPath)) {
@@ -1796,8 +1796,8 @@ function generateInternalChecksums(): string {
   lines.push(')');
   lines.push('');
 
-  lines.push(`ACFS_INTERNAL_CHECKSUMS_COUNT=${INTERNAL_SCRIPTS_TO_CHECKSUM.length}`);
-  lines.push(`ACFS_INTERNAL_CHECKSUMS_GENERATED="$(date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || echo unknown)"`);
+  lines.push(`GTBI_INTERNAL_CHECKSUMS_COUNT=${INTERNAL_SCRIPTS_TO_CHECKSUM.length}`);
+  lines.push(`GTBI_INTERNAL_CHECKSUMS_GENERATED="$(date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || echo unknown)"`);
   lines.push('');
 
   return lines.join('\n');
@@ -1824,7 +1824,7 @@ function generateCategoryScript(manifest: Manifest, category: ModuleCategory): s
     lines.push(`# ${sanitizeForBashComment(module.description)}`);
     lines.push(`${funcName}() {`);
     lines.push(`    local module_id="${module.id}"`);
-    lines.push('    acfs_require_contract "module:${module_id}" || return 1');
+    lines.push('    gtbi_require_contract "module:${module_id}" || return 1');
     lines.push(`    log_step "Installing ${module.id}"`);
     lines.push('');
 
@@ -1839,7 +1839,7 @@ function generateCategoryScript(manifest: Manifest, category: ModuleCategory): s
     if (skipVerify) {
       lines.push('    # Verify skipped: run_in_tmux installs async in detached tmux session');
       lines.push(`    log_info "${module.id}: installation running in background tmux session"`);
-      const tmuxSession = 'acfs-services';
+      const tmuxSession = 'gtbi-services';
       lines.push(`    log_info "Attach with: tmux attach -t ${tmuxSession}"`);
     } else {
       lines.push('    # Verify');
@@ -1929,42 +1929,42 @@ function generateDoctorChecks(manifest: Manifest): string {
   lines.push('        explicit_target_home="${explicit_target_home%/}"');
   lines.push('    fi');
   lines.push('');
-  lines.push('    if declare -f _acfs_validate_target_user >/dev/null 2>&1; then');
-  lines.push('        _acfs_validate_target_user "$target_user" "TARGET_USER" || return 1');
+  lines.push('    if declare -f _gtbi_validate_target_user >/dev/null 2>&1; then');
+  lines.push('        _gtbi_validate_target_user "$target_user" "TARGET_USER" || return 1');
   lines.push('    elif [[ -z "$target_user" ]] || [[ ! "$target_user" =~ ^[a-z_][a-z0-9._-]*$ ]]; then');
   lines.push('        log_error "Invalid TARGET_USER \'${target_user:-<empty>}\' (expected: lowercase user name like \'ubuntu\')"');
   lines.push('        return 1');
   lines.push('    fi');
   lines.push('');
-  lines.push('    if declare -f _acfs_resolve_target_home >/dev/null 2>&1; then');
-  lines.push('        resolved_target_home="$(_acfs_resolve_target_home "$target_user" "$explicit_target_home" || true)"');
+  lines.push('    if declare -f _gtbi_resolve_target_home >/dev/null 2>&1; then');
+  lines.push('        resolved_target_home="$(_gtbi_resolve_target_home "$target_user" "$explicit_target_home" || true)"');
   lines.push('    elif [[ "$target_user" == "root" ]]; then');
   lines.push('        resolved_target_home="/root"');
   lines.push('    else');
-  lines.push('        local _acfs_passwd_entry=""');
-  lines.push('        _acfs_passwd_entry="$(acfs_generated_getent_passwd_entry "$target_user" 2>/dev/null || true)"');
-  lines.push('        if [[ -n "$_acfs_passwd_entry" ]]; then');
-  lines.push('            resolved_target_home="$(acfs_generated_passwd_home_from_entry "$_acfs_passwd_entry" 2>/dev/null || true)"');
+  lines.push('        local _gtbi_passwd_entry=""');
+  lines.push('        _gtbi_passwd_entry="$(gtbi_generated_getent_passwd_entry "$target_user" 2>/dev/null || true)"');
+  lines.push('        if [[ -n "$_gtbi_passwd_entry" ]]; then');
+  lines.push('            resolved_target_home="$(gtbi_generated_passwd_home_from_entry "$_gtbi_passwd_entry" 2>/dev/null || true)"');
   lines.push('        else');
-  lines.push('            _acfs_current_user="$(acfs_generated_resolve_current_user 2>/dev/null || true)"');
+  lines.push('            _gtbi_current_user="$(gtbi_generated_resolve_current_user 2>/dev/null || true)"');
   lines.push('            current_home="${HOME:-}"');
   lines.push('            if [[ -n "$current_home" ]]; then');
   lines.push('                current_home="${current_home%/}"');
   lines.push('            fi');
-  lines.push('            if [[ "${_acfs_current_user:-}" == "$target_user" ]] && [[ -n "$current_home" ]] && [[ "$current_home" == /* ]] && [[ "$current_home" != "/" ]] && { [[ -z "$explicit_target_home" ]] || [[ "$current_home" == "$explicit_target_home" ]]; }; then');
+  lines.push('            if [[ "${_gtbi_current_user:-}" == "$target_user" ]] && [[ -n "$current_home" ]] && [[ "$current_home" == /* ]] && [[ "$current_home" != "/" ]] && { [[ -z "$explicit_target_home" ]] || [[ "$current_home" == "$explicit_target_home" ]]; }; then');
   lines.push('                resolved_target_home="$current_home"');
   lines.push('            fi');
-  lines.push('            unset _acfs_current_user');
+  lines.push('            unset _gtbi_current_user');
   lines.push('        fi');
-  lines.push('        unset _acfs_passwd_entry');
+  lines.push('        unset _gtbi_passwd_entry');
   lines.push('    fi');
   lines.push('    if [[ -n "$resolved_target_home" ]]; then');
   lines.push('        target_home="${resolved_target_home%/}"');
   lines.push('    fi');
   lines.push('');
-  lines.push('    if [[ "$cmd" == *"acfs_generated_"* ]]; then');
+  lines.push('    if [[ "$cmd" == *"gtbi_generated_"* ]]; then');
   lines.push('        local helper_prelude=""');
-  lines.push('        helper_prelude="$(declare -f acfs_generated_system_binary_path acfs_generated_resolve_current_user acfs_generated_getent_passwd_entry acfs_generated_passwd_home_from_entry 2>/dev/null || true)"');
+  lines.push('        helper_prelude="$(declare -f gtbi_generated_system_binary_path gtbi_generated_resolve_current_user gtbi_generated_getent_passwd_entry gtbi_generated_passwd_home_from_entry 2>/dev/null || true)"');
   lines.push('        if [[ -z "$helper_prelude" ]]; then');
   lines.push('            log_error "Generated helper functions are unavailable for manifest check command"');
   lines.push('            return 1');
@@ -1974,8 +1974,8 @@ function generateDoctorChecks(manifest: Manifest): string {
   lines.push('');
   lines.push('    local env_bin=""');
   lines.push('    local bash_bin=""');
-  lines.push('    env_bin="$(acfs_generated_system_binary_path env 2>/dev/null || true)"');
-  lines.push('    bash_bin="$(acfs_generated_system_binary_path bash 2>/dev/null || true)"');
+  lines.push('    env_bin="$(gtbi_generated_system_binary_path env 2>/dev/null || true)"');
+  lines.push('    bash_bin="$(gtbi_generated_system_binary_path bash 2>/dev/null || true)"');
   lines.push('    if [[ -z "$env_bin" || -z "$bash_bin" ]]; then');
   lines.push('        return 1');
   lines.push('    fi');
@@ -1986,9 +1986,9 @@ function generateDoctorChecks(manifest: Manifest): string {
   lines.push('                log_error "Invalid TARGET_HOME for \'$target_user\': ${target_home:-<empty>} (must be an absolute path and cannot be \'/\')"');
   lines.push('                return 1');
   lines.push('            fi');
-  lines.push('            local target_bin="${ACFS_BIN_DIR:-$target_home/.local/bin}"');
+  lines.push('            local target_bin="${GTBI_BIN_DIR:-$target_home/.local/bin}"');
   lines.push('            if [[ -z "$target_bin" ]] || [[ "$target_bin" != /* ]] || [[ "$target_bin" == "/" ]]; then');
-  lines.push('                log_error "ACFS_BIN_DIR must be an absolute path and cannot be \'/\' (got: ${target_bin:-<empty>})"');
+  lines.push('                log_error "GTBI_BIN_DIR must be an absolute path and cannot be \'/\' (got: ${target_bin:-<empty>})"');
   lines.push('                return 1');
   lines.push('            fi');
   lines.push('            local dir=""');
@@ -1998,7 +1998,7 @@ function generateDoctorChecks(manifest: Manifest): string {
   lines.push('            for dir in \\');
   lines.push('                "$target_bin" \\');
   lines.push('                "$target_home/.local/bin" \\');
-  lines.push('                "$target_home/.acfs/bin" \\');
+  lines.push('                "$target_home/.gtbi/bin" \\');
   lines.push('                "$target_home/.bun/bin" \\');
   lines.push('                "$target_home/.cargo/bin" \\');
   lines.push('                "$target_home/.atuin/bin" \\');
@@ -2021,19 +2021,19 @@ function generateDoctorChecks(manifest: Manifest): string {
   lines.push('            done');
   lines.push('            target_path_prefix=$(IFS=:; echo "${target_path_entries[*]}")');
   lines.push('            target_path="$target_path_prefix${PATH:+:$PATH}"');
-  lines.push('            current_user="$(acfs_generated_resolve_current_user 2>/dev/null || true)"');
+  lines.push('            current_user="$(gtbi_generated_resolve_current_user 2>/dev/null || true)"');
   lines.push('            if [[ "${current_user:-}" == "$target_user" ]]; then');
   lines.push('                "$env_bin" TARGET_USER="$target_user" TARGET_HOME="$target_home" HOME="$target_home" PATH="$target_path" "$bash_bin" -o pipefail -c "$cmd"');
   lines.push('                return $?');
   lines.push('            fi');
   lines.push('            local runuser_bin=""');
-  lines.push('            runuser_bin="$(acfs_generated_system_binary_path runuser 2>/dev/null || true)"');
+  lines.push('            runuser_bin="$(gtbi_generated_system_binary_path runuser 2>/dev/null || true)"');
   lines.push('            if [[ $EUID -eq 0 && -n "$runuser_bin" ]]; then');
   lines.push('                "$runuser_bin" -u "$target_user" -- "$env_bin" TARGET_USER="$target_user" TARGET_HOME="$target_home" HOME="$target_home" PATH="$target_path" "$bash_bin" -o pipefail -c "$cmd"');
   lines.push('                return $?');
   lines.push('            fi');
   lines.push('            local sudo_bin=""');
-  lines.push('            sudo_bin="$(acfs_generated_system_binary_path sudo 2>/dev/null || true)"');
+  lines.push('            sudo_bin="$(gtbi_generated_system_binary_path sudo 2>/dev/null || true)"');
   lines.push('            if [[ -n "$sudo_bin" ]]; then');
   lines.push('                "$sudo_bin" -n -u "$target_user" "$env_bin" TARGET_USER="$target_user" TARGET_HOME="$target_home" HOME="$target_home" PATH="$target_path" "$bash_bin" -o pipefail -c "$cmd"');
   lines.push('                return $?');
@@ -2050,7 +2050,7 @@ function generateDoctorChecks(manifest: Manifest): string {
   lines.push('                return $?');
   lines.push('            fi');
   lines.push('            local sudo_bin=""');
-  lines.push('            sudo_bin="$(acfs_generated_system_binary_path sudo 2>/dev/null || true)"');
+  lines.push('            sudo_bin="$(gtbi_generated_system_binary_path sudo 2>/dev/null || true)"');
   lines.push('            if [[ -n "$sudo_bin" ]]; then');
   lines.push('                if [[ -n "$target_home" ]] && [[ "$target_home" == /* ]] && [[ "$target_home" != "/" ]]; then');
   lines.push('                    "$sudo_bin" -n "$env_bin" TARGET_USER="$target_user" TARGET_HOME="$target_home" PATH="$system_path_prefix" "$bash_bin" -o pipefail -c "$cmd"');
@@ -2086,15 +2086,15 @@ function generateDoctorChecks(manifest: Manifest): string {
   lines.push('        run_as="${run_as:-current}"');
   lines.push('        ');
   // Run checks in the proper execution context while keeping the script non-interactive.
-  // Use ${ACFS_*-default} to respect NO_COLOR (empty preserves empty). Related: bd-39ye
+  // Use ${GTBI_*-default} to respect NO_COLOR (empty preserves empty). Related: bd-39ye
   lines.push('        if run_manifest_check_command "$run_as" "$cmd" &>/dev/null; then');
-  lines.push('            echo -e "${ACFS_GREEN-\\033[0;32m}[ok]${ACFS_NC-\\033[0m} $id - $desc"');
+  lines.push('            echo -e "${GTBI_GREEN-\\033[0;32m}[ok]${GTBI_NC-\\033[0m} $id - $desc"');
   lines.push('            ((passed += 1))');
   lines.push('        elif [[ "$optional" = "optional" ]]; then');
-  lines.push('            echo -e "${ACFS_YELLOW-\\033[0;33m}[skip]${ACFS_NC-\\033[0m} $id - $desc"');
+  lines.push('            echo -e "${GTBI_YELLOW-\\033[0;33m}[skip]${GTBI_NC-\\033[0m} $id - $desc"');
   lines.push('            ((skipped += 1))');
   lines.push('        else');
-  lines.push('            echo -e "${ACFS_RED-\\033[0;31m}[fail]${ACFS_NC-\\033[0m} $id - $desc"');
+  lines.push('            echo -e "${GTBI_RED-\\033[0;31m}[fail]${GTBI_NC-\\033[0m} $id - $desc"');
   lines.push('            ((failed += 1))');
   lines.push('        fi');
   lines.push('    done');
@@ -2126,14 +2126,14 @@ function generateMasterInstaller(manifest: Manifest): string {
 
   // Source all category scripts
   for (const category of categories) {
-    lines.push(`source "\$ACFS_GENERATED_SCRIPT_DIR/install_${category}.sh"`);
+    lines.push(`source "\$GTBI_GENERATED_SCRIPT_DIR/install_${category}.sh"`);
   }
   lines.push('');
 
   // Main install function
   lines.push('# Install all modules in global dependency order');
   lines.push('install_all() {');
-  lines.push('    log_section "ACFS Full Installation"');
+  lines.push('    log_section "GTBI Full Installation"');
   lines.push('');
 
   // Use global sort to ensure dependencies are met across categories
@@ -2171,7 +2171,7 @@ function generateMasterInstaller(manifest: Manifest): string {
 // ============================================================
 
 const TS_HEADER = `// ============================================================
-// AUTO-GENERATED FROM acfs.manifest.yaml — DO NOT EDIT
+// AUTO-GENERATED FROM gtbi.manifest.yaml — DO NOT EDIT
 // Regenerate: bun run generate (from packages/manifest)
 // ============================================================
 `;
@@ -2218,10 +2218,10 @@ const WEB_SELECTION_PROFILES = [
       'stack.dcg',
       'stack.ru',
       'stack.rch',
-      'acfs.workspace',
-      'acfs.onboard',
-      'acfs.update',
-      'acfs.doctor',
+      'gtbi.workspace',
+      'gtbi.onboard',
+      'gtbi.update',
+      'gtbi.doctor',
     ],
     onlyPhases: [],
   },
@@ -2281,7 +2281,7 @@ function getWebVisibleModules(manifest: Manifest): Module[] {
  */
 function generateWebModules(manifest: Manifest): string {
   const modules = sortModulesByPhaseAndDependency(manifest);
-  const acfsVersion = readProjectVersion();
+  const gtbiVersion = readProjectVersion();
   const manifestSha256 = computeManifestSha256();
   const checksumsYamlSha256 = computeChecksumsYamlSha256();
   const lines: string[] = [TS_HEADER];
@@ -2311,14 +2311,14 @@ function generateWebModules(manifest: Manifest): string {
   lines.push('');
 
   lines.push('export interface ManifestProvenanceMetadata {');
-  lines.push('  acfsVersion: string;');
+  lines.push('  gtbiVersion: string;');
   lines.push('  manifestSha256: string;');
   lines.push('  checksumsYamlSha256: string;');
   lines.push('}');
   lines.push('');
 
   lines.push('export const manifestProvenance = {');
-  lines.push(`  acfsVersion: "${escapeTs(acfsVersion)}",`);
+  lines.push(`  gtbiVersion: "${escapeTs(gtbiVersion)}",`);
   lines.push(`  manifestSha256: "${manifestSha256}",`);
   lines.push(`  checksumsYamlSha256: "${checksumsYamlSha256}",`);
   lines.push('} as const satisfies ManifestProvenanceMetadata;');
@@ -2634,7 +2634,7 @@ function generateWebIndex(): string {
  * Show help message
  */
 function showHelp(): void {
-  console.log(`ACFS Manifest-to-Installer Generator
+  console.log(`GTBI Manifest-to-Installer Generator
 
 Usage: bun run generate [options]
 
@@ -2666,7 +2666,7 @@ async function main(): Promise<void> {
     process.exit(0);
   }
 
-  console.log('ACFS Manifest-to-Installer Generator');
+  console.log('GTBI Manifest-to-Installer Generator');
   console.log('=====================================');
   console.log('');
 

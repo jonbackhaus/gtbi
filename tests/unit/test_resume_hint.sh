@@ -16,7 +16,7 @@ TEST_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$TEST_DIR/../.." && pwd)"
 
 # Log file
-LOG_FILE="/tmp/acfs_resume_hint_test_$(date +%Y%m%d_%H%M%S).log"
+LOG_FILE="/tmp/gtbi_resume_hint_test_$(date +%Y%m%d_%H%M%S).log"
 
 # Test counters
 TESTS_RUN=0
@@ -87,25 +87,25 @@ extract_parse_args_function() {
 }
 
 extract_ref_arg_value_helper() {
-    sed -n '/^acfs_require_ref_arg_value()/,/^}$/p' "$REPO_ROOT/install.sh"
+    sed -n '/^gtbi_require_ref_arg_value()/,/^}$/p' "$REPO_ROOT/install.sh"
 }
 
 extract_offline_pack_dir_helper() {
-    sed -n '/^acfs_resolve_offline_pack_dir()/,/^}$/p' "$REPO_ROOT/install.sh"
+    sed -n '/^gtbi_resolve_offline_pack_dir()/,/^}$/p' "$REPO_ROOT/install.sh"
 }
 
 extract_offline_pack_normalizer() {
-    sed -n '/^acfs_normalize_offline_pack_configuration()/,/^}$/p' "$REPO_ROOT/install.sh"
+    sed -n '/^gtbi_normalize_offline_pack_configuration()/,/^}$/p' "$REPO_ROOT/install.sh"
 }
 
 # Actually, let's just define our test environment and source install.sh functions
 setup_test_env() {
     # Reset all variables to defaults
     SCRIPT_DIR=""
-    ACFS_COMMIT_SHA_FULL=""
-    ACFS_REF_INPUT=""
-    ACFS_CHECKSUMS_REF=""
-    ACFS_CHECKSUMS_REF_EXPLICIT=false
+    GTBI_COMMIT_SHA_FULL=""
+    GTBI_REF_INPUT=""
+    GTBI_CHECKSUMS_REF=""
+    GTBI_CHECKSUMS_REF_EXPLICIT=false
     MODE="vibe"
     SKIP_POSTGRES=false
     SKIP_VAULT=false
@@ -114,24 +114,24 @@ setup_test_env() {
     SKIP_UBUNTU_UPGRADE=false
     YES_MODE=false
     STRICT_MODE=false
-    ACFS_STRICT_MODE=false
+    GTBI_STRICT_MODE=false
     DRY_RUN=false
     PRINT_MODE=false
     AUTO_FIX_MODE="prompt"
-    ACFS_OFFLINE_PACK=""
-    ACFS_OFFLINE_NETWORK_MODE=""
-    ACFS_OFFLINE_PACK_REQUIRED=""
+    GTBI_OFFLINE_PACK=""
+    GTBI_OFFLINE_NETWORK_MODE=""
+    GTBI_OFFLINE_PACK_REQUIRED=""
 }
 
 setup_parse_args_env() {
     setup_test_env
-    ACFS_REPO_OWNER="Dicklesworthstone"
-    ACFS_REPO_NAME="agentic_coding_flywheel_setup"
-    ACFS_REF="main"
-    ACFS_REF_INPUT="$ACFS_REF"
-    ACFS_RAW="https://raw.githubusercontent.com/${ACFS_REPO_OWNER}/${ACFS_REPO_NAME}/${ACFS_REF}"
-    ACFS_CHECKSUMS_REF="main"
-    ACFS_CHECKSUMS_RAW="https://raw.githubusercontent.com/${ACFS_REPO_OWNER}/${ACFS_REPO_NAME}/${ACFS_CHECKSUMS_REF}"
+    GTBI_REPO_OWNER="Dicklesworthstone"
+    GTBI_REPO_NAME="gastown_batteries_included"
+    GTBI_REF="main"
+    GTBI_REF_INPUT="$GTBI_REF"
+    GTBI_RAW="https://raw.githubusercontent.com/${GTBI_REPO_OWNER}/${GTBI_REPO_NAME}/${GTBI_REF}"
+    GTBI_CHECKSUMS_REF="main"
+    GTBI_CHECKSUMS_RAW="https://raw.githubusercontent.com/${GTBI_REPO_OWNER}/${GTBI_REPO_NAME}/${GTBI_CHECKSUMS_REF}"
     PIN_REF_MODE=false
     RESET_STATE_ONLY=false
     TARGET_UBUNTU_VERSION="25.10"
@@ -225,12 +225,12 @@ test_local_script_invocation() {
 # Test: Local script invocation shell-escapes spaces in the path
 test_local_script_invocation_with_spaces() {
     setup_test_env
-    SCRIPT_DIR="/tmp/acfs local path"
+    SCRIPT_DIR="/tmp/gtbi local path"
 
     local result
     result=$(generate_resume_hint "" "")
 
-    if [[ "$result" != "bash /tmp/acfs\\ local\\ path/install.sh --resume"* ]]; then
+    if [[ "$result" != "bash /tmp/gtbi\\ local\\ path/install.sh --resume"* ]]; then
         log "  Expected shell-escaped install path, got: $result"
         return 1
     fi
@@ -241,17 +241,17 @@ test_local_script_invocation_with_spaces() {
 # Test: Pinned to specific commit SHA
 test_pinned_commit_sha() {
     setup_test_env
-    ACFS_COMMIT_SHA_FULL="abc123def456abc123def456abc123def456abc1"
+    GTBI_COMMIT_SHA_FULL="abc123def456abc123def456abc123def456abc1"
 
     local result
     result=$(generate_resume_hint "" "")
 
     # Should include the full commit SHA in URL
-    if [[ "$result" != *"$ACFS_COMMIT_SHA_FULL"* ]]; then
+    if [[ "$result" != *"$GTBI_COMMIT_SHA_FULL"* ]]; then
         log "  Expected commit SHA in output, got: $result"
         return 1
     fi
-    if [[ "$result" != *"--ref $ACFS_COMMIT_SHA_FULL"* ]]; then
+    if [[ "$result" != *"--ref $GTBI_COMMIT_SHA_FULL"* ]]; then
         log "  Expected --ref to pin the same commit SHA, got: $result"
         return 1
     fi
@@ -261,13 +261,13 @@ test_pinned_commit_sha() {
 
 test_pinned_commit_sha_takes_precedence_over_symbolic_ref() {
     setup_test_env
-    ACFS_REF_INPUT="feature-branch"
-    ACFS_COMMIT_SHA_FULL="abc123def456abc123def456abc123def456abc1"
+    GTBI_REF_INPUT="feature-branch"
+    GTBI_COMMIT_SHA_FULL="abc123def456abc123def456abc123def456abc1"
 
     local result
     result=$(generate_resume_hint "" "")
 
-    if [[ "$result" != *"--ref $ACFS_COMMIT_SHA_FULL"* ]]; then
+    if [[ "$result" != *"--ref $GTBI_COMMIT_SHA_FULL"* ]]; then
         log "  Expected --ref to use exact commit SHA, got: $result"
         return 1
     fi
@@ -281,14 +281,14 @@ test_pinned_commit_sha_takes_precedence_over_symbolic_ref() {
 
 test_pinned_commit_sha_preserves_symbolic_checksum_ref() {
     setup_test_env
-    ACFS_REF_INPUT="feature-branch"
-    ACFS_CHECKSUMS_REF="feature-branch"
-    ACFS_COMMIT_SHA_FULL="abc123def456abc123def456abc123def456abc1"
+    GTBI_REF_INPUT="feature-branch"
+    GTBI_CHECKSUMS_REF="feature-branch"
+    GTBI_COMMIT_SHA_FULL="abc123def456abc123def456abc123def456abc1"
 
     local result
     result=$(generate_resume_hint "" "")
 
-    if [[ "$result" != *"--ref $ACFS_COMMIT_SHA_FULL"* ]]; then
+    if [[ "$result" != *"--ref $GTBI_COMMIT_SHA_FULL"* ]]; then
         log "  Expected --ref to use exact commit SHA, got: $result"
         return 1
     fi
@@ -300,10 +300,10 @@ test_pinned_commit_sha_preserves_symbolic_checksum_ref() {
     return 0
 }
 
-# Test: Custom ACFS_REF (branch/tag)
+# Test: Custom GTBI_REF (branch/tag)
 test_custom_ref() {
     setup_test_env
-    ACFS_REF_INPUT="v1.2.3"
+    GTBI_REF_INPUT="v1.2.3"
 
     local result
     result=$(generate_resume_hint "" "")
@@ -317,10 +317,10 @@ test_custom_ref() {
     return 0
 }
 
-# Test: Custom ACFS_REF is shell-escaped in copy-paste resume hints
+# Test: Custom GTBI_REF is shell-escaped in copy-paste resume hints
 test_custom_ref_shell_escaped() {
     setup_test_env
-    ACFS_REF_INPUT='bad;touch /tmp/acfs-pwned #'
+    GTBI_REF_INPUT='bad;touch /tmp/gtbi-pwned #'
 
     local result
     result=$(generate_resume_hint "" "")
@@ -347,20 +347,20 @@ test_checksums_ref_survives_ref_parse_order() {
     setup_parse_args_env
     parse_args --checksums-ref explicit-checksums --ref feature-branch --print-plan
 
-    if [[ "$ACFS_CHECKSUMS_REF" != "explicit-checksums" ]]; then
-        log "  Expected explicit checksums ref to survive later --ref, got: $ACFS_CHECKSUMS_REF"
+    if [[ "$GTBI_CHECKSUMS_REF" != "explicit-checksums" ]]; then
+        log "  Expected explicit checksums ref to survive later --ref, got: $GTBI_CHECKSUMS_REF"
         return 1
     fi
-    if [[ "$ACFS_CHECKSUMS_REF_EXPLICIT" != "true" ]]; then
-        log "  Expected ACFS_CHECKSUMS_REF_EXPLICIT=true, got: $ACFS_CHECKSUMS_REF_EXPLICIT"
+    if [[ "$GTBI_CHECKSUMS_REF_EXPLICIT" != "true" ]]; then
+        log "  Expected GTBI_CHECKSUMS_REF_EXPLICIT=true, got: $GTBI_CHECKSUMS_REF_EXPLICIT"
         return 1
     fi
 
     setup_parse_args_env
     parse_args --ref feature-branch --checksums-ref explicit-checksums --print-plan
 
-    if [[ "$ACFS_CHECKSUMS_REF" != "explicit-checksums" ]]; then
-        log "  Expected explicit checksums ref to apply after --ref, got: $ACFS_CHECKSUMS_REF"
+    if [[ "$GTBI_CHECKSUMS_REF" != "explicit-checksums" ]]; then
+        log "  Expected explicit checksums ref to apply after --ref, got: $GTBI_CHECKSUMS_REF"
         return 1
     fi
 
@@ -370,9 +370,9 @@ test_checksums_ref_survives_ref_parse_order() {
 test_custom_checksums_ref_resume_hint() {
     setup_test_env
     SCRIPT_DIR="/some/local/path"
-    ACFS_REF_INPUT="feature-branch"
-    ACFS_CHECKSUMS_REF='checksums;touch /tmp/acfs-pwned #'
-    ACFS_CHECKSUMS_REF_EXPLICIT=true
+    GTBI_REF_INPUT="feature-branch"
+    GTBI_CHECKSUMS_REF='checksums;touch /tmp/gtbi-pwned #'
+    GTBI_CHECKSUMS_REF_EXPLICIT=true
 
     local result
     result=$(generate_resume_hint "" "")
@@ -399,30 +399,30 @@ test_offline_pack_relative_path_is_normalized_for_resume_hint() {
     local expected_pack=""
     local expected_pack_q=""
 
-    temp_root="$(mktemp -d "${TMPDIR:-/tmp}/acfs-resume-pack.XXXXXX")" || return 1
-    mkdir -p "$temp_root/work/pack with spaces/acfs-offline-pack" || return 1
-    printf '{}\n' > "$temp_root/work/pack with spaces/acfs-offline-pack/manifest.json" || return 1
+    temp_root="$(mktemp -d "${TMPDIR:-/tmp}/gtbi-resume-pack.XXXXXX")" || return 1
+    mkdir -p "$temp_root/work/pack with spaces/gtbi-offline-pack" || return 1
+    printf '{}\n' > "$temp_root/work/pack with spaces/gtbi-offline-pack/manifest.json" || return 1
 
     old_pwd="$PWD"
     cd "$temp_root/work" || return 1
-    ACFS_OFFLINE_PACK="pack with spaces"
-    acfs_normalize_offline_pack_configuration || {
+    GTBI_OFFLINE_PACK="pack with spaces"
+    gtbi_normalize_offline_pack_configuration || {
         cd "$old_pwd" || true
         return 1
     }
     cd "$old_pwd" || return 1
 
     expected_pack="$temp_root/work/pack with spaces"
-    if [[ "$ACFS_OFFLINE_PACK" != "$expected_pack" ]]; then
-        log "  Expected ACFS_OFFLINE_PACK=$expected_pack, got: $ACFS_OFFLINE_PACK"
+    if [[ "$GTBI_OFFLINE_PACK" != "$expected_pack" ]]; then
+        log "  Expected GTBI_OFFLINE_PACK=$expected_pack, got: $GTBI_OFFLINE_PACK"
         return 1
     fi
-    if [[ "$ACFS_OFFLINE_NETWORK_MODE" != "offline" ]]; then
-        log "  Expected ACFS_OFFLINE_NETWORK_MODE=offline, got: $ACFS_OFFLINE_NETWORK_MODE"
+    if [[ "$GTBI_OFFLINE_NETWORK_MODE" != "offline" ]]; then
+        log "  Expected GTBI_OFFLINE_NETWORK_MODE=offline, got: $GTBI_OFFLINE_NETWORK_MODE"
         return 1
     fi
-    if [[ "$ACFS_OFFLINE_PACK_REQUIRED" != "true" ]]; then
-        log "  Expected ACFS_OFFLINE_PACK_REQUIRED=true, got: $ACFS_OFFLINE_PACK_REQUIRED"
+    if [[ "$GTBI_OFFLINE_PACK_REQUIRED" != "true" ]]; then
+        log "  Expected GTBI_OFFLINE_PACK_REQUIRED=true, got: $GTBI_OFFLINE_PACK_REQUIRED"
         return 1
     fi
 
@@ -529,15 +529,15 @@ test_strict_mode() {
 }
 
 # Test: strict mode set by parse_args runtime flag
-test_acfs_strict_mode() {
+test_gtbi_strict_mode() {
     setup_test_env
-    ACFS_STRICT_MODE=true
+    GTBI_STRICT_MODE=true
 
     local result
     result=$(generate_resume_hint "" "")
 
     if [[ "$result" != *"--strict"* ]]; then
-        log "  Expected --strict from ACFS_STRICT_MODE in output, got: $result"
+        log "  Expected --strict from GTBI_STRICT_MODE in output, got: $result"
         return 1
     fi
 
@@ -551,7 +551,7 @@ test_complex_combination() {
     SKIP_POSTGRES=true
     SKIP_CLOUD=true
     YES_MODE=true
-    ACFS_REF_INPUT="develop"
+    GTBI_REF_INPUT="develop"
 
     local result
     result=$(generate_resume_hint "languages" "install_rust")
@@ -590,34 +590,34 @@ test_complex_combination() {
     return 0
 }
 
-# Test: Main branch uses acfs.sh shorthand
+# Test: Main branch uses gtbi.sh shorthand
 test_main_branch_shorthand() {
     setup_test_env
-    ACFS_REF_INPUT="main"
+    GTBI_REF_INPUT="main"
 
     local result
     result=$(generate_resume_hint "" "")
 
-    # Should use acfs.sh shorthand for main branch
-    if [[ "$result" != *"acfs.sh"* ]]; then
-        log "  Expected acfs.sh shorthand for main branch, got: $result"
+    # Should use gtbi.sh shorthand for main branch
+    if [[ "$result" != *"gtbi.sh"* ]]; then
+        log "  Expected gtbi.sh shorthand for main branch, got: $result"
         return 1
     fi
 
     return 0
 }
 
-# Test: Empty ACFS_REF uses acfs.sh shorthand
+# Test: Empty GTBI_REF uses gtbi.sh shorthand
 test_empty_ref_shorthand() {
     setup_test_env
-    ACFS_REF_INPUT=""
+    GTBI_REF_INPUT=""
 
     local result
     result=$(generate_resume_hint "" "")
 
-    # Should use acfs.sh shorthand
-    if [[ "$result" != *"acfs.sh"* ]]; then
-        log "  Expected acfs.sh shorthand, got: $result"
+    # Should use gtbi.sh shorthand
+    if [[ "$result" != *"gtbi.sh"* ]]; then
+        log "  Expected gtbi.sh shorthand, got: $result"
         return 1
     fi
 
@@ -628,8 +628,8 @@ test_empty_ref_shorthand() {
 test_print_resume_hint_uses_state_helper() {
     setup_test_env
     YES_MODE=true
-    ACFS_STATE_FILE="$(mktemp)"
-    printf '{}\n' > "$ACFS_STATE_FILE"
+    GTBI_STATE_FILE="$(mktemp)"
+    printf '{}\n' > "$GTBI_STATE_FILE"
     STATE_SET_RESUME_HINT_CALLS=0
     STATE_SET_RESUME_HINT_VALUE=""
 
@@ -637,47 +637,47 @@ test_print_resume_hint_uses_state_helper() {
 
     if [[ "$STATE_SET_RESUME_HINT_CALLS" -ne 1 ]]; then
         log "  Expected state_set_resume_hint to be called once, got: $STATE_SET_RESUME_HINT_CALLS"
-        rm -f "$ACFS_STATE_FILE"
+        rm -f "$GTBI_STATE_FILE"
         return 1
     fi
 
     if [[ "$STATE_SET_RESUME_HINT_VALUE" != *"--resume"* ]]; then
         log "  Expected generated resume hint to include --resume, got: $STATE_SET_RESUME_HINT_VALUE"
-        rm -f "$ACFS_STATE_FILE"
+        rm -f "$GTBI_STATE_FILE"
         return 1
     fi
 
     if [[ "$STATE_SET_RESUME_HINT_VALUE" != *"--yes"* ]]; then
         log "  Expected generated resume hint to include --yes, got: $STATE_SET_RESUME_HINT_VALUE"
-        rm -f "$ACFS_STATE_FILE"
+        rm -f "$GTBI_STATE_FILE"
         return 1
     fi
 
-    rm -f "$ACFS_STATE_FILE"
+    rm -f "$GTBI_STATE_FILE"
     return 0
 }
 
 # Test: print_resume_hint fallback preserves the absolute local installer path
 test_print_resume_hint_fallback_uses_absolute_local_path() {
     setup_test_env
-    SCRIPT_DIR="/tmp/acfs fallback"
-    ACFS_STATE_FILE="$(mktemp)"
-    printf '{}\n' > "$ACFS_STATE_FILE"
+    SCRIPT_DIR="/tmp/gtbi fallback"
+    GTBI_STATE_FILE="$(mktemp)"
+    printf '{}\n' > "$GTBI_STATE_FILE"
     STATE_SET_RESUME_HINT_CALLS=0
     STATE_SET_RESUME_HINT_VALUE=""
 
     generate_resume_hint() { return 1; }
     print_resume_hint "languages" "install_rust"
 
-    if [[ "$STATE_SET_RESUME_HINT_VALUE" != "bash /tmp/acfs\\ fallback/install.sh --resume --yes" ]]; then
+    if [[ "$STATE_SET_RESUME_HINT_VALUE" != "bash /tmp/gtbi\\ fallback/install.sh --resume --yes" ]]; then
         log "  Expected absolute fallback resume hint, got: $STATE_SET_RESUME_HINT_VALUE"
-        rm -f "$ACFS_STATE_FILE"
+        rm -f "$GTBI_STATE_FILE"
         unset -f generate_resume_hint
         eval "$(extract_resume_hint_function)"
         return 1
     fi
 
-    rm -f "$ACFS_STATE_FILE"
+    rm -f "$GTBI_STATE_FILE"
     unset -f generate_resume_hint
     eval "$(extract_resume_hint_function)"
     return 0
@@ -685,23 +685,23 @@ test_print_resume_hint_fallback_uses_absolute_local_path() {
 
 test_print_resume_hint_fallback_uses_fail_closed_curl() {
     setup_test_env
-    ACFS_STATE_FILE="$(mktemp)"
-    printf '{}\n' > "$ACFS_STATE_FILE"
+    GTBI_STATE_FILE="$(mktemp)"
+    printf '{}\n' > "$GTBI_STATE_FILE"
     STATE_SET_RESUME_HINT_CALLS=0
     STATE_SET_RESUME_HINT_VALUE=""
 
     generate_resume_hint() { return 1; }
     print_resume_hint "languages" "install_rust"
 
-    if [[ "$STATE_SET_RESUME_HINT_VALUE" != "curl -fsSL https://acfs.sh | bash -s -- --resume --yes" ]]; then
+    if [[ "$STATE_SET_RESUME_HINT_VALUE" != "curl -fsSL https://gtbi.sh | bash -s -- --resume --yes" ]]; then
         log "  Expected fail-closed curl fallback resume hint, got: $STATE_SET_RESUME_HINT_VALUE"
-        rm -f "$ACFS_STATE_FILE"
+        rm -f "$GTBI_STATE_FILE"
         unset -f generate_resume_hint
         eval "$(extract_resume_hint_function)"
         return 1
     fi
 
-    rm -f "$ACFS_STATE_FILE"
+    rm -f "$GTBI_STATE_FILE"
     unset -f generate_resume_hint
     eval "$(extract_resume_hint_function)"
     return 0
@@ -761,7 +761,7 @@ test_read_only_mode_preserves_no_autofix() {
 
 main() {
     log "============================================================"
-    log "ACFS Resume Hint Unit Tests"
+    log "GTBI Resume Hint Unit Tests"
     log "============================================================"
     log "Log file: $LOG_FILE"
     log ""
@@ -783,7 +783,7 @@ main() {
     run_test test_all_skip_flags
     run_test test_yes_mode
     run_test test_strict_mode
-    run_test test_acfs_strict_mode
+    run_test test_gtbi_strict_mode
     run_test test_complex_combination
     run_test test_main_branch_shorthand
     run_test test_empty_ref_shorthand

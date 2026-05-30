@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-# ACFS Swarm Packet - per-agent startup packet generator
+# GTBI Swarm Packet - per-agent startup packet generator
 #
 # Builds a bounded, read-only prompt packet for one Beads issue. The packet
 # packages current repo instructions, Beads metadata, bounded CASS/CM context,
@@ -25,7 +25,7 @@ SWARM_PACKET_WARNINGS=()
 
 swarm_packet_usage() {
     cat <<'EOF'
-Usage: acfs swarm packet --bead ID [OPTIONS]
+Usage: gtbi swarm packet --bead ID [OPTIONS]
 
 Options:
   --json                Emit machine-readable JSON
@@ -150,7 +150,7 @@ swarm_packet_parse_args() {
                 ;;
             *)
                 echo "Error: unknown option: $1" >&2
-                echo "Run 'acfs swarm packet --help' for usage." >&2
+                echo "Run 'gtbi swarm packet --help' for usage." >&2
                 return 2
                 ;;
         esac
@@ -350,7 +350,7 @@ swarm_packet_build_markdown() {
     cass_block="$(printf '%s\n' "$cass_context" | swarm_packet_indent_text)"
 
     cat <<EOF
-# ACFS Swarm Startup Packet
+# GTBI Swarm Startup Packet
 
 Agent: $SWARM_PACKET_AGENT_NAME
 Role: $SWARM_PACKET_ROLE

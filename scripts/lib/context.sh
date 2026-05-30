@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
 # ============================================================
-# ACFS Installer - Error Context Tracking Library
+# GTBI Installer - Error Context Tracking Library
 # Provides phase/step tracking and try_step() wrapper
 # Part of EPIC: Per-Phase Error Reporting (bead qqo)
 # ============================================================
 
 # Guard against double-sourcing
-if [[ -n "${ACFS_CONTEXT_LOADED:-}" ]]; then
+if [[ -n "${GTBI_CONTEXT_LOADED:-}" ]]; then
     return 0
 fi
-export ACFS_CONTEXT_LOADED=1
+export GTBI_CONTEXT_LOADED=1
 
 # ============================================================
 # Error Context Global Variables
@@ -172,7 +172,7 @@ try_step() {
     # Create temp file for capturing output.
     # Never fall back to a predictable /tmp path (symlink/clobber risk under sudo/root).
     local temp_output=""
-    temp_output=$(mktemp "${TMPDIR:-/tmp}/acfs_context.XXXXXX" 2>/dev/null) || temp_output=""
+    temp_output=$(mktemp "${TMPDIR:-/tmp}/gtbi_context.XXXXXX" 2>/dev/null) || temp_output=""
 
     # Execute command, capturing both stdout and stderr when possible.
     local exit_code=0
@@ -223,7 +223,7 @@ try_step_eval() {
     # Create temp file for capturing output.
     # Never fall back to a predictable /tmp path (symlink/clobber risk under sudo/root).
     local temp_output=""
-    temp_output=$(mktemp "${TMPDIR:-/tmp}/acfs_context.XXXXXX" 2>/dev/null) || temp_output=""
+    temp_output=$(mktemp "${TMPDIR:-/tmp}/gtbi_context.XXXXXX" 2>/dev/null) || temp_output=""
 
     if [[ -z "$command_str" ]]; then
         [[ -n "$temp_output" ]] && printf '%s\n' "try_step_eval: missing command string" > "$temp_output"

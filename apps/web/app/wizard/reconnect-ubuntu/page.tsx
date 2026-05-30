@@ -68,8 +68,8 @@ export default function ReconnectUbuntuPage() {
   const effectiveUsername = sshUsername.trim() || "ubuntu";
   const userTarget = formatSshTarget(effectiveUsername, vpsIP);
   const userPrompt = `${effectiveUsername}@`;
-  const sshCommand = `ssh -i ~/.ssh/acfs_ed25519 ${userTarget}`;
-  const sshCommandWindows = `ssh -i $HOME\\.ssh\\acfs_ed25519 ${userTarget}`;
+  const sshCommand = `ssh -i ~/.ssh/gtbi_ed25519 ${userTarget}`;
+  const sshCommandWindows = `ssh -i $HOME\\.ssh\\gtbi_ed25519 ${userTarget}`;
   const userKeyRepairCommand = buildUserKeyRepairCommand(effectiveUsername, vpsIP);
   const rootKeyRepairCommand = buildRootKeyRepairCommand(effectiveUsername, vpsIP);
 
@@ -139,11 +139,11 @@ export default function ReconnectUbuntuPage() {
             <p className="text-sm text-muted-foreground">
               This SSH command uses your SSH key (the{" "}
               <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">
-                -i ~/.ssh/acfs_ed25519
+                -i ~/.ssh/gtbi_ed25519
               </code>{" "}
               part — or on Windows{" "}
               <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">
-                -i $HOME\\.ssh\\acfs_ed25519
+                -i $HOME\\.ssh\\gtbi_ed25519
               </code>
               ) instead of a password. The installer set this up for you.
             </p>
@@ -235,7 +235,7 @@ export default function ReconnectUbuntuPage() {
             During installation, you may have connected as &quot;root&quot;, the super-admin
             account. Now we want you to use your normal SSH user instead because:
             <br /><br />
-            <strong>1. Safety:</strong> Day-to-day ACFS work should happen from a non-root login whenever possible.
+            <strong>1. Safety:</strong> Day-to-day GTBI work should happen from a non-root login whenever possible.
             That keeps routine commands away from the most dangerous account.
             <br /><br />
             <strong>2. Better experience:</strong> The installer set up special features

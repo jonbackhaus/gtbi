@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-# ACFS Swarm Doctor - pre-swarm coordination preflight
+# GTBI Swarm Doctor - pre-swarm coordination preflight
 #
 # Consumes the local swarm status collector and turns it into a
 # launch/no-launch decision with exact non-mutating remediation commands.
@@ -10,13 +10,13 @@ set -euo pipefail
 
 SWARM_DOCTOR_JSON=false
 SWARM_DOCTOR_STATUS_FILE=""
-SWARM_DOCTOR_STALE_HOURS="${ACFS_SWARM_STALE_HOURS:-12}"
+SWARM_DOCTOR_STALE_HOURS="${GTBI_SWARM_STALE_HOURS:-12}"
 SWARM_DOCTOR_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SWARM_STATUS_SCRIPT="${ACFS_SWARM_STATUS_SCRIPT:-$SWARM_DOCTOR_SCRIPT_DIR/swarm_status.sh}"
+SWARM_STATUS_SCRIPT="${GTBI_SWARM_STATUS_SCRIPT:-$SWARM_DOCTOR_SCRIPT_DIR/swarm_status.sh}"
 
 swarm_doctor_usage() {
     cat <<'EOF'
-Usage: acfs swarm doctor [OPTIONS]
+Usage: gtbi swarm doctor [OPTIONS]
 
 Options:
   --json              Emit machine-readable JSON
@@ -61,7 +61,7 @@ swarm_doctor_parse_args() {
                 ;;
             *)
                 echo "Error: unknown option: $1" >&2
-                echo "Run 'acfs swarm doctor --help' for usage." >&2
+                echo "Run 'gtbi swarm doctor --help' for usage." >&2
                 exit 2
                 ;;
         esac
@@ -236,7 +236,7 @@ def check($id; $status; $summary; $details; $commands):
        elif ($am.status == "pass") then "Agent Mail health is usable"
        else "Agent Mail health is uncertain" end);
       ($am.warnings // []);
-      ["mcp-agent-mail doctor check --json", "acfs swarm status --json"]
+      ["mcp-agent-mail doctor check --json", "gtbi swarm status --json"]
     ),
     check(
       "beads";
@@ -296,7 +296,7 @@ def check($id; $status; $summary; $details; $commands):
        elif ($disk_gib < 50) then "Available disk is low for a large swarm"
        else "Local resource pressure is acceptable" end);
       ($host.warnings // []);
-      ["acfs capacity --recommend-ntm", "acfs swarm status --json"]
+      ["gtbi capacity --recommend-ntm", "gtbi swarm status --json"]
     ),
     check(
       "active_work";
@@ -313,7 +313,7 @@ def check($id; $status; $summary; $details; $commands):
        elif ($stale_detail_warnings | length) > 0 then "Detailed stale-work evidence is unavailable"
        else "No stale in-progress Beads or reservations detected from available evidence" end);
       ($stale_detail_warnings + ($malformed_stale_inputs | map(.reason)));
-      ["br list --status in_progress --json", "mcp-agent-mail doctor check --json", "acfs swarm status --json"]
+      ["br list --status in_progress --json", "mcp-agent-mail doctor check --json", "gtbi swarm status --json"]
     )
   ] as $checks
 | {
@@ -373,7 +373,7 @@ swarm_doctor_emit_human() {
     local report="$1"
     local jq_bin="$2"
 
-    echo "ACFS Swarm Doctor"
+    echo "GTBI Swarm Doctor"
     echo "Status: $("${jq_bin}" -r '.status' <<<"$report")"
     echo ""
     echo "Checks:"

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-# ACFS Resume Behavior Integration Checks
+# GTBI Resume Behavior Integration Checks
 #
 # These tests validate state.sh resume logic in a realistic environment
 # without re-running the full installer multiple times.
@@ -69,7 +69,7 @@ assert_file_missing() {
 
 new_state_file() {
   local tag="$1"
-  local home="/tmp/acfs-home-${tag}-$$-${RANDOM}"
+  local home="/tmp/gtbi-home-${tag}-$$-${RANDOM}"
   echo "${home}/state.json"
 }
 
@@ -77,12 +77,12 @@ init_state_with_completed() {
   local state_file="$1"
   shift
 
-  export ACFS_STATE_FILE="$state_file"
-  export ACFS_HOME
-  ACFS_HOME="$(dirname "$state_file")"
+  export GTBI_STATE_FILE="$state_file"
+  export GTBI_HOME
+  GTBI_HOME="$(dirname "$state_file")"
   export MODE="vibe"
   export TARGET_USER="ubuntu"
-  export ACFS_VERSION="0.3.0"
+  export GTBI_VERSION="0.3.0"
 
   state_init
 
@@ -97,9 +97,9 @@ test_normal_resume() {
   init_state_with_completed "$state_file" \
     "user_setup" "filesystem" "shell_setup" "cli_tools" "languages"
 
-  export ACFS_FORCE_REINSTALL=false
-  export ACFS_FORCE_RESUME=false
-  export ACFS_INTERACTIVE=false
+  export GTBI_FORCE_REINSTALL=false
+  export GTBI_FORCE_RESUME=false
+  export GTBI_INTERACTIVE=false
 
   local rc
   if confirm_resume; then rc=0; else rc=$?; fi
@@ -114,15 +114,15 @@ test_force_reinstall() {
   state_file="$(new_state_file force)"
   init_state_with_completed "$state_file" "user_setup" "filesystem"
 
-  export ACFS_FORCE_REINSTALL=true
-  export ACFS_FORCE_RESUME=false
-  export ACFS_INTERACTIVE=false
+  export GTBI_FORCE_REINSTALL=true
+  export GTBI_FORCE_RESUME=false
+  export GTBI_INTERACTIVE=false
 
   local rc
   if confirm_resume; then rc=0; else rc=$?; fi
   assert_eq 1 "$rc" "force reinstall returns 1 (fresh install)"
   assert_file_missing "$state_file" "force reinstall removes state file"
-  export ACFS_FORCE_REINSTALL=false
+  export GTBI_FORCE_REINSTALL=false
 }
 
 test_force_resume_without_completed_phases() {
@@ -131,15 +131,15 @@ test_force_resume_without_completed_phases() {
   init_state_with_completed "$state_file"
   state_update '.failed_phase = "user_setup"'
 
-  export ACFS_FORCE_REINSTALL=false
-  export ACFS_FORCE_RESUME=true
-  export ACFS_INTERACTIVE=false
+  export GTBI_FORCE_REINSTALL=false
+  export GTBI_FORCE_RESUME=true
+  export GTBI_INTERACTIVE=false
 
   local rc
   if confirm_resume; then rc=0; else rc=$?; fi
   assert_eq 0 "$rc" "force resume works when a phase failed before any phase completed"
 
-  export ACFS_FORCE_RESUME=false
+  export GTBI_FORCE_RESUME=false
 }
 
 test_force_reinstall_without_completed_phases() {
@@ -148,16 +148,16 @@ test_force_reinstall_without_completed_phases() {
   init_state_with_completed "$state_file"
   state_update '.failed_phase = "user_setup"'
 
-  export ACFS_FORCE_REINSTALL=true
-  export ACFS_FORCE_RESUME=false
-  export ACFS_INTERACTIVE=false
+  export GTBI_FORCE_REINSTALL=true
+  export GTBI_FORCE_RESUME=false
+  export GTBI_INTERACTIVE=false
 
   local rc
   if confirm_resume; then rc=0; else rc=$?; fi
   assert_eq 1 "$rc" "force reinstall works when a phase failed before any phase completed"
   assert_file_missing "$state_file" "force reinstall removes failed zero-progress state file"
 
-  export ACFS_FORCE_REINSTALL=false
+  export GTBI_FORCE_REINSTALL=false
 }
 
 test_corrupted_state() {
@@ -165,13 +165,13 @@ test_corrupted_state() {
   state_file="$(new_state_file corrupt)"
   mkdir -p "$(dirname "$state_file")"
   printf '%s' "not json" > "$state_file"
-  export ACFS_STATE_FILE="$state_file"
-  export ACFS_HOME
-  ACFS_HOME="$(dirname "$state_file")"
+  export GTBI_STATE_FILE="$state_file"
+  export GTBI_HOME
+  GTBI_HOME="$(dirname "$state_file")"
 
-  export ACFS_FORCE_REINSTALL=false
-  export ACFS_FORCE_RESUME=false
-  export ACFS_INTERACTIVE=false
+  export GTBI_FORCE_REINSTALL=false
+  export GTBI_FORCE_RESUME=false
+  export GTBI_INTERACTIVE=false
 
   local rc
   if confirm_resume; then rc=0; else rc=$?; fi
@@ -201,26 +201,26 @@ test_state_lock_tracks_current_state_file() {
   first_state="$(new_state_file lock-first)"
   second_state="$(new_state_file lock-second)"
 
-  export ACFS_STATE_FILE="$first_state"
+  export GTBI_STATE_FILE="$first_state"
   _state_acquire_lock || {
     fail "state lock acquired for first state file"
     return
   }
-  first_fd="$ACFS_LOCK_FD"
+  first_fd="$GTBI_LOCK_FD"
   first_lock="$(readlink "/proc/$$/fd/$first_fd" 2>/dev/null || true)"
   _state_release_lock
 
-  export ACFS_STATE_FILE="$second_state"
+  export GTBI_STATE_FILE="$second_state"
   _state_acquire_lock || {
     fail "state lock acquired for second state file"
     return
   }
-  second_fd="$ACFS_LOCK_FD"
+  second_fd="$GTBI_LOCK_FD"
   second_lock="$(readlink "/proc/$$/fd/$second_fd" 2>/dev/null || true)"
   _state_release_lock
 
   assert_eq "${first_state}.lock" "$first_lock" "first state lock targets first state file"
-  assert_eq "${second_state}.lock" "$second_lock" "state lock retargets after ACFS_STATE_FILE changes"
+  assert_eq "${second_state}.lock" "$second_lock" "state lock retargets after GTBI_STATE_FILE changes"
 }
 
 test_state_write_atomic_does_not_sync_by_default() {
@@ -235,7 +235,7 @@ test_state_write_atomic_does_not_sync_by_default() {
     return 99
   }
 
-  export ACFS_STATE_DURABLE_SYNC=false
+  export GTBI_STATE_DURABLE_SYNC=false
   if ! state_write_atomic "$state_file" "$content"; then
     unset -f sync
     fail "state_write_atomic succeeds when sync is unavailable by default"
@@ -258,9 +258,9 @@ test_version_mismatch() {
   "completed_phases": []
 }
 EOF
-  export ACFS_STATE_FILE="$state_file"
-  export ACFS_HOME
-  ACFS_HOME="$(dirname "$state_file")"
+  export GTBI_STATE_FILE="$state_file"
+  export GTBI_HOME
+  GTBI_HOME="$(dirname "$state_file")"
 
   local rc
   if state_check_version; then rc=0; else rc=$?; fi
@@ -269,7 +269,7 @@ EOF
 
 main() {
   echo ""
-  echo "=== ACFS Resume Behavior Checks ==="
+  echo "=== GTBI Resume Behavior Checks ==="
   test_normal_resume
   test_corrupted_state
   test_force_reinstall

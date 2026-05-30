@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-# Unit tests for acfs swarm inventory
+# Unit tests for gtbi swarm inventory
 # ============================================================
 
 set -euo pipefail
@@ -10,7 +10,7 @@ SWARM_INV_SH="$REPO_ROOT/scripts/lib/swarm_inventory.sh"
 
 TESTS_PASSED=0
 TESTS_FAILED=0
-ARTIFACT_DIR="${ACFS_SWARM_INV_TEST_ARTIFACTS_DIR:-${TMPDIR:-/tmp}/acfs-swarm-inventory-test-artifacts-$(date +%Y%m%d-%H%M%S)-$$}"
+ARTIFACT_DIR="${GTBI_SWARM_INV_TEST_ARTIFACTS_DIR:-${TMPDIR:-/tmp}/gtbi-swarm-inventory-test-artifacts-$(date +%Y%m%d-%H%M%S)-$$}"
 
 mkdir -p "$ARTIFACT_DIR"
 
@@ -47,14 +47,14 @@ sample_inventory_fixture() {
   "hosts": [
     {
       "id": "local",
-      "display_name": "Local ACFS host",
+      "display_name": "Local GTBI host",
       "role": "swarm-controller",
       "status": "active",
       "manual_tags": ["primary", "ntm"],
       "last_probe_at": "2099-01-01T00:00:00Z",
       "probe_source": "manual",
       "resources": {"cpu_count": 64, "mem_total_mib": 262144, "disk_available_mib": 524288},
-      "capacity": {"workload": "standard", "recommended_agents": 25, "safe_agents": 44, "source": "acfs capacity --json --recommend-ntm"},
+      "capacity": {"workload": "standard", "recommended_agents": 25, "safe_agents": 44, "source": "gtbi capacity --json --recommend-ntm"},
       "rch": {"worker": false, "controller": true, "workers_total": 8, "workers_healthy": 8},
       "ntm": {"can_launch": true, "preferred_labels": ["swarm-25"]},
       "ru": {"can_sync_repos": true},
@@ -254,7 +254,7 @@ test_empty_inventory_warns_without_failing_validation() {
       .status == "warn" and
       .summary.hosts_total == 0 and
       (.warnings[0] | contains("inventory has no hosts")) and
-      (.next_commands | index("acfs swarm inventory import --input hosts.inventory.json"))
+      (.next_commands | index("gtbi swarm inventory import --input hosts.inventory.json"))
     ' <<< "$output" >/dev/null || return 1
 
     pass "empty_inventory_warns_without_failing_validation"

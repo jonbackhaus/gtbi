@@ -22,7 +22,7 @@ install_test_runtime_home_override() {
     # These standalone tests isolate each case by assigning HOME to a scratch
     # directory. The production runtime resolver intentionally prefers the real
     # passwd home when TARGET_HOME is unset, so override that final fallback here
-    # to keep the harness from inspecting the developer's installed ACFS home.
+    # to keep the harness from inspecting the developer's installed GTBI home.
     autofix_resolve_current_home() {
         autofix_sanitize_abs_nonroot_path "${HOME:-}" 2>/dev/null
     }
@@ -33,29 +33,29 @@ install_test_runtime_home_override
 setup_autofix_state_dir() {
     local state_dir="$1"
     unset -f record_change 2>/dev/null || true
-    unset _ACFS_AUTOFIX_SOURCED
-    unset _ACFS_AUTOFIX_VERSION_MANAGERS_SH_LOADED
+    unset _GTBI_AUTOFIX_SOURCED
+    unset _GTBI_AUTOFIX_VERSION_MANAGERS_SH_LOADED
     # shellcheck source=autofix_version_managers.sh
     source "$SCRIPT_DIR/autofix_version_managers.sh"
     install_test_runtime_home_override
 
-    export ACFS_STATE_DIR="$state_dir"
-    export ACFS_CHANGES_FILE="$ACFS_STATE_DIR/changes.jsonl"
-    export ACFS_UNDOS_FILE="$ACFS_STATE_DIR/undos.jsonl"
-    export ACFS_BACKUPS_DIR="$ACFS_STATE_DIR/backups"
-    export ACFS_LOCK_FILE="$ACFS_STATE_DIR/.lock"
-    export ACFS_INTEGRITY_FILE="$ACFS_STATE_DIR/.integrity"
+    export GTBI_STATE_DIR="$state_dir"
+    export GTBI_CHANGES_FILE="$GTBI_STATE_DIR/changes.jsonl"
+    export GTBI_UNDOS_FILE="$GTBI_STATE_DIR/undos.jsonl"
+    export GTBI_BACKUPS_DIR="$GTBI_STATE_DIR/backups"
+    export GTBI_LOCK_FILE="$GTBI_STATE_DIR/.lock"
+    export GTBI_INTEGRITY_FILE="$GTBI_STATE_DIR/.integrity"
 
-    ACFS_CHANGE_RECORDS=()
-    ACFS_CHANGE_ORDER=()
-    ACFS_SESSION_ID=""
-    ACFS_AUTOFIX_INITIALIZED=false
-    ACFS_AUTOFIX_LOCK_FD=""
+    GTBI_CHANGE_RECORDS=()
+    GTBI_CHANGE_ORDER=()
+    GTBI_SESSION_ID=""
+    GTBI_AUTOFIX_INITIALIZED=false
+    GTBI_AUTOFIX_LOCK_FD=""
 
-    rm -rf "$ACFS_STATE_DIR"
-    mkdir -p "$ACFS_BACKUPS_DIR"
-    : > "$ACFS_CHANGES_FILE"
-    : > "$ACFS_UNDOS_FILE"
+    rm -rf "$GTBI_STATE_DIR"
+    mkdir -p "$GTBI_BACKUPS_DIR"
+    : > "$GTBI_CHANGES_FILE"
+    : > "$GTBI_UNDOS_FILE"
 }
 
 test_pass() {
@@ -347,7 +347,7 @@ EOF
         return
     fi
 
-    if [[ -f "$ACFS_STATE_DIR/.session" ]]; then
+    if [[ -f "$GTBI_STATE_DIR/.session" ]]; then
         HOME="$old_home"
         [[ -n "$old_nvm_dir" ]] && NVM_DIR="$old_nvm_dir" || unset NVM_DIR
         cleanup_test_dir "$test_dir"
@@ -355,7 +355,7 @@ EOF
         return
     fi
 
-    if [[ "$(jq -r 'select(.category == "nvm") | .category' "$ACFS_CHANGES_FILE" | wc -l | tr -d ' ')" -lt 2 ]]; then
+    if [[ "$(jq -r 'select(.category == "nvm") | .category' "$GTBI_CHANGES_FILE" | wc -l | tr -d ' ')" -lt 2 ]]; then
         HOME="$old_home"
         [[ -n "$old_nvm_dir" ]] && NVM_DIR="$old_nvm_dir" || unset NVM_DIR
         cleanup_test_dir "$test_dir"
@@ -414,7 +414,7 @@ EOF
         return
     fi
 
-    if [[ -s "$ACFS_CHANGES_FILE" ]]; then
+    if [[ -s "$GTBI_CHANGES_FILE" ]]; then
         HOME="$old_home"
         [[ -n "$old_nvm_dir" ]] && NVM_DIR="$old_nvm_dir" || unset NVM_DIR
         cleanup_test_dir "$test_dir"
@@ -692,7 +692,7 @@ EOF
         return
     fi
 
-    if [[ -f "$ACFS_STATE_DIR/.session" ]]; then
+    if [[ -f "$GTBI_STATE_DIR/.session" ]]; then
         HOME="$old_home"
         [[ -n "$old_pyenv_root" ]] && PYENV_ROOT="$old_pyenv_root" || unset PYENV_ROOT
         cleanup_test_dir "$test_dir"
@@ -700,7 +700,7 @@ EOF
         return
     fi
 
-    if [[ "$(jq -r 'select(.category == "pyenv") | .category' "$ACFS_CHANGES_FILE" | wc -l | tr -d ' ')" -lt 2 ]]; then
+    if [[ "$(jq -r 'select(.category == "pyenv") | .category' "$GTBI_CHANGES_FILE" | wc -l | tr -d ' ')" -lt 2 ]]; then
         HOME="$old_home"
         [[ -n "$old_pyenv_root" ]] && PYENV_ROOT="$old_pyenv_root" || unset PYENV_ROOT
         cleanup_test_dir "$test_dir"
@@ -759,7 +759,7 @@ EOF
         return
     fi
 
-    if [[ -s "$ACFS_CHANGES_FILE" ]]; then
+    if [[ -s "$GTBI_CHANGES_FILE" ]]; then
         HOME="$old_home"
         [[ -n "$old_pyenv_root" ]] && PYENV_ROOT="$old_pyenv_root" || unset PYENV_ROOT
         cleanup_test_dir "$test_dir"
@@ -843,7 +843,7 @@ EOF
     fi
 
     local session_count
-    session_count=$(jq -r '.session_id' "$ACFS_CHANGES_FILE" | sort -u | sed '/^null$/d;/^$/d' | wc -l | tr -d ' ')
+    session_count=$(jq -r '.session_id' "$GTBI_CHANGES_FILE" | sort -u | sed '/^null$/d;/^$/d' | wc -l | tr -d ' ')
     if [[ "$session_count" != "1" ]]; then
         HOME="$old_home"
         [[ -n "$old_nvm_dir" ]] && NVM_DIR="$old_nvm_dir" || unset NVM_DIR
@@ -853,7 +853,7 @@ EOF
         return
     fi
 
-    if [[ -f "$ACFS_STATE_DIR/.session" ]]; then
+    if [[ -f "$GTBI_STATE_DIR/.session" ]]; then
         HOME="$old_home"
         [[ -n "$old_nvm_dir" ]] && NVM_DIR="$old_nvm_dir" || unset NVM_DIR
         [[ -n "$old_pyenv_root" ]] && PYENV_ROOT="$old_pyenv_root" || unset PYENV_ROOT

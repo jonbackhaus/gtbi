@@ -98,7 +98,7 @@ function WindowsTerminalSetupContent() {
   const displayIP = vpsIP || "YOUR_VPS_IP";
   const effectiveUsername = sshUsername.trim() || "ubuntu";
   const ubuntuTarget = formatSshTarget(effectiveUsername, displayIP);
-  const sshCommandLine = `ssh -i $HOME\\.ssh\\acfs_ed25519 ${ubuntuTarget}`;
+  const sshCommandLine = `ssh -i $HOME\\.ssh\\gtbi_ed25519 ${ubuntuTarget}`;
 
   const handleCopy = useCallback(async () => {
     const copiedOk = await copyTextToClipboard(sshCommandLine);
@@ -153,7 +153,7 @@ function WindowsTerminalSetupContent() {
           </p>
           <ul className="list-disc list-inside space-y-1 text-sm">
             <li>Click a tab in Windows Terminal to instantly connect to your VPS</li>
-            <li>Give it a custom name like &quot;My VPS&quot; or &quot;ACFS Server&quot;</li>
+            <li>Give it a custom name like &quot;My VPS&quot; or &quot;GTBI Server&quot;</li>
             <li>Optionally set it as your default profile</li>
           </ul>
         </div>
@@ -218,7 +218,7 @@ function WindowsTerminalSetupContent() {
               <p className="text-sm font-medium mb-2">Name:</p>
               <CodeBlock code="My VPS" variant="compact" />
               <p className="text-xs text-muted-foreground mt-1">
-                (or whatever name you prefer, like &quot;ACFS Server&quot; or &quot;Ubuntu VPS&quot;)
+                (or whatever name you prefer, like &quot;GTBI Server&quot; or &quot;Ubuntu VPS&quot;)
               </p>
             </div>
             <div>
@@ -332,7 +332,7 @@ function WindowsTerminalSetupContent() {
                 <p className="text-sm text-muted-foreground">
                   Make sure your SSH key file exists at{" "}
                   <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">
-                    $HOME\.ssh\acfs_ed25519
+                    $HOME\.ssh\gtbi_ed25519
                   </code>
                   . If you used a different key name, update the command line accordingly.
                 </p>

@@ -28,8 +28,8 @@ NC='\033[0m'
 # Setup test environment
 setup() {
     TEST_TMP_DIR=$(mktemp -d)
-    export ACFS_LOG_DIR="$TEST_TMP_DIR"
-    export ACFS_LOG_LEVEL=$ACFS_LOG_DEBUG
+    export GTBI_LOG_DIR="$TEST_TMP_DIR"
+    export GTBI_LOG_LEVEL=$GTBI_LOG_DEBUG
 }
 
 # Cleanup test environment
@@ -61,8 +61,8 @@ run_test() {
 
 test_init_logging() {
     init_logging
-    [[ -f "$ACFS_SESSION_LOG" ]] || return 1
-    grep -q "ACFS newproj TUI Wizard Session Log" "$ACFS_SESSION_LOG" || return 1
+    [[ -f "$GTBI_SESSION_LOG" ]] || return 1
+    grep -q "GTBI newproj TUI Wizard Session Log" "$GTBI_SESSION_LOG" || return 1
     return 0
 }
 
@@ -74,10 +74,10 @@ test_log_levels() {
     log_warn "Warning message"
     log_error "Error message"
 
-    grep -q "DEBUG" "$ACFS_SESSION_LOG" || return 1
-    grep -q "INFO" "$ACFS_SESSION_LOG" || return 1
-    grep -q "WARN" "$ACFS_SESSION_LOG" || return 1
-    grep -q "ERROR" "$ACFS_SESSION_LOG" || return 1
+    grep -q "DEBUG" "$GTBI_SESSION_LOG" || return 1
+    grep -q "INFO" "$GTBI_SESSION_LOG" || return 1
+    grep -q "WARN" "$GTBI_SESSION_LOG" || return 1
+    grep -q "ERROR" "$GTBI_SESSION_LOG" || return 1
     return 0
 }
 
@@ -86,9 +86,9 @@ test_log_state() {
 
     log_state "project_name" "" "my-project"
 
-    grep -q "STATE" "$ACFS_SESSION_LOG" || return 1
-    grep -q "project_name" "$ACFS_SESSION_LOG" || return 1
-    grep -q "my-project" "$ACFS_SESSION_LOG" || return 1
+    grep -q "STATE" "$GTBI_SESSION_LOG" || return 1
+    grep -q "project_name" "$GTBI_SESSION_LOG" || return 1
+    grep -q "my-project" "$GTBI_SESSION_LOG" || return 1
     return 0
 }
 
@@ -99,7 +99,7 @@ test_log_screen() {
     log_screen "RENDER" "welcome"
     log_screen "EXIT" "welcome"
 
-    grep -c "SCRN" "$ACFS_SESSION_LOG" | grep -q "3" || return 1
+    grep -c "SCRN" "$GTBI_SESSION_LOG" | grep -q "3" || return 1
     return 0
 }
 
@@ -110,11 +110,11 @@ test_log_input_sanitization() {
     local long_input=$(printf 'x%.0s' {1..200})
     log_input "test_field" "$long_input"
 
-    grep -q "truncated" "$ACFS_SESSION_LOG" || return 1
+    grep -q "truncated" "$GTBI_SESSION_LOG" || return 1
 
     # Test that sensitive patterns are masked
     log_input "api" "sk-1234567890abcdef"
-    grep -q "sk-\*\*\*" "$ACFS_SESSION_LOG" || return 1
+    grep -q "sk-\*\*\*" "$GTBI_SESSION_LOG" || return 1
 
     return 0
 }
@@ -125,9 +125,9 @@ test_log_validation() {
     log_validation "project_name" "my-project" "PASS"
     log_validation "project_name" "bad name!" "FAIL" "Contains invalid characters"
 
-    grep -q "VALID" "$ACFS_SESSION_LOG" || return 1
-    grep -q "PASS" "$ACFS_SESSION_LOG" || return 1
-    grep -q "FAIL" "$ACFS_SESSION_LOG" || return 1
+    grep -q "VALID" "$GTBI_SESSION_LOG" || return 1
+    grep -q "PASS" "$GTBI_SESSION_LOG" || return 1
+    grep -q "FAIL" "$GTBI_SESSION_LOG" || return 1
     return 0
 }
 
@@ -138,7 +138,7 @@ test_log_file_op() {
     log_file_op "MKDIR" "/tmp/test" "OK"
     log_file_op "WRITE" "/tmp/test/.gitignore" "OK"
 
-    grep -c "FILE" "$ACFS_SESSION_LOG" | grep -q "3" || return 1
+    grep -c "FILE" "$GTBI_SESSION_LOG" | grep -q "3" || return 1
     return 0
 }
 
@@ -148,8 +148,8 @@ test_log_cmd() {
     log_cmd "git init" 0
     log_cmd "invalid_command" 1
 
-    grep -q "CMD" "$ACFS_SESSION_LOG" || return 1
-    grep -q "FAIL" "$ACFS_SESSION_LOG" || return 1
+    grep -q "CMD" "$GTBI_SESSION_LOG" || return 1
+    grep -q "FAIL" "$GTBI_SESSION_LOG" || return 1
     return 0
 }
 
@@ -159,7 +159,7 @@ test_log_tech_detect() {
     log_tech_detect "nodejs" "package.json" "high"
     log_tech_detect "typescript" "tsconfig.json" "high"
 
-    grep -c "TECH" "$ACFS_SESSION_LOG" | grep -q "2" || return 1
+    grep -c "TECH" "$GTBI_SESSION_LOG" | grep -q "2" || return 1
     return 0
 }
 
@@ -170,7 +170,7 @@ test_log_nav() {
     log_nav "BACK" "project_name" "welcome"
     log_nav "CANCEL"
 
-    grep -c "NAV" "$ACFS_SESSION_LOG" | grep -q "3" || return 1
+    grep -c "NAV" "$GTBI_SESSION_LOG" | grep -q "3" || return 1
     return 0
 }
 
@@ -179,8 +179,8 @@ test_log_json() {
 
     log_json "wizard_state" '{"project_name": "test", "enabled": true}'
 
-    grep -q "JSON" "$ACFS_SESSION_LOG" || return 1
-    grep -q "project_name" "$ACFS_SESSION_LOG" || return 1
+    grep -q "JSON" "$GTBI_SESSION_LOG" || return 1
+    grep -q "project_name" "$GTBI_SESSION_LOG" || return 1
     return 0
 }
 
@@ -188,8 +188,8 @@ test_finalize_logging() {
     init_logging
     finalize_logging 0
 
-    grep -q "Session completed" "$ACFS_SESSION_LOG" || return 1
-    grep -q "Exit code: 0" "$ACFS_SESSION_LOG" || return 1
+    grep -q "Session completed" "$GTBI_SESSION_LOG" || return 1
+    grep -q "Exit code: 0" "$GTBI_SESSION_LOG" || return 1
     return 0
 }
 
@@ -200,19 +200,19 @@ test_log_checkpoint() {
     sleep 1
     log_checkpoint "end_wizard"
 
-    grep -c "TIME" "$ACFS_SESSION_LOG" | grep -q "2" || return 1
-    grep -q "Checkpoint: start_wizard" "$ACFS_SESSION_LOG" || return 1
+    grep -c "TIME" "$GTBI_SESSION_LOG" | grep -q "2" || return 1
+    grep -q "Checkpoint: start_wizard" "$GTBI_SESSION_LOG" || return 1
     return 0
 }
 
 test_verbose_mode() {
-    export ACFS_LOG_LEVEL=$ACFS_LOG_INFO
+    export GTBI_LOG_LEVEL=$GTBI_LOG_INFO
     init_logging
 
     # Info should not show DEBUG messages
     log_debug "This should not appear"
 
-    if grep -q "This should not appear" "$ACFS_SESSION_LOG"; then
+    if grep -q "This should not appear" "$GTBI_SESSION_LOG"; then
         return 1
     fi
 
@@ -220,7 +220,7 @@ test_verbose_mode() {
     enable_verbose
     log_debug "This should appear"
 
-    grep -q "This should appear" "$ACFS_SESSION_LOG" || return 1
+    grep -q "This should appear" "$GTBI_SESSION_LOG" || return 1
     return 0
 }
 
@@ -250,14 +250,14 @@ test_log_env_snapshot() {
 
     log_env_snapshot
 
-    grep -q "ENV" "$ACFS_SESSION_LOG" || return 1
-    grep -q "PATH=" "$ACFS_SESSION_LOG" || return 1
-    grep -q "TERM=" "$ACFS_SESSION_LOG" || return 1
+    grep -q "ENV" "$GTBI_SESSION_LOG" || return 1
+    grep -q "PATH=" "$GTBI_SESSION_LOG" || return 1
+    grep -q "TERM=" "$GTBI_SESSION_LOG" || return 1
     return 0
 }
 
 test_log_level_filtering() {
-    export ACFS_LOG_LEVEL=$ACFS_LOG_WARN
+    export GTBI_LOG_LEVEL=$GTBI_LOG_WARN
     init_logging
 
     log_debug "Debug should not appear"
@@ -265,25 +265,25 @@ test_log_level_filtering() {
     log_warn "Warn should appear"
     log_error "Error should appear"
 
-    if grep -q "Debug should not appear" "$ACFS_SESSION_LOG"; then
+    if grep -q "Debug should not appear" "$GTBI_SESSION_LOG"; then
         return 1
     fi
-    if grep -q "Info should not appear" "$ACFS_SESSION_LOG"; then
+    if grep -q "Info should not appear" "$GTBI_SESSION_LOG"; then
         return 1
     fi
-    grep -q "Warn should appear" "$ACFS_SESSION_LOG" || return 1
-    grep -q "Error should appear" "$ACFS_SESSION_LOG" || return 1
+    grep -q "Warn should appear" "$GTBI_SESSION_LOG" || return 1
+    grep -q "Error should appear" "$GTBI_SESSION_LOG" || return 1
     return 0
 }
 
 test_multiple_sessions() {
     init_logging
-    local first_log="$ACFS_SESSION_LOG"
+    local first_log="$GTBI_SESSION_LOG"
 
     sleep 1  # Ensure different timestamp
 
     init_logging
-    local second_log="$ACFS_SESSION_LOG"
+    local second_log="$GTBI_SESSION_LOG"
 
     [[ "$first_log" != "$second_log" ]] || return 1
     [[ -f "$first_log" ]] || return 1
@@ -302,9 +302,9 @@ test_log_dump_state() {
 
     log_dump_state TEST_STATE
 
-    grep -q "DUMP" "$ACFS_SESSION_LOG" || return 1
-    grep -q "project_name" "$ACFS_SESSION_LOG" || return 1
-    grep -q "my-project" "$ACFS_SESSION_LOG" || return 1
+    grep -q "DUMP" "$GTBI_SESSION_LOG" || return 1
+    grep -q "project_name" "$GTBI_SESSION_LOG" || return 1
+    grep -q "my-project" "$GTBI_SESSION_LOG" || return 1
     return 0
 }
 

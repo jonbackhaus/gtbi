@@ -1,52 +1,52 @@
 #!/usr/bin/env bash
 # ============================================================
-# ACFS Installer - Logging Library
+# GTBI Installer - Logging Library
 # Provides consistent, colored output for the installer
 # ============================================================
 
 # ============================================================
 # Log file capture (always defined, even when basic log funcs
-# are skipped via _ACFS_LOGGING_SH_LOADED guard)
+# are skipped via _GTBI_LOGGING_SH_LOADED guard)
 # ============================================================
 
 # Initialize log file capture: tee stderr to a timestamped log file.
-# Usage: acfs_log_init [log_directory]
-# After calling, all stderr output is captured to ACFS_LOG_FILE.
-# Call acfs_log_close to restore stderr and finalize the log.
-if ! declare -f acfs_log_init >/dev/null 2>&1; then
-    acfs_log_init() {
-        local log_dir="${1:-${ACFS_HOME:+${ACFS_HOME}/logs}}"
+# Usage: gtbi_log_init [log_directory]
+# After calling, all stderr output is captured to GTBI_LOG_FILE.
+# Call gtbi_log_close to restore stderr and finalize the log.
+if ! declare -f gtbi_log_init >/dev/null 2>&1; then
+    gtbi_log_init() {
+        local log_dir="${1:-${GTBI_HOME:+${GTBI_HOME}/logs}}"
         local saved_stderr_fd=""
 
-        # Fallback if ACFS_HOME not set or empty
+        # Fallback if GTBI_HOME not set or empty
         if [[ -z "$log_dir" ]]; then
-            log_dir="${ACFS_LOG_DIR:-/var/log/acfs}"
+            log_dir="${GTBI_LOG_DIR:-/var/log/gtbi}"
         fi
 
-        ACFS_LOG_INITIALIZED=false
-        ACFS_LOG_STDERR_CAPTURED=false
-        ACFS_LOG_ORIGINAL_STDERR_FD=""
+        GTBI_LOG_INITIALIZED=false
+        GTBI_LOG_STDERR_CAPTURED=false
+        GTBI_LOG_ORIGINAL_STDERR_FD=""
 
         # Create log directory
         mkdir -p "$log_dir" 2>/dev/null || return 1
 
-        ACFS_LOG_FILE="${log_dir}/install-$(date +%Y%m%d_%H%M%S).log"
-        export ACFS_LOG_FILE
+        GTBI_LOG_FILE="${log_dir}/install-$(date +%Y%m%d_%H%M%S).log"
+        export GTBI_LOG_FILE
 
         # Write log header
         {
-            printf '=== ACFS Install Log ===\n'
+            printf '=== GTBI Install Log ===\n'
             printf 'Started: %s\n' "$(date -Iseconds)"
-            printf 'Version: %s\n' "${ACFS_VERSION:-unknown}"
+            printf 'Version: %s\n' "${GTBI_VERSION:-unknown}"
             printf 'User: %s\n' "${TARGET_USER:-unknown}"
             printf 'Home: %s\n' "${TARGET_HOME:-unknown}"
             printf '========================\n\n'
-        } > "$ACFS_LOG_FILE" 2>/dev/null || return 1
-        ACFS_LOG_INITIALIZED=true
+        } > "$GTBI_LOG_FILE" 2>/dev/null || return 1
+        GTBI_LOG_INITIALIZED=true
 
         # Fix ownership so target user can read logs
         if [[ -n "${TARGET_USER:-}" ]] && [[ "$(id -u)" -eq 0 ]]; then
-            chown "${TARGET_USER}:${TARGET_USER}" "$log_dir" "$ACFS_LOG_FILE" 2>/dev/null || true
+            chown "${TARGET_USER}:${TARGET_USER}" "$log_dir" "$GTBI_LOG_FILE" 2>/dev/null || true
         fi
 
         # Tee stderr: all stderr output goes to both terminal and log file.
@@ -61,73 +61,73 @@ if ! declare -f acfs_log_init >/dev/null 2>&1; then
             # On bash 5.3+, bare `exec` under set -e can exit the script
             # before `if` catches the failure, so we test in a subshell.
             if (exec 3>&1; echo test > >(cat >/dev/null)) 2>/dev/null; then
-                # Save original stderr first. Use an ACFS-owned dynamic fd instead
+                # Save original stderr first. Use an GTBI-owned dynamic fd instead
                 # of fd 3, because BATS and other callers may already own fd 3.
                 if exec {saved_stderr_fd}>&2; then
-                    ACFS_LOG_ORIGINAL_STDERR_FD="$saved_stderr_fd"
+                    GTBI_LOG_ORIGINAL_STDERR_FD="$saved_stderr_fd"
                 fi
                 # shellcheck disable=SC2261
                 # Use set +e locally to prevent exec from exiting under bash 5.3+
-                if [[ -n "$saved_stderr_fd" ]] && (set +e; exec 2> >(tee -a "$ACFS_LOG_FILE" >&"$saved_stderr_fd")) 2>/dev/null; then
-                    if exec 2> >(tee -a "$ACFS_LOG_FILE" >&"$saved_stderr_fd"); then
+                if [[ -n "$saved_stderr_fd" ]] && (set +e; exec 2> >(tee -a "$GTBI_LOG_FILE" >&"$saved_stderr_fd")) 2>/dev/null; then
+                    if exec 2> >(tee -a "$GTBI_LOG_FILE" >&"$saved_stderr_fd"); then
                         tee_logging_ok=true
-                        ACFS_LOG_STDERR_CAPTURED=true
+                        GTBI_LOG_STDERR_CAPTURED=true
                     fi
                 fi
             fi
         fi
 
         if [[ "$tee_logging_ok" != "true" ]]; then
-            if [[ -n "${ACFS_LOG_ORIGINAL_STDERR_FD:-}" ]]; then
-                { exec {ACFS_LOG_ORIGINAL_STDERR_FD}>&-; } 2>/dev/null || true
-                ACFS_LOG_ORIGINAL_STDERR_FD=""
+            if [[ -n "${GTBI_LOG_ORIGINAL_STDERR_FD:-}" ]]; then
+                { exec {GTBI_LOG_ORIGINAL_STDERR_FD}>&-; } 2>/dev/null || true
+                GTBI_LOG_ORIGINAL_STDERR_FD=""
             fi
             # Fallback: rely on explicit logging calls instead of automatic tee
-            ACFS_LOG_FALLBACK=true
-            export ACFS_LOG_FALLBACK
+            GTBI_LOG_FALLBACK=true
+            export GTBI_LOG_FALLBACK
         fi
     }
 fi
 
 # Close log file capture and restore stderr.
 # Strips ANSI color codes from the log for clean text output.
-if ! declare -f acfs_log_close >/dev/null 2>&1; then
-    acfs_log_close() {
-        # Restore only an fd that acfs_log_init opened. Callers and test harnesses
+if ! declare -f gtbi_log_close >/dev/null 2>&1; then
+    gtbi_log_close() {
+        # Restore only an fd that gtbi_log_init opened. Callers and test harnesses
         # often use fd 3 themselves; inheriting it must not make us redirect/close it.
-        if [[ "${ACFS_LOG_STDERR_CAPTURED:-false}" == "true" && -n "${ACFS_LOG_ORIGINAL_STDERR_FD:-}" ]]; then
-            exec 2>&"${ACFS_LOG_ORIGINAL_STDERR_FD}" || true
-            { exec {ACFS_LOG_ORIGINAL_STDERR_FD}>&-; } 2>/dev/null || true
-            ACFS_LOG_ORIGINAL_STDERR_FD=""
-            ACFS_LOG_STDERR_CAPTURED=false
+        if [[ "${GTBI_LOG_STDERR_CAPTURED:-false}" == "true" && -n "${GTBI_LOG_ORIGINAL_STDERR_FD:-}" ]]; then
+            exec 2>&"${GTBI_LOG_ORIGINAL_STDERR_FD}" || true
+            { exec {GTBI_LOG_ORIGINAL_STDERR_FD}>&-; } 2>/dev/null || true
+            GTBI_LOG_ORIGINAL_STDERR_FD=""
+            GTBI_LOG_STDERR_CAPTURED=false
         fi
 
-        if [[ "${ACFS_LOG_INITIALIZED:-false}" == "true" && -n "${ACFS_LOG_FILE:-}" && -f "$ACFS_LOG_FILE" ]]; then
+        if [[ "${GTBI_LOG_INITIALIZED:-false}" == "true" && -n "${GTBI_LOG_FILE:-}" && -f "$GTBI_LOG_FILE" ]]; then
             # Strip ANSI escape codes for clean log
             # Use -i.bak for portability (works on both GNU sed and BSD sed)
-            sed -i.bak $'s/\033\[[0-9;]*m//g' "$ACFS_LOG_FILE" 2>/dev/null && rm -f "${ACFS_LOG_FILE}.bak" || true
+            sed -i.bak $'s/\033\[[0-9;]*m//g' "$GTBI_LOG_FILE" 2>/dev/null && rm -f "${GTBI_LOG_FILE}.bak" || true
 
             # Append footer
             {
                 printf '\n========================\n'
                 printf 'Finished: %s\n' "$(date -Iseconds)"
                 printf '========================\n'
-            } >> "$ACFS_LOG_FILE"
+            } >> "$GTBI_LOG_FILE"
 
             # Fix ownership
             if [[ -n "${TARGET_USER:-}" ]] && [[ "$(id -u)" -eq 0 ]]; then
-                chown "${TARGET_USER}:${TARGET_USER}" "$ACFS_LOG_FILE" 2>/dev/null || true
+                chown "${TARGET_USER}:${TARGET_USER}" "$GTBI_LOG_FILE" 2>/dev/null || true
             fi
         fi
-        ACFS_LOG_INITIALIZED=false
+        GTBI_LOG_INITIALIZED=false
     }
 fi
 
 # Prevent multiple sourcing of basic log functions
-if [[ -n "${_ACFS_LOGGING_SH_LOADED:-}" ]]; then
+if [[ -n "${_GTBI_LOGGING_SH_LOADED:-}" ]]; then
     return 0
 fi
-_ACFS_LOGGING_SH_LOADED=1
+_GTBI_LOGGING_SH_LOADED=1
 
 # ============================================================
 # Color Support with NO_COLOR Standard (https://no-color.org/)
@@ -140,36 +140,36 @@ _ACFS_LOGGING_SH_LOADED=1
 # Related: bd-39ye
 
 # Initialize colors based on environment
-_acfs_init_colors() {
+_gtbi_init_colors() {
     # Disable colors if NO_COLOR is set (any value) or output is not a TTY
     if [[ -n "${NO_COLOR:-}" ]] || [[ ! -t 2 ]]; then
         # No colors - empty strings
-        export ACFS_RED=''
-        export ACFS_GREEN=''
-        export ACFS_YELLOW=''
-        export ACFS_BLUE=''
-        export ACFS_GRAY=''
-        export ACFS_NC=''
-        export ACFS_COLORS_ENABLED=false
+        export GTBI_RED=''
+        export GTBI_GREEN=''
+        export GTBI_YELLOW=''
+        export GTBI_BLUE=''
+        export GTBI_GRAY=''
+        export GTBI_NC=''
+        export GTBI_COLORS_ENABLED=false
     else
         # Colors enabled
-        export ACFS_RED='\033[0;31m'
-        export ACFS_GREEN='\033[0;32m'
-        export ACFS_YELLOW='\033[0;33m'
-        export ACFS_BLUE='\033[0;34m'
-        export ACFS_GRAY='\033[0;90m'
-        export ACFS_NC='\033[0m'
-        export ACFS_COLORS_ENABLED=true
+        export GTBI_RED='\033[0;31m'
+        export GTBI_GREEN='\033[0;32m'
+        export GTBI_YELLOW='\033[0;33m'
+        export GTBI_BLUE='\033[0;34m'
+        export GTBI_GRAY='\033[0;90m'
+        export GTBI_NC='\033[0m'
+        export GTBI_COLORS_ENABLED=true
     fi
 }
 
 # Initialize colors on first load
-_acfs_init_colors
+_gtbi_init_colors
 
 # Check if colors are enabled
-# Usage: if acfs_colors_enabled; then echo "colors!"; fi
-acfs_colors_enabled() {
-    [[ "${ACFS_COLORS_ENABLED:-true}" == "true" ]]
+# Usage: if gtbi_colors_enabled; then echo "colors!"; fi
+gtbi_colors_enabled() {
+    [[ "${GTBI_COLORS_ENABLED:-true}" == "true" ]]
 }
 
 # Log a major step (blue)
@@ -179,12 +179,12 @@ if ! declare -f log_step >/dev/null; then
         if [[ $# -ge 2 ]]; then
             local step="$1"
             local message="$2"
-            printf "${ACFS_BLUE}[%s]${ACFS_NC} %s\n" "$step" "$message" >&2
+            printf "${GTBI_BLUE}[%s]${GTBI_NC} %s\n" "$step" "$message" >&2
             return 0
         fi
 
         local message="${1:-}"
-        printf "${ACFS_BLUE}[•]${ACFS_NC} %s\n" "$message" >&2
+        printf "${GTBI_BLUE}[•]${GTBI_NC} %s\n" "$message" >&2
     }
 fi
 
@@ -194,7 +194,7 @@ if ! declare -f log_section >/dev/null; then
     log_section() {
         local title="$1"
         echo "" >&2
-        printf "${ACFS_BLUE}%s${ACFS_NC}\n" "$title" >&2
+        printf "${GTBI_BLUE}%s${GTBI_NC}\n" "$title" >&2
     }
 fi
 
@@ -202,7 +202,7 @@ fi
 # Usage: log_detail "Installing zsh..."
 if ! declare -f log_detail >/dev/null; then
     log_detail() {
-        printf "${ACFS_GRAY}    %s${ACFS_NC}\n" "$1" >&2
+        printf "${GTBI_GRAY}    %s${GTBI_NC}\n" "$1" >&2
     }
 fi
 
@@ -218,7 +218,7 @@ fi
 # Usage: log_success "Installation complete"
 if ! declare -f log_success >/dev/null; then
     log_success() {
-        printf "${ACFS_GREEN}✓ %s${ACFS_NC}\n" "$1" >&2
+        printf "${GTBI_GREEN}✓ %s${GTBI_NC}\n" "$1" >&2
     }
 fi
 
@@ -226,7 +226,7 @@ fi
 # Usage: log_warn "This may take a while"
 if ! declare -f log_warn >/dev/null; then
     log_warn() {
-        printf "${ACFS_YELLOW}⚠ %s${ACFS_NC}\n" "$1" >&2
+        printf "${GTBI_YELLOW}⚠ %s${GTBI_NC}\n" "$1" >&2
     }
 fi
 
@@ -236,22 +236,22 @@ if ! declare -f log_sensitive >/dev/null; then
     log_sensitive() {
         local message="$1"
 
-        # If stderr is being tee'd, write to the ACFS-owned saved stderr fd so
+        # If stderr is being tee'd, write to the GTBI-owned saved stderr fd so
         # secrets still reach the operator without entering the install log.
-        if [[ "${ACFS_LOG_STDERR_CAPTURED:-false}" == "true" ]] &&
-            [[ "${ACFS_LOG_ORIGINAL_STDERR_FD:-}" =~ ^[0-9]+$ ]] &&
-            { true >&"${ACFS_LOG_ORIGINAL_STDERR_FD}"; } 2>/dev/null; then
-            printf "${ACFS_YELLOW}⚠ %s${ACFS_NC}\n" "$message" >&"${ACFS_LOG_ORIGINAL_STDERR_FD}"
+        if [[ "${GTBI_LOG_STDERR_CAPTURED:-false}" == "true" ]] &&
+            [[ "${GTBI_LOG_ORIGINAL_STDERR_FD:-}" =~ ^[0-9]+$ ]] &&
+            { true >&"${GTBI_LOG_ORIGINAL_STDERR_FD}"; } 2>/dev/null; then
+            printf "${GTBI_YELLOW}⚠ %s${GTBI_NC}\n" "$message" >&"${GTBI_LOG_ORIGINAL_STDERR_FD}"
             return 0
         fi
 
         # Fall back to /dev/tty when available to avoid log capture.
-        if [[ -w /dev/tty ]] && printf "${ACFS_YELLOW}⚠ %s${ACFS_NC}\n" "$message" > /dev/tty 2>/dev/null; then
+        if [[ -w /dev/tty ]] && printf "${GTBI_YELLOW}⚠ %s${GTBI_NC}\n" "$message" > /dev/tty 2>/dev/null; then
             return 0
         fi
 
         # Last resort: stderr (may be logged).
-        printf "${ACFS_YELLOW}⚠ %s${ACFS_NC}\n" "$message" >&2
+        printf "${GTBI_YELLOW}⚠ %s${GTBI_NC}\n" "$message" >&2
     }
 fi
 
@@ -259,7 +259,7 @@ fi
 # Usage: log_error "Failed to install package"
 if ! declare -f log_error >/dev/null; then
     log_error() {
-        printf "${ACFS_RED}✖ %s${ACFS_NC}\n" "$1" >&2
+        printf "${GTBI_RED}✖ %s${GTBI_NC}\n" "$1" >&2
     }
 fi
 
@@ -277,7 +277,7 @@ fi
 if ! declare -f log_to_file >/dev/null; then
     log_to_file() {
         local message="$1"
-        local logfile="${2:-/var/log/acfs/install.log}"
+        local logfile="${2:-/var/log/gtbi/install.log}"
 
         # Ensure log directory exists
         mkdir -p "$(dirname "$logfile")" 2>/dev/null || true
@@ -288,7 +288,7 @@ if ! declare -f log_to_file >/dev/null; then
 fi
 
 # Associative array for timer tracking (avoids eval)
-declare -gA ACFS_TIMERS=()
+declare -gA GTBI_TIMERS=()
 
 # ============================================================
 # Progress Display (for multi-phase installations)
@@ -401,7 +401,7 @@ if ! declare -f show_completion >/dev/null; then
         echo "║  1. Type 'exit' to disconnect                                 ║" >&2
         local ssh_user="${TARGET_USER:-ubuntu}"
         local ssh_target="${ssh_user}@YOUR_IP"
-        local reconnect_line="  2. Reconnect: ssh -i ~/.ssh/acfs_ed25519 ${ssh_target}"
+        local reconnect_line="  2. Reconnect: ssh -i ~/.ssh/gtbi_ed25519 ${ssh_target}"
         local reconnect_pad_len=$((63 - ${#reconnect_line}))
         local reconnect_padding=""
         if [[ $reconnect_pad_len -gt 0 ]]; then
@@ -419,7 +419,7 @@ fi
 if ! declare -f timer_start >/dev/null; then
     timer_start() {
         local name="$1"
-        ACFS_TIMERS["$name"]=$(date +%s)
+        GTBI_TIMERS["$name"]=$(date +%s)
     }
 fi
 
@@ -428,7 +428,7 @@ fi
 if ! declare -f timer_end >/dev/null; then
     timer_end() {
         local name="$1"
-        local start="${ACFS_TIMERS[$name]:-}"
+        local start="${GTBI_TIMERS[$name]:-}"
 
         # If timer was never started, warn and skip duration logging
         if [[ -z "$start" ]]; then

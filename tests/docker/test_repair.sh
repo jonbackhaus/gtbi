@@ -3,7 +3,7 @@
 # GTBI Installer - Repair Test (Docker)
 #
 # Runs a fresh install, deliberately corrupts the installation
-# in 5 realistic ways, then verifies that `acfs doctor --fix`
+# in 5 realistic ways, then verifies that `gtbi doctor --fix`
 # restores everything to a healthy state.
 #
 # All corruptions target checks that have non-manual auto-fix
@@ -12,7 +12,7 @@
 # Runs INSIDE a Docker container. Mount the repo at /repo:
 #
 #   docker run --rm \
-#     -e ACFS_CI=true \
+#     -e GTBI_CI=true \
 #     -v /path/to/gtbi:/repo:rw \
 #     ubuntu:25.10 bash /repo/tests/docker/test_repair.sh
 # ============================================================
@@ -41,7 +41,7 @@ fi
 # ── Phase 1: Fresh Install ─────────────────────────────────────────────────────
 
 log "Phase 1: Fresh Install"
-if ACFS_CI=true bash /repo/install.sh \
+if GTBI_CI=true bash /repo/install.sh \
         --yes --skip-preflight --skip-ubuntu-upgrade --mode vibe \
         > "${ARTIFACTS_DIR}/repair_install.log" 2>&1; then
     log "Install successful"
@@ -54,7 +54,7 @@ fi
 # ── Phase 2: Baseline Doctor (must pass before we corrupt) ────────────────────
 
 log "Phase 2: Baseline Doctor"
-if su - ubuntu -c "ACFS_DOCTOR_CI=true zsh -ic 'acfs doctor'" \
+if su - ubuntu -c "GTBI_DOCTOR_CI=true zsh -ic 'gtbi doctor'" \
         > "${ARTIFACTS_DIR}/repair_baseline_doctor.log" 2>&1; then
     log "Baseline doctor passed"
 else
@@ -93,16 +93,16 @@ else
     echo "  [skip] zsh-syntax-highlighting not present"
 fi
 
-# C: Strip ACFS sourcing line from .zshrc
-# Fixes: shell.acfs_sourced via fix_acfs_sourcing()
-log "  Corruption C: stripping ACFS sourcing from .zshrc"
-if grep -q 'acfs\.zshrc' /home/ubuntu/.zshrc 2>/dev/null; then
-    sed -i '/acfs\.zshrc/d' /home/ubuntu/.zshrc
-    sed -i '/ACFS configuration/d' /home/ubuntu/.zshrc
-    CORRUPTED_CHECK_IDS+=("shell.acfs_sourced")
-    echo "  [ok] ACFS sourcing stripped from .zshrc"
+# C: Strip GTBI sourcing line from .zshrc
+# Fixes: shell.gtbi_sourced via fix_gtbi_sourcing()
+log "  Corruption C: stripping GTBI sourcing from .zshrc"
+if grep -q 'gtbi\.zshrc' /home/ubuntu/.zshrc 2>/dev/null; then
+    sed -i '/gtbi\.zshrc/d' /home/ubuntu/.zshrc
+    sed -i '/GTBI configuration/d' /home/ubuntu/.zshrc
+    CORRUPTED_CHECK_IDS+=("shell.gtbi_sourced")
+    echo "  [ok] GTBI sourcing stripped from .zshrc"
 else
-    echo "  [skip] ACFS sourcing not present in .zshrc"
+    echo "  [skip] GTBI sourcing not present in .zshrc"
 fi
 
 # D: Remove the am symlink (mcp_agent_mail)
@@ -141,7 +141,7 @@ log "Corrupted check IDs: ${CORRUPTED_CHECK_IDS[*]}"
 # check IDs appear as failures, the corruption silently had no effect.
 
 log "Phase 4: Pre-Fix Doctor (expect failures)"
-su - ubuntu -c "ACFS_DOCTOR_CI=true zsh -ic 'acfs doctor'" \
+su - ubuntu -c "GTBI_DOCTOR_CI=true zsh -ic 'gtbi doctor'" \
     > "${ARTIFACTS_DIR}/repair_pre_fix_doctor.log" 2>&1 || true
 
 detected=0
@@ -163,8 +163,8 @@ log "${detected}/${#CORRUPTED_CHECK_IDS[@]} corruptions detected"
 
 # ── Phase 5: Run Repair ───────────────────────────────────────────────────────
 
-log "Phase 5: Running acfs doctor --fix"
-if su - ubuntu -c "ACFS_DOCTOR_CI=true zsh -ic 'acfs doctor --fix'" \
+log "Phase 5: Running gtbi doctor --fix"
+if su - ubuntu -c "GTBI_DOCTOR_CI=true zsh -ic 'gtbi doctor --fix'" \
         > "${ARTIFACTS_DIR}/repair_fix.log" 2>&1; then
     log "Repair completed"
 else
@@ -181,7 +181,7 @@ fi
 # ── Phase 6: Post-Fix Doctor ─────────────────────────────────────────────────
 
 log "Phase 6: Post-Fix Doctor (expect clean)"
-if su - ubuntu -c "ACFS_DOCTOR_CI=true zsh -ic 'acfs doctor'" \
+if su - ubuntu -c "GTBI_DOCTOR_CI=true zsh -ic 'gtbi doctor'" \
         > "${ARTIFACTS_DIR}/repair_post_fix_doctor.log" 2>&1; then
     log "Post-fix doctor passed — installation is healthy"
 else

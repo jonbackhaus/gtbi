@@ -7,7 +7,7 @@
 # SHA256 checksums for critical internal scripts (bd-3tpl).
 # Used by check-manifest-drift.sh to detect unauthorized changes.
 
-declare -gA ACFS_INTERNAL_CHECKSUMS=(
+declare -gA GTBI_INTERNAL_CHECKSUMS=(
   [scripts/lib/security.sh]="821ebff8aa1503c551d8ab527593a9124134659a2e1655b0fe0b1a99e42469fc"
   [scripts/lib/agents.sh]="a6485afa0cf17d636ad7f049796a23821fb9c5dbf3640ec42ee9b1bb0a8628b4"
   [scripts/lib/update.sh]="15723e5ed5a56ac15b394bf426b53c852b550c7c9fe07bd34f4c4c94704f32fc"
@@ -24,9 +24,9 @@ declare -gA ACFS_INTERNAL_CHECKSUMS=(
   [scripts/lib/user.sh]="9e92de58e706a790b66f2d05317bd404860e6222ecf496f3c873427d0516d68a"
   [scripts/lib/tools.sh]="e2d48e800888b759245e66cc9d86d097d83bf10f6d3bd2fcd17ec4bddfec94e0"
   [scripts/lib/export-config.sh]="6280123436223b5708f506b0a18b83c64891f8ee55af93c5c513f7fb202b97e3"
-  [scripts/acfs-global]="08480a09fa6699cef325937351e9f937904f82f8bdb8f88381ec95bd18c5c56f"
-  [scripts/acfs-update]="178ab5f2af97f8c1584aa298aef350b28fe5b8dafd95e85c28af3be27e05f816"
+  [scripts/gtbi-global]="08480a09fa6699cef325937351e9f937904f82f8bdb8f88381ec95bd18c5c56f"
+  [scripts/gtbi-update]="178ab5f2af97f8c1584aa298aef350b28fe5b8dafd95e85c28af3be27e05f816"
 )
 
-ACFS_INTERNAL_CHECKSUMS_COUNT=18
-ACFS_INTERNAL_CHECKSUMS_GENERATED="$(date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || echo unknown)"
+GTBI_INTERNAL_CHECKSUMS_COUNT=18
+GTBI_INTERNAL_CHECKSUMS_GENERATED="$(date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || echo unknown)"

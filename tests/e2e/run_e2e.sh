@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-# ACFS E2E Test Runner
+# GTBI E2E Test Runner
 #
 # Runs all E2E tests with proper environment setup and reporting.
 #
@@ -131,7 +131,7 @@ setup_environment() {
     # Set environment variables
     export E2E_DIR
     export PROJECT_ROOT
-    export ACFS_LIB_DIR="$PROJECT_ROOT/scripts/lib"
+    export GTBI_LIB_DIR="$PROJECT_ROOT/scripts/lib"
 
     # Disable CI detection for interactive tests
     unset CI GITHUB_ACTIONS GITLAB_CI JENKINS_URL TRAVIS CIRCLECI
@@ -181,7 +181,7 @@ run_tests() {
         echo -e "${YELLOW}Quick mode: Skipping expect-based tests${NC}"
         echo ""
         # We'll use the skip_without_expect helper in tests
-        export ACFS_E2E_QUICK_MODE=1
+        export GTBI_E2E_QUICK_MODE=1
     fi
 
     # Run bats
@@ -230,7 +230,7 @@ cleanup() {
 main() {
     echo ""
     echo -e "${BLUE}╔═══════════════════════════════════════════════════════════╗${NC}"
-    echo -e "${BLUE}║          ACFS E2E Test Suite                              ║${NC}"
+    echo -e "${BLUE}║          GTBI E2E Test Suite                              ║${NC}"
     echo -e "${BLUE}╚═══════════════════════════════════════════════════════════╝${NC}"
     echo ""
 

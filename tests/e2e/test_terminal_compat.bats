@@ -22,7 +22,7 @@ teardown() {
     local project_name="term-dumb-test"
     local project_dir="$E2E_TEST_DIR/$project_name"
 
-    TERM=dumb run bash "$ACFS_LIB_DIR/newproj.sh" "$project_name" "$project_dir"
+    TERM=dumb run bash "$GTBI_LIB_DIR/newproj.sh" "$project_name" "$project_dir"
 
     assert_success
     [[ -d "$project_dir" ]]
@@ -32,7 +32,7 @@ teardown() {
     local project_name="term-xterm-test"
     local project_dir="$E2E_TEST_DIR/$project_name"
 
-    TERM=xterm run bash "$ACFS_LIB_DIR/newproj.sh" "$project_name" "$project_dir"
+    TERM=xterm run bash "$GTBI_LIB_DIR/newproj.sh" "$project_name" "$project_dir"
 
     assert_success
     [[ -d "$project_dir" ]]
@@ -42,7 +42,7 @@ teardown() {
     local project_name="term-256-test"
     local project_dir="$E2E_TEST_DIR/$project_name"
 
-    TERM=xterm-256color run bash "$ACFS_LIB_DIR/newproj.sh" "$project_name" "$project_dir"
+    TERM=xterm-256color run bash "$GTBI_LIB_DIR/newproj.sh" "$project_name" "$project_dir"
 
     assert_success
     [[ -d "$project_dir" ]]
@@ -53,7 +53,7 @@ teardown() {
     local project_dir="$E2E_TEST_DIR/$project_name"
 
     unset TERM
-    run bash "$ACFS_LIB_DIR/newproj.sh" "$project_name" "$project_dir"
+    run bash "$GTBI_LIB_DIR/newproj.sh" "$project_name" "$project_dir"
 
     assert_success
     [[ -d "$project_dir" ]]
@@ -67,7 +67,7 @@ teardown() {
     local project_name="no-unicode-test"
     local project_dir="$E2E_TEST_DIR/$project_name"
 
-    TERM=dumb LANG=C run bash "$ACFS_LIB_DIR/newproj.sh" "$project_name" "$project_dir"
+    TERM=dumb LANG=C run bash "$GTBI_LIB_DIR/newproj.sh" "$project_name" "$project_dir"
 
     assert_success
     # Output should not contain broken unicode
@@ -78,7 +78,7 @@ teardown() {
     local project_name="unicode-test"
     local project_dir="$E2E_TEST_DIR/$project_name"
 
-    TERM=xterm-256color LANG=en_US.UTF-8 run bash "$ACFS_LIB_DIR/newproj.sh" "$project_name" "$project_dir"
+    TERM=xterm-256color LANG=en_US.UTF-8 run bash "$GTBI_LIB_DIR/newproj.sh" "$project_name" "$project_dir"
 
     assert_success
     # Project should be created regardless of unicode support
@@ -97,7 +97,7 @@ teardown() {
     export LINES=10
 
     run expect -c '
-        spawn bash '"$ACFS_LIB_DIR/newproj.sh"' --interactive
+        spawn bash '"$GTBI_LIB_DIR/newproj.sh"' --interactive
         expect {
             -re "(small|resize|terminal)" { exit 0 }
             timeout { exit 1 }
@@ -109,7 +109,7 @@ teardown() {
 }
 
 @test "Terminal size check function exists" {
-    source "$ACFS_LIB_DIR/newproj.sh" 2>/dev/null || true
+    source "$GTBI_LIB_DIR/newproj.sh" 2>/dev/null || true
 
     # Check the function exists
     declare -f get_terminal_size &>/dev/null || \
@@ -125,7 +125,7 @@ teardown() {
     local project_name="dumb-escape-test"
     local project_dir="$E2E_TEST_DIR/$project_name"
 
-    TERM=dumb run bash "$ACFS_LIB_DIR/newproj.sh" "$project_name" "$project_dir"
+    TERM=dumb run bash "$GTBI_LIB_DIR/newproj.sh" "$project_name" "$project_dir"
 
     # Escape codes would show as \033 or similar
     [[ "$output" != *$'\033['* ]] || true  # May have codes, that's ok
@@ -135,7 +135,7 @@ teardown() {
     local project_name="no-color-test"
     local project_dir="$E2E_TEST_DIR/$project_name"
 
-    NO_COLOR=1 run bash "$ACFS_LIB_DIR/newproj.sh" "$project_name" "$project_dir"
+    NO_COLOR=1 run bash "$GTBI_LIB_DIR/newproj.sh" "$project_name" "$project_dir"
 
     assert_success
     [[ -d "$project_dir" ]]
@@ -146,39 +146,39 @@ teardown() {
 # ============================================================
 
 @test "Detects CI via CI=true" {
-    CI=true run bash "$ACFS_LIB_DIR/newproj.sh" --interactive
+    CI=true run bash "$GTBI_LIB_DIR/newproj.sh" --interactive
 
     assert_failure
     [[ "$output" == *"CI"* ]]
 }
 
 @test "Detects CI via GITHUB_ACTIONS" {
-    GITHUB_ACTIONS=true run bash "$ACFS_LIB_DIR/newproj.sh" --interactive
+    GITHUB_ACTIONS=true run bash "$GTBI_LIB_DIR/newproj.sh" --interactive
 
     assert_failure
     [[ "$output" == *"CI"* ]] || [[ "$output" == *"environment"* ]]
 }
 
 @test "Detects CI via GITLAB_CI" {
-    GITLAB_CI=true run bash "$ACFS_LIB_DIR/newproj.sh" --interactive
+    GITLAB_CI=true run bash "$GTBI_LIB_DIR/newproj.sh" --interactive
 
     assert_failure
 }
 
 @test "Detects CI via JENKINS_URL" {
-    JENKINS_URL="http://jenkins.example.com" run bash "$ACFS_LIB_DIR/newproj.sh" --interactive
+    JENKINS_URL="http://jenkins.example.com" run bash "$GTBI_LIB_DIR/newproj.sh" --interactive
 
     assert_failure
 }
 
 @test "Detects CI via TRAVIS" {
-    TRAVIS=true run bash "$ACFS_LIB_DIR/newproj.sh" --interactive
+    TRAVIS=true run bash "$GTBI_LIB_DIR/newproj.sh" --interactive
 
     assert_failure
 }
 
 @test "Detects CI via CIRCLECI" {
-    CIRCLECI=true run bash "$ACFS_LIB_DIR/newproj.sh" --interactive
+    CIRCLECI=true run bash "$GTBI_LIB_DIR/newproj.sh" --interactive
 
     assert_failure
 }
@@ -192,7 +192,7 @@ teardown() {
     local project_name="bash4-test"
     local project_dir="$E2E_TEST_DIR/$project_name"
 
-    run bash "$ACFS_LIB_DIR/newproj.sh" "$project_name" "$project_dir"
+    run bash "$GTBI_LIB_DIR/newproj.sh" "$project_name" "$project_dir"
 
     assert_success
 }
@@ -201,7 +201,7 @@ teardown() {
     local project_name="subshell-test"
     local project_dir="$E2E_TEST_DIR/$project_name"
 
-    run bash -c "bash '$ACFS_LIB_DIR/newproj.sh' '$project_name' '$project_dir'"
+    run bash -c "bash '$GTBI_LIB_DIR/newproj.sh' '$project_name' '$project_dir'"
 
     assert_success
     [[ -d "$project_dir" ]]
@@ -215,7 +215,7 @@ teardown() {
     local project_name="locale-c-test"
     local project_dir="$E2E_TEST_DIR/$project_name"
 
-    LC_ALL=C run bash "$ACFS_LIB_DIR/newproj.sh" "$project_name" "$project_dir"
+    LC_ALL=C run bash "$GTBI_LIB_DIR/newproj.sh" "$project_name" "$project_dir"
 
     assert_success
 }
@@ -224,7 +224,7 @@ teardown() {
     local project_name="locale-utf8-test"
     local project_dir="$E2E_TEST_DIR/$project_name"
 
-    LC_ALL=en_US.UTF-8 run bash "$ACFS_LIB_DIR/newproj.sh" "$project_name" "$project_dir"
+    LC_ALL=en_US.UTF-8 run bash "$GTBI_LIB_DIR/newproj.sh" "$project_name" "$project_dir"
 
     assert_success
 }

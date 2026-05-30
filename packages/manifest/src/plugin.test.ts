@@ -12,8 +12,8 @@ const INSTALLER_URL = 'https://example.com/install.sh';
 function firstPartyManifest(): Manifest {
   return {
     version: 1,
-    name: 'ACFS Test Manifest',
-    id: 'acfs',
+    name: 'GTBI Test Manifest',
+    id: 'gtbi',
     defaults: {
       user: 'ubuntu',
       workspace_root: '/data/projects',
@@ -69,25 +69,25 @@ function validationOptions(overrides: Partial<PluginValidationOptions> = {}): Pl
 
 function validPlugin(): Record<string, unknown> {
   return {
-    schema: 'acfs.plugin-package.v1',
+    schema: 'gtbi.plugin-package.v1',
     schemaVersion: 1,
     packageId: 'example.tools',
     displayName: 'Example Tools',
     version: '1.2.3',
-    description: 'Installable ACFS modules for Example Tools.',
+    description: 'Installable GTBI modules for Example Tools.',
     publisher: {
       name: 'Example Maintainers',
       contactUrl: 'https://example.com/security',
-      sourceUrl: 'https://github.com/example/acfs-plugin-example',
+      sourceUrl: 'https://github.com/example/gtbi-plugin-example',
     },
     license: 'Apache-2.0',
-    docsUrl: 'https://example.com/acfs-plugin-example',
+    docsUrl: 'https://example.com/gtbi-plugin-example',
     provenance: {
       generatedAt: '2026-05-08T00:00:00Z',
       sourceRef: 'main',
       sourceCommit: '0123456789abcdef0123456789abcdef01234567',
       pluginSha256: CHECKSUM,
-      acfsManifestVersion: 1,
+      gtbiManifestVersion: 1,
     },
     targets: [
       {
@@ -121,7 +121,7 @@ function validPlugin(): Record<string, unknown> {
           env: [],
         },
         verify: ['example --version'],
-        docs_url: 'https://example.com/acfs-plugin-example/cli',
+        docs_url: 'https://example.com/gtbi-plugin-example/cli',
       },
     ],
     offline: {

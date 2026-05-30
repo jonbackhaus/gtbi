@@ -87,7 +87,7 @@ export function LinuxBasicsLesson() {
           <CodeBlock code="$ ls" />
         </div>
         <Paragraph>
-          With ACFS, this is aliased to <InlineCode>lsd</InlineCode> which shows
+          With GTBI, this is aliased to <InlineCode>lsd</InlineCode> which shows
           beautiful icons.
         </Paragraph>
 
@@ -156,7 +156,7 @@ export function LinuxBasicsLesson() {
               { command: "mkdir my-project", description: "Create a directory" },
               {
                 command: "mkcd my-project",
-                description: "Create AND cd into it (ACFS function)",
+                description: "Create AND cd into it (GTBI function)",
               },
               { command: "touch file.txt", description: "Create an empty file" },
             ]}
@@ -253,7 +253,7 @@ export function LinuxBasicsLesson() {
         <div className="mt-6">
           <CodeBlock
             code={`$ cd /data/projects
-$ mkcd acfs-test
+$ mkcd gtbi-test
 $ pwd
 $ touch hello.txt
 $ ls
@@ -345,16 +345,16 @@ const HOME_TREE: TreeNode = {
           description: "Your home directory. This is where you start.",
           children: [
             {
-              name: ".acfs",
+              name: ".gtbi",
               type: "folder",
               permissions: "drwxr-xr-x",
               owner: "ubuntu",
               group: "ubuntu",
               size: "4.0K",
               modified: "2026-03-10",
-              description: "ACFS configuration and scripts.",
+              description: "GTBI configuration and scripts.",
               children: [
-                { name: "config.yaml", type: "file", kind: "config", permissions: "-rw-r--r--", owner: "ubuntu", group: "ubuntu", size: "1.2K", modified: "2026-03-10", description: "Main ACFS configuration." },
+                { name: "config.yaml", type: "file", kind: "config", permissions: "-rw-r--r--", owner: "ubuntu", group: "ubuntu", size: "1.2K", modified: "2026-03-10", description: "Main GTBI configuration." },
                 { name: "scripts", type: "folder", permissions: "drwxr-xr-x", owner: "ubuntu", group: "ubuntu", size: "4.0K", modified: "2026-03-08", children: [] },
               ],
             },
@@ -369,8 +369,8 @@ const HOME_TREE: TreeNode = {
               description: "SSH keys and configuration. Permissions must be strict!",
               children: [
                 { name: "authorized_keys", type: "file", kind: "key", permissions: "-rw-------", owner: "ubuntu", group: "ubuntu", size: "580", modified: "2026-02-20", description: "Public keys allowed to connect." },
-                { name: "acfs_ed25519", type: "file", kind: "key", permissions: "-rw-------", owner: "ubuntu", group: "ubuntu", size: "411", modified: "2026-02-20", description: "Private SSH key (never share!)." },
-                { name: "acfs_ed25519.pub", type: "file", kind: "key", permissions: "-rw-r--r--", owner: "ubuntu", group: "ubuntu", size: "97", modified: "2026-02-20", description: "Public SSH key (safe to share)." },
+                { name: "gtbi_ed25519", type: "file", kind: "key", permissions: "-rw-------", owner: "ubuntu", group: "ubuntu", size: "411", modified: "2026-02-20", description: "Private SSH key (never share!)." },
+                { name: "gtbi_ed25519.pub", type: "file", kind: "key", permissions: "-rw-r--r--", owner: "ubuntu", group: "ubuntu", size: "97", modified: "2026-02-20", description: "Public SSH key (safe to share)." },
                 { name: "config", type: "file", kind: "config", permissions: "-rw-r--r--", owner: "ubuntu", group: "ubuntu", size: "245", modified: "2026-02-18", description: "SSH client configuration." },
               ],
             },
@@ -387,7 +387,7 @@ const HOME_TREE: TreeNode = {
               ],
             },
             { name: ".bashrc", type: "file", kind: "config", permissions: "-rw-r--r--", owner: "ubuntu", group: "ubuntu", size: "3.7K", modified: "2026-03-05", description: "Bash startup script." },
-            { name: ".zshrc", type: "file", kind: "config", permissions: "-rw-r--r--", owner: "ubuntu", group: "ubuntu", size: "4.1K", modified: "2026-03-11", description: "Zsh startup script (loaded by ACFS)." },
+            { name: ".zshrc", type: "file", kind: "config", permissions: "-rw-r--r--", owner: "ubuntu", group: "ubuntu", size: "4.1K", modified: "2026-03-11", description: "Zsh startup script (loaded by GTBI)." },
             { name: ".gitconfig", type: "file", kind: "config", permissions: "-rw-r--r--", owner: "ubuntu", group: "ubuntu", size: "312", modified: "2026-02-28", description: "Git user configuration." },
           ],
         },

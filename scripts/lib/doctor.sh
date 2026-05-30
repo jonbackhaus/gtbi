@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
 # shellcheck disable=SC1091
 # ============================================================
-# ACFS Doctor - System Health Check
-# Validates that ACFS installation is complete and working
+# GTBI Doctor - System Health Check
+# Validates that GTBI installation is complete and working
 #
 # Uses gum for enhanced terminal UI when available
 # ============================================================
 
-ACFS_VERSION="${ACFS_VERSION:-0.1.0}"
+GTBI_VERSION="${GTBI_VERSION:-0.1.0}"
 
-_acfs_doctor_sanitize_abs_nonroot_path() {
+_gtbi_doctor_sanitize_abs_nonroot_path() {
     local path_value="${1:-}"
 
     [[ -n "$path_value" ]] || return 1
@@ -20,16 +20,16 @@ _acfs_doctor_sanitize_abs_nonroot_path() {
     printf '%s\n' "$path_value"
 }
 
-_acfs_doctor_existing_abs_nonroot_dir() {
+_gtbi_doctor_existing_abs_nonroot_dir() {
     local path_value=""
 
-    path_value="$(_acfs_doctor_sanitize_abs_nonroot_path "${1:-}" 2>/dev/null || true)"
+    path_value="$(_gtbi_doctor_sanitize_abs_nonroot_path "${1:-}" 2>/dev/null || true)"
     [[ -n "$path_value" ]] || return 1
     [[ -d "$path_value" ]] || return 1
     printf '%s\n' "$path_value"
 }
 
-_acfs_doctor_system_binary_path() {
+_gtbi_doctor_system_binary_path() {
     local name="${1:-}"
     local candidate=""
 
@@ -59,7 +59,7 @@ _acfs_doctor_system_binary_path() {
     return 1
 }
 
-_acfs_doctor_read_json_string_key() {
+_gtbi_doctor_read_json_string_key() {
     local json_file="${1:-}"
     local key="${2:-}"
     local value=""
@@ -70,14 +70,14 @@ _acfs_doctor_read_json_string_key() {
     [[ -f "$json_file" ]] || return 1
     [[ "$key" =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]] || return 1
 
-    jq_bin="$(_acfs_doctor_system_binary_path jq 2>/dev/null || true)"
+    jq_bin="$(_gtbi_doctor_system_binary_path jq 2>/dev/null || true)"
     if [[ -n "$jq_bin" ]]; then
         value="$("$jq_bin" -r --arg key "$key" 'select(.[$key] | type == "string") | .[$key]' "$json_file" 2>/dev/null || true)"
     fi
 
     if [[ -z "$value" ]]; then
-        sed_bin="$(_acfs_doctor_system_binary_path sed 2>/dev/null || true)"
-        head_bin="$(_acfs_doctor_system_binary_path head 2>/dev/null || true)"
+        sed_bin="$(_gtbi_doctor_system_binary_path sed 2>/dev/null || true)"
+        head_bin="$(_gtbi_doctor_system_binary_path head 2>/dev/null || true)"
         if [[ -n "$sed_bin" && -n "$head_bin" ]]; then
             value="$("$sed_bin" -n "s/.*\"${key}\"[[:space:]]*:[[:space:]]*\"\([^\"]*\)\".*/\1/p" "$json_file" 2>/dev/null | "$head_bin" -n 1)"
         fi
@@ -87,7 +87,7 @@ _acfs_doctor_read_json_string_key() {
     printf '%s\n' "$value"
 }
 
-_acfs_doctor_normalize_mode() {
+_gtbi_doctor_normalize_mode() {
     local mode="${1:-}"
 
     case "$mode" in
@@ -100,7 +100,7 @@ _acfs_doctor_normalize_mode() {
     esac
 }
 
-_acfs_doctor_normalize_ref() {
+_gtbi_doctor_normalize_ref() {
     local ref="${1:-}"
 
     [[ -n "$ref" ]] || return 1
@@ -123,18 +123,18 @@ _acfs_doctor_normalize_ref() {
     printf '%s\n' "$ref"
 }
 
-_acfs_doctor_resolve_current_user() {
+_gtbi_doctor_resolve_current_user() {
     local current_user=""
     local id_bin=""
     local whoami_bin=""
 
-    id_bin="$(_acfs_doctor_system_binary_path id 2>/dev/null || true)"
+    id_bin="$(_gtbi_doctor_system_binary_path id 2>/dev/null || true)"
     if [[ -n "$id_bin" ]]; then
         current_user="$("$id_bin" -un 2>/dev/null || true)"
     fi
 
     if [[ -z "$current_user" ]]; then
-        whoami_bin="$(_acfs_doctor_system_binary_path whoami 2>/dev/null || true)"
+        whoami_bin="$(_gtbi_doctor_system_binary_path whoami 2>/dev/null || true)"
         if [[ -n "$whoami_bin" ]]; then
             current_user="$("$whoami_bin" 2>/dev/null || true)"
         fi
@@ -144,14 +144,14 @@ _acfs_doctor_resolve_current_user() {
     printf '%s\n' "$current_user"
 }
 
-_acfs_doctor_getent_passwd_entry() {
+_gtbi_doctor_getent_passwd_entry() {
     local user="${1-}"
     local getent_bin=""
     local passwd_entry=""
     local passwd_line=""
     local printed_any=false
 
-    getent_bin="$(_acfs_doctor_system_binary_path getent 2>/dev/null || true)"
+    getent_bin="$(_gtbi_doctor_system_binary_path getent 2>/dev/null || true)"
     if [[ -z "$user" ]]; then
         if [[ -n "$getent_bin" ]]; then
             while IFS= read -r passwd_line; do
@@ -186,34 +186,34 @@ _acfs_doctor_getent_passwd_entry() {
     printf '%s\n' "$passwd_entry"
 }
 
-_acfs_doctor_passwd_home_from_entry() {
+_gtbi_doctor_passwd_home_from_entry() {
     local passwd_entry="${1:-}"
     local passwd_home=""
 
     [[ -n "$passwd_entry" ]] || return 1
     IFS=: read -r _ _ _ _ _ passwd_home _ <<< "$passwd_entry"
-    passwd_home="$(_acfs_doctor_sanitize_abs_nonroot_path "$passwd_home" 2>/dev/null || true)"
+    passwd_home="$(_gtbi_doctor_sanitize_abs_nonroot_path "$passwd_home" 2>/dev/null || true)"
     [[ -n "$passwd_home" ]] || return 1
     printf '%s\n' "$passwd_home"
 }
 
-_acfs_doctor_resolve_current_home() {
+_gtbi_doctor_resolve_current_home() {
     local current_user=""
     local home_candidate=""
     local passwd_entry=""
     local passwd_home=""
 
-    home_candidate="$(_acfs_doctor_sanitize_abs_nonroot_path "${HOME:-}" 2>/dev/null || true)"
-    current_user="$(_acfs_doctor_resolve_current_user 2>/dev/null || true)"
+    home_candidate="$(_gtbi_doctor_sanitize_abs_nonroot_path "${HOME:-}" 2>/dev/null || true)"
+    current_user="$(_gtbi_doctor_resolve_current_user 2>/dev/null || true)"
     if [[ "$current_user" == "root" ]]; then
         printf '/root\n'
         return 0
     fi
 
     if [[ -n "$current_user" ]]; then
-        passwd_entry="$(_acfs_doctor_getent_passwd_entry "$current_user" 2>/dev/null || true)"
+        passwd_entry="$(_gtbi_doctor_getent_passwd_entry "$current_user" 2>/dev/null || true)"
         if [[ -n "$passwd_entry" ]]; then
-            passwd_home="$(_acfs_doctor_passwd_home_from_entry "$passwd_entry" 2>/dev/null || true)"
+            passwd_home="$(_gtbi_doctor_passwd_home_from_entry "$passwd_entry" 2>/dev/null || true)"
             if [[ -n "$passwd_home" ]]; then
                 printf '%s\n' "$passwd_home"
                 return 0
@@ -225,32 +225,32 @@ _acfs_doctor_resolve_current_home() {
     printf '%s\n' "$home_candidate"
 }
 
-_acfs_doctor_current_home="$(_acfs_doctor_resolve_current_home 2>/dev/null || true)"
-_acfs_doctor_original_home="$(_acfs_doctor_sanitize_abs_nonroot_path "${HOME:-}" 2>/dev/null || true)"
-if [[ -n "$_acfs_doctor_original_home" ]]; then
-    HOME="$_acfs_doctor_original_home"
+_gtbi_doctor_current_home="$(_gtbi_doctor_resolve_current_home 2>/dev/null || true)"
+_gtbi_doctor_original_home="$(_gtbi_doctor_sanitize_abs_nonroot_path "${HOME:-}" 2>/dev/null || true)"
+if [[ -n "$_gtbi_doctor_original_home" ]]; then
+    HOME="$_gtbi_doctor_original_home"
     export HOME
-elif [[ -n "$_acfs_doctor_current_home" ]]; then
-    HOME="$_acfs_doctor_current_home"
+elif [[ -n "$_gtbi_doctor_current_home" ]]; then
+    HOME="$_gtbi_doctor_current_home"
     export HOME
 fi
-_ACFS_DOCTOR_ENV_TARGET_USER="${TARGET_USER:-}"
-_ACFS_DOCTOR_ENV_TARGET_USER_WAS_SET=false
-if [[ -n "$_ACFS_DOCTOR_ENV_TARGET_USER" ]]; then
-    _ACFS_DOCTOR_ENV_TARGET_USER_WAS_SET=true
+_GTBI_DOCTOR_ENV_TARGET_USER="${TARGET_USER:-}"
+_GTBI_DOCTOR_ENV_TARGET_USER_WAS_SET=false
+if [[ -n "$_GTBI_DOCTOR_ENV_TARGET_USER" ]]; then
+    _GTBI_DOCTOR_ENV_TARGET_USER_WAS_SET=true
 fi
-_ACFS_DOCTOR_ENV_TARGET_HOME="$(_acfs_doctor_sanitize_abs_nonroot_path "${TARGET_HOME:-}" 2>/dev/null || true)"
-_ACFS_DOCTOR_ENV_ACFS_HOME="$(_acfs_doctor_sanitize_abs_nonroot_path "${ACFS_HOME:-}" 2>/dev/null || true)"
-TARGET_HOME="$_ACFS_DOCTOR_ENV_TARGET_HOME"
-ACFS_HOME="$(_acfs_doctor_sanitize_abs_nonroot_path "${ACFS_HOME:-}" 2>/dev/null || true)"
-ACFS_STATE_FILE="$(_acfs_doctor_sanitize_abs_nonroot_path "${ACFS_STATE_FILE:-}" 2>/dev/null || true)"
-ACFS_SYSTEM_STATE_FILE="$(_acfs_doctor_sanitize_abs_nonroot_path "${ACFS_SYSTEM_STATE_FILE:-/var/lib/acfs/state.json}" 2>/dev/null || true)"
-if [[ -z "$ACFS_SYSTEM_STATE_FILE" ]]; then
-    ACFS_SYSTEM_STATE_FILE="/var/lib/acfs/state.json"
+_GTBI_DOCTOR_ENV_TARGET_HOME="$(_gtbi_doctor_sanitize_abs_nonroot_path "${TARGET_HOME:-}" 2>/dev/null || true)"
+_GTBI_DOCTOR_ENV_GTBI_HOME="$(_gtbi_doctor_sanitize_abs_nonroot_path "${GTBI_HOME:-}" 2>/dev/null || true)"
+TARGET_HOME="$_GTBI_DOCTOR_ENV_TARGET_HOME"
+GTBI_HOME="$(_gtbi_doctor_sanitize_abs_nonroot_path "${GTBI_HOME:-}" 2>/dev/null || true)"
+GTBI_STATE_FILE="$(_gtbi_doctor_sanitize_abs_nonroot_path "${GTBI_STATE_FILE:-}" 2>/dev/null || true)"
+GTBI_SYSTEM_STATE_FILE="$(_gtbi_doctor_sanitize_abs_nonroot_path "${GTBI_SYSTEM_STATE_FILE:-/var/lib/gtbi/state.json}" 2>/dev/null || true)"
+if [[ -z "$GTBI_SYSTEM_STATE_FILE" ]]; then
+    GTBI_SYSTEM_STATE_FILE="/var/lib/gtbi/state.json"
 fi
-_ACFS_DOCTOR_ENV_BIN_DIR="$(_acfs_doctor_sanitize_abs_nonroot_path "${ACFS_BIN_DIR:-}" 2>/dev/null || true)"
-ACFS_BIN_DIR=""
-export TARGET_HOME ACFS_HOME ACFS_STATE_FILE ACFS_SYSTEM_STATE_FILE ACFS_BIN_DIR
+_GTBI_DOCTOR_ENV_BIN_DIR="$(_gtbi_doctor_sanitize_abs_nonroot_path "${GTBI_BIN_DIR:-}" 2>/dev/null || true)"
+GTBI_BIN_DIR=""
+export TARGET_HOME GTBI_HOME GTBI_STATE_FILE GTBI_SYSTEM_STATE_FILE GTBI_BIN_DIR
 
 # Ensure the doctor is self-contained and doesn't depend on shell rc files
 # for PATH setup (e.g., when run from a fresh SSH session or non-zsh shell).
@@ -260,17 +260,17 @@ ensure_path() {
     local system_path_prefix="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin"
     local current_path="${PATH:-$system_path_prefix}"
     local seen_path=":$current_path:"
-    local primary_home="${TARGET_HOME:-${_acfs_doctor_current_home:-/root}}"
-    local primary_bin_dir="${ACFS_BIN_DIR:-$primary_home/.local/bin}"
+    local primary_home="${TARGET_HOME:-${_gtbi_doctor_current_home:-/root}}"
+    local primary_bin_dir="${GTBI_BIN_DIR:-$primary_home/.local/bin}"
 
-    primary_bin_dir="$(_acfs_doctor_validate_bin_dir_for_home "$primary_bin_dir" "$primary_home" 2>/dev/null || true)"
+    primary_bin_dir="$(_gtbi_doctor_validate_bin_dir_for_home "$primary_bin_dir" "$primary_home" 2>/dev/null || true)"
     [[ -n "$primary_bin_dir" ]] || primary_bin_dir="$primary_home/.local/bin"
 
-    # Priority order for ACFS tools
+    # Priority order for GTBI tools
     local candidate_dirs=(
         "$primary_bin_dir"
         "$primary_home/.local/bin"
-        "$primary_home/.acfs/bin"
+        "$primary_home/.gtbi/bin"
         "$primary_home/.bun/bin"
         "$primary_home/.cargo/bin"
         "$primary_home/.atuin/bin"
@@ -285,19 +285,19 @@ ensure_path() {
         "/snap/bin"
     )
 
-    if [[ -n "${ACFS_HOME:-}" ]]; then
-        candidate_dirs=("$ACFS_HOME/bin" "${candidate_dirs[@]}")
+    if [[ -n "${GTBI_HOME:-}" ]]; then
+        candidate_dirs=("$GTBI_HOME/bin" "${candidate_dirs[@]}")
     fi
 
-    if [[ -n "${_acfs_doctor_current_home:-}" ]] && [[ "$primary_home" != "$_acfs_doctor_current_home" ]]; then
+    if [[ -n "${_gtbi_doctor_current_home:-}" ]] && [[ "$primary_home" != "$_gtbi_doctor_current_home" ]]; then
         candidate_dirs+=(
-            "$_acfs_doctor_current_home/.local/bin"
-            "$_acfs_doctor_current_home/.acfs/bin"
-            "$_acfs_doctor_current_home/.bun/bin"
-            "$_acfs_doctor_current_home/.cargo/bin"
-            "$_acfs_doctor_current_home/.atuin/bin"
-            "$_acfs_doctor_current_home/go/bin"
-            "$_acfs_doctor_current_home/google-cloud-sdk/bin"
+            "$_gtbi_doctor_current_home/.local/bin"
+            "$_gtbi_doctor_current_home/.gtbi/bin"
+            "$_gtbi_doctor_current_home/.bun/bin"
+            "$_gtbi_doctor_current_home/.cargo/bin"
+            "$_gtbi_doctor_current_home/.atuin/bin"
+            "$_gtbi_doctor_current_home/go/bin"
+            "$_gtbi_doctor_current_home/google-cloud-sdk/bin"
         )
     fi
 
@@ -305,7 +305,7 @@ ensure_path() {
         [[ -d "$dir" ]] || continue
         # Robust PATH check using exact matching to avoid partial substring hits.
         # Track pending additions too so duplicate candidate entries do not get
-        # prepended twice when ACFS_BIN_DIR resolves to ~/.local/bin.
+        # prepended twice when GTBI_BIN_DIR resolves to ~/.local/bin.
         if [[ "$seen_path" != *":$dir:"* ]]; then
             to_add+=("$dir")
             seen_path="${seen_path}${dir}:"
@@ -322,94 +322,94 @@ HAS_GUM=false
 
 # Source gum_ui library if available
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-_acfs_doctor_script_acfs_home=""
+_gtbi_doctor_script_gtbi_home=""
 case "$SCRIPT_DIR" in
-    */.acfs/bin)
-        _acfs_doctor_script_acfs_home="${SCRIPT_DIR%/bin}"
+    */.gtbi/bin)
+        _gtbi_doctor_script_gtbi_home="${SCRIPT_DIR%/bin}"
         ;;
-    */.acfs/scripts/lib)
-        _acfs_doctor_script_acfs_home="${SCRIPT_DIR%/scripts/lib}"
+    */.gtbi/scripts/lib)
+        _gtbi_doctor_script_gtbi_home="${SCRIPT_DIR%/scripts/lib}"
         ;;
 esac
-_acfs_doctor_script_acfs_home="$(_acfs_doctor_sanitize_abs_nonroot_path "${_acfs_doctor_script_acfs_home:-}" 2>/dev/null || true)"
+_gtbi_doctor_script_gtbi_home="$(_gtbi_doctor_sanitize_abs_nonroot_path "${_gtbi_doctor_script_gtbi_home:-}" 2>/dev/null || true)"
 
-_acfs_doctor_acfs_home_for_home() {
+_gtbi_doctor_gtbi_home_for_home() {
     local base_home="${1:-}"
 
-    base_home="$(_acfs_doctor_sanitize_abs_nonroot_path "$base_home" 2>/dev/null || true)"
+    base_home="$(_gtbi_doctor_sanitize_abs_nonroot_path "$base_home" 2>/dev/null || true)"
     [[ -n "$base_home" ]] || return 1
-    printf '%s\n' "$base_home/.acfs"
+    printf '%s\n' "$base_home/.gtbi"
 }
 
-_acfs_doctor_acfs_home_matches_home() {
-    local acfs_home="${1:-}"
+_gtbi_doctor_gtbi_home_matches_home() {
+    local gtbi_home="${1:-}"
     local base_home="${2:-}"
-    local expected_acfs_home=""
+    local expected_gtbi_home=""
 
-    acfs_home="$(_acfs_doctor_sanitize_abs_nonroot_path "$acfs_home" 2>/dev/null || true)"
-    [[ -n "$acfs_home" ]] || return 1
-    expected_acfs_home="$(_acfs_doctor_acfs_home_for_home "$base_home" 2>/dev/null || true)"
-    [[ -n "$expected_acfs_home" ]] || return 1
-    [[ "$acfs_home" == "$expected_acfs_home" ]]
+    gtbi_home="$(_gtbi_doctor_sanitize_abs_nonroot_path "$gtbi_home" 2>/dev/null || true)"
+    [[ -n "$gtbi_home" ]] || return 1
+    expected_gtbi_home="$(_gtbi_doctor_gtbi_home_for_home "$base_home" 2>/dev/null || true)"
+    [[ -n "$expected_gtbi_home" ]] || return 1
+    [[ "$gtbi_home" == "$expected_gtbi_home" ]]
 }
 
-_acfs_doctor_trusted_lookup_acfs_home() {
-    local acfs_home="${ACFS_HOME:-}"
+_gtbi_doctor_trusted_lookup_gtbi_home() {
+    local gtbi_home="${GTBI_HOME:-}"
 
-    acfs_home="$(_acfs_doctor_sanitize_abs_nonroot_path "$acfs_home" 2>/dev/null || true)"
-    [[ -n "$acfs_home" ]] || return 1
+    gtbi_home="$(_gtbi_doctor_sanitize_abs_nonroot_path "$gtbi_home" 2>/dev/null || true)"
+    [[ -n "$gtbi_home" ]] || return 1
 
-    if [[ -n "${_acfs_doctor_script_acfs_home:-}" ]]; then
-        [[ "$acfs_home" == "$_acfs_doctor_script_acfs_home" ]] || return 1
-        printf '%s\n' "$acfs_home"
+    if [[ -n "${_gtbi_doctor_script_gtbi_home:-}" ]]; then
+        [[ "$gtbi_home" == "$_gtbi_doctor_script_gtbi_home" ]] || return 1
+        printf '%s\n' "$gtbi_home"
         return 0
     fi
 
-    if _acfs_doctor_acfs_home_matches_home "$acfs_home" "${_ACFS_DOCTOR_ENV_TARGET_HOME:-}" 2>/dev/null; then
-        printf '%s\n' "$acfs_home"
+    if _gtbi_doctor_gtbi_home_matches_home "$gtbi_home" "${_GTBI_DOCTOR_ENV_TARGET_HOME:-}" 2>/dev/null; then
+        printf '%s\n' "$gtbi_home"
         return 0
     fi
 
-    if _acfs_doctor_acfs_home_matches_home "$acfs_home" "${_acfs_doctor_current_home:-}" 2>/dev/null; then
-        printf '%s\n' "$acfs_home"
+    if _gtbi_doctor_gtbi_home_matches_home "$gtbi_home" "${_gtbi_doctor_current_home:-}" 2>/dev/null; then
+        printf '%s\n' "$gtbi_home"
         return 0
     fi
 
     return 1
 }
 
-_acfs_doctor_trusted_runtime_acfs_home() {
-    local acfs_home="${ACFS_HOME:-}"
+_gtbi_doctor_trusted_runtime_gtbi_home() {
+    local gtbi_home="${GTBI_HOME:-}"
 
-    acfs_home="$(_acfs_doctor_sanitize_abs_nonroot_path "$acfs_home" 2>/dev/null || true)"
-    [[ -n "$acfs_home" ]] || return 1
+    gtbi_home="$(_gtbi_doctor_sanitize_abs_nonroot_path "$gtbi_home" 2>/dev/null || true)"
+    [[ -n "$gtbi_home" ]] || return 1
 
-    if [[ -n "${_acfs_doctor_script_acfs_home:-}" ]]; then
-        [[ "$acfs_home" == "$_acfs_doctor_script_acfs_home" ]] || return 1
-        printf '%s\n' "$acfs_home"
+    if [[ -n "${_gtbi_doctor_script_gtbi_home:-}" ]]; then
+        [[ "$gtbi_home" == "$_gtbi_doctor_script_gtbi_home" ]] || return 1
+        printf '%s\n' "$gtbi_home"
         return 0
     fi
 
-    if _acfs_doctor_acfs_home_matches_home "$acfs_home" "${TARGET_HOME:-}" 2>/dev/null; then
-        printf '%s\n' "$acfs_home"
+    if _gtbi_doctor_gtbi_home_matches_home "$gtbi_home" "${TARGET_HOME:-}" 2>/dev/null; then
+        printf '%s\n' "$gtbi_home"
         return 0
     fi
 
     return 1
 }
 
-_acfs_doctor_find_project_path() {
+_gtbi_doctor_find_project_path() {
     local rel_path="$1"
     local candidate=""
-    local trusted_acfs_home=""
+    local trusted_gtbi_home=""
 
-    trusted_acfs_home="$(_acfs_doctor_trusted_lookup_acfs_home 2>/dev/null || true)"
+    trusted_gtbi_home="$(_gtbi_doctor_trusted_lookup_gtbi_home 2>/dev/null || true)"
 
     for candidate in \
         "$SCRIPT_DIR/../$rel_path" \
         "$SCRIPT_DIR/../../$rel_path" \
-        "${trusted_acfs_home:+$trusted_acfs_home/$rel_path}" \
-        "${_acfs_doctor_current_home:+$_acfs_doctor_current_home/.acfs/$rel_path}"; do
+        "${trusted_gtbi_home:+$trusted_gtbi_home/$rel_path}" \
+        "${_gtbi_doctor_current_home:+$_gtbi_doctor_current_home/.gtbi/$rel_path}"; do
         if [[ -f "$candidate" ]]; then
             printf '%s\n' "$candidate"
             return 0
@@ -419,15 +419,15 @@ _acfs_doctor_find_project_path() {
     return 1
 }
 
-_acfs_doctor_find_lib_script() {
-    _acfs_doctor_find_project_path "scripts/lib/$1"
+_gtbi_doctor_find_lib_script() {
+    _gtbi_doctor_find_project_path "scripts/lib/$1"
 }
 
-_acfs_doctor_find_scripts_script() {
-    _acfs_doctor_find_project_path "scripts/$1"
+_gtbi_doctor_find_scripts_script() {
+    _gtbi_doctor_find_project_path "scripts/$1"
 }
 
-_acfs_doctor_shell_has_active_assignment() {
+_gtbi_doctor_shell_has_active_assignment() {
     local file="${1:-}"
     local variable_name="${2:-}"
     [[ -n "$file" && -n "$variable_name" && -f "$file" ]] || return 1
@@ -452,7 +452,7 @@ _acfs_doctor_shell_has_active_assignment() {
     ' "$file" 2>/dev/null
 }
 
-_acfs_doctor_claude_settings_has_command_hook() {
+_gtbi_doctor_claude_settings_has_command_hook() {
     local settings_file="${1:-}"
     local command_pattern="${2:-}"
 
@@ -483,10 +483,10 @@ _acfs_doctor_claude_settings_has_command_hook() {
     ' "$settings_file" >/dev/null 2>&1
 }
 
-_acfs_doctor_source_first() {
+_gtbi_doctor_source_first() {
     local rel_path="$1"
     local candidate=""
-    candidate="$(_acfs_doctor_find_lib_script "$rel_path" 2>/dev/null || true)"
+    candidate="$(_gtbi_doctor_find_lib_script "$rel_path" 2>/dev/null || true)"
     [[ -n "$candidate" ]] || return 1
 
     # shellcheck source=/dev/null
@@ -495,8 +495,8 @@ _acfs_doctor_source_first() {
 }
 
 # Source output formatting library (for TOON support)
-_acfs_doctor_source_first "output.sh" || true
-_acfs_doctor_source_first "progress.sh" || true
+_gtbi_doctor_source_first "output.sh" || true
+_gtbi_doctor_source_first "progress.sh" || true
 
 if ! type -t log_error >/dev/null 2>&1; then
     log_step() { echo "[*] $*" >&2; }
@@ -507,16 +507,16 @@ if ! type -t log_error >/dev/null 2>&1; then
     log_info() { echo "    $*" >&2; }
 fi
 
-_acfs_doctor_validate_bin_dir_for_home() {
+_gtbi_doctor_validate_bin_dir_for_home() {
     local bin_dir="${1:-}"
     local base_home="${2:-}"
     local passwd_line=""
     local passwd_home=""
     local hinted_home=""
 
-    bin_dir="$(_acfs_doctor_sanitize_abs_nonroot_path "$bin_dir" 2>/dev/null || true)"
+    bin_dir="$(_gtbi_doctor_sanitize_abs_nonroot_path "$bin_dir" 2>/dev/null || true)"
     [[ -n "$bin_dir" ]] || return 1
-    base_home="$(_acfs_doctor_sanitize_abs_nonroot_path "$base_home" 2>/dev/null || true)"
+    base_home="$(_gtbi_doctor_sanitize_abs_nonroot_path "$base_home" 2>/dev/null || true)"
 
     if [[ -n "$base_home" ]] && [[ "$bin_dir" == "$base_home" || "$bin_dir" == "$base_home/"* ]]; then
         printf '%s\n' "$bin_dir"
@@ -525,26 +525,26 @@ _acfs_doctor_validate_bin_dir_for_home() {
 
     case "$bin_dir" in
         */.local/bin) hinted_home="${bin_dir%/.local/bin}" ;;
-        */.acfs/bin) hinted_home="${bin_dir%/.acfs/bin}" ;;
+        */.gtbi/bin) hinted_home="${bin_dir%/.gtbi/bin}" ;;
         */.bun/bin) hinted_home="${bin_dir%/.bun/bin}" ;;
         */.cargo/bin) hinted_home="${bin_dir%/.cargo/bin}" ;;
         */.atuin/bin) hinted_home="${bin_dir%/.atuin/bin}" ;;
         */go/bin) hinted_home="${bin_dir%/go/bin}" ;;
         */google-cloud-sdk/bin) hinted_home="${bin_dir%/google-cloud-sdk/bin}" ;;
     esac
-    hinted_home="$(_acfs_doctor_sanitize_abs_nonroot_path "$hinted_home" 2>/dev/null || true)"
+    hinted_home="$(_gtbi_doctor_sanitize_abs_nonroot_path "$hinted_home" 2>/dev/null || true)"
     if [[ -n "$hinted_home" ]] && [[ -n "$base_home" ]] && [[ "$hinted_home" != "$base_home" ]]; then
         return 1
     fi
 
     while IFS= read -r passwd_line; do
-        passwd_home="$(_acfs_doctor_passwd_home_from_entry "$passwd_line" 2>/dev/null || true)"
+        passwd_home="$(_gtbi_doctor_passwd_home_from_entry "$passwd_line" 2>/dev/null || true)"
         [[ -n "$passwd_home" ]] || continue
         [[ -n "$base_home" && "$passwd_home" == "$base_home" ]] && continue
         if [[ "$bin_dir" == "$passwd_home" || "$bin_dir" == "$passwd_home/"* ]]; then
             return 1
         fi
-    done < <(_acfs_doctor_getent_passwd_entry 2>/dev/null || true)
+    done < <(_gtbi_doctor_getent_passwd_entry 2>/dev/null || true)
 
     printf '%s\n' "$bin_dir"
 }
@@ -555,146 +555,146 @@ _DOCTOR_SHOW_STATS=false
 
 
 # Prefer the installed VERSION file when available.
-_acfs_doctor_version_file="$(_acfs_doctor_find_project_path "VERSION" 2>/dev/null || true)"
-if [[ -n "$_acfs_doctor_version_file" ]]; then
-    ACFS_VERSION="$(cat "$_acfs_doctor_version_file" 2>/dev/null || echo "$ACFS_VERSION")"
+_gtbi_doctor_version_file="$(_gtbi_doctor_find_project_path "VERSION" 2>/dev/null || true)"
+if [[ -n "$_gtbi_doctor_version_file" ]]; then
+    GTBI_VERSION="$(cat "$_gtbi_doctor_version_file" 2>/dev/null || echo "$GTBI_VERSION")"
 fi
-unset _acfs_doctor_version_file
+unset _gtbi_doctor_version_file
 
 # Prefer the installed state file for mode (vibe/safe) when available.
-ACFS_MODE="$(_acfs_doctor_normalize_mode "${ACFS_MODE:-}" 2>/dev/null || true)"
-_acfs_doctor_installed_state="$(_acfs_doctor_find_project_path "state.json" 2>/dev/null || true)"
-if [[ -z "${ACFS_MODE:-}" ]] && [[ -f "$_acfs_doctor_installed_state" ]]; then
-    ACFS_MODE="$(_acfs_doctor_read_json_string_key "$_acfs_doctor_installed_state" "mode" 2>/dev/null || true)"
-    ACFS_MODE="$(_acfs_doctor_normalize_mode "${ACFS_MODE:-}" 2>/dev/null || true)"
+GTBI_MODE="$(_gtbi_doctor_normalize_mode "${GTBI_MODE:-}" 2>/dev/null || true)"
+_gtbi_doctor_installed_state="$(_gtbi_doctor_find_project_path "state.json" 2>/dev/null || true)"
+if [[ -z "${GTBI_MODE:-}" ]] && [[ -f "$_gtbi_doctor_installed_state" ]]; then
+    GTBI_MODE="$(_gtbi_doctor_read_json_string_key "$_gtbi_doctor_installed_state" "mode" 2>/dev/null || true)"
+    GTBI_MODE="$(_gtbi_doctor_normalize_mode "${GTBI_MODE:-}" 2>/dev/null || true)"
 fi
-ACFS_MODE="${ACFS_MODE:-vibe}"
-export ACFS_MODE
-unset _acfs_doctor_installed_state
+GTBI_MODE="${GTBI_MODE:-vibe}"
+export GTBI_MODE
+unset _gtbi_doctor_installed_state
 
-# Prefer authoritative installed/system state before ambient $HOME/.acfs state.
-_acfs_doctor_state_files=()
-_acfs_doctor_ambient_state_files=()
-_acfs_doctor_installed_state="$(_acfs_doctor_find_project_path "state.json" 2>/dev/null || true)"
-if [[ -n "$_acfs_doctor_installed_state" ]]; then
-    _acfs_doctor_state_files+=("$_acfs_doctor_installed_state")
+# Prefer authoritative installed/system state before ambient $HOME/.gtbi state.
+_gtbi_doctor_state_files=()
+_gtbi_doctor_ambient_state_files=()
+_gtbi_doctor_installed_state="$(_gtbi_doctor_find_project_path "state.json" 2>/dev/null || true)"
+if [[ -n "$_gtbi_doctor_installed_state" ]]; then
+    _gtbi_doctor_state_files+=("$_gtbi_doctor_installed_state")
 fi
-if [[ -n "${ACFS_SYSTEM_STATE_FILE:-}" ]]; then
-    _acfs_doctor_state_files+=("$ACFS_SYSTEM_STATE_FILE")
+if [[ -n "${GTBI_SYSTEM_STATE_FILE:-}" ]]; then
+    _gtbi_doctor_state_files+=("$GTBI_SYSTEM_STATE_FILE")
 fi
-_acfs_doctor_trusted_acfs_home="$(_acfs_doctor_trusted_lookup_acfs_home 2>/dev/null || true)"
-if [[ -n "$_acfs_doctor_trusted_acfs_home" ]]; then
-    _acfs_doctor_state_files+=("$_acfs_doctor_trusted_acfs_home/state.json")
+_gtbi_doctor_trusted_gtbi_home="$(_gtbi_doctor_trusted_lookup_gtbi_home 2>/dev/null || true)"
+if [[ -n "$_gtbi_doctor_trusted_gtbi_home" ]]; then
+    _gtbi_doctor_state_files+=("$_gtbi_doctor_trusted_gtbi_home/state.json")
 fi
-if [[ -n "${ACFS_STATE_FILE:-}" ]]; then
-    _acfs_doctor_state_files+=("$ACFS_STATE_FILE")
+if [[ -n "${GTBI_STATE_FILE:-}" ]]; then
+    _gtbi_doctor_state_files+=("$GTBI_STATE_FILE")
 fi
-if [[ -n "${_acfs_doctor_current_home:-}" ]]; then
-    _acfs_doctor_ambient_state_files+=("$_acfs_doctor_current_home/.acfs/state.json")
+if [[ -n "${_gtbi_doctor_current_home:-}" ]]; then
+    _gtbi_doctor_ambient_state_files+=("$_gtbi_doctor_current_home/.gtbi/state.json")
 fi
 
 TARGET_USER=""
-if [[ "$_ACFS_DOCTOR_ENV_TARGET_USER_WAS_SET" == true ]]; then
-    TARGET_USER="$_ACFS_DOCTOR_ENV_TARGET_USER"
+if [[ "$_GTBI_DOCTOR_ENV_TARGET_USER_WAS_SET" == true ]]; then
+    TARGET_USER="$_GTBI_DOCTOR_ENV_TARGET_USER"
 fi
 if [[ -z "${TARGET_USER:-}" ]]; then
-    for _acfs_doctor_state_file in "${_acfs_doctor_state_files[@]}"; do
-        [[ -f "$_acfs_doctor_state_file" ]] || continue
-        TARGET_USER="$(_acfs_doctor_read_json_string_key "$_acfs_doctor_state_file" target_user 2>/dev/null || true)"
+    for _gtbi_doctor_state_file in "${_gtbi_doctor_state_files[@]}"; do
+        [[ -f "$_gtbi_doctor_state_file" ]] || continue
+        TARGET_USER="$(_gtbi_doctor_read_json_string_key "$_gtbi_doctor_state_file" target_user 2>/dev/null || true)"
         [[ -n "${TARGET_USER:-}" ]] && break
     done
 fi
 if [[ -z "${TARGET_USER:-}" ]]; then
-    for _acfs_doctor_state_file in "${_acfs_doctor_ambient_state_files[@]}"; do
-        [[ -f "$_acfs_doctor_state_file" ]] || continue
-        TARGET_USER="$(_acfs_doctor_read_json_string_key "$_acfs_doctor_state_file" target_user 2>/dev/null || true)"
+    for _gtbi_doctor_state_file in "${_gtbi_doctor_ambient_state_files[@]}"; do
+        [[ -f "$_gtbi_doctor_state_file" ]] || continue
+        TARGET_USER="$(_gtbi_doctor_read_json_string_key "$_gtbi_doctor_state_file" target_user 2>/dev/null || true)"
         [[ -n "${TARGET_USER:-}" ]] && break
     done
 fi
 if [[ -z "${TARGET_USER:-}" ]]; then
-    _acfs_current_user="$(_acfs_doctor_resolve_current_user 2>/dev/null || true)"
-    if [[ -n "$_acfs_current_user" ]] && [[ "$_acfs_current_user" != "root" ]]; then
-        TARGET_USER="$_acfs_current_user"
+    _gtbi_current_user="$(_gtbi_doctor_resolve_current_user 2>/dev/null || true)"
+    if [[ -n "$_gtbi_current_user" ]] && [[ "$_gtbi_current_user" != "root" ]]; then
+        TARGET_USER="$_gtbi_current_user"
     fi
-    unset _acfs_current_user
+    unset _gtbi_current_user
 fi
-if [[ -z "${TARGET_USER:-}" ]] && [[ "$_ACFS_DOCTOR_ENV_TARGET_USER_WAS_SET" != true ]]; then
+if [[ -z "${TARGET_USER:-}" ]] && [[ "$_GTBI_DOCTOR_ENV_TARGET_USER_WAS_SET" != true ]]; then
     TARGET_USER="ubuntu"
 fi
 if [[ ! "$TARGET_USER" =~ ^[a-z_][a-z0-9._-]*$ ]]; then
-    if [[ "$_ACFS_DOCTOR_ENV_TARGET_USER_WAS_SET" != true ]]; then
+    if [[ "$_GTBI_DOCTOR_ENV_TARGET_USER_WAS_SET" != true ]]; then
         TARGET_USER="ubuntu"
     fi
 fi
 
 TARGET_HOME=""
-if [[ "$_ACFS_DOCTOR_ENV_TARGET_USER_WAS_SET" != true ]]; then
-    for _acfs_doctor_state_file in "${_acfs_doctor_state_files[@]}"; do
-        [[ -f "$_acfs_doctor_state_file" ]] || continue
-        TARGET_HOME="$(_acfs_doctor_read_json_string_key "$_acfs_doctor_state_file" target_home 2>/dev/null || true)"
+if [[ "$_GTBI_DOCTOR_ENV_TARGET_USER_WAS_SET" != true ]]; then
+    for _gtbi_doctor_state_file in "${_gtbi_doctor_state_files[@]}"; do
+        [[ -f "$_gtbi_doctor_state_file" ]] || continue
+        TARGET_HOME="$(_gtbi_doctor_read_json_string_key "$_gtbi_doctor_state_file" target_home 2>/dev/null || true)"
         if [[ -n "${TARGET_HOME:-}" ]]; then
-            TARGET_HOME="$(_acfs_doctor_existing_abs_nonroot_dir "${TARGET_HOME%/}" 2>/dev/null || true)"
+            TARGET_HOME="$(_gtbi_doctor_existing_abs_nonroot_dir "${TARGET_HOME%/}" 2>/dev/null || true)"
         fi
         [[ -n "${TARGET_HOME:-}" ]] && break
     done
     if [[ -z "${TARGET_HOME:-}" ]]; then
-        _acfs_doctor_ambient_target_user=""
-        for _acfs_doctor_state_file in "${_acfs_doctor_ambient_state_files[@]}"; do
-            [[ -f "$_acfs_doctor_state_file" ]] || continue
-            _acfs_doctor_ambient_target_user="$(_acfs_doctor_read_json_string_key "$_acfs_doctor_state_file" target_user 2>/dev/null || true)"
-            [[ "${_acfs_doctor_ambient_target_user:-}" == "$TARGET_USER" ]] || continue
-            TARGET_HOME="$(_acfs_doctor_read_json_string_key "$_acfs_doctor_state_file" target_home 2>/dev/null || true)"
+        _gtbi_doctor_ambient_target_user=""
+        for _gtbi_doctor_state_file in "${_gtbi_doctor_ambient_state_files[@]}"; do
+            [[ -f "$_gtbi_doctor_state_file" ]] || continue
+            _gtbi_doctor_ambient_target_user="$(_gtbi_doctor_read_json_string_key "$_gtbi_doctor_state_file" target_user 2>/dev/null || true)"
+            [[ "${_gtbi_doctor_ambient_target_user:-}" == "$TARGET_USER" ]] || continue
+            TARGET_HOME="$(_gtbi_doctor_read_json_string_key "$_gtbi_doctor_state_file" target_home 2>/dev/null || true)"
             if [[ -n "${TARGET_HOME:-}" ]]; then
-                TARGET_HOME="$(_acfs_doctor_existing_abs_nonroot_dir "${TARGET_HOME%/}" 2>/dev/null || true)"
+                TARGET_HOME="$(_gtbi_doctor_existing_abs_nonroot_dir "${TARGET_HOME%/}" 2>/dev/null || true)"
             fi
             [[ -n "${TARGET_HOME:-}" ]] && break
         done
-        unset _acfs_doctor_ambient_target_user
+        unset _gtbi_doctor_ambient_target_user
     fi
 fi
-for _acfs_doctor_state_file in "${_acfs_doctor_state_files[@]}"; do
-    [[ -f "$_acfs_doctor_state_file" ]] || continue
-    ACFS_BIN_DIR="$(_acfs_doctor_read_json_string_key "$_acfs_doctor_state_file" bin_dir 2>/dev/null || true)"
-    ACFS_BIN_DIR="$(_acfs_doctor_existing_abs_nonroot_dir "${ACFS_BIN_DIR:-}" 2>/dev/null || true)"
-    ACFS_BIN_DIR="$(_acfs_doctor_validate_bin_dir_for_home "${ACFS_BIN_DIR:-}" "${TARGET_HOME:-}" 2>/dev/null || true)"
-    [[ -n "${ACFS_BIN_DIR:-}" ]] && break
+for _gtbi_doctor_state_file in "${_gtbi_doctor_state_files[@]}"; do
+    [[ -f "$_gtbi_doctor_state_file" ]] || continue
+    GTBI_BIN_DIR="$(_gtbi_doctor_read_json_string_key "$_gtbi_doctor_state_file" bin_dir 2>/dev/null || true)"
+    GTBI_BIN_DIR="$(_gtbi_doctor_existing_abs_nonroot_dir "${GTBI_BIN_DIR:-}" 2>/dev/null || true)"
+    GTBI_BIN_DIR="$(_gtbi_doctor_validate_bin_dir_for_home "${GTBI_BIN_DIR:-}" "${TARGET_HOME:-}" 2>/dev/null || true)"
+    [[ -n "${GTBI_BIN_DIR:-}" ]] && break
 done
-if [[ -z "${ACFS_BIN_DIR:-}" ]]; then
-    _acfs_doctor_ambient_target_user=""
-    for _acfs_doctor_state_file in "${_acfs_doctor_ambient_state_files[@]}"; do
-        [[ -f "$_acfs_doctor_state_file" ]] || continue
-        _acfs_doctor_ambient_target_user="$(_acfs_doctor_read_json_string_key "$_acfs_doctor_state_file" target_user 2>/dev/null || true)"
-        [[ "${_acfs_doctor_ambient_target_user:-}" == "$TARGET_USER" ]] || continue
-        ACFS_BIN_DIR="$(_acfs_doctor_read_json_string_key "$_acfs_doctor_state_file" bin_dir 2>/dev/null || true)"
-        ACFS_BIN_DIR="$(_acfs_doctor_existing_abs_nonroot_dir "${ACFS_BIN_DIR:-}" 2>/dev/null || true)"
-        ACFS_BIN_DIR="$(_acfs_doctor_validate_bin_dir_for_home "${ACFS_BIN_DIR:-}" "${TARGET_HOME:-}" 2>/dev/null || true)"
-        [[ -n "${ACFS_BIN_DIR:-}" ]] && break
+if [[ -z "${GTBI_BIN_DIR:-}" ]]; then
+    _gtbi_doctor_ambient_target_user=""
+    for _gtbi_doctor_state_file in "${_gtbi_doctor_ambient_state_files[@]}"; do
+        [[ -f "$_gtbi_doctor_state_file" ]] || continue
+        _gtbi_doctor_ambient_target_user="$(_gtbi_doctor_read_json_string_key "$_gtbi_doctor_state_file" target_user 2>/dev/null || true)"
+        [[ "${_gtbi_doctor_ambient_target_user:-}" == "$TARGET_USER" ]] || continue
+        GTBI_BIN_DIR="$(_gtbi_doctor_read_json_string_key "$_gtbi_doctor_state_file" bin_dir 2>/dev/null || true)"
+        GTBI_BIN_DIR="$(_gtbi_doctor_existing_abs_nonroot_dir "${GTBI_BIN_DIR:-}" 2>/dev/null || true)"
+        GTBI_BIN_DIR="$(_gtbi_doctor_validate_bin_dir_for_home "${GTBI_BIN_DIR:-}" "${TARGET_HOME:-}" 2>/dev/null || true)"
+        [[ -n "${GTBI_BIN_DIR:-}" ]] && break
     done
-    unset _acfs_doctor_ambient_target_user
+    unset _gtbi_doctor_ambient_target_user
 fi
-if [[ -z "${ACFS_BIN_DIR:-}" ]]; then
-    ACFS_BIN_DIR="$(_acfs_doctor_validate_bin_dir_for_home "$_ACFS_DOCTOR_ENV_BIN_DIR" "${TARGET_HOME:-}" 2>/dev/null || true)"
+if [[ -z "${GTBI_BIN_DIR:-}" ]]; then
+    GTBI_BIN_DIR="$(_gtbi_doctor_validate_bin_dir_for_home "$_GTBI_DOCTOR_ENV_BIN_DIR" "${TARGET_HOME:-}" 2>/dev/null || true)"
 fi
 
-_acfs_doctor_resolved_target_home=""
+_gtbi_doctor_resolved_target_home=""
 if [[ "$TARGET_USER" == "root" ]]; then
-    _acfs_doctor_resolved_target_home="/root"
+    _gtbi_doctor_resolved_target_home="/root"
 else
-    _acfs_passwd_entry="$(_acfs_doctor_getent_passwd_entry "$TARGET_USER" 2>/dev/null || true)"
-    if [[ -n "$_acfs_passwd_entry" ]]; then
-        _acfs_doctor_resolved_target_home="$(_acfs_doctor_passwd_home_from_entry "$_acfs_passwd_entry" 2>/dev/null || true)"
-    elif [[ "$TARGET_USER" == "$(_acfs_doctor_resolve_current_user 2>/dev/null || true)" ]] && [[ -n "${_acfs_doctor_current_home:-}" ]]; then
-        _acfs_doctor_resolved_target_home="$_acfs_doctor_current_home"
+    _gtbi_passwd_entry="$(_gtbi_doctor_getent_passwd_entry "$TARGET_USER" 2>/dev/null || true)"
+    if [[ -n "$_gtbi_passwd_entry" ]]; then
+        _gtbi_doctor_resolved_target_home="$(_gtbi_doctor_passwd_home_from_entry "$_gtbi_passwd_entry" 2>/dev/null || true)"
+    elif [[ "$TARGET_USER" == "$(_gtbi_doctor_resolve_current_user 2>/dev/null || true)" ]] && [[ -n "${_gtbi_doctor_current_home:-}" ]]; then
+        _gtbi_doctor_resolved_target_home="$_gtbi_doctor_current_home"
     fi
-    unset _acfs_passwd_entry
+    unset _gtbi_passwd_entry
 fi
-if [[ -n "$_acfs_doctor_resolved_target_home" ]]; then
-    TARGET_HOME="$_acfs_doctor_resolved_target_home"
+if [[ -n "$_gtbi_doctor_resolved_target_home" ]]; then
+    TARGET_HOME="$_gtbi_doctor_resolved_target_home"
 fi
-unset _acfs_doctor_resolved_target_home
+unset _gtbi_doctor_resolved_target_home
 
-if [[ -z "${TARGET_HOME:-}" ]] && [[ -n "${_ACFS_DOCTOR_ENV_TARGET_HOME:-}" ]] && [[ "$_ACFS_DOCTOR_ENV_TARGET_USER_WAS_SET" != true ]]; then
-    TARGET_HOME="$_ACFS_DOCTOR_ENV_TARGET_HOME"
+if [[ -z "${TARGET_HOME:-}" ]] && [[ -n "${_GTBI_DOCTOR_ENV_TARGET_HOME:-}" ]] && [[ "$_GTBI_DOCTOR_ENV_TARGET_USER_WAS_SET" != true ]]; then
+    TARGET_HOME="$_GTBI_DOCTOR_ENV_TARGET_HOME"
 fi
 if [[ -n "${TARGET_HOME:-}" ]] && { [[ "$TARGET_HOME" != /* ]] || [[ "$TARGET_HOME" == "/" ]]; }; then
     TARGET_HOME=""
@@ -702,50 +702,50 @@ fi
 if [[ -z "${TARGET_HOME:-}" ]]; then
     if [[ "$TARGET_USER" == "root" ]]; then
         TARGET_HOME="/root"
-    elif [[ -n "${_acfs_doctor_current_home:-}" ]] && [[ "$TARGET_USER" == "$(_acfs_doctor_resolve_current_user 2>/dev/null || true)" ]]; then
-        TARGET_HOME="$_acfs_doctor_current_home"
+    elif [[ -n "${_gtbi_doctor_current_home:-}" ]] && [[ "$TARGET_USER" == "$(_gtbi_doctor_resolve_current_user 2>/dev/null || true)" ]]; then
+        TARGET_HOME="$_gtbi_doctor_current_home"
     fi
 fi
 
-ACFS_BIN_DIR="$(_acfs_doctor_validate_bin_dir_for_home "${ACFS_BIN_DIR:-}" "${TARGET_HOME:-}" 2>/dev/null || true)"
+GTBI_BIN_DIR="$(_gtbi_doctor_validate_bin_dir_for_home "${GTBI_BIN_DIR:-}" "${TARGET_HOME:-}" 2>/dev/null || true)"
 
 export TARGET_USER
 export TARGET_HOME
 
-if [[ -n "$_acfs_doctor_script_acfs_home" ]]; then
-    ACFS_HOME="$_acfs_doctor_script_acfs_home"
+if [[ -n "$_gtbi_doctor_script_gtbi_home" ]]; then
+    GTBI_HOME="$_gtbi_doctor_script_gtbi_home"
 else
-    _acfs_doctor_trusted_acfs_home="$(_acfs_doctor_trusted_runtime_acfs_home 2>/dev/null || true)"
-    if [[ -n "$_acfs_doctor_trusted_acfs_home" ]]; then
-        ACFS_HOME="$_acfs_doctor_trusted_acfs_home"
+    _gtbi_doctor_trusted_gtbi_home="$(_gtbi_doctor_trusted_runtime_gtbi_home 2>/dev/null || true)"
+    if [[ -n "$_gtbi_doctor_trusted_gtbi_home" ]]; then
+        GTBI_HOME="$_gtbi_doctor_trusted_gtbi_home"
     elif [[ -n "${TARGET_HOME:-}" ]]; then
-        ACFS_HOME="$(_acfs_doctor_acfs_home_for_home "$TARGET_HOME" 2>/dev/null || true)"
+        GTBI_HOME="$(_gtbi_doctor_gtbi_home_for_home "$TARGET_HOME" 2>/dev/null || true)"
     else
-        ACFS_HOME=""
+        GTBI_HOME=""
     fi
 fi
-export ACFS_HOME
+export GTBI_HOME
 
-unset _acfs_doctor_trusted_acfs_home
-unset _acfs_doctor_script_acfs_home
-unset _acfs_doctor_state_files
-unset _acfs_doctor_state_file
-unset _acfs_doctor_installed_state
-unset _ACFS_DOCTOR_ENV_BIN_DIR
-unset _ACFS_DOCTOR_ENV_TARGET_HOME
-unset _ACFS_DOCTOR_ENV_TARGET_USER
-unset _ACFS_DOCTOR_ENV_TARGET_USER_WAS_SET
+unset _gtbi_doctor_trusted_gtbi_home
+unset _gtbi_doctor_script_gtbi_home
+unset _gtbi_doctor_state_files
+unset _gtbi_doctor_state_file
+unset _gtbi_doctor_installed_state
+unset _GTBI_DOCTOR_ENV_BIN_DIR
+unset _GTBI_DOCTOR_ENV_TARGET_HOME
+unset _GTBI_DOCTOR_ENV_TARGET_USER
+unset _GTBI_DOCTOR_ENV_TARGET_USER_WAS_SET
 
 ensure_path
 if command -v gum &>/dev/null; then
     HAS_GUM=true
 fi
 
-_acfs_doctor_source_first "gum_ui.sh" || true
+_gtbi_doctor_source_first "gum_ui.sh" || true
 
 # Source doctor_fix after target-home resolution so its autofix state and
-# helper lookups cannot be steered by a stale caller ACFS_HOME.
-_acfs_doctor_source_first "doctor_fix.sh" || true
+# helper lookups cannot be steered by a stale caller GTBI_HOME.
+_gtbi_doctor_source_first "doctor_fix.sh" || true
 
 # ============================================================
 # Fix Suggestion Builder (bd-31ps.5.2)
@@ -785,8 +785,8 @@ build_fix_suggestion() {
     local -a flag_args=(--yes --force-reinstall)
 
     # Add mode flag (vibe is default, but explicit is clearer)
-    local mode="${ACFS_MODE:-vibe}"
-    mode="$(_acfs_doctor_normalize_mode "$mode" 2>/dev/null || true)"
+    local mode="${GTBI_MODE:-vibe}"
+    mode="$(_gtbi_doctor_normalize_mode "$mode" 2>/dev/null || true)"
     flag_args+=(--mode "${mode:-vibe}")
 
     # Add module/phase selector
@@ -799,13 +799,13 @@ build_fix_suggestion() {
     # Build the command
     # Check if we have a pinned ref from state.json
     local state_file=""
-    state_file="$(_acfs_doctor_find_project_path "state.json" 2>/dev/null || true)"
+    state_file="$(_gtbi_doctor_find_project_path "state.json" 2>/dev/null || true)"
     if [[ -f "$state_file" ]]; then
         local pinned_ref=""
-        pinned_ref="$(_acfs_doctor_read_json_string_key "$state_file" "pinned_ref" 2>/dev/null || true)"
-        pinned_ref="$(_acfs_doctor_normalize_ref "$pinned_ref" 2>/dev/null || true)"
+        pinned_ref="$(_gtbi_doctor_read_json_string_key "$state_file" "pinned_ref" 2>/dev/null || true)"
+        pinned_ref="$(_gtbi_doctor_normalize_ref "$pinned_ref" 2>/dev/null || true)"
         if [[ -n "$pinned_ref" && "$pinned_ref" != "main" ]]; then
-            install_url="https://raw.githubusercontent.com/Dicklesworthstone/agentic_coding_flywheel_setup/${pinned_ref}/install.sh"
+            install_url="https://raw.githubusercontent.com/jonbackhaus/gtbi/${pinned_ref}/install.sh"
             flag_args+=(--ref "$pinned_ref")
         fi
     fi
@@ -916,7 +916,7 @@ MANIFEST_CHECKS_LOADED=false
 # "declare -a MANIFEST_CHECKS=(...)" which bash scopes as local inside a
 # function.  Top-level sourcing keeps the array globally visible.
 _MANIFEST_CHECKS_FILE=""
-_MANIFEST_CHECKS_FILE="$(_acfs_doctor_find_project_path "scripts/generated/doctor_checks.sh" 2>/dev/null || true)"
+_MANIFEST_CHECKS_FILE="$(_gtbi_doctor_find_project_path "scripts/generated/doctor_checks.sh" 2>/dev/null || true)"
 
 if [[ -n "$_MANIFEST_CHECKS_FILE" ]]; then
     # Save shell options before sourcing (doctor_checks.sh sets -euo pipefail)
@@ -941,13 +941,13 @@ CYAN='\033[0;36m'
 NC='\033[0m'
 
 # Color scheme (Catppuccin Mocha)
-ACFS_PRIMARY="${ACFS_PRIMARY:-#89b4fa}"
-ACFS_SUCCESS="${ACFS_SUCCESS:-#a6e3a1}"
-ACFS_WARNING="${ACFS_WARNING:-#f9e2af}"
-ACFS_ERROR="${ACFS_ERROR:-#f38ba8}"
-ACFS_MUTED="${ACFS_MUTED:-#6c7086}"
-ACFS_ACCENT="${ACFS_ACCENT:-#cba6f7}"
-ACFS_TEAL="${ACFS_TEAL:-#94e2d5}"
+GTBI_PRIMARY="${GTBI_PRIMARY:-#89b4fa}"
+GTBI_SUCCESS="${GTBI_SUCCESS:-#a6e3a1}"
+GTBI_WARNING="${GTBI_WARNING:-#f9e2af}"
+GTBI_ERROR="${GTBI_ERROR:-#f38ba8}"
+GTBI_MUTED="${GTBI_MUTED:-#6c7086}"
+GTBI_ACCENT="${GTBI_ACCENT:-#cba6f7}"
+GTBI_TEAL="${GTBI_TEAL:-#94e2d5}"
 
 # Counters
 PASS_COUNT=0
@@ -963,7 +963,7 @@ JSON_MODE=false
 JSON_CHECKS=()
 
 # Deep mode - run functional tests beyond binary existence
-# Related: agentic_coding_flywheel_setup-01s
+# Related: gastown_batteries_included-01s
 DEEP_MODE=false
 
 # Fix mode - automatically apply safe fixes
@@ -972,21 +972,21 @@ FIX_MODE=false
 DRY_RUN_MODE=false
 
 # Caching for deep checks - skip slow operations that recently passed
-# Related: agentic_coding_flywheel_setup-lz1
+# Related: gastown_batteries_included-lz1
 NO_CACHE=false
-CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/acfs/doctor"
+CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/gtbi/doctor"
 CACHE_TTL=300  # 5 minutes
 
 # Per-check timeout (prevents indefinite hangs)
-# Related: agentic_coding_flywheel_setup-lz1
+# Related: gastown_batteries_included-lz1
 DEEP_CHECK_TIMEOUT=15  # seconds
 DOCTOR_VERSION_TIMEOUT="${DOCTOR_VERSION_TIMEOUT:-2}"
 
-# Print `acfs` CLI help (only used when this script is installed as the `acfs` entrypoint).
-print_acfs_help() {
-    echo "ACFS - Agentic Coding Flywheel Setup"
+# Print `gtbi` CLI help (only used when this script is installed as the `gtbi` entrypoint).
+print_gtbi_help() {
+    echo "GTBI - Agentic Coding Flywheel Setup"
     echo ""
-    echo "Usage: acfs <command> [options]"
+    echo "Usage: gtbi <command> [options]"
     echo ""
     echo "Commands:"
     echo "  doctor [options]    Check system health and tool status"
@@ -1015,46 +1015,46 @@ print_acfs_help() {
     echo "  continue [options]  View installation/upgrade progress"
     echo "  dashboard <command> Generate/view a static HTML dashboard"
     echo "  newproj <name>      Create new project with git, br, claude settings"
-    echo "  update [options]    Update ACFS tools to latest versions"
+    echo "  update [options]    Update GTBI tools to latest versions"
     echo "  services-setup      Configure AI agents and cloud services"
     echo "  session <command>   Export/import/share agent sessions"
     echo "  support-bundle      Collect diagnostic data for troubleshooting"
-    echo "  version             Show ACFS version"
+    echo "  version             Show GTBI version"
     echo "  help                Show this help message"
 }
 
-_acfs_doctor_exec_bash_script() {
+_gtbi_doctor_exec_bash_script() {
     local script_path="${1:-}"
     local bash_bin=""
     local env_bin=""
-    local passthrough_acfs_home=""
+    local passthrough_gtbi_home=""
     local passthrough_home=""
     local passthrough_target_user=""
     local passthrough_target_home=""
     local passthrough_bin_dir=""
     shift || true
 
-    bash_bin="$(_acfs_doctor_system_binary_path bash 2>/dev/null || true)"
+    bash_bin="$(_gtbi_doctor_system_binary_path bash 2>/dev/null || true)"
     if [[ -z "$bash_bin" ]]; then
         echo "Error: bash not found" >&2
         return 1
     fi
 
-    passthrough_acfs_home="$(_acfs_doctor_sanitize_abs_nonroot_path "${ACFS_HOME:-}" 2>/dev/null || true)"
-    passthrough_target_home="$(_acfs_doctor_sanitize_abs_nonroot_path "${TARGET_HOME:-}" 2>/dev/null || true)"
-    passthrough_home="${passthrough_target_home:-$(_acfs_doctor_sanitize_abs_nonroot_path "${_acfs_doctor_original_home:-}" 2>/dev/null || true)}"
-    passthrough_bin_dir="$(_acfs_doctor_sanitize_abs_nonroot_path "${ACFS_BIN_DIR:-}" 2>/dev/null || true)"
+    passthrough_gtbi_home="$(_gtbi_doctor_sanitize_abs_nonroot_path "${GTBI_HOME:-}" 2>/dev/null || true)"
+    passthrough_target_home="$(_gtbi_doctor_sanitize_abs_nonroot_path "${TARGET_HOME:-}" 2>/dev/null || true)"
+    passthrough_home="${passthrough_target_home:-$(_gtbi_doctor_sanitize_abs_nonroot_path "${_gtbi_doctor_original_home:-}" 2>/dev/null || true)}"
+    passthrough_bin_dir="$(_gtbi_doctor_sanitize_abs_nonroot_path "${GTBI_BIN_DIR:-}" 2>/dev/null || true)"
     passthrough_target_user="${TARGET_USER:-}"
-    if [[ -n "$passthrough_acfs_home" ]] && [[ -n "$passthrough_home" ]] && \
-       _acfs_doctor_acfs_home_matches_home "$passthrough_acfs_home" "$passthrough_home" 2>/dev/null; then
-        env_bin="$(_acfs_doctor_system_binary_path env 2>/dev/null || true)"
+    if [[ -n "$passthrough_gtbi_home" ]] && [[ -n "$passthrough_home" ]] && \
+       _gtbi_doctor_gtbi_home_matches_home "$passthrough_gtbi_home" "$passthrough_home" 2>/dev/null; then
+        env_bin="$(_gtbi_doctor_system_binary_path env 2>/dev/null || true)"
         if [[ -n "$env_bin" ]]; then
             exec "$env_bin" \
                 HOME="$passthrough_home" \
-                ACFS_HOME="$passthrough_acfs_home" \
+                GTBI_HOME="$passthrough_gtbi_home" \
                 TARGET_USER="$passthrough_target_user" \
                 TARGET_HOME="$passthrough_target_home" \
-                ACFS_BIN_DIR="$passthrough_bin_dir" \
+                GTBI_BIN_DIR="$passthrough_bin_dir" \
                 "$bash_bin" "$script_path" "$@"
         fi
     fi
@@ -1064,7 +1064,7 @@ _acfs_doctor_exec_bash_script() {
 
 resolve_session_lib() {
     local session_script=""
-    session_script="$(_acfs_doctor_find_lib_script "session.sh" 2>/dev/null || true)"
+    session_script="$(_gtbi_doctor_find_lib_script "session.sh" 2>/dev/null || true)"
     if [[ -n "$session_script" ]]; then
         echo "$session_script"
         return 0
@@ -1073,7 +1073,7 @@ resolve_session_lib() {
 }
 
 print_session_help() {
-    echo "Usage: acfs session <command> [options]"
+    echo "Usage: gtbi session <command> [options]"
     echo ""
     echo "Commands:"
     echo "  list [--json] [--days N] [--agent NAME] [--limit N]"
@@ -1085,14 +1085,14 @@ print_session_help() {
     echo "  list-imported"
     echo ""
     echo "Examples:"
-    echo "  acfs session list --days 7"
-    echo "  acfs session export ~/.codex/sessions/.../abc.jsonl --output session.json"
-    echo "  acfs session convert ~/.codex/sessions/.../abc.jsonl --from codex --to claude-code --workspace /data/projects/foo"
-    echo "  acfs session recent --workspace /data/projects/foo"
-    echo "  acfs session import session.json --dry-run"
+    echo "  gtbi session list --days 7"
+    echo "  gtbi session export ~/.codex/sessions/.../abc.jsonl --output session.json"
+    echo "  gtbi session convert ~/.codex/sessions/.../abc.jsonl --from codex --to claude-code --workspace /data/projects/foo"
+    echo "  gtbi session recent --workspace /data/projects/foo"
+    echo "  gtbi session import session.json --dry-run"
 }
 
-acfs_session_recent() {
+gtbi_session_recent() {
     local workspace
     workspace="$(pwd)"
     local format="json"
@@ -1124,10 +1124,10 @@ acfs_session_recent() {
     export_recent_session "$workspace" "$format"
 }
 
-acfs_session_main() {
+gtbi_session_main() {
     local session_lib
     session_lib="$(resolve_session_lib)" || {
-        echo "Error: session.sh not found. Re-run the ACFS installer." >&2
+        echo "Error: session.sh not found. Re-run the GTBI installer." >&2
         return 1
     }
 
@@ -1157,7 +1157,7 @@ acfs_session_main() {
             ;;
         recent)
             shift
-            acfs_session_recent "$@"
+            gtbi_session_recent "$@"
             ;;
         import)
             shift
@@ -1189,9 +1189,9 @@ section() {
         if [[ "$HAS_GUM" == "true" ]]; then
             echo ""
             gum style \
-                --foreground "$ACFS_PRIMARY" \
+                --foreground "$GTBI_PRIMARY" \
                 --bold \
-                --border-foreground "$ACFS_MUTED" \
+                --border-foreground "$GTBI_MUTED" \
                 --border normal \
                 --padding "0 2" \
                 --margin "0 0 1 0" \
@@ -1244,7 +1244,7 @@ run_with_timeout() {
         if [[ "$JSON_MODE" != "true" ]]; then
             # Log timeout warning (non-fatal)
             if [[ "$HAS_GUM" == "true" ]]; then
-                gum style --foreground "$ACFS_MUTED" "    ⏱ $description timed out after ${timeout_secs}s" >&2
+                gum style --foreground "$GTBI_MUTED" "    ⏱ $description timed out after ${timeout_secs}s" >&2
             else
                 echo -e "    ${YELLOW}⏱ $description timed out after ${timeout_secs}s${NC}" >&2
             fi
@@ -1518,9 +1518,9 @@ configured_truthy_value() {
 doctor_runtime_home() {
     local resolved_home=""
 
-    resolved_home="$(_acfs_doctor_sanitize_abs_nonroot_path "${TARGET_HOME:-}" 2>/dev/null || true)"
+    resolved_home="$(_gtbi_doctor_sanitize_abs_nonroot_path "${TARGET_HOME:-}" 2>/dev/null || true)"
     if [[ -z "$resolved_home" ]]; then
-        resolved_home="${_acfs_doctor_current_home:-}"
+        resolved_home="${_gtbi_doctor_current_home:-}"
     fi
 
     if [[ -n "$resolved_home" ]] && [[ "$resolved_home" == /* ]] && [[ "$resolved_home" != "/" ]]; then
@@ -1597,9 +1597,9 @@ check_with_timeout_status() {
 
         # Display with [?] indicator
         if [[ "$HAS_GUM" == "true" ]]; then
-            echo "  $(gum style --foreground "$ACFS_WARNING" --bold "? WAIT") $(gum style "$label")"
+            echo "  $(gum style --foreground "$GTBI_WARNING" --bold "? WAIT") $(gum style "$label")"
             if [[ -n "$fix" ]]; then
-                echo "        $(gum style --foreground "$ACFS_MUTED" "Fix:") $(gum style --foreground "$ACFS_ACCENT" --italic "$fix")"
+                echo "        $(gum style --foreground "$GTBI_MUTED" "Fix:") $(gum style --foreground "$GTBI_ACCENT" --italic "$fix")"
             fi
         else
             echo -e "  ${YELLOW}? WAIT${NC} $label"
@@ -1641,18 +1641,18 @@ check() {
     if [[ "$HAS_GUM" == "true" ]]; then
         case "$status" in
             pass)
-                echo "  $(gum style --foreground "$ACFS_SUCCESS" --bold "✓ PASS") $(gum style --foreground "$ACFS_TEAL" "$label")"
+                echo "  $(gum style --foreground "$GTBI_SUCCESS" --bold "✓ PASS") $(gum style --foreground "$GTBI_TEAL" "$label")"
                 ;;
             warn)
-                echo "  $(gum style --foreground "$ACFS_WARNING" --bold "⚠ WARN") $(gum style "$label")"
+                echo "  $(gum style --foreground "$GTBI_WARNING" --bold "⚠ WARN") $(gum style "$label")"
                 if [[ -n "$fix" ]]; then
-                    echo "        $(gum style --foreground "$ACFS_MUTED" "Fix:") $(gum style --foreground "$ACFS_ACCENT" --italic "$fix")"
+                    echo "        $(gum style --foreground "$GTBI_MUTED" "Fix:") $(gum style --foreground "$GTBI_ACCENT" --italic "$fix")"
                 fi
                 ;;
             fail)
-                echo "  $(gum style --foreground "$ACFS_ERROR" --bold "✖ FAIL") $(gum style "$label")"
+                echo "  $(gum style --foreground "$GTBI_ERROR" --bold "✖ FAIL") $(gum style "$label")"
                 if [[ -n "$fix" ]]; then
-                    echo "        $(gum style --foreground "$ACFS_MUTED" "Fix:") $(gum style --foreground "$ACFS_ACCENT" --italic "$fix")"
+                    echo "        $(gum style --foreground "$GTBI_MUTED" "Fix:") $(gum style --foreground "$GTBI_ACCENT" --italic "$fix")"
                 fi
                 ;;
         esac
@@ -1707,15 +1707,15 @@ doctor_binary_path() {
     runtime_home="$(doctor_runtime_home)"
     [[ -n "$runtime_home" ]] || return 1
 
-    primary_bin_dir="$(_acfs_doctor_validate_bin_dir_for_home "${ACFS_BIN_DIR:-}" "$runtime_home" 2>/dev/null || true)"
+    primary_bin_dir="$(_gtbi_doctor_validate_bin_dir_for_home "${GTBI_BIN_DIR:-}" "$runtime_home" 2>/dev/null || true)"
     [[ -n "$primary_bin_dir" ]] || primary_bin_dir="$runtime_home/.local/bin"
-    if [[ -n "${ACFS_HOME:-}" ]]; then
-        candidates+=("$ACFS_HOME/bin/$name")
+    if [[ -n "${GTBI_HOME:-}" ]]; then
+        candidates+=("$GTBI_HOME/bin/$name")
     fi
     candidates+=(
         "$primary_bin_dir/$name"
         "$runtime_home/.local/bin/$name"
-        "$runtime_home/.acfs/bin/$name"
+        "$runtime_home/.gtbi/bin/$name"
         "$runtime_home/.bun/bin/$name"
         "$runtime_home/.cargo/bin/$name"
         "$runtime_home/.atuin/bin/$name"
@@ -1739,7 +1739,7 @@ doctor_binary_path() {
 
     IFS=':' read -r -a path_entries <<< "${PATH:-}"
     for path_dir in "${path_entries[@]}"; do
-        sanitized_dir="$(_acfs_doctor_sanitize_abs_nonroot_path "$path_dir" 2>/dev/null || true)"
+        sanitized_dir="$(_gtbi_doctor_sanitize_abs_nonroot_path "$path_dir" 2>/dev/null || true)"
         [[ -n "$sanitized_dir" ]] || continue
         case "$sanitized_dir" in
             "$runtime_home"|"$runtime_home"/*)
@@ -1767,18 +1767,18 @@ doctor_runtime_path() {
     runtime_home="$(doctor_runtime_home)"
     [[ -n "$runtime_home" ]] || return 1
 
-    primary_bin_dir="$(_acfs_doctor_validate_bin_dir_for_home "${ACFS_BIN_DIR:-}" "$runtime_home" 2>/dev/null || true)"
+    primary_bin_dir="$(_gtbi_doctor_validate_bin_dir_for_home "${GTBI_BIN_DIR:-}" "$runtime_home" 2>/dev/null || true)"
     [[ -n "$primary_bin_dir" ]] || primary_bin_dir="$runtime_home/.local/bin"
 
-    if [[ -n "${ACFS_HOME:-}" ]]; then
-        path_entries+=("$ACFS_HOME/bin")
-        seen_path="${seen_path}${ACFS_HOME}/bin:"
+    if [[ -n "${GTBI_HOME:-}" ]]; then
+        path_entries+=("$GTBI_HOME/bin")
+        seen_path="${seen_path}${GTBI_HOME}/bin:"
     fi
 
     for dir in \
         "$primary_bin_dir" \
         "$runtime_home/.local/bin" \
-        "$runtime_home/.acfs/bin" \
+        "$runtime_home/.gtbi/bin" \
         "$runtime_home/.bun/bin" \
         "$runtime_home/.cargo/bin" \
         "$runtime_home/.atuin/bin" \
@@ -1853,7 +1853,7 @@ get_version_line() {
 
     local version=""
     local timeout_bin=""
-    timeout_bin="$(_acfs_doctor_system_binary_path timeout 2>/dev/null || true)"
+    timeout_bin="$(_gtbi_doctor_system_binary_path timeout 2>/dev/null || true)"
     # UBS has a directory size check that can block --version; bypass it
     if [[ "$cmd" == "ubs" ]] || [[ "$exec_path" == */ubs ]]; then
         version=$(UBS_MAX_DIR_SIZE_MB=10000 doctor_version_probe "$timeout_bin" "$DOCTOR_VERSION_TIMEOUT" discard "$exec_path" --version) || true
@@ -1921,7 +1921,7 @@ check_identity() {
     local sudo_bin=""
     local id_bin=""
     local grep_bin=""
-    user="$(_acfs_doctor_resolve_current_user 2>/dev/null || true)"
+    user="$(_gtbi_doctor_resolve_current_user 2>/dev/null || true)"
     if [[ "$user" == "$TARGET_USER" ]]; then
         check "identity.user_is_ubuntu" "Logged in as $TARGET_USER" "pass" "whoami=$user"
     else
@@ -1929,16 +1929,16 @@ check_identity() {
     fi
 
     # Check sudo configuration (passwordless only required in vibe mode)
-    sudo_bin="$(_acfs_doctor_system_binary_path sudo 2>/dev/null || true)"
-    if [[ "${ACFS_MODE:-vibe}" == "vibe" ]]; then
+    sudo_bin="$(_gtbi_doctor_system_binary_path sudo 2>/dev/null || true)"
+    if [[ "${GTBI_MODE:-vibe}" == "vibe" ]]; then
         if [[ -n "$sudo_bin" ]] && "$sudo_bin" -n true 2>/dev/null; then
             check "identity.passwordless_sudo" "Passwordless sudo (vibe mode)" "pass"
         else
-            check "identity.passwordless_sudo" "Passwordless sudo (vibe mode)" "fail" "requires password" "Re-run ACFS installer with --mode vibe"
+            check "identity.passwordless_sudo" "Passwordless sudo (vibe mode)" "fail" "requires password" "Re-run GTBI installer with --mode vibe"
         fi
     else
-        id_bin="$(_acfs_doctor_system_binary_path id 2>/dev/null || true)"
-        grep_bin="$(_acfs_doctor_system_binary_path grep 2>/dev/null || true)"
+        id_bin="$(_gtbi_doctor_system_binary_path id 2>/dev/null || true)"
+        grep_bin="$(_gtbi_doctor_system_binary_path grep 2>/dev/null || true)"
         if [[ -n "$sudo_bin" && -n "$id_bin" && -n "$grep_bin" ]] && "$id_bin" -nG 2>/dev/null | "$grep_bin" -qw sudo; then
             check "identity.sudo" "Sudo available (safe mode)" "pass"
         else
@@ -2061,7 +2061,7 @@ check_agents() {
     local alias_fix
     local target_zshrc=""
     alias_fix="$(fix_for_module "shell.omz")"
-    target_zshrc="$(_acfs_doctor_find_project_path "zsh/acfs.zshrc" 2>/dev/null || true)"
+    target_zshrc="$(_gtbi_doctor_find_project_path "zsh/gtbi.zshrc" 2>/dev/null || true)"
     if grep -q "^alias cc=" "$target_zshrc" 2>/dev/null; then
         check "agent.alias.cc" "cc alias" "pass"
     else
@@ -2074,7 +2074,7 @@ check_agents() {
         check "agent.alias.cod" "cod alias" "warn" "not in zshrc" "$alias_fix"
     fi
 
-    # gmi is defined as a shell function (not an alias) in acfs.zshrc
+    # gmi is defined as a shell function (not an alias) in gtbi.zshrc
     if grep -q "^gmi()" "$target_zshrc" 2>/dev/null || grep -q "^alias gmi=" "$target_zshrc" 2>/dev/null; then
         check "agent.alias.gmi" "gmi function" "pass"
     else
@@ -2091,7 +2091,7 @@ check_agents() {
 # Check for agent PATH conflicts (bead hi7)
 # Native installations should take precedence over package manager versions
 check_agent_path_conflicts() {
-    local doctor_ci="${ACFS_DOCTOR_CI:-false}"
+    local doctor_ci="${GTBI_DOCTOR_CI:-false}"
     local expected_native_path=""
     expected_native_path="$(doctor_runtime_home)/.local/bin/claude"
 
@@ -2112,7 +2112,7 @@ check_agent_path_conflicts() {
             # Package manager version - warn about potential conflicts
             check "agent.path.claude" "Claude Code path" "warn" \
                 "using bun/npm version ($claude_path)" \
-                "Switch to native: acfs update --force --agents-only (removes bun version, installs native)"
+                "Switch to native: gtbi update --force --agents-only (removes bun version, installs native)"
         fi
     else
         # Some other path - just note it
@@ -2156,7 +2156,7 @@ check_dcg_hook_status() {
         return
     fi
 
-    if _acfs_doctor_claude_settings_has_command_hook "$settings_file" '(^|[[:space:]/])dcg([[:space:]]|$)'; then
+    if _gtbi_doctor_claude_settings_has_command_hook "$settings_file" '(^|[[:space:]/])dcg([[:space:]]|$)'; then
         check "stack.dcg" "DCG ($version)" "pass" "installed + hook registered"
     else
         check "stack.dcg" "DCG ($version)" "warn" "binary installed but hook not registered" \
@@ -2168,12 +2168,12 @@ check_dcg_hook_status() {
 check_cloud() {
     section "Cloud/DB"
 
-    local doctor_ci="${ACFS_DOCTOR_CI:-false}"
+    local doctor_ci="${GTBI_DOCTOR_CI:-false}"
 
     check_optional_command "cloud.vault" "Vault" "vault"
     check_optional_command "cloud.postgres" "PostgreSQL" "psql"
     check_optional_command "cloud.wrangler" "Wrangler" "wrangler" "bun install -g --trust wrangler@latest"
-    check_optional_command "cloud.supabase" "Supabase CLI" "supabase" "acfs update --cloud-only --force"
+    check_optional_command "cloud.supabase" "Supabase CLI" "supabase" "gtbi update --cloud-only --force"
     check_optional_command "cloud.vercel" "Vercel CLI" "vercel" "bun install -g --trust vercel@latest"
 
     # Tailscale VPN (bt5)
@@ -2218,8 +2218,8 @@ check_cloud() {
     # Fresh installs (WSL, VM, containers) may not have openssh-server
     local sshd_bin=""
     local systemctl_bin=""
-    sshd_bin="$(_acfs_doctor_system_binary_path sshd 2>/dev/null || true)"
-    systemctl_bin="$(_acfs_doctor_system_binary_path systemctl 2>/dev/null || true)"
+    sshd_bin="$(_gtbi_doctor_system_binary_path sshd 2>/dev/null || true)"
+    systemctl_bin="$(_gtbi_doctor_system_binary_path systemctl 2>/dev/null || true)"
     if [[ -n "$sshd_bin" ]] || [[ -f /etc/ssh/sshd_config ]]; then
         if [[ -n "$systemctl_bin" && -d /run/systemd/system ]]; then
             if "$systemctl_bin" is-active --quiet ssh 2>/dev/null || "$systemctl_bin" is-active --quiet sshd 2>/dev/null; then
@@ -2317,7 +2317,7 @@ check_stack() {
             gcloud_bv=$(type -ap bv 2>/dev/null | grep "google-cloud-sdk" | head -1 || true)
             if [[ -n "$gcloud_bv" ]]; then
                 check "stack.bv" "Beads Viewer ($version)" "warn" "gcloud bv exists at $gcloud_bv (but correctly shadowed)" \
-                    "beads_viewer is correctly prioritized, but gcloud's bv exists. ACFS zshrc handles this."
+                    "beads_viewer is correctly prioritized, but gcloud's bv exists. GTBI zshrc handles this."
             else
                 check "stack.bv" "Beads Viewer ($version)" "pass" "installed"
             fi
@@ -2354,13 +2354,13 @@ check_stack() {
 
         am_version=$(get_version_line "$am_bin")
         am_label="MCP Agent Mail ($am_version)"
-        curl_bin="$(_acfs_doctor_system_binary_path curl 2>/dev/null || true)"
+        curl_bin="$(_gtbi_doctor_system_binary_path curl 2>/dev/null || true)"
 
         if [[ -z "$curl_bin" ]] || ! "$curl_bin" -fsS --max-time 10 http://127.0.0.1:8765/health/liveness >/dev/null 2>&1; then
             check "stack.mcp_agent_mail" "$am_label" "warn" "installed but service is not running" "$am_install_fix"
         elif {
-            id_bin="$(_acfs_doctor_system_binary_path id 2>/dev/null || true)"
-            systemctl_bin="$(_acfs_doctor_system_binary_path systemctl 2>/dev/null || true)"
+            id_bin="$(_gtbi_doctor_system_binary_path id 2>/dev/null || true)"
+            systemctl_bin="$(_gtbi_doctor_system_binary_path systemctl 2>/dev/null || true)"
             local am_uid=""
             local am_runtime_dir=""
             # Resolve TARGET_USER's UID, not the current process user's, so split-user
@@ -2399,7 +2399,7 @@ check_stack() {
             local am_repair_fix='Run: am doctor repair --yes && am doctor fix --yes'
 
             # `am doctor check` validates live mailbox/archive state, not just the
-            # ACFS install surface. Keep it in --deep so normal installer canaries
+            # GTBI install surface. Keep it in --deep so normal installer canaries
             # do not warn on unrelated mailbox hygiene after proving the service.
             am_global_doctor_json="$(agent_mail_doctor_check_json || true)"
             if [[ -z "$am_global_doctor_json" ]]; then
@@ -2440,7 +2440,7 @@ check_stack() {
         if [[ -x "$runtime_home/mcp_agent_mail/am" ]] && ! doctor_agent_mail_cli_path >/dev/null 2>&1; then
             check "symlink.am" "$am_label" "warn" \
                 "binary exists at ~/mcp_agent_mail/am but symlink missing from ~/.local/bin/am" \
-                "Fix: ln -sf ~/mcp_agent_mail/am ~/.local/bin/am (or run: acfs doctor --fix)"
+                "Fix: ln -sf ~/mcp_agent_mail/am ~/.local/bin/am (or run: gtbi doctor --fix)"
         else
             check "stack.mcp_agent_mail" "$am_label" "warn" "install directory present but am CLI is missing" "$am_install_fix"
         fi
@@ -2560,19 +2560,19 @@ check_stack() {
     # Check DCG (Destructive Command Guard)
     check_dcg_hook_status
 
-    # Check acfs-nightly-update timer (systemd user unit)
+    # Check gtbi-nightly-update timer (systemd user unit)
     # Gracefully handle missing systemd user session (curl|bash installs as
     # root don't have a D-Bus session, so systemctl --user always fails).
     local _nightly_status="unknown"
     local systemctl_bin=""
-    systemctl_bin="$(_acfs_doctor_system_binary_path systemctl 2>/dev/null || true)"
+    systemctl_bin="$(_gtbi_doctor_system_binary_path systemctl 2>/dev/null || true)"
     if [[ -n "$systemctl_bin" && -d /run/systemd/system ]]; then
         # Try to access the user session; if no D-Bus, fall back to checking
         # the unit file exists on disk instead.
         local _target_home=""
         _target_home="$(doctor_runtime_home)"
-        local _nightly_unit_file="${_target_home}/.config/systemd/user/acfs-nightly-update.timer"
-        if "$systemctl_bin" --user is-enabled acfs-nightly-update.timer &>/dev/null 2>&1; then
+        local _nightly_unit_file="${_target_home}/.config/systemd/user/gtbi-nightly-update.timer"
+        if "$systemctl_bin" --user is-enabled gtbi-nightly-update.timer &>/dev/null 2>&1; then
             _nightly_status="enabled"
         elif [[ -f "$_nightly_unit_file" ]]; then
             _nightly_status="unit_exists"
@@ -2584,21 +2584,21 @@ check_stack() {
     fi
     case "$_nightly_status" in
         enabled)
-            check "acfs.nightly" "Nightly auto-update timer" "pass" "enabled"
+            check "gtbi.nightly" "Nightly auto-update timer" "pass" "enabled"
             ;;
         unit_exists)
-            check "acfs.nightly" "Nightly auto-update timer" "warn" \
+            check "gtbi.nightly" "Nightly auto-update timer" "warn" \
                 "unit file exists but timer not enabled (no D-Bus user session?)" \
-                "loginctl enable-linger \$(whoami) && systemctl --user enable --now acfs-nightly-update.timer"
+                "loginctl enable-linger \$(whoami) && systemctl --user enable --now gtbi-nightly-update.timer"
             ;;
         no_systemd)
-            check "acfs.nightly" "Nightly auto-update timer" "skip" \
+            check "gtbi.nightly" "Nightly auto-update timer" "skip" \
                 "no systemd or no user session (expected for curl|bash root installs)"
             ;;
         *)
-            check "acfs.nightly" "Nightly auto-update timer" "warn" \
+            check "gtbi.nightly" "Nightly auto-update timer" "warn" \
                 "not installed (optional)" \
-                "$(fix_for_module "acfs.nightly")"
+                "$(fix_for_module "gtbi.nightly")"
             ;;
     esac
 
@@ -2715,7 +2715,7 @@ check_utilities() {
 # ============================================================
 # Runs manifest-derived checks for tools NOT already covered by the bespoke
 # check functions above.  This fills gaps (lazygit, nvm, apr, jfp, pt, srps,
-# all utils.*, acfs.*, base.system.*) without duplicating bespoke output.
+# all utils.*, gtbi.*, base.system.*) without duplicating bespoke output.
 # ============================================================
 
 # Returns 0 (true) if the given manifest ID is already verified by a bespoke
@@ -2738,7 +2738,7 @@ _is_bespoke_covered() {
         users.ubuntu|users.ubuntu.*) return 0 ;;
         # check_workspace
         base.filesystem.[12]) return 0 ;;
-        acfs.workspace|acfs.workspace.*) return 0 ;;
+        gtbi.workspace|gtbi.workspace.*) return 0 ;;
         # check_shell
         shell|shell.*) return 0 ;;
         # check_core_tools  (cli.modern.* maps to rg, tmux, fzf, gh, etc.)
@@ -2758,8 +2758,8 @@ _is_bespoke_covered() {
         stack.beads_rust|stack.beads_rust.*|stack.cass|stack.cm|stack.cm.*|stack.caam) return 0 ;;
         stack.dcg|stack.dcg.*|stack.ru|stack.meta_skill|stack.meta_skill.*) return 0 ;;
         stack.brenner_bot|stack.rch|stack.wezterm_automata) return 0 ;;
-        # check_stack  (acfs nightly timer — bespoke handles D-Bus gracefully)
-        acfs.nightly) return 0 ;;
+        # check_stack  (gtbi nightly timer — bespoke handles D-Bus gracefully)
+        gtbi.nightly) return 0 ;;
         # check_utilities (bd-2gog)
         util|util.*|utils|utils.*) return 0 ;;
     esac
@@ -2798,8 +2798,8 @@ _doctor_run_manifest_check() {
         explicit_target_home="${explicit_target_home%/}"
     fi
 
-    if declare -f _acfs_validate_target_user >/dev/null 2>&1; then
-        _acfs_validate_target_user "$target_user" "TARGET_USER" || return 1
+    if declare -f _gtbi_validate_target_user >/dev/null 2>&1; then
+        _gtbi_validate_target_user "$target_user" "TARGET_USER" || return 1
     elif [[ -z "$target_user" ]] || [[ ! "$target_user" =~ ^[a-z_][a-z0-9._-]*$ ]]; then
         log_error "Invalid TARGET_USER '${target_user:-<empty>}' (expected: lowercase user name like 'ubuntu')"
         return 1
@@ -2809,11 +2809,11 @@ _doctor_run_manifest_check() {
         resolved_target_home="/root"
     else
         local passwd_entry=""
-        passwd_entry="$(_acfs_doctor_getent_passwd_entry "$target_user" 2>/dev/null || true)"
+        passwd_entry="$(_gtbi_doctor_getent_passwd_entry "$target_user" 2>/dev/null || true)"
         if [[ -n "$passwd_entry" ]]; then
-            resolved_target_home="$(_acfs_doctor_passwd_home_from_entry "$passwd_entry" 2>/dev/null || true)"
-        elif [[ "$target_user" == "$(_acfs_doctor_resolve_current_user 2>/dev/null || true)" ]]; then
-            current_home="$(_acfs_doctor_sanitize_abs_nonroot_path "${_acfs_doctor_current_home:-}" 2>/dev/null || true)"
+            resolved_target_home="$(_gtbi_doctor_passwd_home_from_entry "$passwd_entry" 2>/dev/null || true)"
+        elif [[ "$target_user" == "$(_gtbi_doctor_resolve_current_user 2>/dev/null || true)" ]]; then
+            current_home="$(_gtbi_doctor_sanitize_abs_nonroot_path "${_gtbi_doctor_current_home:-}" 2>/dev/null || true)"
             if [[ -n "$current_home" ]] && { [[ -z "$explicit_target_home" ]] || [[ "$current_home" == "$explicit_target_home" ]]; }; then
                 resolved_target_home="$current_home"
             fi
@@ -2827,16 +2827,16 @@ _doctor_run_manifest_check() {
         fi
     fi
 
-    env_bin="$(_acfs_doctor_system_binary_path env 2>/dev/null || true)"
-    bash_bin="$(_acfs_doctor_system_binary_path bash 2>/dev/null || true)"
+    env_bin="$(_gtbi_doctor_system_binary_path env 2>/dev/null || true)"
+    bash_bin="$(_gtbi_doctor_system_binary_path bash 2>/dev/null || true)"
     if [[ -z "$env_bin" || -z "$bash_bin" ]]; then
         log_error "Unable to locate env/bash for manifest check"
         return 1
     fi
 
-    if [[ "$cmd" == *"acfs_generated_"* ]]; then
+    if [[ "$cmd" == *"gtbi_generated_"* ]]; then
         local helper_prelude=""
-        helper_prelude="$(declare -f acfs_generated_system_binary_path acfs_generated_resolve_current_user acfs_generated_getent_passwd_entry acfs_generated_passwd_home_from_entry 2>/dev/null || true)"
+        helper_prelude="$(declare -f gtbi_generated_system_binary_path gtbi_generated_resolve_current_user gtbi_generated_getent_passwd_entry gtbi_generated_passwd_home_from_entry 2>/dev/null || true)"
         if [[ -z "$helper_prelude" ]]; then
             log_error "Generated helper functions are unavailable for manifest check command"
             return 1
@@ -2853,10 +2853,10 @@ _doctor_run_manifest_check() {
                 return 1
             fi
             local target_bin=""
-            target_bin="$(_acfs_doctor_validate_bin_dir_for_home "${ACFS_BIN_DIR:-}" "$target_home" 2>/dev/null || true)"
+            target_bin="$(_gtbi_doctor_validate_bin_dir_for_home "${GTBI_BIN_DIR:-}" "$target_home" 2>/dev/null || true)"
             [[ -n "$target_bin" ]] || target_bin="$target_home/.local/bin"
             if [[ -z "$target_bin" ]] || [[ "$target_bin" != /* ]] || [[ "$target_bin" == "/" ]]; then
-                log_error "ACFS_BIN_DIR must be an absolute path and cannot be '/' (got: ${target_bin:-<empty>})"
+                log_error "GTBI_BIN_DIR must be an absolute path and cannot be '/' (got: ${target_bin:-<empty>})"
                 return 1
             fi
             local dir=""
@@ -2866,7 +2866,7 @@ _doctor_run_manifest_check() {
             for dir in \
                 "$target_bin" \
                 "$target_home/.local/bin" \
-                "$target_home/.acfs/bin" \
+                "$target_home/.gtbi/bin" \
                 "$target_home/.bun/bin" \
                 "$target_home/.cargo/bin" \
                 "$target_home/.atuin/bin" \
@@ -2890,21 +2890,21 @@ _doctor_run_manifest_check() {
             target_path_prefix=$(IFS=:; echo "${target_path_entries[*]}")
             target_path="$target_path_prefix${PATH:+:$PATH}"
             local -a target_check_argv=("$bash_bin" -c 'cd "$HOME" || exit 1; exec "$@"' _ "$bash_bin" -o pipefail -c "$cmd")
-            if [[ "$(_acfs_doctor_resolve_current_user 2>/dev/null || true)" == "$target_user" ]]; then
+            if [[ "$(_gtbi_doctor_resolve_current_user 2>/dev/null || true)" == "$target_user" ]]; then
                 "$env_bin" TARGET_USER="$target_user" TARGET_HOME="$target_home" HOME="$target_home" PATH="$target_path" "${target_check_argv[@]}"
                 return $?
             fi
-            runuser_bin="$(_acfs_doctor_system_binary_path runuser 2>/dev/null || true)"
+            runuser_bin="$(_gtbi_doctor_system_binary_path runuser 2>/dev/null || true)"
             if [[ $EUID -eq 0 && -n "$runuser_bin" ]]; then
                 "$runuser_bin" -u "$target_user" -- "$env_bin" TARGET_USER="$target_user" TARGET_HOME="$target_home" HOME="$target_home" PATH="$target_path" "${target_check_argv[@]}"
                 return $?
             fi
-            sudo_bin="$(_acfs_doctor_system_binary_path sudo 2>/dev/null || true)"
+            sudo_bin="$(_gtbi_doctor_system_binary_path sudo 2>/dev/null || true)"
             if [[ -n "$sudo_bin" ]]; then
                 "$sudo_bin" -n -u "$target_user" "$env_bin" TARGET_USER="$target_user" TARGET_HOME="$target_home" HOME="$target_home" PATH="$target_path" "${target_check_argv[@]}"
                 return $?
             fi
-            su_bin="$(_acfs_doctor_system_binary_path su 2>/dev/null || true)"
+            su_bin="$(_gtbi_doctor_system_binary_path su 2>/dev/null || true)"
             if [[ $EUID -eq 0 && -n "$su_bin" ]]; then
                 "$su_bin" "$target_user" -c "$(printf '%q' "$env_bin") TARGET_USER=$(printf '%q' "$target_user") TARGET_HOME=$(printf '%q' "$target_home") HOME=$(printf '%q' "$target_home") PATH=$(printf '%q' "$target_path") $(printf '%q ' "${target_check_argv[@]}")"
                 return $?
@@ -2920,7 +2920,7 @@ _doctor_run_manifest_check() {
                 fi
                 return $?
             fi
-            sudo_bin="$(_acfs_doctor_system_binary_path sudo 2>/dev/null || true)"
+            sudo_bin="$(_gtbi_doctor_system_binary_path sudo 2>/dev/null || true)"
             if [[ -n "$sudo_bin" ]]; then
                 if [[ -n "$target_home" ]] && [[ "$target_home" == /* ]] && [[ "$target_home" != "/" ]]; then
                     "$sudo_bin" -n "$env_bin" TARGET_USER="$target_user" TARGET_HOME="$target_home" PATH="$system_path_prefix" "$bash_bin" -o pipefail -c "$cmd"
@@ -2944,7 +2944,7 @@ _doctor_run_manifest_check() {
 # Run manifest checks that are NOT already covered by bespoke functions.
 # Integrates with the standard check() output (JSON/gum/plain) so the results
 # are indistinguishable from hand-written checks.  Failed checks include a
-# copy-pasteable fix suggestion using `acfs install --only <module>`.
+# copy-pasteable fix suggestion using `gtbi install --only <module>`.
 check_manifest_supplemental() {
     [[ "$MANIFEST_CHECKS_LOADED" == "true" ]] || return 0
     [[ ${#MANIFEST_CHECKS[@]} -gt 0 ]] || return 0
@@ -3015,7 +3015,7 @@ check_manifest_supplemental() {
 load_skipped_tools() {
     SKIPPED_TOOLS_DATA=()
     local state_file=""
-    state_file="$(_acfs_doctor_find_project_path "state.json" 2>/dev/null || true)"
+    state_file="$(_gtbi_doctor_find_project_path "state.json" 2>/dev/null || true)"
 
     [[ -f "$state_file" ]] || return 0
 
@@ -3061,8 +3061,8 @@ check_skipped() {
     fi
 
     if [[ "$HAS_GUM" == "true" ]]; then
-        echo "  $(gum style --foreground "$ACFS_MUTED" --bold "○ SKIP") $(gum style --foreground "$ACFS_MUTED" "$label")"
-        echo "        $(gum style --foreground "$ACFS_MUTED" --italic "Reason: $reason")"
+        echo "  $(gum style --foreground "$GTBI_MUTED" --bold "○ SKIP") $(gum style --foreground "$GTBI_MUTED" "$label")"
+        echo "        $(gum style --foreground "$GTBI_MUTED" --italic "Reason: $reason")"
     else
         echo -e "  ${CYAN}○ SKIP${NC} $label"
         echo -e "        Reason: $reason"
@@ -3080,7 +3080,7 @@ show_skipped_tools() {
 
     if [[ "$JSON_MODE" != "true" ]]; then
         if [[ "$HAS_GUM" == "true" ]]; then
-            gum style --foreground "$ACFS_MUTED" "  These tools were skipped during installation (not errors)"
+            gum style --foreground "$GTBI_MUTED" "  These tools were skipped during installation (not errors)"
         else
             echo -e "  ${CYAN}These tools were skipped during installation (not errors)${NC}"
         fi
@@ -3148,8 +3148,8 @@ deep_check_optional_probe() {
     local env_bin=""
     local bash_bin=""
 
-    env_bin="$(_acfs_doctor_system_binary_path env 2>/dev/null || true)"
-    bash_bin="$(_acfs_doctor_system_binary_path bash 2>/dev/null || true)"
+    env_bin="$(_gtbi_doctor_system_binary_path env 2>/dev/null || true)"
+    bash_bin="$(_gtbi_doctor_system_binary_path bash 2>/dev/null || true)"
     if [[ -z "$env_bin" || -z "$bash_bin" ]]; then
         check "$id" "$label" "warn" "env/bash unavailable" "$fix"
         return 0
@@ -3283,7 +3283,7 @@ run_deep_checks() {
             cache_status=" (cache disabled)"
         fi
         if [[ "$HAS_GUM" == "true" ]]; then
-            gum style --foreground "$ACFS_MUTED" "  Running functional tests...$cache_status"
+            gum style --foreground "$GTBI_MUTED" "  Running functional tests...$cache_status"
         else
             echo -e "  ${CYAN}Running functional tests...$cache_status${NC}"
         fi
@@ -3334,13 +3334,13 @@ run_deep_checks() {
         if [[ "$HAS_GUM" == "true" ]]; then
             local summary_text=""
             if [[ $DEEP_FAIL_COUNT -eq 0 ]]; then
-                summary_text="$(gum style --foreground "$ACFS_SUCCESS" --bold "$DEEP_PASS_COUNT/$deep_total") functional tests passed"
-                [[ $DEEP_WARN_COUNT -gt 0 ]] && summary_text="$summary_text $(gum style --foreground "$ACFS_WARNING" "($DEEP_WARN_COUNT warnings)")"
+                summary_text="$(gum style --foreground "$GTBI_SUCCESS" --bold "$DEEP_PASS_COUNT/$deep_total") functional tests passed"
+                [[ $DEEP_WARN_COUNT -gt 0 ]] && summary_text="$summary_text $(gum style --foreground "$GTBI_WARNING" "($DEEP_WARN_COUNT warnings)")"
             else
-                summary_text="$(gum style --foreground "$ACFS_ERROR" --bold "$DEEP_PASS_COUNT/$deep_total") functional tests passed"
-                summary_text="$summary_text $(gum style --foreground "$ACFS_ERROR" "($DEEP_FAIL_COUNT failed)")"
+                summary_text="$(gum style --foreground "$GTBI_ERROR" --bold "$DEEP_PASS_COUNT/$deep_total") functional tests passed"
+                summary_text="$summary_text $(gum style --foreground "$GTBI_ERROR" "($DEEP_FAIL_COUNT failed)")"
             fi
-            echo "  $summary_text $(gum style --foreground "$ACFS_MUTED" "in ${elapsed_time}s")"
+            echo "  $summary_text $(gum style --foreground "$GTBI_MUTED" "in ${elapsed_time}s")"
         else
             if [[ $DEEP_FAIL_COUNT -eq 0 ]]; then
                 echo -e "  ${GREEN}$DEEP_PASS_COUNT/$deep_total${NC} functional tests passed in ${elapsed_time}s"
@@ -3373,13 +3373,13 @@ check_claude_auth() {
     local claude_bin=""
     claude_bin="$(doctor_binary_path claude 2>/dev/null || true)"
     if [[ -z "$claude_bin" ]]; then
-        check "deep.agent.claude_auth" "Claude Code" "warn" "not installed" "acfs update --force --agents-only"
+        check "deep.agent.claude_auth" "Claude Code" "warn" "not installed" "gtbi update --force --agents-only"
         return
     fi
 
     # Check if binary works
     if ! "$claude_bin" --version &>/dev/null; then
-        check "deep.agent.claude_auth" "Claude Code auth" "fail" "binary error" "Reinstall: acfs update --force --agents-only"
+        check "deep.agent.claude_auth" "Claude Code auth" "fail" "binary error" "Reinstall: gtbi update --force --agents-only"
         return
     fi
 
@@ -3619,7 +3619,7 @@ check_postgres_role() {
         return  # Already reported in connection check
     fi
 
-    # Validate target user with the same contract the installer uses. ACFS
+    # Validate target user with the same contract the installer uses. GTBI
     # target users may contain dots/hyphens; the SQL below compares a string
     # literal after this validation, not an unquoted PostgreSQL identifier.
     local target_user="${TARGET_USER:-}"
@@ -3770,11 +3770,11 @@ check_network_dns() {
         local getent_bin=""
         local timeout_bin=""
         local grep_bin=""
-        dig_bin="$(_acfs_doctor_system_binary_path dig 2>/dev/null || true)"
-        host_bin="$(_acfs_doctor_system_binary_path host 2>/dev/null || true)"
-        getent_bin="$(_acfs_doctor_system_binary_path getent 2>/dev/null || true)"
-        timeout_bin="$(_acfs_doctor_system_binary_path timeout 2>/dev/null || true)"
-        grep_bin="$(_acfs_doctor_system_binary_path grep 2>/dev/null || true)"
+        dig_bin="$(_gtbi_doctor_system_binary_path dig 2>/dev/null || true)"
+        host_bin="$(_gtbi_doctor_system_binary_path host 2>/dev/null || true)"
+        getent_bin="$(_gtbi_doctor_system_binary_path getent 2>/dev/null || true)"
+        timeout_bin="$(_gtbi_doctor_system_binary_path timeout 2>/dev/null || true)"
+        grep_bin="$(_gtbi_doctor_system_binary_path grep 2>/dev/null || true)"
         if [[ -n "$dig_bin" && -n "$grep_bin" ]]; then
             if "$dig_bin" +short +time=5 +tries=1 "$host" 2>/dev/null | "$grep_bin" -qE '^[0-9]'; then
                 resolved=true
@@ -3811,7 +3811,7 @@ check_network_dns() {
 # Tests HTTP(S) connectivity to GitHub (critical for installer downloads)
 check_network_github() {
     local curl_bin=""
-    curl_bin="$(_acfs_doctor_system_binary_path curl 2>/dev/null || true)"
+    curl_bin="$(_gtbi_doctor_system_binary_path curl 2>/dev/null || true)"
     if [[ -z "$curl_bin" ]]; then
         check "deep.network.github" "GitHub connectivity" "warn" "curl not installed"
         return
@@ -3847,7 +3847,7 @@ check_network_github() {
 # Tests connectivity to the configured APT mirror
 check_network_apt_mirror() {
     local curl_bin=""
-    curl_bin="$(_acfs_doctor_system_binary_path curl 2>/dev/null || true)"
+    curl_bin="$(_gtbi_doctor_system_binary_path curl 2>/dev/null || true)"
     if [[ -z "$curl_bin" ]]; then
         return  # Already warned in github check
     fi
@@ -3887,7 +3887,7 @@ check_network_apt_mirror() {
 deep_check_notifications() {
     local runtime_home=""
     runtime_home="$(doctor_runtime_home)"
-    local config_file="${runtime_home}/.config/acfs/config.yaml"
+    local config_file="${runtime_home}/.config/gtbi/config.yaml"
     local enabled="" topic="" server=""
 
     # Read config (same logic as notify.sh)
@@ -3904,25 +3904,25 @@ deep_check_notifications() {
     fi
 
     # Allow env overrides
-    enabled="${ACFS_NTFY_ENABLED:-$enabled}"
-    topic="${ACFS_NTFY_TOPIC:-$topic}"
-    server="${ACFS_NTFY_SERVER:-$server}"
+    enabled="${GTBI_NTFY_ENABLED:-$enabled}"
+    topic="${GTBI_NTFY_TOPIC:-$topic}"
+    server="${GTBI_NTFY_SERVER:-$server}"
     server="${server:-https://ntfy.sh}"
 
     # Check configuration state
     if [[ "$enabled" != "true" ]]; then
-        check "deep.notifications.ntfy" "ntfy.sh notifications" "warn" "not enabled" "acfs notifications enable"
+        check "deep.notifications.ntfy" "ntfy.sh notifications" "warn" "not enabled" "gtbi notifications enable"
         return
     fi
 
     if [[ -z "$topic" ]]; then
-        check "deep.notifications.ntfy" "ntfy.sh notifications" "warn" "enabled but no topic set" "acfs notifications enable"
+        check "deep.notifications.ntfy" "ntfy.sh notifications" "warn" "enabled but no topic set" "gtbi notifications enable"
         return
     fi
 
     # Topic and enabled are set -- test server connectivity
     local curl_bin=""
-    curl_bin="$(_acfs_doctor_system_binary_path curl 2>/dev/null || true)"
+    curl_bin="$(_gtbi_doctor_system_binary_path curl 2>/dev/null || true)"
     if [[ -z "$curl_bin" ]]; then
         check "deep.notifications.ntfy" "ntfy.sh notifications" "warn" "curl not available" "apt install curl"
         return
@@ -3935,7 +3935,7 @@ deep_check_notifications() {
     if [[ "$http_code" =~ ^2 ]]; then
         check "deep.notifications.ntfy" "ntfy.sh notifications" "pass" "enabled, server reachable (${server})"
     elif [[ "$http_code" == "000" ]]; then
-        check "deep.notifications.ntfy" "ntfy.sh notifications" "warn" "server unreachable (${server})" "Check network or acfs notifications set-server <url>"
+        check "deep.notifications.ntfy" "ntfy.sh notifications" "warn" "server unreachable (${server})" "Check network or gtbi notifications set-server <url>"
     else
         check "deep.notifications.ntfy" "ntfy.sh notifications" "warn" "server returned HTTP ${http_code}" "Check server URL: ${server}"
     fi
@@ -3957,7 +3957,7 @@ check_vault_configured() {
     # Check if VAULT_ADDR is set (required for vault to work)
     if [[ -z "${VAULT_ADDR:-}" ]]; then
         # Check common config locations
-        if _acfs_doctor_shell_has_active_assignment "$auth_home/.zshrc.local" "VAULT_ADDR"; then
+        if _gtbi_doctor_shell_has_active_assignment "$auth_home/.zshrc.local" "VAULT_ADDR"; then
             check "deep.cloud.vault_config" "Vault config" "pass" "VAULT_ADDR in ~/.zshrc.local"
         else
             check "deep.cloud.vault_config" "Vault config" "warn" "VAULT_ADDR not set" "export VAULT_ADDR=https://your-vault-server:8200"
@@ -4071,7 +4071,7 @@ check_supabase_auth() {
     auth_home="$(doctor_runtime_home)"
 
     if ! supabase_bin="$(doctor_binary_path supabase 2>/dev/null || true)" || [[ -z "$supabase_bin" ]]; then
-        check "deep.cloud.supabase_auth" "Supabase CLI" "warn" "not installed" "acfs update --cloud-only --force"
+        check "deep.cloud.supabase_auth" "Supabase CLI" "warn" "not installed" "gtbi update --cloud-only --force"
         return
     fi
 
@@ -4181,10 +4181,10 @@ print_summary() {
     echo ""
 
     # Print legend (bead qup)
-    local doctor_ci="${ACFS_DOCTOR_CI:-false}"
+    local doctor_ci="${GTBI_DOCTOR_CI:-false}"
     if [[ "$doctor_ci" != "true" ]]; then
         if [[ "$HAS_GUM" == "true" ]]; then
-            gum style --foreground "$ACFS_MUTED" "  Legend: $(gum style --foreground "$ACFS_SUCCESS" "✓") installed  $(gum style --foreground "$ACFS_MUTED" "○") skipped  $(gum style --foreground "$ACFS_ERROR" "✖") missing  $(gum style --foreground "$ACFS_WARNING" "⚠") warning  $(gum style --foreground "$ACFS_WARNING" "?") timeout"
+            gum style --foreground "$GTBI_MUTED" "  Legend: $(gum style --foreground "$GTBI_SUCCESS" "✓") installed  $(gum style --foreground "$GTBI_MUTED" "○") skipped  $(gum style --foreground "$GTBI_ERROR" "✖") missing  $(gum style --foreground "$GTBI_WARNING" "⚠") warning  $(gum style --foreground "$GTBI_WARNING" "?") timeout"
         else
             echo -e "  Legend: ${GREEN}✓${NC} installed  ${CYAN}○${NC} skipped  ${RED}✖${NC} missing  ${YELLOW}⚠${NC} warning  ${YELLOW}?${NC} timeout"
         fi
@@ -4217,11 +4217,11 @@ print_json() {
     local json_output
     json_output=$(cat << EOF
 {
-  "acfs_version": "$(json_escape "$ACFS_VERSION")",
+  "gtbi_version": "$(json_escape "$GTBI_VERSION")",
   "timestamp": "$(json_escape "$(date -Iseconds)")",
-  "mode": "$(json_escape "${ACFS_MODE:-vibe}")",
+  "mode": "$(json_escape "${GTBI_MODE:-vibe}")",
   "deep_mode": $DEEP_MODE,
-  "user": "$(json_escape "$(_acfs_doctor_resolve_current_user 2>/dev/null || true)")",
+  "user": "$(json_escape "$(_gtbi_doctor_resolve_current_user 2>/dev/null || true)")",
   "os": {"id": "$(json_escape "$os_id")", "version": "$(json_escape "$os_version")"},
   "checks": [$checks_json],
   "summary": {"pass": $PASS_COUNT, "skip": $SKIP_COUNT, "warn": $WARN_COUNT, "fail": $FAIL_COUNT}$deep_summary_json
@@ -4230,10 +4230,10 @@ EOF
 )
 
     # Use output formatting library if available
-    if type -t acfs_format_output &>/dev/null; then
+    if type -t gtbi_format_output &>/dev/null; then
         local resolved_format
-        resolved_format=$(acfs_resolve_format "$_DOCTOR_OUTPUT_FORMAT")
-        acfs_format_output "$json_output" "$resolved_format" "$_DOCTOR_SHOW_STATS"
+        resolved_format=$(gtbi_resolve_format "$_DOCTOR_OUTPUT_FORMAT")
+        gtbi_format_output "$json_output" "$resolved_format" "$_DOCTOR_SHOW_STATS"
     else
         # Fallback: direct JSON output
         printf '%s\n' "$json_output"
@@ -4243,9 +4243,9 @@ EOF
 # Main
 main() {
     local invoked_as
-    invoked_as="$(basename "${0:-acfs}")"
+    invoked_as="$(basename "${0:-gtbi}")"
 
-    # If installed as `acfs`, support subcommands (doctor/update/services-setup/version).
+    # If installed as `gtbi`, support subcommands (doctor/update/services-setup/version).
     local subcmd="${1:-}"
     case "$subcmd" in
         doctor|check)
@@ -4254,10 +4254,10 @@ main() {
         info|i)
             shift
             local info_script=""
-            info_script="$(_acfs_doctor_find_lib_script "info.sh" 2>/dev/null || true)"
+            info_script="$(_gtbi_doctor_find_lib_script "info.sh" 2>/dev/null || true)"
 
             if [[ -n "$info_script" ]]; then
-                _acfs_doctor_exec_bash_script "$info_script" "$@"
+                _gtbi_doctor_exec_bash_script "$info_script" "$@"
             fi
 
             echo "Error: info.sh not found" >&2
@@ -4266,10 +4266,10 @@ main() {
         status)
             shift
             local status_script=""
-            status_script="$(_acfs_doctor_find_lib_script "status.sh" 2>/dev/null || true)"
+            status_script="$(_gtbi_doctor_find_lib_script "status.sh" 2>/dev/null || true)"
 
             if [[ -n "$status_script" ]]; then
-                _acfs_doctor_exec_bash_script "$status_script" "$@"
+                _gtbi_doctor_exec_bash_script "$status_script" "$@"
             fi
 
             echo "Error: status.sh not found" >&2
@@ -4278,10 +4278,10 @@ main() {
         rescue|rescue-advisor|first-run-rescue)
             shift
             local rescue_script=""
-            rescue_script="$(_acfs_doctor_find_lib_script "rescue.sh" 2>/dev/null || true)"
+            rescue_script="$(_gtbi_doctor_find_lib_script "rescue.sh" 2>/dev/null || true)"
 
             if [[ -n "$rescue_script" ]]; then
-                _acfs_doctor_exec_bash_script "$rescue_script" "$@"
+                _gtbi_doctor_exec_bash_script "$rescue_script" "$@"
             fi
 
             echo "Error: rescue.sh not found" >&2
@@ -4290,10 +4290,10 @@ main() {
         capacity|cap)
             shift
             local capacity_script=""
-            capacity_script="$(_acfs_doctor_find_lib_script "capacity.sh" 2>/dev/null || true)"
+            capacity_script="$(_gtbi_doctor_find_lib_script "capacity.sh" 2>/dev/null || true)"
 
             if [[ -n "$capacity_script" ]]; then
-                _acfs_doctor_exec_bash_script "$capacity_script" "$@"
+                _gtbi_doctor_exec_bash_script "$capacity_script" "$@"
             fi
 
             echo "Error: capacity.sh not found" >&2
@@ -4302,10 +4302,10 @@ main() {
         policy-lint|policy_lint)
             shift
             local policy_lint_script=""
-            policy_lint_script="$(_acfs_doctor_find_lib_script "policy_lint.sh" 2>/dev/null || true)"
+            policy_lint_script="$(_gtbi_doctor_find_lib_script "policy_lint.sh" 2>/dev/null || true)"
 
             if [[ -n "$policy_lint_script" ]]; then
-                _acfs_doctor_exec_bash_script "$policy_lint_script" "$@"
+                _gtbi_doctor_exec_bash_script "$policy_lint_script" "$@"
             fi
 
             echo "Error: policy_lint.sh not found" >&2
@@ -4314,10 +4314,10 @@ main() {
         credential-preflight|credential_preflight|secrets-preflight|secrets_preflight)
             shift
             local credential_preflight_script=""
-            credential_preflight_script="$(_acfs_doctor_find_lib_script "credential_preflight.sh" 2>/dev/null || true)"
+            credential_preflight_script="$(_gtbi_doctor_find_lib_script "credential_preflight.sh" 2>/dev/null || true)"
 
             if [[ -n "$credential_preflight_script" ]]; then
-                _acfs_doctor_exec_bash_script "$credential_preflight_script" "$@"
+                _gtbi_doctor_exec_bash_script "$credential_preflight_script" "$@"
             fi
 
             echo "Error: credential_preflight.sh not found" >&2
@@ -4330,10 +4330,10 @@ main() {
                 plan|advisor)
                     [[ $# -gt 0 ]] && shift
                     local swarm_plan_script=""
-                    swarm_plan_script="$(_acfs_doctor_find_lib_script "swarm_plan.sh" 2>/dev/null || true)"
+                    swarm_plan_script="$(_gtbi_doctor_find_lib_script "swarm_plan.sh" 2>/dev/null || true)"
 
                     if [[ -n "$swarm_plan_script" ]]; then
-                        _acfs_doctor_exec_bash_script "$swarm_plan_script" "$@"
+                        _gtbi_doctor_exec_bash_script "$swarm_plan_script" "$@"
                     fi
 
                     echo "Error: swarm_plan.sh not found" >&2
@@ -4342,10 +4342,10 @@ main() {
                 status|snapshot)
                     [[ $# -gt 0 ]] && shift
                     local swarm_status_script=""
-                    swarm_status_script="$(_acfs_doctor_find_lib_script "swarm_status.sh" 2>/dev/null || true)"
+                    swarm_status_script="$(_gtbi_doctor_find_lib_script "swarm_status.sh" 2>/dev/null || true)"
 
                     if [[ -n "$swarm_status_script" ]]; then
-                        _acfs_doctor_exec_bash_script "$swarm_status_script" "$@"
+                        _gtbi_doctor_exec_bash_script "$swarm_status_script" "$@"
                     fi
 
                     echo "Error: swarm_status.sh not found" >&2
@@ -4354,10 +4354,10 @@ main() {
                 doctor|preflight)
                     [[ $# -gt 0 ]] && shift
                     local swarm_doctor_script=""
-                    swarm_doctor_script="$(_acfs_doctor_find_lib_script "swarm_doctor.sh" 2>/dev/null || true)"
+                    swarm_doctor_script="$(_gtbi_doctor_find_lib_script "swarm_doctor.sh" 2>/dev/null || true)"
 
                     if [[ -n "$swarm_doctor_script" ]]; then
-                        _acfs_doctor_exec_bash_script "$swarm_doctor_script" "$@"
+                        _gtbi_doctor_exec_bash_script "$swarm_doctor_script" "$@"
                     fi
 
                     echo "Error: swarm_doctor.sh not found" >&2
@@ -4366,10 +4366,10 @@ main() {
                 simulate|simulation|dry-run)
                     [[ $# -gt 0 ]] && shift
                     local swarm_simulation_script=""
-                    swarm_simulation_script="$(_acfs_doctor_find_lib_script "swarm_simulation.sh" 2>/dev/null || true)"
+                    swarm_simulation_script="$(_gtbi_doctor_find_lib_script "swarm_simulation.sh" 2>/dev/null || true)"
 
                     if [[ -n "$swarm_simulation_script" ]]; then
-                        _acfs_doctor_exec_bash_script "$swarm_simulation_script" "$@"
+                        _gtbi_doctor_exec_bash_script "$swarm_simulation_script" "$@"
                     fi
 
                     echo "Error: swarm_simulation.sh not found" >&2
@@ -4378,10 +4378,10 @@ main() {
                 packet|packets|startup-packet)
                     [[ $# -gt 0 ]] && shift
                     local swarm_packet_script=""
-                    swarm_packet_script="$(_acfs_doctor_find_lib_script "swarm_packet.sh" 2>/dev/null || true)"
+                    swarm_packet_script="$(_gtbi_doctor_find_lib_script "swarm_packet.sh" 2>/dev/null || true)"
 
                     if [[ -n "$swarm_packet_script" ]]; then
-                        _acfs_doctor_exec_bash_script "$swarm_packet_script" "$@"
+                        _gtbi_doctor_exec_bash_script "$swarm_packet_script" "$@"
                     fi
 
                     echo "Error: swarm_packet.sh not found" >&2
@@ -4390,10 +4390,10 @@ main() {
                 assign|assignment|allocate|allocations)
                     [[ $# -gt 0 ]] && shift
                     local swarm_assign_script=""
-                    swarm_assign_script="$(_acfs_doctor_find_lib_script "swarm_assign.sh" 2>/dev/null || true)"
+                    swarm_assign_script="$(_gtbi_doctor_find_lib_script "swarm_assign.sh" 2>/dev/null || true)"
 
                     if [[ -n "$swarm_assign_script" ]]; then
-                        _acfs_doctor_exec_bash_script "$swarm_assign_script" "$@"
+                        _gtbi_doctor_exec_bash_script "$swarm_assign_script" "$@"
                     fi
 
                     echo "Error: swarm_assign.sh not found" >&2
@@ -4402,10 +4402,10 @@ main() {
                 convergence|converge|audit)
                     [[ $# -gt 0 ]] && shift
                     local swarm_convergence_script=""
-                    swarm_convergence_script="$(_acfs_doctor_find_lib_script "swarm_convergence.sh" 2>/dev/null || true)"
+                    swarm_convergence_script="$(_gtbi_doctor_find_lib_script "swarm_convergence.sh" 2>/dev/null || true)"
 
                     if [[ -n "$swarm_convergence_script" ]]; then
-                        _acfs_doctor_exec_bash_script "$swarm_convergence_script" "$@"
+                        _gtbi_doctor_exec_bash_script "$swarm_convergence_script" "$@"
                     fi
 
                     echo "Error: swarm_convergence.sh not found" >&2
@@ -4414,10 +4414,10 @@ main() {
                 calibration|calibrate|capacity-calibration)
                     [[ $# -gt 0 ]] && shift
                     local swarm_calibration_script=""
-                    swarm_calibration_script="$(_acfs_doctor_find_lib_script "swarm_calibration.sh" 2>/dev/null || true)"
+                    swarm_calibration_script="$(_gtbi_doctor_find_lib_script "swarm_calibration.sh" 2>/dev/null || true)"
 
                     if [[ -n "$swarm_calibration_script" ]]; then
-                        _acfs_doctor_exec_bash_script "$swarm_calibration_script" "$@"
+                        _gtbi_doctor_exec_bash_script "$swarm_calibration_script" "$@"
                     fi
 
                     echo "Error: swarm_calibration.sh not found" >&2
@@ -4426,22 +4426,22 @@ main() {
                 inventory|hosts|host-inventory)
                     [[ $# -gt 0 ]] && shift
                     local swarm_inventory_script=""
-                    swarm_inventory_script="$(_acfs_doctor_find_lib_script "swarm_inventory.sh" 2>/dev/null || true)"
+                    swarm_inventory_script="$(_gtbi_doctor_find_lib_script "swarm_inventory.sh" 2>/dev/null || true)"
 
                     if [[ -n "$swarm_inventory_script" ]]; then
-                        _acfs_doctor_exec_bash_script "$swarm_inventory_script" "$@"
+                        _gtbi_doctor_exec_bash_script "$swarm_inventory_script" "$@"
                     fi
 
                     echo "Error: swarm_inventory.sh not found" >&2
                     return 1
                     ;;
                 help|-h|--help)
-                    echo "Usage: acfs swarm <plan|status|doctor|simulate|packet|assign|convergence|calibration|inventory> [--json]"
+                    echo "Usage: gtbi swarm <plan|status|doctor|simulate|packet|assign|convergence|calibration|inventory> [--json]"
                     return 0
                     ;;
                 *)
                     echo "Error: unknown swarm subcommand: $swarm_subcmd" >&2
-                    echo "Try 'acfs swarm status --help' for usage." >&2
+                    echo "Try 'gtbi swarm status --help' for usage." >&2
                     return 2
                     ;;
             esac
@@ -4449,10 +4449,10 @@ main() {
         swarm-plan|swarm_plan)
             shift
             local swarm_plan_script=""
-            swarm_plan_script="$(_acfs_doctor_find_lib_script "swarm_plan.sh" 2>/dev/null || true)"
+            swarm_plan_script="$(_gtbi_doctor_find_lib_script "swarm_plan.sh" 2>/dev/null || true)"
 
             if [[ -n "$swarm_plan_script" ]]; then
-                _acfs_doctor_exec_bash_script "$swarm_plan_script" "$@"
+                _gtbi_doctor_exec_bash_script "$swarm_plan_script" "$@"
             fi
 
             echo "Error: swarm_plan.sh not found" >&2
@@ -4461,10 +4461,10 @@ main() {
         swarm-status|swarm_status)
             shift
             local swarm_status_script=""
-            swarm_status_script="$(_acfs_doctor_find_lib_script "swarm_status.sh" 2>/dev/null || true)"
+            swarm_status_script="$(_gtbi_doctor_find_lib_script "swarm_status.sh" 2>/dev/null || true)"
 
             if [[ -n "$swarm_status_script" ]]; then
-                _acfs_doctor_exec_bash_script "$swarm_status_script" "$@"
+                _gtbi_doctor_exec_bash_script "$swarm_status_script" "$@"
             fi
 
             echo "Error: swarm_status.sh not found" >&2
@@ -4473,10 +4473,10 @@ main() {
         swarm-simulate|swarm_simulate)
             shift
             local swarm_simulation_script=""
-            swarm_simulation_script="$(_acfs_doctor_find_lib_script "swarm_simulation.sh" 2>/dev/null || true)"
+            swarm_simulation_script="$(_gtbi_doctor_find_lib_script "swarm_simulation.sh" 2>/dev/null || true)"
 
             if [[ -n "$swarm_simulation_script" ]]; then
-                _acfs_doctor_exec_bash_script "$swarm_simulation_script" "$@"
+                _gtbi_doctor_exec_bash_script "$swarm_simulation_script" "$@"
             fi
 
             echo "Error: swarm_simulation.sh not found" >&2
@@ -4485,10 +4485,10 @@ main() {
         swarm-packet|swarm_packet)
             shift
             local swarm_packet_script=""
-            swarm_packet_script="$(_acfs_doctor_find_lib_script "swarm_packet.sh" 2>/dev/null || true)"
+            swarm_packet_script="$(_gtbi_doctor_find_lib_script "swarm_packet.sh" 2>/dev/null || true)"
 
             if [[ -n "$swarm_packet_script" ]]; then
-                _acfs_doctor_exec_bash_script "$swarm_packet_script" "$@"
+                _gtbi_doctor_exec_bash_script "$swarm_packet_script" "$@"
             fi
 
             echo "Error: swarm_packet.sh not found" >&2
@@ -4497,10 +4497,10 @@ main() {
         swarm-assign|swarm_assign)
             shift
             local swarm_assign_script=""
-            swarm_assign_script="$(_acfs_doctor_find_lib_script "swarm_assign.sh" 2>/dev/null || true)"
+            swarm_assign_script="$(_gtbi_doctor_find_lib_script "swarm_assign.sh" 2>/dev/null || true)"
 
             if [[ -n "$swarm_assign_script" ]]; then
-                _acfs_doctor_exec_bash_script "$swarm_assign_script" "$@"
+                _gtbi_doctor_exec_bash_script "$swarm_assign_script" "$@"
             fi
 
             echo "Error: swarm_assign.sh not found" >&2
@@ -4509,10 +4509,10 @@ main() {
         swarm-convergence|swarm_convergence)
             shift
             local swarm_convergence_script=""
-            swarm_convergence_script="$(_acfs_doctor_find_lib_script "swarm_convergence.sh" 2>/dev/null || true)"
+            swarm_convergence_script="$(_gtbi_doctor_find_lib_script "swarm_convergence.sh" 2>/dev/null || true)"
 
             if [[ -n "$swarm_convergence_script" ]]; then
-                _acfs_doctor_exec_bash_script "$swarm_convergence_script" "$@"
+                _gtbi_doctor_exec_bash_script "$swarm_convergence_script" "$@"
             fi
 
             echo "Error: swarm_convergence.sh not found" >&2
@@ -4521,10 +4521,10 @@ main() {
         swarm-calibration|swarm_calibration)
             shift
             local swarm_calibration_script=""
-            swarm_calibration_script="$(_acfs_doctor_find_lib_script "swarm_calibration.sh" 2>/dev/null || true)"
+            swarm_calibration_script="$(_gtbi_doctor_find_lib_script "swarm_calibration.sh" 2>/dev/null || true)"
 
             if [[ -n "$swarm_calibration_script" ]]; then
-                _acfs_doctor_exec_bash_script "$swarm_calibration_script" "$@"
+                _gtbi_doctor_exec_bash_script "$swarm_calibration_script" "$@"
             fi
 
             echo "Error: swarm_calibration.sh not found" >&2
@@ -4533,10 +4533,10 @@ main() {
         swarm-inventory|swarm_inventory)
             shift
             local swarm_inventory_script=""
-            swarm_inventory_script="$(_acfs_doctor_find_lib_script "swarm_inventory.sh" 2>/dev/null || true)"
+            swarm_inventory_script="$(_gtbi_doctor_find_lib_script "swarm_inventory.sh" 2>/dev/null || true)"
 
             if [[ -n "$swarm_inventory_script" ]]; then
-                _acfs_doctor_exec_bash_script "$swarm_inventory_script" "$@"
+                _gtbi_doctor_exec_bash_script "$swarm_inventory_script" "$@"
             fi
 
             echo "Error: swarm_inventory.sh not found" >&2
@@ -4550,21 +4550,21 @@ main() {
                     [[ $# -gt 0 ]] && shift
                     ;;
                 help|-h|--help)
-                    echo "Usage: acfs coordinate doctor [--json]"
+                    echo "Usage: gtbi coordinate doctor [--json]"
                     return 0
                     ;;
                 *)
                     echo "Error: unknown coordinate subcommand: $coordinate_subcmd" >&2
-                    echo "Try 'acfs coordinate doctor --help' for usage." >&2
+                    echo "Try 'gtbi coordinate doctor --help' for usage." >&2
                     return 2
                     ;;
             esac
 
             local swarm_doctor_script=""
-            swarm_doctor_script="$(_acfs_doctor_find_lib_script "swarm_doctor.sh" 2>/dev/null || true)"
+            swarm_doctor_script="$(_gtbi_doctor_find_lib_script "swarm_doctor.sh" 2>/dev/null || true)"
 
             if [[ -n "$swarm_doctor_script" ]]; then
-                _acfs_doctor_exec_bash_script "$swarm_doctor_script" "$@"
+                _gtbi_doctor_exec_bash_script "$swarm_doctor_script" "$@"
             fi
 
             echo "Error: swarm_doctor.sh not found" >&2
@@ -4573,10 +4573,10 @@ main() {
         dashboard)
             shift
             local dashboard_script=""
-            dashboard_script="$(_acfs_doctor_find_lib_script "dashboard.sh" 2>/dev/null || true)"
+            dashboard_script="$(_gtbi_doctor_find_lib_script "dashboard.sh" 2>/dev/null || true)"
 
             if [[ -n "$dashboard_script" ]]; then
-                _acfs_doctor_exec_bash_script "$dashboard_script" "$@"
+                _gtbi_doctor_exec_bash_script "$dashboard_script" "$@"
             fi
 
             echo "Error: dashboard.sh not found" >&2
@@ -4585,10 +4585,10 @@ main() {
         continue|progress)
             shift
             local continue_script=""
-            continue_script="$(_acfs_doctor_find_lib_script "continue.sh" 2>/dev/null || true)"
+            continue_script="$(_gtbi_doctor_find_lib_script "continue.sh" 2>/dev/null || true)"
 
             if [[ -n "$continue_script" ]]; then
-                _acfs_doctor_exec_bash_script "$continue_script" "$@"
+                _gtbi_doctor_exec_bash_script "$continue_script" "$@"
             fi
 
             echo "Error: continue.sh not found" >&2
@@ -4597,10 +4597,10 @@ main() {
         changelog|changes|log)
             shift
             local changelog_script=""
-            changelog_script="$(_acfs_doctor_find_lib_script "changelog.sh" 2>/dev/null || true)"
+            changelog_script="$(_gtbi_doctor_find_lib_script "changelog.sh" 2>/dev/null || true)"
 
             if [[ -n "$changelog_script" ]]; then
-                _acfs_doctor_exec_bash_script "$changelog_script" "$@"
+                _gtbi_doctor_exec_bash_script "$changelog_script" "$@"
             fi
 
             echo "Error: changelog.sh not found" >&2
@@ -4609,10 +4609,10 @@ main() {
         export-config|export)
             shift
             local export_config_script=""
-            export_config_script="$(_acfs_doctor_find_lib_script "export-config.sh" 2>/dev/null || true)"
+            export_config_script="$(_gtbi_doctor_find_lib_script "export-config.sh" 2>/dev/null || true)"
 
             if [[ -n "$export_config_script" ]]; then
-                _acfs_doctor_exec_bash_script "$export_config_script" "$@"
+                _gtbi_doctor_exec_bash_script "$export_config_script" "$@"
             fi
 
             echo "Error: export-config.sh not found" >&2
@@ -4621,10 +4621,10 @@ main() {
         cheatsheet|cs)
             shift
             local cheatsheet_script=""
-            cheatsheet_script="$(_acfs_doctor_find_lib_script "cheatsheet.sh" 2>/dev/null || true)"
+            cheatsheet_script="$(_gtbi_doctor_find_lib_script "cheatsheet.sh" 2>/dev/null || true)"
 
             if [[ -n "$cheatsheet_script" ]]; then
-                _acfs_doctor_exec_bash_script "$cheatsheet_script" "$@"
+                _gtbi_doctor_exec_bash_script "$cheatsheet_script" "$@"
             fi
 
             echo "Error: cheatsheet.sh not found" >&2
@@ -4632,16 +4632,16 @@ main() {
             ;;
         session|sessions)
             shift
-            acfs_session_main "$@"
+            gtbi_session_main "$@"
             return $?
             ;;
         update)
             shift
             local update_script=""
-            update_script="$(_acfs_doctor_find_lib_script "update.sh" 2>/dev/null || true)"
+            update_script="$(_gtbi_doctor_find_lib_script "update.sh" 2>/dev/null || true)"
 
             if [[ -n "$update_script" ]]; then
-                _acfs_doctor_exec_bash_script "$update_script" "$@"
+                _gtbi_doctor_exec_bash_script "$update_script" "$@"
             fi
 
             echo "Error: update.sh not found" >&2
@@ -4650,10 +4650,10 @@ main() {
         newproj|new-project|new)
             shift
             local newproj_script=""
-            newproj_script="$(_acfs_doctor_find_lib_script "newproj.sh" 2>/dev/null || true)"
+            newproj_script="$(_gtbi_doctor_find_lib_script "newproj.sh" 2>/dev/null || true)"
 
             if [[ -n "$newproj_script" ]]; then
-                _acfs_doctor_exec_bash_script "$newproj_script" "$@"
+                _gtbi_doctor_exec_bash_script "$newproj_script" "$@"
             fi
 
             echo "Error: newproj.sh not found" >&2
@@ -4662,10 +4662,10 @@ main() {
         services-setup|services|setup)
             shift
             local services_script=""
-            services_script="$(_acfs_doctor_find_scripts_script "services-setup.sh" 2>/dev/null || true)"
+            services_script="$(_gtbi_doctor_find_scripts_script "services-setup.sh" 2>/dev/null || true)"
 
             if [[ -n "$services_script" ]]; then
-                _acfs_doctor_exec_bash_script "$services_script" "$@"
+                _gtbi_doctor_exec_bash_script "$services_script" "$@"
             fi
 
             echo "Error: services-setup.sh not found" >&2
@@ -4674,10 +4674,10 @@ main() {
         support-bundle|bundle)
             shift
             local support_script=""
-            support_script="$(_acfs_doctor_find_lib_script "support.sh" 2>/dev/null || true)"
+            support_script="$(_gtbi_doctor_find_lib_script "support.sh" 2>/dev/null || true)"
 
             if [[ -n "$support_script" ]]; then
-                _acfs_doctor_exec_bash_script "$support_script" "$@"
+                _gtbi_doctor_exec_bash_script "$support_script" "$@"
             fi
 
             echo "Error: support.sh not found" >&2
@@ -4686,10 +4686,10 @@ main() {
         provisioning-packet|provider-packet)
             shift
             local provisioning_packet_script=""
-            provisioning_packet_script="$(_acfs_doctor_find_lib_script "provisioning_packet.sh" 2>/dev/null || true)"
+            provisioning_packet_script="$(_gtbi_doctor_find_lib_script "provisioning_packet.sh" 2>/dev/null || true)"
 
             if [[ -n "$provisioning_packet_script" ]]; then
-                _acfs_doctor_exec_bash_script "$provisioning_packet_script" "$@"
+                _gtbi_doctor_exec_bash_script "$provisioning_packet_script" "$@"
             fi
 
             echo "Error: provisioning_packet.sh not found" >&2
@@ -4698,10 +4698,10 @@ main() {
         offline-pack|artifact-pack)
             shift
             local offline_artifact_pack_script=""
-            offline_artifact_pack_script="$(_acfs_doctor_find_lib_script "offline_artifact_pack.sh" 2>/dev/null || true)"
+            offline_artifact_pack_script="$(_gtbi_doctor_find_lib_script "offline_artifact_pack.sh" 2>/dev/null || true)"
 
             if [[ -n "$offline_artifact_pack_script" ]]; then
-                _acfs_doctor_exec_bash_script "$offline_artifact_pack_script" "$@"
+                _gtbi_doctor_exec_bash_script "$offline_artifact_pack_script" "$@"
             fi
 
             echo "Error: offline_artifact_pack.sh not found" >&2
@@ -4709,22 +4709,22 @@ main() {
             ;;
         version|-v|--version)
             local version_file=""
-            version_file="$(_acfs_doctor_find_project_path "VERSION" 2>/dev/null || true)"
+            version_file="$(_gtbi_doctor_find_project_path "VERSION" 2>/dev/null || true)"
 
             if [[ -n "$version_file" ]]; then
                 cat "$version_file"
             else
-                echo "${ACFS_VERSION:-unknown}"
+                echo "${GTBI_VERSION:-unknown}"
             fi
             return 0
             ;;
         help|-h)
-            print_acfs_help
+            print_gtbi_help
             return 0
             ;;
         "")
-            if [[ "$invoked_as" == "acfs" ]]; then
-                print_acfs_help
+            if [[ "$invoked_as" == "gtbi" ]]; then
+                print_gtbi_help
                 return 0
             fi
             ;;
@@ -4782,11 +4782,11 @@ main() {
                 shift
                 ;;
             --help|-h)
-                echo "Usage: acfs doctor [--json] [--format <fmt>] [--stats] [--deep] [--no-cache] [--fix] [--dry-run]"
+                echo "Usage: gtbi doctor [--json] [--format <fmt>] [--stats] [--deep] [--no-cache] [--fix] [--dry-run]"
                 echo ""
                 echo "Options:"
                 echo "  --json           Output results as JSON"
-                echo "  --format <fmt>   Output format: json or toon (env: ACFS_OUTPUT_FORMAT, TOON_DEFAULT_FORMAT)"
+                echo "  --format <fmt>   Output format: json or toon (env: GTBI_OUTPUT_FORMAT, TOON_DEFAULT_FORMAT)"
                 echo "  --toon, -t       Shorthand for --format toon"
                 echo "  --stats          Show token savings statistics (JSON vs TOON bytes)"
                 echo "  --deep      Run functional tests (auth, connections)"
@@ -4805,18 +4805,18 @@ main() {
                 echo ""
                 echo "Fix mode applies safe, reversible fixes for common issues:"
                 echo "  - PATH ordering in shell config"
-                echo "  - Missing ACFS config files"
+                echo "  - Missing GTBI config files"
                 echo "  - Missing symlinks for tools"
                 echo "  - Missing zsh plugins"
                 echo "Use --dry-run to preview fixes before applying."
                 echo ""
                 echo "Examples:"
-                echo "  acfs doctor                   # Quick health check"
-                echo "  acfs doctor --deep            # Full functional tests"
-                echo "  acfs doctor --deep --no-cache # Force fresh deep checks"
-                echo "  acfs doctor --json            # JSON output for tooling"
-                echo "  acfs doctor --fix             # Apply safe fixes"
-                echo "  acfs doctor --fix --dry-run   # Preview fixes"
+                echo "  gtbi doctor                   # Quick health check"
+                echo "  gtbi doctor --deep            # Full functional tests"
+                echo "  gtbi doctor --deep --no-cache # Force fresh deep checks"
+                echo "  gtbi doctor --json            # JSON output for tooling"
+                echo "  gtbi doctor --fix             # Apply safe fixes"
+                echo "  gtbi doctor --fix --dry-run   # Preview fixes"
                 exit 0
                 ;;
             *)
@@ -4839,18 +4839,18 @@ main() {
             echo ""
             gum style \
                 --border rounded \
-                --border-foreground "$ACFS_PRIMARY" \
+                --border-foreground "$GTBI_PRIMARY" \
                 --padding "1 2" \
                 --margin "0 0 1 0" \
-                "$(gum style --foreground "$ACFS_ACCENT" --bold '🩺 ACFS Doctor') $(gum style --foreground "$ACFS_MUTED" "v$ACFS_VERSION")
+                "$(gum style --foreground "$GTBI_ACCENT" --bold '🩺 GTBI Doctor') $(gum style --foreground "$GTBI_MUTED" "v$GTBI_VERSION")
 
-$(gum style --foreground "$ACFS_MUTED" "User:") $(gum style --foreground "$ACFS_TEAL" "$(_acfs_doctor_resolve_current_user 2>/dev/null || true)")  $(gum style --foreground "$ACFS_MUTED" "Mode:") $(gum style --foreground "$ACFS_TEAL" "${ACFS_MODE:-vibe}")
-$(gum style --foreground "$ACFS_MUTED" "OS:") $(gum style --foreground "$ACFS_TEAL" "$os_pretty")"
+$(gum style --foreground "$GTBI_MUTED" "User:") $(gum style --foreground "$GTBI_TEAL" "$(_gtbi_doctor_resolve_current_user 2>/dev/null || true)")  $(gum style --foreground "$GTBI_MUTED" "Mode:") $(gum style --foreground "$GTBI_TEAL" "${GTBI_MODE:-vibe}")
+$(gum style --foreground "$GTBI_MUTED" "OS:") $(gum style --foreground "$GTBI_TEAL" "$os_pretty")"
         else
             echo ""
-            echo "ACFS Doctor v$ACFS_VERSION"
-            echo "User: $(_acfs_doctor_resolve_current_user 2>/dev/null || true)"
-            echo "Mode: ${ACFS_MODE:-vibe}"
+            echo "GTBI Doctor v$GTBI_VERSION"
+            echo "User: $(_gtbi_doctor_resolve_current_user 2>/dev/null || true)"
+            echo "Mode: ${GTBI_MODE:-vibe}"
             echo "OS: $os_pretty"
             echo ""
         fi

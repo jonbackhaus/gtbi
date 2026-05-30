@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-# ACFS Tool Provenance - local installed-tool ledger
+# GTBI Tool Provenance - local installed-tool ledger
 #
 # Read-only JSON ledger for support bundles and swarm diagnostics.
 # No network calls are made; unknown provenance is reported explicitly.
@@ -12,15 +12,15 @@ PROVENANCE_JSON=false
 PROVENANCE_GENERATED_AT="$(date -Iseconds 2>/dev/null || date)"
 PROVENANCE_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROVENANCE_REPO_ROOT="$(cd "$PROVENANCE_SCRIPT_DIR/../.." 2>/dev/null && pwd || true)"
-PROVENANCE_CHECKSUMS_FILE="${ACFS_PROVENANCE_CHECKSUMS_FILE:-}"
-PROVENANCE_TOOLS_FILE="${ACFS_PROVENANCE_TOOLS_FILE:-}"
-PROVENANCE_TIMEOUT="${ACFS_PROVENANCE_TIMEOUT:-5}"
+PROVENANCE_CHECKSUMS_FILE="${GTBI_PROVENANCE_CHECKSUMS_FILE:-}"
+PROVENANCE_TOOLS_FILE="${GTBI_PROVENANCE_TOOLS_FILE:-}"
+PROVENANCE_TIMEOUT="${GTBI_PROVENANCE_TIMEOUT:-5}"
 PROVENANCE_OBJECTS=()
 PROVENANCE_WARNINGS=()
 
 provenance_usage() {
     cat <<'EOF'
-Usage: acfs provenance [OPTIONS]
+Usage: gtbi provenance [OPTIONS]
 
 Emit a local installed-tool provenance ledger. The command is read-only,
 offline, and redacts user-specific paths.
@@ -30,9 +30,9 @@ Options:
   --help, -h   Show this help
 
 Environment:
-  ACFS_PROVENANCE_TOOLS_FILE      Pipe-delimited tool spec override for tests
-  ACFS_PROVENANCE_CHECKSUMS_FILE  checksums.yaml path for installer references
-  ACFS_PROVENANCE_TIMEOUT         Per-tool version timeout seconds (default: 5)
+  GTBI_PROVENANCE_TOOLS_FILE      Pipe-delimited tool spec override for tests
+  GTBI_PROVENANCE_CHECKSUMS_FILE  checksums.yaml path for installer references
+  GTBI_PROVENANCE_TIMEOUT         Per-tool version timeout seconds (default: 5)
 EOF
 }
 
@@ -49,7 +49,7 @@ provenance_parse_args() {
                 ;;
             *)
                 echo "Error: unknown option: $1" >&2
-                echo "Run 'acfs provenance --help' for usage." >&2
+                echo "Run 'gtbi provenance --help' for usage." >&2
                 return 2
                 ;;
         esac
@@ -79,9 +79,9 @@ provenance_find_checksums_file() {
     fi
 
     for candidate in \
-        "${ACFS_HOME:-}/checksums.yaml" \
+        "${GTBI_HOME:-}/checksums.yaml" \
         "$PROVENANCE_REPO_ROOT/checksums.yaml" \
-        "$HOME/.acfs/checksums.yaml"
+        "$HOME/.gtbi/checksums.yaml"
     do
         [[ -n "$candidate" && -f "$candidate" ]] || continue
         printf '%s\n' "$candidate"
@@ -156,7 +156,7 @@ provenance_redact_text() {
     local text="${1:-}"
     local home_candidate=""
 
-    for home_candidate in "${HOME:-}" "${TARGET_HOME:-}" "${ACFS_HOME:-}"; do
+    for home_candidate in "${HOME:-}" "${TARGET_HOME:-}" "${GTBI_HOME:-}"; do
         [[ -n "$home_candidate" && "$home_candidate" == /* && "$home_candidate" != "/" ]] || continue
         text="${text//$home_candidate/\$HOME}"
     done
@@ -347,7 +347,7 @@ provenance_emit_human() {
     local report="$1"
     local jq_bin="$2"
 
-    echo "ACFS Tool Provenance"
+    echo "GTBI Tool Provenance"
     echo "Status: $("${jq_bin}" -r '.status' <<<"$report")"
     "${jq_bin}" -r '.summary | "Tools: \(.total) total, \(.present) present, \(.missing) missing, \(.mismatched) mismatched, \(.unknown_provenance) unknown provenance"' <<<"$report"
     echo ""
@@ -362,7 +362,7 @@ provenance_main() {
 
     jq_bin="$(provenance_binary_path jq 2>/dev/null || true)"
     if [[ -z "$jq_bin" ]]; then
-        echo "Error: jq is required for acfs provenance" >&2
+        echo "Error: jq is required for gtbi provenance" >&2
         return 2
     fi
 

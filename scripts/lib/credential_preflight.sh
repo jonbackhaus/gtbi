@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # ============================================================
-# ACFS Credential Preflight - read-only local secret exposure check
+# GTBI Credential Preflight - read-only local secret exposure check
 #
-# Scans bounded ACFS-owned files plus documented shell/env surfaces before
+# Scans bounded GTBI-owned files plus documented shell/env surfaces before
 # agent launch or support-bundle sharing. It reports categories and counts,
 # never raw secret values or snippets, and never mutates user files.
 # ============================================================
@@ -16,8 +16,8 @@ export PATH
 CRED_PREFLIGHT_JSON=false
 CRED_PREFLIGHT_ROOT=""
 CRED_PREFLIGHT_HOME="${HOME:-}"
-CRED_PREFLIGHT_ACFS_HOME="${ACFS_HOME:-}"
-CRED_PREFLIGHT_MAX_BYTES="${ACFS_CREDENTIAL_PREFLIGHT_MAX_BYTES:-1048576}"
+CRED_PREFLIGHT_GTBI_HOME="${GTBI_HOME:-}"
+CRED_PREFLIGHT_MAX_BYTES="${GTBI_CREDENTIAL_PREFLIGHT_MAX_BYTES:-1048576}"
 CRED_PREFLIGHT_GENERATED_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date)"
 CRED_PREFLIGHT_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CRED_PREFLIGHT_REPO_ROOT="$(cd "$CRED_PREFLIGHT_SCRIPT_DIR/../.." 2>/dev/null && pwd || true)"
@@ -31,9 +31,9 @@ CRED_PREFLIGHT_JQ_BIN=""
 
 credential_preflight_usage() {
     cat <<'EOF'
-Usage: acfs credential-preflight [OPTIONS]
+Usage: gtbi credential-preflight [OPTIONS]
 
-Read-only scan for credential exposure in bounded ACFS, shell config, and shell
+Read-only scan for credential exposure in bounded GTBI, shell config, and shell
 history surfaces. Output reports categories and counts only; it never prints raw
 secret values or snippets.
 
@@ -41,7 +41,7 @@ Options:
   --json              Emit machine-readable JSON
   --human             Emit human-readable output (default)
   --home DIR          Target user home (default: current HOME)
-  --acfs-home DIR     ACFS home (default: $ACFS_HOME or HOME/.acfs)
+  --gtbi-home DIR     GTBI home (default: $GTBI_HOME or HOME/.gtbi)
   --root DIR          Repository root used for relative path display
   --file FILE         Scan one file; repeat to scan several files
   --exclude PATH      Skip a file or directory; repeat for multiple paths
@@ -66,9 +66,9 @@ credential_preflight_parse_args() {
                 CRED_PREFLIGHT_HOME="$2"
                 shift 2
                 ;;
-            --acfs-home)
-                [[ -n "${2:-}" && "$2" != -* ]] || { echo "Error: --acfs-home requires a directory" >&2; return 2; }
-                CRED_PREFLIGHT_ACFS_HOME="$2"
+            --gtbi-home)
+                [[ -n "${2:-}" && "$2" != -* ]] || { echo "Error: --gtbi-home requires a directory" >&2; return 2; }
+                CRED_PREFLIGHT_GTBI_HOME="$2"
                 shift 2
                 ;;
             --root)
@@ -98,7 +98,7 @@ credential_preflight_parse_args() {
                 ;;
             *)
                 echo "Error: unknown option: $1" >&2
-                echo "Run 'acfs credential-preflight --help' for usage." >&2
+                echo "Run 'gtbi credential-preflight --help' for usage." >&2
                 return 2
                 ;;
         esac
@@ -133,7 +133,7 @@ credential_preflight_binary_path() {
 credential_preflight_require_jq() {
     CRED_PREFLIGHT_JQ_BIN="$(credential_preflight_binary_path jq 2>/dev/null || true)"
     if [[ -z "$CRED_PREFLIGHT_JQ_BIN" ]]; then
-        echo "Error: jq is required for acfs credential-preflight" >&2
+        echo "Error: jq is required for gtbi credential-preflight" >&2
         return 2
     fi
 }
@@ -180,16 +180,16 @@ credential_preflight_display_path() {
     local path="$2"
     local abs_path=""
     local home_abs=""
-    local acfs_abs=""
+    local gtbi_abs=""
 
     abs_path="$(credential_preflight_abs_path "$path" 2>/dev/null || printf '%s\n' "$path")"
     home_abs="$(credential_preflight_abs_path "$CRED_PREFLIGHT_HOME" 2>/dev/null || true)"
-    acfs_abs="$(credential_preflight_abs_path "$CRED_PREFLIGHT_ACFS_HOME" 2>/dev/null || true)"
+    gtbi_abs="$(credential_preflight_abs_path "$CRED_PREFLIGHT_GTBI_HOME" 2>/dev/null || true)"
 
     if [[ "$abs_path" == "$root/"* ]]; then
         printf '%s\n' "${abs_path#"$root/"}"
-    elif [[ -n "$acfs_abs" && "$abs_path" == "$acfs_abs/"* ]]; then
-        printf '$ACFS_HOME/%s\n' "${abs_path#"$acfs_abs/"}"
+    elif [[ -n "$gtbi_abs" && "$abs_path" == "$gtbi_abs/"* ]]; then
+        printf '$GTBI_HOME/%s\n' "${abs_path#"$gtbi_abs/"}"
     elif [[ -n "$home_abs" && "$abs_path" == "$home_abs/"* ]]; then
         printf '$HOME/%s\n' "${abs_path#"$home_abs/"}"
     else
@@ -205,8 +205,8 @@ credential_preflight_source_for_path() {
     case "$base" in
         .bash_history|.zsh_history) printf 'shell_history\n' ;;
         .bashrc|.zshrc|.profile|.bash_profile|.zprofile|.zshenv|.env|.env.local) printf 'shell_env\n' ;;
-        state.json|onboard_progress.json|acfs.manifest.yaml) printf 'acfs_state\n' ;;
-        install-*.log|install_summary_*.json|performance_budget*.json) printf 'acfs_log\n' ;;
+        state.json|onboard_progress.json|gtbi.manifest.yaml) printf 'gtbi_state\n' ;;
+        install-*.log|install_summary_*.json|performance_budget*.json) printf 'gtbi_log\n' ;;
         *) printf 'explicit\n' ;;
     esac
 }
@@ -229,7 +229,7 @@ credential_preflight_add_scan_file() {
 
 credential_preflight_collect_default_files() {
     local home_dir="$1"
-    local acfs_home="$2"
+    local gtbi_home="$2"
     local path=""
 
     for path in \
@@ -247,19 +247,19 @@ credential_preflight_collect_default_files() {
         credential_preflight_add_scan_file "$path"
     done
 
-    if [[ -n "$acfs_home" ]]; then
+    if [[ -n "$gtbi_home" ]]; then
         for path in \
-            "$acfs_home/state.json" \
-            "$acfs_home/onboard_progress.json" \
-            "$acfs_home/acfs.manifest.yaml"
+            "$gtbi_home/state.json" \
+            "$gtbi_home/onboard_progress.json" \
+            "$gtbi_home/gtbi.manifest.yaml"
         do
             credential_preflight_add_scan_file "$path"
         done
 
-        if [[ -d "$acfs_home/logs" ]]; then
+        if [[ -d "$gtbi_home/logs" ]]; then
             while IFS= read -r path; do
-                credential_preflight_add_scan_file "$path" "acfs_log"
-            done < <(find "$acfs_home/logs" -maxdepth 1 -type f \( -name 'install-*.log' -o -name 'install_summary_*.json' -o -name 'performance_budget*.json' \) 2>/dev/null | LC_ALL=C sort | head -20)
+                credential_preflight_add_scan_file "$path" "gtbi_log"
+            done < <(find "$gtbi_home/logs" -maxdepth 1 -type f \( -name 'install-*.log' -o -name 'install_summary_*.json' -o -name 'performance_budget*.json' \) 2>/dev/null | LC_ALL=C sort | head -20)
         fi
     fi
 }
@@ -603,7 +603,7 @@ credential_preflight_main() {
     local parse_status=0
     local root=""
     local home_abs=""
-    local acfs_abs=""
+    local gtbi_abs=""
     local idx=0
 
     credential_preflight_parse_args "$@" || parse_status=$?
@@ -619,16 +619,16 @@ credential_preflight_main() {
     if [[ -n "$home_abs" ]]; then
         CRED_PREFLIGHT_HOME="$home_abs"
     fi
-    if [[ -z "$CRED_PREFLIGHT_ACFS_HOME" && -n "$CRED_PREFLIGHT_HOME" ]]; then
-        CRED_PREFLIGHT_ACFS_HOME="$CRED_PREFLIGHT_HOME/.acfs"
+    if [[ -z "$CRED_PREFLIGHT_GTBI_HOME" && -n "$CRED_PREFLIGHT_HOME" ]]; then
+        CRED_PREFLIGHT_GTBI_HOME="$CRED_PREFLIGHT_HOME/.gtbi"
     fi
-    acfs_abs="$(credential_preflight_abs_path "$CRED_PREFLIGHT_ACFS_HOME" 2>/dev/null || true)"
-    if [[ -n "$acfs_abs" ]]; then
-        CRED_PREFLIGHT_ACFS_HOME="$acfs_abs"
+    gtbi_abs="$(credential_preflight_abs_path "$CRED_PREFLIGHT_GTBI_HOME" 2>/dev/null || true)"
+    if [[ -n "$gtbi_abs" ]]; then
+        CRED_PREFLIGHT_GTBI_HOME="$gtbi_abs"
     fi
 
     if [[ ${#CRED_PREFLIGHT_SCAN_FILES[@]} -eq 0 ]]; then
-        credential_preflight_collect_default_files "$CRED_PREFLIGHT_HOME" "$CRED_PREFLIGHT_ACFS_HOME"
+        credential_preflight_collect_default_files "$CRED_PREFLIGHT_HOME" "$CRED_PREFLIGHT_GTBI_HOME"
     fi
 
     for ((idx = 0; idx < ${#CRED_PREFLIGHT_SCAN_FILES[@]}; idx++)); do

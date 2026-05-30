@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # ============================================================
-# ACFS newproj TUI Wizard - Tech Stack Detection
+# GTBI newproj TUI Wizard - Tech Stack Detection
 # Automatically detects project tech stack from config files
 # ============================================================
 
 # Prevent multiple sourcing
-if [[ -n "${_ACFS_NEWPROJ_DETECT_SH_LOADED:-}" ]]; then
+if [[ -n "${_GTBI_NEWPROJ_DETECT_SH_LOADED:-}" ]]; then
     return 0
 fi
-_ACFS_NEWPROJ_DETECT_SH_LOADED=1
+_GTBI_NEWPROJ_DETECT_SH_LOADED=1
 
 # ============================================================
 # Tech Stack Detection

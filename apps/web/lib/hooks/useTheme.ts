@@ -19,7 +19,7 @@ import { safeGetItem, safeSetItem } from "@/lib/utils";
 export type ThemeMode = "dark" | "light" | "system";
 export type ResolvedTheme = "dark" | "light";
 
-const STORAGE_KEY = "acfs-theme";
+const STORAGE_KEY = "gtbi-theme";
 
 /** Resolve "system" to the actual OS preference. */
 function resolveTheme(mode: ThemeMode): ResolvedTheme {

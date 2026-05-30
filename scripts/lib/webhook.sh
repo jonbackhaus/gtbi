@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-# ACFS Installer - Webhook Notification Library
+# GTBI Installer - Webhook Notification Library
 #
 # Provides webhook notification for installation completion,
 # useful for fleet management, monitoring, and personal alerts.
@@ -9,20 +9,20 @@
 # ============================================================
 
 # Prevent multiple sourcing
-if [[ -n "${_ACFS_WEBHOOK_SH_LOADED:-}" ]]; then
+if [[ -n "${_GTBI_WEBHOOK_SH_LOADED:-}" ]]; then
     return 0
 fi
-_ACFS_WEBHOOK_SH_LOADED=1
+_GTBI_WEBHOOK_SH_LOADED=1
 
 # ============================================================
 # Configuration Sources (priority order)
 # ============================================================
 # 1. CLI flag: --webhook <url>
-# 2. Environment variable: ACFS_WEBHOOK_URL
-# 3. Config file: ~/.config/acfs/config.yaml (webhook_url key)
+# 2. Environment variable: GTBI_WEBHOOK_URL
+# 3. Config file: ~/.config/gtbi/config.yaml (webhook_url key)
 
 # Global webhook URL - set by parse_webhook_args or read_webhook_config
-ACFS_WEBHOOK_URL="${ACFS_WEBHOOK_URL:-}"
+GTBI_WEBHOOK_URL="${GTBI_WEBHOOK_URL:-}"
 
 webhook_sanitize_abs_nonroot_path() {
     local path_value="${1:-}"
@@ -207,7 +207,7 @@ webhook_runtime_home() {
     webhook_resolve_current_home
 }
 
-_ACFS_WEBHOOK_RUNTIME_HOME="$(webhook_runtime_home 2>/dev/null || true)"
+_GTBI_WEBHOOK_RUNTIME_HOME="$(webhook_runtime_home 2>/dev/null || true)"
 
 webhook_is_hex16_group() {
     [[ "${1:-}" =~ ^[0-9A-Fa-f]{1,4}$ ]]
@@ -336,21 +336,21 @@ webhook_validate_url() {
 # ============================================================
 
 # Read webhook URL from config file if not already set
-# Config file: ~/.config/acfs/config.yaml
+# Config file: ~/.config/gtbi/config.yaml
 # Format: webhook_url: "https://..."
 webhook_read_config() {
     # Skip if already set via env or CLI
-    if [[ -n "${ACFS_WEBHOOK_URL:-}" ]]; then
+    if [[ -n "${GTBI_WEBHOOK_URL:-}" ]]; then
         return 0
     fi
 
-    local config_home="${_ACFS_WEBHOOK_RUNTIME_HOME:-}"
+    local config_home="${_GTBI_WEBHOOK_RUNTIME_HOME:-}"
     local config_file=""
 
     if [[ -z "$config_home" ]]; then
         return 0
     fi
-    config_file="${config_home}/.config/acfs/config.yaml"
+    config_file="${config_home}/.config/gtbi/config.yaml"
 
     if [[ ! -f "$config_file" ]]; then
         return 0
@@ -365,7 +365,7 @@ webhook_read_config() {
 
     if [[ -n "$url" ]]; then
         if webhook_validate_url "$url"; then
-            ACFS_WEBHOOK_URL="$url"
+            GTBI_WEBHOOK_URL="$url"
             log_detail "Webhook URL loaded from config file"
         fi
     fi
@@ -381,11 +381,11 @@ webhook_read_config() {
 webhook_format_payload() {
     local status="$1"
     local summary_file="$2"
-    local url="${ACFS_WEBHOOK_URL:-}"
+    local url="${GTBI_WEBHOOK_URL:-}"
     local jq_bin=""
 
     # Read summary data
-    local hostname ip duration_seconds tools_installed acfs_version timestamp
+    local hostname ip duration_seconds tools_installed gtbi_version timestamp
     hostname=$(hostname 2>/dev/null || echo "unknown")
     ip=$(webhook_public_ip)
     jq_bin="$(webhook_system_binary_path jq 2>/dev/null || true)"
@@ -394,26 +394,26 @@ webhook_format_payload() {
     if [[ -f "$summary_file" ]]; then
         duration_seconds=$("$jq_bin" -r '.total_seconds // 0' "$summary_file" 2>/dev/null) || duration_seconds=0
         tools_installed=$("$jq_bin" -r '.phases | length // 0' "$summary_file" 2>/dev/null) || tools_installed=0
-        acfs_version=$("$jq_bin" -r '.environment.acfs_version // "unknown"' "$summary_file" 2>/dev/null) || acfs_version="unknown"
+        gtbi_version=$("$jq_bin" -r '.environment.gtbi_version // "unknown"' "$summary_file" 2>/dev/null) || gtbi_version="unknown"
         timestamp=$("$jq_bin" -r '.timestamp // empty' "$summary_file" 2>/dev/null) || timestamp=""
         [[ -n "$timestamp" ]] || timestamp=$(date -Iseconds)
     else
         duration_seconds=0
         tools_installed=0
-        acfs_version="${ACFS_VERSION:-unknown}"
+        gtbi_version="${GTBI_VERSION:-unknown}"
         timestamp=$(date -Iseconds)
     fi
 
     # Detect platform and format appropriately
     if [[ "$url" == *"hooks.slack.com"* ]]; then
         # Slack webhook format
-        _webhook_format_slack "$jq_bin" "$status" "$hostname" "$ip" "$duration_seconds" "$tools_installed" "$acfs_version" "$timestamp"
+        _webhook_format_slack "$jq_bin" "$status" "$hostname" "$ip" "$duration_seconds" "$tools_installed" "$gtbi_version" "$timestamp"
     elif [[ "$url" == *"discord.com/api/webhooks"* ]]; then
         # Discord webhook format
-        _webhook_format_discord "$jq_bin" "$status" "$hostname" "$ip" "$duration_seconds" "$tools_installed" "$acfs_version" "$timestamp"
+        _webhook_format_discord "$jq_bin" "$status" "$hostname" "$ip" "$duration_seconds" "$tools_installed" "$gtbi_version" "$timestamp"
     else
         # Generic JSON format
-        _webhook_format_generic "$jq_bin" "$status" "$hostname" "$ip" "$duration_seconds" "$tools_installed" "$acfs_version" "$timestamp"
+        _webhook_format_generic "$jq_bin" "$status" "$hostname" "$ip" "$duration_seconds" "$tools_installed" "$gtbi_version" "$timestamp"
     fi
 }
 
@@ -451,11 +451,11 @@ _webhook_format_slack() {
     if [[ "$status" == "success" ]]; then
         emoji=":white_check_mark:"
         color="good"
-        text="ACFS installation completed successfully!"
+        text="GTBI installation completed successfully!"
     else
         emoji=":x:"
         color="danger"
-        text="ACFS installation failed"
+        text="GTBI installation failed"
     fi
 
     local duration_human
@@ -484,7 +484,7 @@ _webhook_format_slack() {
                     {title: "Phases", value: $tools, short: true},
                     {title: "Version", value: $version, short: true}
                 ],
-                footer: "ACFS Installer"
+                footer: "GTBI Installer"
             }]
         }'
 }
@@ -497,11 +497,11 @@ _webhook_format_discord() {
     if [[ "$status" == "success" ]]; then
         emoji=":white_check_mark:"
         color=5763719  # Green
-        title="ACFS Installation Complete"
+        title="GTBI Installation Complete"
     else
         emoji=":x:"
         color=15548997  # Red
-        title="ACFS Installation Failed"
+        title="GTBI Installation Failed"
     fi
 
     local duration_human
@@ -531,7 +531,7 @@ _webhook_format_discord() {
                     {name: "Phases", value: $tools, inline: true},
                     {name: "Version", value: $version, inline: true}
                 ],
-                footer: {text: "ACFS Installer"},
+                footer: {text: "GTBI Installer"},
                 timestamp: $timestamp
             }]
         }'
@@ -546,8 +546,8 @@ _webhook_format_discord() {
 # Returns: 0 always (non-blocking, don't fail install)
 webhook_send() {
     local status="${1:-success}"
-    local summary_file="${2:-${ACFS_SUMMARY_FILE:-}}"
-    local url="${ACFS_WEBHOOK_URL:-}"
+    local summary_file="${2:-${GTBI_SUMMARY_FILE:-}}"
+    local url="${GTBI_WEBHOOK_URL:-}"
     local curl_bin=""
     local jq_bin=""
 
@@ -598,7 +598,7 @@ webhook_send() {
 
         if [[ "$http_code" =~ ^2 ]]; then
             # Success - log only if debug mode
-            [[ "${ACFS_DEBUG:-}" == "true" ]] && echo "Webhook sent (HTTP $http_code)" >&2
+            [[ "${GTBI_DEBUG:-}" == "true" ]] && echo "Webhook sent (HTTP $http_code)" >&2
         else
             # Failure - log warning but don't fail
             echo "Webhook failed (HTTP $http_code)" >&2

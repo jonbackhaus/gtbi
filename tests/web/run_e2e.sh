@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-# ACFS Web Wizard - E2E Test Runner
+# GTBI Web Wizard - E2E Test Runner
 #
 # Runs Playwright tests with structured logging, retries, and
 # artifact collection in a predictable location.
@@ -24,7 +24,7 @@ WEB_DIR="$REPO_ROOT/apps/web"
 
 # Artifacts directory with timestamp
 TIMESTAMP="$(date +%Y%m%d-%H%M%S)"
-ARTIFACTS_DIR="${ACFS_E2E_ARTIFACTS:-$REPO_ROOT/test-results/web-e2e-$TIMESTAMP}"
+ARTIFACTS_DIR="${GTBI_E2E_ARTIFACTS:-$REPO_ROOT/test-results/web-e2e-$TIMESTAMP}"
 
 # Colors (only if stderr is a terminal)
 if [[ -t 2 ]]; then
@@ -118,7 +118,7 @@ done
 
 echo "" >&2
 echo "${BOLD}============================================================${NC}" >&2
-echo "${BOLD}ACFS Web Wizard E2E Tests${NC}" >&2
+echo "${BOLD}GTBI Web Wizard E2E Tests${NC}" >&2
 echo "${GRAY}Started: $(timestamp)${NC}" >&2
 echo "${GRAY}Artifacts: ${ARTIFACTS_DIR}${NC}" >&2
 echo "${BOLD}============================================================${NC}" >&2
@@ -255,7 +255,7 @@ echo "${BOLD}============================================================${NC}" 
 # Output JSON summary to stdout for machine parsing
 cat <<EOF
 {
-  "suite": "ACFS Web Wizard E2E",
+  "suite": "GTBI Web Wizard E2E",
   "passed": $PASSED,
   "failed": $FAILED,
   "skipped": $SKIPPED,

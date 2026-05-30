@@ -1,7 +1,7 @@
-# Agentic Coding Flywheel Setup (ACFS)
+# Agentic Coding Flywheel Setup (GTBI)
 
 <div align="center">
-  <img src="docs/assets/acfs_illustration.webp" alt="Agentic Coding Flywheel Setup (ACFS) - From zero to fully-configured agentic coding VPS in 30 minutes">
+  <img src="docs/assets/gtbi_illustration.webp" alt="Agentic Coding Flywheel Setup (GTBI) - From zero to fully-configured agentic coding VPS in 30 minutes">
 </div>
 
 ![Version](https://img.shields.io/badge/Version-0.7.0-bd93f9?style=for-the-badge)
@@ -30,7 +30,7 @@
 ### Quick Install
 
 ```bash
-curl -fsSL "https://raw.githubusercontent.com/Dicklesworthstone/agentic_coding_flywheel_setup/main/install.sh?$(date +%s)" | bash -s -- --yes --mode vibe
+curl -fsSL "https://raw.githubusercontent.com/jonbackhaus/gtbi/main/install.sh?$(date +%s)" | bash -s -- --yes --mode vibe
 ```
 
 The installer is **idempotent**—if interrupted, simply re-run it. It will automatically resume from the last completed phase without prompts.
@@ -38,10 +38,10 @@ The installer is **idempotent**—if interrupted, simply re-run it. It will auto
 > **Production environments:** For stable, reproducible installs, pin to a tagged release or specific commit:
 > ```bash
 > # Preferred: use a tagged release (e.g., v0.5.0)
-> curl -fsSL "https://raw.githubusercontent.com/Dicklesworthstone/agentic_coding_flywheel_setup/v0.5.0/install.sh" | bash -s -- --yes --mode vibe --ref v0.5.0
+> curl -fsSL "https://raw.githubusercontent.com/jonbackhaus/gtbi/v0.5.0/install.sh" | bash -s -- --yes --mode vibe --ref v0.5.0
 >
 > # Alternative: pin to a specific commit SHA
-> curl -fsSL "https://raw.githubusercontent.com/Dicklesworthstone/agentic_coding_flywheel_setup/abc1234/install.sh" | bash -s -- --yes --mode vibe --ref abc1234
+> curl -fsSL "https://raw.githubusercontent.com/jonbackhaus/gtbi/abc1234/install.sh" | bash -s -- --yes --mode vibe --ref abc1234
 > ```
 > Tagged releases are tested and stable. Passing `--ref` ensures all fetched scripts use the same version.
 
@@ -49,7 +49,7 @@ The installer is **idempotent**—if interrupted, simply re-run it. It will auto
 
 ## TL;DR
 
-**ACFS** is a complete system for bootstrapping agentic coding environments:
+**GTBI** is a complete system for bootstrapping agentic coding environments:
 
 **Why you'd care:**
 - **Zero to Hero:** Takes complete beginners from "I have a laptop" to "I have Claude/Codex/Gemini agents writing code for me on a VPS"
@@ -67,7 +67,7 @@ The installer is **idempotent**—if interrupted, simply re-run it. It will auto
 
 ---
 
-## The ACFS Experience
+## The GTBI Experience
 
 ```mermaid
 graph LR
@@ -115,7 +115,7 @@ graph LR
 ```
 
 ### For Beginners
-ACFS includes a **step-by-step wizard website** at [agent-flywheel.com](https://agent-flywheel.com) that guides complete beginners through:
+GTBI includes a **step-by-step wizard website** at [agent-flywheel.com](https://agent-flywheel.com) that guides complete beginners through:
 1. Installing a terminal on their local machine
 2. Generating SSH keys (for secure access later)
 3. Renting a VPS from providers like OVH or Contabo
@@ -125,16 +125,16 @@ ACFS includes a **step-by-step wizard website** at [agent-flywheel.com](https://
 7. Starting to code with AI agents
 
 ### For Developers
-ACFS is a **one-liner** that transforms any fresh Ubuntu VPS into a fully-configured development environment with modern tooling and three AI coding agents ready to go.
+GTBI is a **one-liner** that transforms any fresh Ubuntu VPS into a fully-configured development environment with modern tooling and three AI coding agents ready to go.
 
 ### For Teams
-ACFS provides a **reproducible, idempotent** setup that ensures every team member's VPS environment is identical—eliminating "works on my machine" for agentic workflows.
+GTBI provides a **reproducible, idempotent** setup that ensures every team member's VPS environment is identical—eliminating "works on my machine" for agentic workflows.
 
 ---
 
 ## Architecture & Design
 
-ACFS is built around a **single source of truth**: the manifest file. Everything else—the installer scripts, doctor checks, website content—derives from this central definition. This architecture ensures consistency and makes the system easy to extend.
+GTBI is built around a **single source of truth**: the manifest file. Everything else—the installer scripts, doctor checks, website content—derives from this central definition. This architecture ensures consistency and makes the system easy to extend.
 
 ### One-Page System Data Flow
 
@@ -154,12 +154,12 @@ flowchart TB
 
   %% Repo sources
   subgraph R["Repo (source)"]
-    Manifest["acfs.manifest.yaml<br/>Modules + install + verify + deps"]
+    Manifest["gtbi.manifest.yaml<br/>Modules + install + verify + deps"]
     Generator["packages/manifest<br/>Parser (Zod) + generate.ts"]
     Generated["scripts/generated/* (reference)<br/>category installers + doctor_checks.sh"]
     Installer["install.sh (production one-liner)"]
     Lib["scripts/lib/*<br/>security / doctor / update / services-setup"]
-    Configs["acfs/*<br/>zshrc + tmux.conf + onboard lessons"]
+    Configs["gtbi/*<br/>zshrc + tmux.conf + onboard lessons"]
     Checksums["checksums.yaml<br/>sha256 for upstream installers"]
     Tests["tests/vm/test_install_ubuntu.sh<br/>Docker integration test"]
   end
@@ -168,8 +168,8 @@ flowchart TB
   subgraph V["Target VPS (Ubuntu 25.10, auto-upgraded)"]
     Run["Run install.sh"]
     Verify["Verified upstream installers<br/>(security.sh + checksums.yaml)"]
-    AcfsHome["~/.acfs/<br/>configs + scripts + state.json"]
-    Commands["Commands<br/>acfs doctor / acfs update / acfs services-setup / onboard"]
+    AcfsHome["~/.gtbi/<br/>configs + scripts + state.json"]
+    Commands["Commands<br/>gtbi doctor / gtbi update / gtbi services-setup / onboard"]
     Tools["Installed tools<br/>bun/uv/rust/go + tmux/rg/gh + vault + ..."]
     Agents["Agent CLIs<br/>claude / codex / gemini"]
     Stack["Stack tools<br/>ntm / mcp_agent_mail / ubs / bv / cass / cm / caam / slb / dcg / ru"]
@@ -208,7 +208,7 @@ flowchart TB
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                            SOURCE OF TRUTH                                   │
 │  ┌─────────────────────────────────────────────────────────────────────┐    │
-│  │  acfs.manifest.yaml                                                  │    │
+│  │  gtbi.manifest.yaml                                                  │    │
 │  │  Tool Definitions • Install Commands • Verification Logic           │    │
 │  └─────────────────────────────────────────────────────────────────────┘    │
 └─────────────────────────────────────────────────────────────────────────────┘
@@ -243,7 +243,7 @@ flowchart TB
 ┌───────────────────────────────────────────────────────────────────────────┐
 │                           TARGET VPS                                       │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐   │
-│  │ 30+ Tools    │  │ zsh + p10k   │  │ AI Agents    │  │ ~/.acfs/     │   │
+│  │ 30+ Tools    │  │ zsh + p10k   │  │ AI Agents    │  │ ~/.gtbi/     │   │
 │  │ Installed    │  │ Shell Config │  │ Claude/Codex │  │ Configurations│  │
 │  └──────────────┘  └──────────────┘  └──────────────┘  └──────────────┘   │
 └───────────────────────────────────────────────────────────────────────────┘
@@ -251,7 +251,7 @@ flowchart TB
 
 ### Why This Architecture?
 
-**Single Source of Truth**: The manifest file (`acfs.manifest.yaml`) defines every tool—its name, description, install commands, and verification logic. When you add or edit a tool in the manifest, the generator automatically updates the generated scripts and manifest-derived checks. The production one-liner installer (`install.sh`) is still hand-written today, so behavior changes may also require updating `install.sh` until full migration.
+**Single Source of Truth**: The manifest file (`gtbi.manifest.yaml`) defines every tool—its name, description, install commands, and verification logic. When you add or edit a tool in the manifest, the generator automatically updates the generated scripts and manifest-derived checks. The production one-liner installer (`install.sh`) is still hand-written today, so behavior changes may also require updating `install.sh` until full migration.
 
 **TypeScript + Zod Validation**: The manifest parser uses Zod schemas to validate the YAML at parse time. Typos, missing fields, and structural errors are caught immediately during generation—not at runtime on a user's VPS when the installer fails halfway through.
 
@@ -264,28 +264,28 @@ flowchart TB
 
 | Component | Path | Technology | Purpose |
 |-----------|------|------------|---------|
-| **Manifest** | `acfs.manifest.yaml` | YAML | Single source of truth for all tools |
+| **Manifest** | `gtbi.manifest.yaml` | YAML | Single source of truth for all tools |
 | **Generator** | `packages/manifest/src/generate.ts` | TypeScript/Bun | Produces installer scripts from manifest |
 | **Website** | `apps/web/` | Next.js 16 + Tailwind 4 | Step-by-step wizard for beginners |
 | **Installer** | `install.sh` | Bash | One-liner bootstrap script |
 | **Lib Scripts** | `scripts/lib/` | Bash | Modular installer functions |
 | **Generated Scripts** | `scripts/generated/` | Bash | Auto-generated category installers (sourced by `install.sh`; execution is feature-flagged) |
-| **Configs** | `acfs/` | Shell/Tmux configs | Files deployed to `~/.acfs/` |
-| **Onboarding** | `acfs/onboard/` | Bash + Markdown | Interactive tutorial system |
+| **Configs** | `gtbi/` | Shell/Tmux configs | Files deployed to `~/.gtbi/` |
+| **Onboarding** | `gtbi/onboard/` | Bash + Markdown | Interactive tutorial system |
 | **Checksums** | `checksums.yaml` | YAML | SHA256 hashes for upstream installers |
 
 ---
 
 ## The Manifest System
 
-`acfs.manifest.yaml` is the **single source of truth** for all tools installed by ACFS. It defines what gets installed, how to install it, and how to verify the installation worked.
+`gtbi.manifest.yaml` is the **single source of truth** for all tools installed by GTBI. It defines what gets installed, how to install it, and how to verify the installation worked.
 
 ### Manifest Structure
 
 ```yaml
 version: "1.0"
 meta:
-  name: "ACFS"
+  name: "GTBI"
   description: "Agentic Coding Flywheel Setup"
   version: "0.1.0"
 
@@ -312,7 +312,7 @@ modules:
 
 Each module specifies:
 - **description**: Human-readable name
-- **category**: Grouping for installer organization (base, shell, cli, lang, tools, db, cloud, agents, stack, acfs)
+- **category**: Grouping for installer organization (base, shell, cli, lang, tools, db, cloud, agents, stack, gtbi)
 - **install**: Commands to run (or descriptions that become TODOs)
 - **verify**: Commands that must succeed to confirm installation
 
@@ -359,7 +359,7 @@ The generator itself is ~400 lines of TypeScript. The generated output is ~1000 
 
 ## Security Verification
 
-ACFS downloads and executes installer scripts from the internet. This is inherently risky—a compromised upstream could inject malicious code. The security verification system mitigates this risk.
+GTBI downloads and executes installer scripts from the internet. This is inherently risky—a compromised upstream could inject malicious code. The security verification system mitigates this risk.
 
 ### How It Works
 
@@ -414,7 +414,7 @@ git commit -m "chore: update upstream checksums"
 
 ### Why This Approach?
 
-The `curl | bash` pattern is controversial but practical. ACFS makes it safer by:
+The `curl | bash` pattern is controversial but practical. GTBI makes it safer by:
 - Verifying content before execution (not just transport via HTTPS)
 - Making checksums auditable in version control
 - Providing tools to detect and investigate changes
@@ -426,26 +426,26 @@ This is defense in depth—HTTPS protects transport, checksums protect content.
 
 ## The Installer
 
-The installer is the heart of ACFS—a modular Bash script that transforms a fresh Ubuntu VPS into a fully-configured development environment.
+The installer is the heart of GTBI—a modular Bash script that transforms a fresh Ubuntu VPS into a fully-configured development environment.
 
 ### Usage
 
 Full vibe mode (recommended for throwaway VPS):
 
 ```bash
-curl -fsSL "https://raw.githubusercontent.com/Dicklesworthstone/agentic_coding_flywheel_setup/main/install.sh?$(date +%s)" | bash -s -- --yes --mode vibe
+curl -fsSL "https://raw.githubusercontent.com/jonbackhaus/gtbi/main/install.sh?$(date +%s)" | bash -s -- --yes --mode vibe
 ```
 
 Interactive mode (asks for confirmation):
 
 ```bash
-curl -fsSL "https://raw.githubusercontent.com/Dicklesworthstone/agentic_coding_flywheel_setup/main/install.sh" | bash
+curl -fsSL "https://raw.githubusercontent.com/jonbackhaus/gtbi/main/install.sh" | bash
 ```
 
 Safe mode (no passwordless sudo, agent confirmations enabled):
 
 ```bash
-curl -fsSL "https://raw.githubusercontent.com/Dicklesworthstone/agentic_coding_flywheel_setup/main/install.sh" | bash -s -- --mode safe
+curl -fsSL "https://raw.githubusercontent.com/jonbackhaus/gtbi/main/install.sh" | bash -s -- --mode safe
 ```
 
 ### Installer Modes
@@ -469,8 +469,8 @@ graph TD
     F["Phase 6: AI Agents<br/><small>claude, codex, gemini</small>"]
     G["Phase 7: Cloud Tools<br/><small>vault, wrangler, supabase, vercel</small>"]
     H["Phase 8: Dicklesworthstone Stack<br/><small>ntm, dcg, ru, ubs, mcp_agent_mail, etc.</small>"]
-    I["Phase 9: Configuration<br/><small>Deploy acfs.zshrc, tmux.conf</small>"]
-    J["Phase 10: Verification<br/><small>acfs doctor</small>"]
+    I["Phase 9: Configuration<br/><small>Deploy gtbi.zshrc, tmux.conf</small>"]
+    J["Phase 10: Verification<br/><small>gtbi doctor</small>"]
 
     A --> B --> C --> D --> E --> F --> G --> H --> I --> J
 
@@ -483,31 +483,31 @@ graph TD
 | Property | Description |
 |----------|-------------|
 | **Idempotent** | Safe to re-run; skips already-installed tools |
-| **Checkpointed** | Phases resume automatically from `~/.acfs/state.json` |
+| **Checkpointed** | Phases resume automatically from `~/.gtbi/state.json` |
 | **Pre-flight validated** | Run `scripts/preflight.sh` to catch issues before install |
 | **Logged** | Colored output with progress indicators |
 | **Modular** | Each category is a separate sourceable script |
 
 ### Resume Capability
 
-The installer tracks progress in `~/.acfs/state.json`. If interrupted:
+The installer tracks progress in `~/.gtbi/state.json`. If interrupted:
 - Re-run the same command—it resumes from the last completed phase
 - No prompts or confirmations needed (with `--yes`)
 - Already-installed tools are detected and skipped
 
 To force a fresh reinstall of all tools:
 ```bash
-curl -fsSL "https://raw.githubusercontent.com/Dicklesworthstone/agentic_coding_flywheel_setup/main/install.sh" | bash -s -- --yes --mode vibe --force-reinstall
+curl -fsSL "https://raw.githubusercontent.com/jonbackhaus/gtbi/main/install.sh" | bash -s -- --yes --mode vibe --force-reinstall
 ```
 
 ### Pre-Flight Check
 
 Before running the full installer, validate your system:
 ```bash
-curl -fsSL "https://raw.githubusercontent.com/Dicklesworthstone/agentic_coding_flywheel_setup/main/scripts/preflight.sh" | bash
-curl -fsSL "https://raw.githubusercontent.com/Dicklesworthstone/agentic_coding_flywheel_setup/main/scripts/preflight.sh" | bash -s -- --json
-curl -fsSL "https://raw.githubusercontent.com/Dicklesworthstone/agentic_coding_flywheel_setup/main/scripts/preflight.sh" | bash -s -- --format toon
-curl -fsSL "https://raw.githubusercontent.com/Dicklesworthstone/agentic_coding_flywheel_setup/main/scripts/preflight.sh" | bash -s -- --network=skip
+curl -fsSL "https://raw.githubusercontent.com/jonbackhaus/gtbi/main/scripts/preflight.sh" | bash
+curl -fsSL "https://raw.githubusercontent.com/jonbackhaus/gtbi/main/scripts/preflight.sh" | bash -s -- --json
+curl -fsSL "https://raw.githubusercontent.com/jonbackhaus/gtbi/main/scripts/preflight.sh" | bash -s -- --format toon
+curl -fsSL "https://raw.githubusercontent.com/jonbackhaus/gtbi/main/scripts/preflight.sh" | bash -s -- --network=skip
 ```
 
 This checks:
@@ -517,20 +517,20 @@ This checks:
 - Network connectivity to required URLs
 - Cached `checksums.yaml` availability for verified upstream installers
 - APT lock status
-- Potential conflicts (nvm, pyenv, existing ACFS)
+- Potential conflicts (nvm, pyenv, existing GTBI)
 
 **Network checks performed:**
 | Check | What it verifies | Fix if failing |
 |-------|------------------|----------------|
 | DNS resolution | Can resolve github.com, raw.githubusercontent.com | Check provider DNS settings; inspect `resolvectl status` or `/etc/resolv.conf` |
 | GitHub HTTPS | Can reach github.com:443 | Check firewall, proxy, or VPN settings |
-| Verified installer URLs | Critical upstream installer endpoints from `checksums.yaml` plus ACFS raw content | May need to retry; transient failures OK; checksum verification still stays enabled |
+| Verified installer URLs | Critical upstream installer endpoints from `checksums.yaml` plus GTBI raw content | May need to retry; transient failures OK; checksum verification still stays enabled |
 | APT mirrors | Default Ubuntu mirror reachable | Check `/etc/apt/sources.list` or try different mirror |
 | Offline/cache mode | `--network=skip` skips live URL checks while still reporting local checksum availability | Re-run with `--network=check` when online before a release or difficult install |
 
 For checksum-refresh review, compare a generated candidate without changing `checksums.yaml`:
 ```bash
-candidate="/tmp/acfs-checksums.$$.candidate.yaml"
+candidate="/tmp/gtbi-checksums.$$.candidate.yaml"
 ./scripts/lib/security.sh --update-checksums > "$candidate"
 ./scripts/preflight.sh --checksum-candidate "$candidate"
 ```
@@ -541,7 +541,7 @@ candidate="/tmp/acfs-checksums.$$.candidate.yaml"
 |-------|-------|----------|
 | "Cannot resolve github.com" | DNS misconfigured | Check provider DNS settings or reboot; do not overwrite managed resolver files |
 | "Cannot reach github.com" | Firewall blocking HTTPS | Allow outbound port 443 |
-| "timeout contacting github.com" | Network, proxy, or provider route is slow | Retry with `--network=check`; if it persists after install bootstrap, run `acfs support-bundle` |
+| "timeout contacting github.com" | Network, proxy, or provider route is slow | Retry with `--network=check`; if it persists after install bootstrap, run `gtbi support-bundle` |
 | "APT mirror slow or unreachable" | Regional mirror down | Edit `/etc/apt/sources.list` to use `archive.ubuntu.com` |
 | "checksum candidate differs" | Upstream verified installer content changed | Review the diff; do not install from unverified fallback sources |
 | "APT lock held" | Another apt process running | Wait for it to finish; reboot and resume if it remains stuck |
@@ -561,7 +561,7 @@ The installer uses semantic colors for progress visibility:
 
 ### Automatic Ubuntu Upgrade
 
-ACFS automatically upgrades Ubuntu to version **25.10** before installation when running on older versions. This ensures compatibility with the latest packages and optimal performance.
+GTBI automatically upgrades Ubuntu to version **25.10** before installation when running on older versions. This ensures compatibility with the latest packages and optimal performance.
 
 **How it works:**
 1. Detects your current Ubuntu version
@@ -569,7 +569,7 @@ ACFS automatically upgrades Ubuntu to version **25.10** before installation when
 3. Performs sequential `do-release-upgrade` operations
 4. Reboots after each upgrade (handled automatically)
 5. Resumes via systemd service after reboot
-6. Continues ACFS installation once at target version
+6. Continues GTBI installation once at target version
 
 **Expected timeline:**
 - Each version hop takes 30-60 minutes
@@ -578,24 +578,24 @@ ACFS automatically upgrades Ubuntu to version **25.10** before installation when
 
 **To skip automatic upgrade:**
 ```bash
-curl -fsSL "https://raw.githubusercontent.com/Dicklesworthstone/agentic_coding_flywheel_setup/main/install.sh" | bash -s -- --yes --mode vibe --skip-ubuntu-upgrade
+curl -fsSL "https://raw.githubusercontent.com/jonbackhaus/gtbi/main/install.sh" | bash -s -- --yes --mode vibe --skip-ubuntu-upgrade
 ```
 
 **To specify a different target version:**
 ```bash
-curl -fsSL "https://raw.githubusercontent.com/Dicklesworthstone/agentic_coding_flywheel_setup/main/install.sh" | bash -s -- --yes --mode vibe --target-ubuntu=25.04
+curl -fsSL "https://raw.githubusercontent.com/jonbackhaus/gtbi/main/install.sh" | bash -s -- --yes --mode vibe --target-ubuntu=25.04
 ```
 
 **Monitoring upgrade progress:**
 ```bash
 # Check current status
-/var/lib/acfs/check_status.sh
+/var/lib/gtbi/check_status.sh
 
 # View upgrade logs
-journalctl -u acfs-upgrade-resume -f
+journalctl -u gtbi-upgrade-resume -f
 
 # View detailed logs
-tail -f /var/log/acfs/upgrade_resume.log
+tail -f /var/log/gtbi/upgrade_resume.log
 ```
 
 **Important notes:**
@@ -609,19 +609,19 @@ tail -f /var/log/acfs/upgrade_resume.log
 
 ## The Update Command
 
-After installation, keeping tools current is handled by `acfs-update`. It provides a unified interface for updating all installed components.
+After installation, keeping tools current is handled by `gtbi-update`. It provides a unified interface for updating all installed components.
 
 ### Usage
 
 ```bash
-acfs-update                  # Update apt, runtimes, shell, agents, cloud CLIs, and stack tools
-acfs-update --agents-only    # Only update coding agents
-acfs-update --runtime-only   # Only update runtimes (bun, rust, uv, go)
-acfs-update --dry-run        # Preview changes without making them
-acfs-update --yes --quiet --no-self-update
-                             # Automated mode that avoids changing the ACFS tree itself
-acfs-update --bootstrap-self-update
-                             # Explicitly convert a non-git ACFS install into a git checkout
+gtbi-update                  # Update apt, runtimes, shell, agents, cloud CLIs, and stack tools
+gtbi-update --agents-only    # Only update coding agents
+gtbi-update --runtime-only   # Only update runtimes (bun, rust, uv, go)
+gtbi-update --dry-run        # Preview changes without making them
+gtbi-update --yes --quiet --no-self-update
+                             # Automated mode that avoids changing the GTBI tree itself
+gtbi-update --bootstrap-self-update
+                             # Explicitly convert a non-git GTBI install into a git checkout
 ```
 
 ### What Gets Updated
@@ -674,13 +674,13 @@ acfs-update --bootstrap-self-update
 
 ### Logs
 
-Update logs are automatically saved to `~/.acfs/logs/updates/` with timestamps:
+Update logs are automatically saved to `~/.gtbi/logs/updates/` with timestamps:
 ```bash
 # View most recent log
-cat ~/.acfs/logs/updates/$(ls -1t ~/.acfs/logs/updates | head -1)
+cat ~/.gtbi/logs/updates/$(ls -1t ~/.gtbi/logs/updates | head -1)
 
 # Follow a running update
-tail -f ~/.acfs/logs/updates/$(ls -1t ~/.acfs/logs/updates | head -1)
+tail -f ~/.gtbi/logs/updates/$(ls -1t ~/.gtbi/logs/updates | head -1)
 ```
 
 ### Why Separate from the Installer?
@@ -694,33 +694,33 @@ The installer transforms a fresh VPS. The update command maintains an existing i
 
 ---
 
-## ACFS CLI Commands
+## GTBI CLI Commands
 
-After installation, the `acfs` command provides a unified interface for managing your environment. Each subcommand is designed to be fast, informative, and scriptable.
+After installation, the `gtbi` command provides a unified interface for managing your environment. Each subcommand is designed to be fast, informative, and scriptable.
 
 ### Quick Reference
 
 ```bash
-acfs info                    # Lightning-fast system overview
-acfs cheatsheet              # Discover installed aliases
-acfs dashboard generate      # Generate HTML status page
-acfs doctor                  # Health checks
-acfs newproj                 # Create a new project (TUI or CLI)
-acfs update                  # Update all tools
-acfs services-setup          # Configure agent credentials
-acfs continue                # View upgrade progress after reboot
+gtbi info                    # Lightning-fast system overview
+gtbi cheatsheet              # Discover installed aliases
+gtbi dashboard generate      # Generate HTML status page
+gtbi doctor                  # Health checks
+gtbi newproj                 # Create a new project (TUI or CLI)
+gtbi update                  # Update all tools
+gtbi services-setup          # Configure agent credentials
+gtbi continue                # View upgrade progress after reboot
 ```
 
-### `acfs newproj` — New Project Wizard
+### `gtbi newproj` — New Project Wizard
 
-Create a new project directory with ACFS defaults (git init, optional br/beads, Claude settings, AGENTS.md).
+Create a new project directory with GTBI defaults (git init, optional br/beads, Claude settings, AGENTS.md).
 The interactive wizard is recommended for beginners.
 
 Interactive wizard (recommended):
 ```bash
-acfs newproj --interactive
-acfs newproj -i
-acfs newproj -i myapp         # Prefill project name
+gtbi newproj --interactive
+gtbi newproj -i
+gtbi newproj -i myapp         # Prefill project name
 ```
 
 The wizard guides you through:
@@ -799,9 +799,9 @@ Options:
 
 CLI mode (automation):
 ```bash
-acfs newproj myapp
-acfs newproj myapp /custom/path
-acfs newproj myapp --no-br
+gtbi newproj myapp
+gtbi newproj myapp /custom/path
+gtbi newproj myapp --no-br
 ```
 
 Notes:
@@ -809,21 +809,21 @@ Notes:
 - Minimum terminal size: 60x15.
 - CLI mode skips existing AGENTS.md; the wizard overwrites it, so move it aside if you want to keep the old one.
 
-### `acfs info` — System Overview
+### `gtbi info` — System Overview
 
 Displays installation status in under 1 second by reading cached state (no verification).
 
 ```bash
-acfs info                # Terminal output (default)
-acfs info --json         # JSON output for scripting
-acfs info --html         # Self-contained HTML page
-acfs info --minimal      # Just essentials (IP, key commands)
+gtbi info                # Terminal output (default)
+gtbi info --json         # JSON output for scripting
+gtbi info --html         # Self-contained HTML page
+gtbi info --minimal      # Just essentials (IP, key commands)
 ```
 
 Example output:
 ```
 ╔══════════════════════════════════════════════════════════════╗
-║                    ACFS System Info                           ║
+║                    GTBI System Info                           ║
 ╠══════════════════════════════════════════════════════════════╣
 ║  Host: vps-12345.contabo.net                                  ║
 ║  IP: 192.168.1.100                                            ║
@@ -844,22 +844,22 @@ Example output:
 - **Offline**: No network calls required
 - **Fallback**: Graceful degradation if data missing
 
-### `acfs cheatsheet` — Alias Discovery
+### `gtbi cheatsheet` — Alias Discovery
 
-Parses `~/.acfs/zsh/acfs.zshrc` to show all installed aliases and commands.
+Parses `~/.gtbi/zsh/gtbi.zshrc` to show all installed aliases and commands.
 
 ```bash
-acfs cheatsheet              # List all aliases
-acfs cheatsheet git          # Filter by category or search term
-acfs cheatsheet --category Agents
-acfs cheatsheet --search docker
-acfs cheatsheet --json       # JSON output for tooling
+gtbi cheatsheet              # List all aliases
+gtbi cheatsheet git          # Filter by category or search term
+gtbi cheatsheet --category Agents
+gtbi cheatsheet --search docker
+gtbi cheatsheet --json       # JSON output for tooling
 ```
 
 Example output:
 ```
 ╔═══════════════════════════════════════════════════════════════╗
-║  ACFS Cheatsheet                                               ║
+║  GTBI Cheatsheet                                               ║
 ╠═══════════════════════════════════════════════════════════════╣
 ║  Agents                                                        ║
 ║    cc   → claude --dangerously-skip-permissions                ║
@@ -880,16 +880,16 @@ Example output:
 ╚═══════════════════════════════════════════════════════════════╝
 ```
 
-### `acfs dashboard` — HTML Status Page
+### `gtbi dashboard` — HTML Status Page
 
 Generates a self-contained HTML dashboard and optionally serves it.
 
 ```bash
-acfs dashboard generate              # Generate ~/.acfs/dashboard/index.html
-acfs dashboard generate --force      # Force regeneration
-acfs dashboard serve                 # Serve on localhost:8080
-acfs dashboard serve --port 3000     # Custom port
-acfs dashboard serve --public        # Bind to 0.0.0.0
+gtbi dashboard generate              # Generate ~/.gtbi/dashboard/index.html
+gtbi dashboard generate --force      # Force regeneration
+gtbi dashboard serve                 # Serve on localhost:8080
+gtbi dashboard serve --port 3000     # Custom port
+gtbi dashboard serve --public        # Bind to 0.0.0.0
 ```
 
 The dashboard provides:
@@ -898,12 +898,12 @@ The dashboard provides:
 - Quick command reference
 - Recent activity summary
 
-### `acfs services-setup` — Credential Configuration
+### `gtbi services-setup` — Credential Configuration
 
 Interactive wizard for configuring AI agent credentials and cloud service logins.
 
 ```bash
-acfs services-setup          # Run full setup wizard
+gtbi services-setup          # Run full setup wizard
 ```
 
 Guides you through:
@@ -915,12 +915,12 @@ Guides you through:
 
 Also offers to install **DCG (Destructive Command Guard)**, a Claude Code hook that blocks destructive commands like `rm -rf /`.
 
-### `acfs continue` — Upgrade Progress
+### `gtbi continue` — Upgrade Progress
 
 After an Ubuntu upgrade reboot, view installation progress:
 
 ```bash
-acfs continue                # Show current upgrade status
+gtbi continue                # Show current upgrade status
 ```
 
 Displays:
@@ -933,7 +933,7 @@ Displays:
 
 ## Learning Hub (Web)
 
-In addition to the terminal-based onboarding, ACFS provides a comprehensive web-based Learning Hub at [agent-flywheel.com/learn](https://agent-flywheel.com/learn).
+In addition to the terminal-based onboarding, GTBI provides a comprehensive web-based Learning Hub at [agent-flywheel.com/learn](https://agent-flywheel.com/learn).
 
 ### Web Lessons
 
@@ -1019,7 +1019,7 @@ The [Tool Status page](https://agent-flywheel.com/tools) provides a searchable c
 - **Search & Filter**: Find tools by name, CLI command, features, or tech stack
 - **Category Browsing**: Filter by "Flywheel Stack" (core agentic tools) or "Utilities"
 - **Tool Details**: Each card shows the tool name, CLI command, GitHub stars, features, and tech stack
-- **Live Data**: Content is auto-generated from `acfs.manifest.yaml` — never manually edited
+- **Live Data**: Content is auto-generated from `gtbi.manifest.yaml` — never manually edited
 
 This page helps users discover tools they may not know about and understand how each fits into the agentic coding workflow.
 
@@ -1112,7 +1112,7 @@ Each lesson includes:
 
 ## Interactive Onboarding (TUI)
 
-After installation, users can learn the ACFS workflow through an interactive terminal-based tutorial. The onboarding TUI discovers lesson markdown files dynamically from `acfs/onboard/lessons`, so the curriculum can grow as new tools and workflows are added without changing the launcher.
+After installation, users can learn the GTBI workflow through an interactive terminal-based tutorial. The onboarding TUI discovers lesson markdown files dynamically from `gtbi/onboard/lessons`, so the curriculum can grow as new tools and workflows are added without changing the launcher.
 
 ### Running Onboarding
 
@@ -1127,11 +1127,11 @@ onboard --reset        # Alias for reset
 
 ### Lessons
 
-Run `onboard --help` to see the currently discovered lesson list. The curriculum currently spans Linux basics, SSH, tmux, agent login, NTM, the flywheel workflow, updating, Beads, RCH, and other ACFS tools. Because lessons are discovered by filename, adding a new `NN_name.md` file automatically extends the tutorial.
+Run `onboard --help` to see the currently discovered lesson list. The curriculum currently spans Linux basics, SSH, tmux, agent login, NTM, the flywheel workflow, updating, Beads, RCH, and other GTBI tools. Because lessons are discovered by filename, adding a new `NN_name.md` file automatically extends the tutorial.
 
 ### Progress Tracking
 
-Progress is saved in `~/.acfs/onboard_progress.json`:
+Progress is saved in `~/.gtbi/onboard_progress.json`:
 
 ```json
 {
@@ -1151,7 +1151,7 @@ If [Charmbracelet Gum](https://github.com/charmbracelet/gum) is installed, the o
 
 ## Tools Installed
 
-ACFS installs a comprehensive suite of **30+ tools** organized into categories:
+GTBI installs a comprehensive suite of **30+ tools** organized into categories:
 
 ### Shell & Terminal UX
 
@@ -1246,10 +1246,10 @@ alias gmi='gemini --yolo'
 
 **Installation & Updates:**
 Claude Code should be installed and updated using its native mechanisms:
-- **Install:** ACFS uses the official native installer (`claude.ai/install.sh`), checksum-verified via `checksums.yaml` (installs to `~/.local/bin/claude`)
-- **Update:** Use `claude update --channel latest` (built-in) or run `acfs update --agents-only`
+- **Install:** GTBI uses the official native installer (`claude.ai/install.sh`), checksum-verified via `checksums.yaml` (installs to `~/.local/bin/claude`)
+- **Update:** Use `claude update --channel latest` (built-in) or run `gtbi update --agents-only`
 
-This ensures proper authentication handling and avoids issues with alternative package manager builds. For Codex and Gemini, ACFS uses standard bun global package updates.
+This ensures proper authentication handling and avoids issues with alternative package manager builds. For Codex and Gemini, GTBI uses standard bun global package updates.
 
 ### Cloud & Database
 
@@ -1261,7 +1261,7 @@ This ensures proper authentication handling and avoids issues with alternative p
 | **Supabase CLI** | `supabase` | Supabase management |
 | **Vercel CLI** | `vercel` | Vercel deployment |
 
-Vault is installed by default (skip with `--skip-vault`). ACFS installs the Vault **CLI** so you have a real secrets tool available early; it does not automatically configure a Vault server for you.
+Vault is installed by default (skip with `--skip-vault`). GTBI installs the Vault **CLI** so you have a real secrets tool available early; it does not automatically configure a Vault server for you.
 
 Supabase networking note: some Supabase projects expose the **direct Postgres host over IPv6-only** (often on free tiers). If your VPS/network is **IPv4-only**, use the Supabase **pooler** connection string instead (or upgrade/configure networking for direct IPv4).
 
@@ -1295,13 +1295,13 @@ Additional productivity tools installed alongside the stack:
 
 ## Doctor Command
 
-`acfs doctor` performs comprehensive health checks on your installation:
+`gtbi doctor` performs comprehensive health checks on your installation:
 
 ```bash
-$ acfs doctor
+$ gtbi doctor
 
 ╔══════════════════════════════════════════════════════════════╗
-║                    ACFS Health Check                          ║
+║                    GTBI Health Check                          ║
 ╠══════════════════════════════════════════════════════════════╣
 ║ Identity                                                      ║
 ║   ✔ Running as ubuntu user                                    ║
@@ -1314,7 +1314,7 @@ $ acfs doctor
 ║   ✔ zsh installed                                             ║
 ║   ✔ oh-my-zsh installed                                       ║
 ║   ✔ powerlevel10k installed                                   ║
-║   ✔ acfs.zshrc sourced                                        ║
+║   ✔ gtbi.zshrc sourced                                        ║
 ║                                                               ║
 ║ Core Tools                                                    ║
 ║   ✔ bun 1.2.16                                                ║
@@ -1357,17 +1357,17 @@ $ acfs doctor
 
 ### Generated Doctor Checks
 
-Doctor checks are generated from the manifest (`scripts/generated/doctor_checks.sh`) to keep verification logic close to `acfs.manifest.yaml`. The `acfs doctor` command automatically sources these generated checks to verify all manifest-defined tools.
+Doctor checks are generated from the manifest (`scripts/generated/doctor_checks.sh`) to keep verification logic close to `gtbi.manifest.yaml`. The `gtbi doctor` command automatically sources these generated checks to verify all manifest-defined tools.
 
 **How it works:**
 1. The manifest generator creates `doctor_checks.sh` with verify commands for each module
-2. `acfs doctor` sources this file and runs each verification check
+2. `gtbi doctor` sources this file and runs each verification check
 3. Failed checks display a **fix suggestion** with the exact command to reinstall
 
 **Example output with fix suggestion:**
 ```
   ✗ tools.lazygit - Lazygit terminal UI not found
-    Fix: acfs install --only tools.lazygit
+    Fix: gtbi install --only tools.lazygit
 ```
 
 This architecture ensures doctor checks stay in sync with the installer—if a tool is in the manifest, it will be verified.
@@ -1375,13 +1375,13 @@ This architecture ensures doctor checks stay in sync with the installer—if a t
 ### Options
 
 ```bash
-acfs doctor              # Interactive colorful output
-acfs doctor --json       # Machine-readable JSON output
-acfs doctor --quiet      # Exit code only (0=healthy, 1=issues)
-acfs doctor --deep       # Run functional tests (auth, connections)
-acfs doctor --fix        # Apply safe fixes for failed checks
-acfs doctor --dry-run    # Preview fixes without applying
-acfs doctor --no-cache   # Skip cache, run all checks fresh
+gtbi doctor              # Interactive colorful output
+gtbi doctor --json       # Machine-readable JSON output
+gtbi doctor --quiet      # Exit code only (0=healthy, 1=issues)
+gtbi doctor --deep       # Run functional tests (auth, connections)
+gtbi doctor --fix        # Apply safe fixes for failed checks
+gtbi doctor --dry-run    # Preview fixes without applying
+gtbi doctor --no-cache   # Skip cache, run all checks fresh
 ```
 
 ### Deep Checks (`--deep`)
@@ -1413,8 +1413,8 @@ Deep Checks
 The `--fix` flag automatically applies safe, deterministic fixes for common issues:
 
 ```bash
-acfs doctor --fix             # Apply safe fixes
-acfs doctor --fix --dry-run   # Preview fixes without applying
+gtbi doctor --fix             # Apply safe fixes
+gtbi doctor --fix --dry-run   # Preview fixes without applying
 ```
 
 #### Safe Auto-Fixers
@@ -1423,25 +1423,25 @@ These fixes are applied automatically when `--fix` is used:
 
 | Fix ID | Description | Undo Strategy |
 |--------|-------------|---------------|
-| `fix.path.ordering` | Prepend ACFS directories to PATH in .zshrc | Restore backup |
-| `fix.config.copy` | Copy missing ~/.acfs config files | Remove copied file |
+| `fix.path.ordering` | Prepend GTBI directories to PATH in .zshrc | Restore backup |
+| `fix.config.copy` | Copy missing ~/.gtbi config files | Remove copied file |
 | `fix.dcg.hook` | Install DCG pre-tool-use hook | Run `dcg uninstall` |
 | `fix.symlink.create` | Create missing tool symlinks | Remove symlink |
 | `fix.plugin.clone` | Clone missing zsh plugins | Remove cloned directory |
-| `fix.acfs.sourcing` | Add ACFS sourcing to .zshrc | Restore backup |
+| `fix.gtbi.sourcing` | Add GTBI sourcing to .zshrc | Restore backup |
 
 #### Safety Guarantees
 
 - **Never deletes user files** — Only creates, modifies, or symlinks
 - **Backups before modify** — SHA256-verified backups of all modified files
 - **Idempotent** — Safe to run multiple times
-- **Logged** — All changes recorded to `~/.local/share/acfs/doctor.log`
+- **Logged** — All changes recorded to `~/.local/share/gtbi/doctor.log`
 - **Reversible** — Every fix has an undo command
 
 #### Example Dry-Run Output
 
 ```
-DRY-RUN: acfs doctor --fix
+DRY-RUN: gtbi doctor --fix
 
 Would apply the following fixes:
 
@@ -1450,8 +1450,8 @@ Would apply the following fixes:
     File: ~/.zshrc
     Backup: Yes (SHA256 verified)
 
-  [fix.acfs.sourcing]
-    Action: Add ACFS sourcing to .zshrc
+  [fix.gtbi.sourcing]
+    Action: Add GTBI sourcing to .zshrc
     File: ~/.zshrc
     Backup: Yes (SHA256 verified)
 
@@ -1477,9 +1477,9 @@ Some operations are never auto-fixed and instead provide suggestions:
 All changes made by `--fix` can be undone:
 
 ```bash
-acfs undo --list      # List all changes
-acfs undo chg_0001    # Undo specific change
-acfs undo --all       # Undo all changes from last session
+gtbi undo --list      # List all changes
+gtbi undo chg_0001    # Undo specific change
+gtbi undo --all       # Undo all changes from last session
 ```
 
 ---
@@ -1490,7 +1490,7 @@ The wizard guides beginners through a **13-step journey** from "I have a laptop"
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│  ACFS Wizard                                                   [Step 3/13]  │
+│  GTBI Wizard                                                   [Step 3/13]  │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
 │  ┌────────────────────────────────────────────────────────────────────────┐ │
@@ -1527,7 +1527,7 @@ The wizard guides beginners through a **13-step journey** from "I have a laptop"
 | 9 | **Run Installer** | The `curl \| bash` one-liner |
 | 10 | **Reconnect as Ubuntu** | Post-install reconnection |
 | 11 | **Verify Key Connection** | Reconnect using your SSH key and confirm it works |
-| 12 | **Status Check** | Run `acfs doctor` to verify |
+| 12 | **Status Check** | Run `gtbi doctor` to verify |
 | 13 | **Launch Onboarding** | Start the interactive tutorial |
 
 ### Key Features
@@ -1543,7 +1543,7 @@ The wizard guides beginners through a **13-step journey** from "I have a laptop"
 
 Step 9 can download a local handoff runbook in JSON or Markdown. The runbook is meant for the user and support loop when an SSH session drops, an install is interrupted, or the user needs to remember the exact command they ran.
 
-**Schema:** `acfs.handoff-runbook.v1`
+**Schema:** `gtbi.handoff-runbook.v1`
 
 | Field | Purpose |
 |-------|---------|
@@ -1552,7 +1552,7 @@ Step 9 can download a local handoff runbook in JSON or Markdown. The runbook is 
 | `ssh` | Expected SSH key paths and redacted reconnect command templates |
 | `install` | Exact installer command generated from the shared command builder |
 | `recoveryCommands` | Copy/paste-safe reconnect, retry, doctor, and support-bundle commands |
-| `support` | Deterministic `acfs support-bundle` reference and review artifacts |
+| `support` | Deterministic `gtbi support-bundle` reference and review artifacts |
 | `privacy` | Explicit redaction policy for host data and exact-command inclusion |
 
 Host addresses are not written into the runbook. The installer command stays exact so a user can paste it back into the VPS session, and the artifact points to `support-report.md` and `manifest.json` for support-bundle review.
@@ -1615,7 +1615,7 @@ The wizard maintains sync across browser tabs via two mechanisms:
 
 ```typescript
 // Same-tab: custom event dispatch
-window.dispatchEvent(new CustomEvent('acfs:wizard:completed-steps-changed', {
+window.dispatchEvent(new CustomEvent('gtbi:wizard:completed-steps-changed', {
   detail: { steps }
 }));
 
@@ -1647,9 +1647,9 @@ This architecture ensures the wizard progress survives browser refreshes, works 
 
 ## Configuration Files
 
-ACFS deploys optimized configuration files to `~/.acfs/` on the target VPS.
+GTBI deploys optimized configuration files to `~/.gtbi/` on the target VPS.
 
-### `~/.acfs/zsh/acfs.zshrc`
+### `~/.gtbi/zsh/gtbi.zshrc`
 
 A comprehensive zsh configuration that's sourced by `~/.zshrc`:
 
@@ -1734,7 +1734,7 @@ bindkey -M viins '^R' atuin-search-viins
 bindkey -M vicmd '^R' atuin-search-vicmd
 ```
 
-### `~/.acfs/tmux/tmux.conf`
+### `~/.gtbi/tmux/tmux.conf`
 
 A tmux configuration specifically optimized for NTM and multi-agent workflows:
 
@@ -1785,7 +1785,7 @@ pane-active-border-style: fg=#89b4fa  # Blue highlight
 ```
 
 **Local Overrides:**
-The config sources `~/.tmux.conf.local` if it exists, allowing personal customizations without modifying ACFS defaults.
+The config sources `~/.tmux.conf.local` if it exists, allowing personal customizations without modifying GTBI defaults.
 
 ---
 
@@ -1856,7 +1856,7 @@ update_shell()     # OMZ, P10K, plugins, Atuin, Zoxide
 update_stack()     # Dicklesworthstone stack tools
 
 # Features:
-# - Automatic logging to ~/.acfs/logs/updates/
+# - Automatic logging to ~/.gtbi/logs/updates/
 # - Version tracking (before/after for each tool)
 # - APT lock detection and warning
 # - Reboot-required detection for kernel updates
@@ -1868,7 +1868,7 @@ update_stack()     # Dicklesworthstone stack tools
 Enhanced terminal UI using Charmbracelet Gum:
 
 ```bash
-print_banner()           # ASCII art ACFS banner
+print_banner()           # ASCII art GTBI banner
 gum_step/gum_detail      # Styled output
 gum_success/warn/error   # Colored messages
 gum_spin                 # Spinner for long operations
@@ -1910,20 +1910,20 @@ state_save                          # Persist to disk (atomic)
 state_load                          # Load from disk
 ```
 
-The state file (`~/.acfs/state.json`) uses atomic writes to prevent corruption.
+The state file (`~/.gtbi/state.json`) uses atomic writes to prevent corruption.
 
 ### `contract.sh`
 
 Runtime contract validation for generated scripts:
 
 ```bash
-acfs_require_contract "module_id"   # Assert environment is ready
-acfs_check_contract                 # Non-fatal contract check
+gtbi_require_contract "module_id"   # Assert environment is ready
+gtbi_check_contract                 # Non-fatal contract check
 ```
 
 Validates that required environment variables and functions exist before execution:
 - `TARGET_USER`, `TARGET_HOME`, `MODE`
-- `ACFS_BOOTSTRAP_DIR`, `ACFS_LIB_DIR`
+- `GTBI_BOOTSTRAP_DIR`, `GTBI_LIB_DIR`
 - Logging functions: `log_detail`, `log_success`, etc.
 
 ### `smoke_test.sh`
@@ -2030,13 +2030,13 @@ Handles the complex multi-step Ubuntu upgrade process:
 2. Calculates upgrade path (e.g., 24.04 → 25.04 → 25.10)
 3. Performs sequential `do-release-upgrade` operations
 4. Installs systemd service for post-reboot resume
-5. Continues ACFS installation after reaching target
+5. Continues GTBI installation after reaching target
 
 ---
 
 ## MCP Agent Mail Integration
 
-ACFS includes integration with **MCP Agent Mail** for multi-agent coordination:
+GTBI includes integration with **MCP Agent Mail** for multi-agent coordination:
 
 ### What Agent Mail Provides
 
@@ -2102,13 +2102,13 @@ On December 17, 2025, an AI agent ran `git checkout --` on files containing hour
 
 | Category | Commands |
 |----------|----------|
-| **Git Reset** | `git reset --hard`, `git reset --merge` <!-- acfs-policy-lint: allow filesystem.no_destructive_cleanup --> |
-| **File Discard** | `git checkout -- <files>`, `git restore <files>` <!-- acfs-policy-lint: allow filesystem.no_destructive_cleanup --> |
+| **Git Reset** | `git reset --hard`, `git reset --merge` <!-- gtbi-policy-lint: allow filesystem.no_destructive_cleanup --> |
+| **File Discard** | `git checkout -- <files>`, `git restore <files>` <!-- gtbi-policy-lint: allow filesystem.no_destructive_cleanup --> |
 | **Force Push** | `git push --force` / `-f` (allows `--force-with-lease`) |
 | **Clean** | `git clean -f` (allows `-n` dry-run) |
 | **Branch Delete** | `git branch -D` (allows `-d`) |
 | **Stash Loss** | `git stash drop`, `git stash clear` |
-| **Filesystem** | `rm -rf` <!-- acfs-policy-lint: allow filesystem.no_destructive_cleanup --> |
+| **Filesystem** | `rm -rf` <!-- gtbi-policy-lint: allow filesystem.no_destructive_cleanup --> |
 
 ### What Gets Allowed
 
@@ -2322,7 +2322,7 @@ curl -fsSL https://raw.githubusercontent.com/Dicklesworthstone/chat_shared_conve
 
 ## CI/CD
 
-ACFS uses GitHub Actions for continuous integration:
+GTBI uses GitHub Actions for continuous integration:
 
 ### Installer Testing (`installer.yml`)
 
@@ -2336,7 +2336,7 @@ jobs:
     - Matrix tests across Ubuntu 24.04, 25.04, 25.10
     - Runs full installation in Docker
     - Verifies all tools installed correctly
-    - Runs acfs doctor to confirm health
+    - Runs gtbi doctor to confirm health
 
   factory-e2e:
     - Runs the literal public curl|bash installer on QEMU/KVM or a fresh real Ubuntu host
@@ -2417,7 +2417,7 @@ jobs:
 
 ### Automated Checksum + Drift Repair (`checksum-monitor.yml`)
 
-ACFS automatically monitors upstream installers for changes, and also repairs generated artifact checksum drift:
+GTBI automatically monitors upstream installers for changes, and also repairs generated artifact checksum drift:
 
 ```yaml
 # Runs every 15 minutes + on upstream changes
@@ -2431,10 +2431,10 @@ triggers:
 **How It Works:**
 
 1. **Verify Generated Artifact Drift**: Runs `scripts/check-manifest-drift.sh --json` to detect:
-   - `ACFS_MANIFEST_SHA256` mismatches
+   - `GTBI_MANIFEST_SHA256` mismatches
    - internal script checksum drift (`scripts/generated/internal_checksums.sh`)
    - generated installer and web metadata drift via `bun run generate:diff`
-   - semantic manifest contract drift across `scripts/generated/doctor_checks.sh`, `apps/web/lib/generated`, `acfs/onboard/lessons`, README snippets, and `checksums.yaml`
+   - semantic manifest contract drift across `scripts/generated/doctor_checks.sh`, `apps/web/lib/generated`, `gtbi/onboard/lessons`, README snippets, and `checksums.yaml`
 2. **Auto-Repair Drift**: If drift is detected, runs `--fix` (regenerate + commit + push)
 3. **Verify Current Upstream Checksums**: Downloads all upstream installers, calculates SHA256
 4. **Detect Upstream Changes**: Compares against `checksums.yaml`
@@ -2458,8 +2458,8 @@ This ensures:
 - **Auditability**: All changes tracked via git commits
 
 **Upstream Repo Dispatch (Fast Path):**
-- ACFS-owned tool repos emit a `repository_dispatch` event (`upstream-changed`) when their `install.sh` changes or a release is published.
-- Requires a PAT secret named `ACFS_REPO_DISPATCH_TOKEN` in each tool repo (repo scope for this org/user).
+- GTBI-owned tool repos emit a `repository_dispatch` event (`upstream-changed`) when their `install.sh` changes or a release is published.
+- Requires a PAT secret named `GTBI_REPO_DISPATCH_TOKEN` in each tool repo (repo scope for this org/user).
 - If dispatch fails, the 15-minute scheduled monitor still catches drift (but slower).
 
 ### Production Smoke Tests (`production-smoke.yml`)
@@ -2486,47 +2486,47 @@ jobs:
   canary:
     - Run tests/vm/test_install_ubuntu.sh (vibe mode)
     - Defaults to Ubuntu 25.10; --all covers 24.04, 25.04, and 25.10
-    - Uses ACFS_CHECKSUMS_REF=main for freshest hashes
+    - Uses GTBI_CHECKSUMS_REF=main for freshest hashes
 ```
 
 ### Factory Installer E2E (`installer-factory-e2e.yml`)
 
-Runs the literal public installer through the authoritative factory harness. The QEMU/KVM backend uses the official Ubuntu cloud image and requires a runner with `/dev/kvm`; set the repository variable `ACFS_FACTORY_RUNNER`, the manual `runner` input, or `client_payload.runner` to a KVM-capable larger/self-hosted runner. The real-host backend runs against a disposable Ubuntu VPS over SSH and is intended for provider-specific sentinel runs.
+Runs the literal public installer through the authoritative factory harness. The QEMU/KVM backend uses the official Ubuntu cloud image and requires a runner with `/dev/kvm`; set the repository variable `GTBI_FACTORY_RUNNER`, the manual `runner` input, or `client_payload.runner` to a KVM-capable larger/self-hosted runner. The real-host backend runs against a disposable Ubuntu VPS over SSH and is intended for provider-specific sentinel runs.
 
 ```yaml
-schedule: "0 8 * * 0" # weekly QEMU/KVM factory canary when ACFS_FACTORY_RUNNER has /dev/kvm
+schedule: "0 8 * * 0" # weekly QEMU/KVM factory canary when GTBI_FACTORY_RUNNER has /dev/kvm
 workflow_dispatch:
   inputs:
     backend: qemu|real-host
-    runner: "" # optional override; blank uses ACFS_FACTORY_RUNNER or ubuntu-latest
+    runner: "" # optional override; blank uses GTBI_FACTORY_RUNNER or ubuntu-latest
     ref: main
     mode: vibe
     expect_ubuntu: "25.10"
     expect_final_ubuntu: "25.10"
 repository_dispatch:
-  types: [acfs-factory-host-ready]
+  types: [gtbi-factory-host-ready]
 real-host secrets:
-  ACFS_FACTORY_SSH_PRIVATE_KEY: private key for real-host backend
-  ACFS_FACTORY_SSH_TARGET: optional fallback root@fresh-host for real-host backend
+  GTBI_FACTORY_SSH_PRIVATE_KEY: private key for real-host backend
+  GTBI_FACTORY_SSH_TARGET: optional fallback root@fresh-host for real-host backend
 ```
 
 Standard GitHub-hosted runners do not provide a contractual nested-virtualization environment. If the QEMU backend runs without `/dev/kvm`, the workflow fails at the KVM preflight with an environment-specific error before invoking the installer.
 
-Reusable workflow callers may use the QEMU backend without passing SSH secrets. The real-host backend still needs a private key plus either `client_payload.ssh_target` for dispatch runs or `ACFS_FACTORY_SSH_TARGET` as a fallback.
+Reusable workflow callers may use the QEMU backend without passing SSH secrets. The real-host backend still needs a private key plus either `client_payload.ssh_target` for dispatch runs or `GTBI_FACTORY_SSH_TARGET` as a fallback.
 
 If `backend=real-host` is requested without those SSH credentials, the workflow fails during configuration resolution. It must never report a green canary when no disposable host was tested.
 
 Workflow artifact directories and uploads include only the current GitHub run id and attempt. That keeps repeated scheduled/manual runs from reusing or uploading old QEMU overlay disks on KVM-capable self-hosted runners with persistent workspaces. The QEMU backend writes its generated private SSH key outside the repository checkout, so upload-artifact and future Git commits never package guest login credentials. Factory diagnostics are redacted before local upload, including installer logs and the remote diagnostic archive.
 
-The target host must be freshly provisioned. By default the harness fails if the `ubuntu` user already exists before install, because the real beginner path must prove ACFS creates that user automatically. The harness also requires `acfs doctor --json` to report zero failures and zero warnings, then separately verifies Agent Mail liveness/systemd service state and the ACFS nightly user timer.
+The target host must be freshly provisioned. By default the harness fails if the `ubuntu` user already exists before install, because the real beginner path must prove GTBI creates that user automatically. The harness also requires `gtbi doctor --json` to report zero failures and zero warnings, then separately verifies Agent Mail liveness/systemd service state and the GTBI nightly user timer.
 
 For the slower upgrade/resume gate, provision a fresh Ubuntu 24.04 host and run the same workflow or script with `--expect-ubuntu 24.04 --expect-final-ubuntu 25.10 --allow-install-reboot`.
 
-For provider-specific real VPS sentinels, use an external provisioning job to create a disposable server, wait for root SSH, dispatch `acfs-factory-host-ready`, and destroy the server after artifact collection. The dispatch payload should include the fresh host address so the repository does not store a stale long-lived VPS as `ACFS_FACTORY_SSH_TARGET`:
+For provider-specific real VPS sentinels, use an external provisioning job to create a disposable server, wait for root SSH, dispatch `gtbi-factory-host-ready`, and destroy the server after artifact collection. The dispatch payload should include the fresh host address so the repository does not store a stale long-lived VPS as `GTBI_FACTORY_SSH_TARGET`:
 
 ```json
 {
-  "event_type": "acfs-factory-host-ready",
+  "event_type": "gtbi-factory-host-ready",
   "client_payload": {
     "backend": "real-host",
     "ssh_target": "root@203.0.113.10",
@@ -2573,11 +2573,11 @@ tests:
 
 ## VPS Providers
 
-ACFS works on any Ubuntu VPS with SSH access and either root password login or a provider console that lets you become root for the first install. Here are recommended providers optimized for multi-agent workloads.
+GTBI works on any Ubuntu VPS with SSH access and either root password login or a provider console that lets you become root for the first install. Here are recommended providers optimized for multi-agent workloads.
 
 > **Why 48-64GB RAM?** Each AI coding agent uses ~2GB RAM. To run 10-20+ agents simultaneously, you need 48GB+ RAM. Don't bottleneck a $400+/month AI investment to save $20 on hosting.
 
-After installation, run `acfs capacity --profile 25-agents --recommend-ntm` on the VPS for a local RAM/CPU/disk sizing report with recommended agent counts and copyable NTM launch profiles.
+After installation, run `gtbi capacity --profile 25-agents --recommend-ntm` on the VPS for a local RAM/CPU/disk sizing report with recommended agent counts and copyable NTM launch profiles.
 
 ### Contabo (Best Value — Top Pick)
 
@@ -2617,7 +2617,7 @@ Any provider with an Ubuntu VPS, SSH access, and a first-login root password or 
 
 ### Provider Setup Guides
 
-ACFS includes detailed step-by-step guides for each supported provider in `scripts/providers/`:
+GTBI includes detailed step-by-step guides for each supported provider in `scripts/providers/`:
 
 | Provider | Guide | Key Sections |
 |----------|-------|--------------|
@@ -2653,12 +2653,12 @@ Each guide includes:
 ## Project Structure
 
 ```
-agentic_coding_flywheel_setup/
+gastown_batteries_included/
 ├── README.md                     # This file
 ├── AGENTS.md                     # Development guidelines
 ├── VERSION                       # Current version (0.7.0)
 ├── install.sh                    # Main installer entry point
-├── acfs.manifest.yaml            # Canonical tool manifest (510 lines)
+├── gtbi.manifest.yaml            # Canonical tool manifest (510 lines)
 ├── checksums.yaml                # SHA256 hashes for upstream scripts
 ├── package.json                  # Root monorepo config
 │
@@ -2681,9 +2681,9 @@ agentic_coding_flywheel_setup/
 │   │       └── generate.ts       # Script generator
 │   └── onboard/                  # Onboard TUI source
 │
-├── acfs/                         # Files deployed to ~/.acfs/
+├── gtbi/                         # Files deployed to ~/.gtbi/
 │   ├── zsh/
-│   │   └── acfs.zshrc            # Shell configuration
+│   │   └── gtbi.zshrc            # Shell configuration
 │   ├── tmux/
 │   │   └── tmux.conf             # Tmux configuration
 │   └── onboard/
@@ -2818,14 +2818,14 @@ Tarjan's strongly connected components (SCC):
 
 ### Test Harness
 
-ACFS includes a comprehensive test harness (`tests/vm/lib/test_harness.sh`) for integration testing:
+GTBI includes a comprehensive test harness (`tests/vm/lib/test_harness.sh`) for integration testing:
 
 ```bash
 # Source the harness
 source tests/vm/lib/test_harness.sh
 
 # Initialize test suite
-harness_init "ACFS Installation Tests"
+harness_init "GTBI Installation Tests"
 
 # Create test sections
 harness_section "Phase 1: Base Packages"
@@ -2849,7 +2849,7 @@ harness_summary  # Outputs: 15 passed, 0 failed, 2 skipped
 | `test_install_ubuntu.sh` | Full Docker-based installation |
 | `test_factory_install_ubuntu.sh` | Real systemd VM/VPS factory install from public curl\|bash |
 | `test_factory_install_qemu.sh` | Local QEMU/KVM factory install using Ubuntu cloud images |
-| `test_acfs_update.sh` | Update mechanism validation |
+| `test_gtbi_update.sh` | Update mechanism validation |
 | `bootstrap_offline_checks.sh` | Offline system readiness |
 | `resume_checks.sh` | State resume validation |
 | `selection_checks.sh` | Module selection unit tests |
@@ -2881,7 +2881,7 @@ harness_summary  # Outputs: 15 passed, 0 failed, 2 skipped
 
 ### Sync Scripts
 
-Sync scripts keep ACFS documentation aligned with upstream projects:
+Sync scripts keep GTBI documentation aligned with upstream projects:
 
 ```bash
 # Sync NTM command palette from upstream
@@ -2895,7 +2895,7 @@ Sync scripts keep ACFS documentation aligned with upstream projects:
 
 | Script | Source | Destination |
 |--------|--------|-------------|
-| `sync_ntm_palette.sh` | NTM repo `command_palette.md` | `acfs/onboard/docs/ntm/` |
+| `sync_ntm_palette.sh` | NTM repo `command_palette.md` | `gtbi/onboard/docs/ntm/` |
 
 All sync scripts use the security library for HTTPS enforcement and content hashing.
 
@@ -2961,7 +2961,7 @@ Vibe mode is designed for **throwaway VPS environments** where velocity matters 
 
 ### Can I use this on my local machine?
 
-ACFS is designed for fresh Ubuntu VPS instances. While you *could* run it locally:
+GTBI is designed for fresh Ubuntu VPS instances. While you *could* run it locally:
 - It may conflict with existing configurations
 - It assumes root/sudo access
 - It's not designed for macOS or Windows
@@ -2972,7 +2972,7 @@ For local development, use the individual tools directly.
 
 The installer is **checkpointed**. Simply re-run it:
 ```bash
-curl -fsSL "https://raw.githubusercontent.com/Dicklesworthstone/agentic_coding_flywheel_setup/main/install.sh?$(date +%s)" | bash -s -- --yes --mode vibe
+curl -fsSL "https://raw.githubusercontent.com/jonbackhaus/gtbi/main/install.sh?$(date +%s)" | bash -s -- --yes --mode vibe
 ```
 
 It will skip already-completed phases and resume where it left off.
@@ -2981,9 +2981,9 @@ It will skip already-completed phases and resume where it left off.
 
 Use the built-in update command:
 ```bash
-acfs update                  # Update all standard components
-acfs update --stack          # Include Dicklesworthstone stack
-acfs update --agents-only    # Just update AI agents
+gtbi update                  # Update all standard components
+gtbi update --stack          # Include Dicklesworthstone stack
+gtbi update --agents-only    # Just update AI agents
 ```
 
 ### How do I uninstall?
@@ -2993,18 +2993,18 @@ There's no uninstall script. To reset:
 2. Create a new one
 3. Run the installer fresh
 
-This is intentional—ACFS is designed for ephemeral VPS environments.
+This is intentional—GTBI is designed for ephemeral VPS environments.
 
 ### Can I customize which tools are installed?
 
-Currently, ACFS installs the full suite. Future versions will support:
+Currently, GTBI installs the full suite. Future versions will support:
 - Manifest-based tool selection
 - Interactive mode for choosing components
 - Modular installation scripts
 
 ---
 
-## Why ACFS Exists
+## Why GTBI Exists
 
 ### The Problem: The Agentic Coding Barrier
 
@@ -3014,7 +3014,7 @@ The rise of AI coding agents (Claude Code, Codex CLI, Gemini CLI) has created a 
 
 ```
 ┌────────────────────────────────────────────────────────────────────────────┐
-│  TIME INVESTMENT WITHOUT ACFS                                               │
+│  TIME INVESTMENT WITHOUT GTBI                                               │
 │                                                                              │
 │  VPS Setup ..................... 30-60 min                                   │
 │  Shell Configuration ........... 20-30 min                                   │
@@ -3027,7 +3027,7 @@ The rise of AI coding agents (Claude Code, Codex CLI, Gemini CLI) has created a 
 │  ─────────────────────────────────────────                                   │
 │  TOTAL: 3-7 hours (and that's if everything works)                          │
 │                                                                              │
-│  TIME INVESTMENT WITH ACFS                                                   │
+│  TIME INVESTMENT WITH GTBI                                                   │
 │                                                                              │
 │  Run one command ............... 25-30 min                                   │
 │  ─────────────────────────────────────────                                   │
@@ -3035,7 +3035,7 @@ The rise of AI coding agents (Claude Code, Codex CLI, Gemini CLI) has created a 
 └────────────────────────────────────────────────────────────────────────────┘
 ```
 
-**ACFS eliminates this barrier entirely.** One command, 30 minutes, fully configured.
+**GTBI eliminates this barrier entirely.** One command, 30 minutes, fully configured.
 
 ### The Deeper Problem: Beginners Can't Start
 
@@ -3059,7 +3059,7 @@ The [wizard website at agent-flywheel.com](https://agent-flywheel.com) solves th
 
 ## The 10x Multiplier Effect
 
-ACFS isn't just a collection of tools—it's a **carefully curated system** where each component amplifies the others. The value isn't additive; it's multiplicative.
+GTBI isn't just a collection of tools—it's a **carefully curated system** where each component amplifies the others. The value isn't additive; it's multiplicative.
 
 ### Tool Synergy Model
 
@@ -3089,7 +3089,7 @@ ACFS isn't just a collection of tools—it's a **carefully curated system** wher
 
 ### Why These Specific Tools?
 
-Every tool in ACFS earns its place through **concrete productivity gains**:
+Every tool in GTBI earns its place through **concrete productivity gains**:
 
 | Tool | Individual Value | Synergy Value |
 |------|-----------------|---------------|
@@ -3116,7 +3116,7 @@ A single agent with basic tooling is useful. Three agents with:
 
 ...can accomplish in one day what would take a solo developer a week.
 
-Tip: run `acfs services-setup` to configure logins, and enable DCG for destructive-command protection.
+Tip: run `gtbi services-setup` to configure logins, and enable DCG for destructive-command protection.
 
 **This is the flywheel effect in action.** Better tools → more capable agents → more code shipped → better understanding of what tools are needed → better tools.
 
@@ -3124,7 +3124,7 @@ Tip: run `acfs services-setup` to configure logins, and enable DCG for destructi
 
 ## Design Algorithms & Decisions
 
-ACFS implements several algorithmic patterns that ensure reliability and maintainability.
+GTBI implements several algorithmic patterns that ensure reliability and maintainability.
 
 ### Idempotency Algorithm
 
@@ -3232,7 +3232,7 @@ scripts/generated/
 ├── install_db.sh          # PostgreSQL 18, Vault
 ├── install_cloud.sh       # wrangler, supabase, vercel
 ├── install_stack.sh       # Dicklesworthstone 10-tool stack + utilities
-├── install_acfs.sh        # ACFS config deployment
+├── install_gtbi.sh        # GTBI config deployment
 ├── install_all.sh         # Orchestration helper
 ├── doctor_checks.sh       # Health verification
 └── manifest_index.sh      # Module metadata arrays
@@ -3241,10 +3241,10 @@ scripts/generated/
 **Generated Script Structure:**
 ```bash
 #!/usr/bin/env bash
-# AUTO-GENERATED FROM acfs.manifest.yaml - DO NOT EDIT
+# AUTO-GENERATED FROM gtbi.manifest.yaml - DO NOT EDIT
 
 install_module_id() {
-    acfs_require_contract "module.id"  # Validate environment
+    gtbi_require_contract "module.id"  # Validate environment
 
     if run_installed_check "module.id"; then
         log_step "module.id already installed"
@@ -3274,52 +3274,52 @@ The generator produces `manifest_index.sh`, a comprehensive bash metadata file t
 **Associative Arrays:**
 ```bash
 # Module metadata lookup
-declare -gA ACFS_MODULE_DESC
-ACFS_MODULE_DESC["lang.bun"]="Bun JavaScript/TypeScript runtime"
-ACFS_MODULE_DESC["agents.claude"]="Claude Code CLI agent"
+declare -gA GTBI_MODULE_DESC
+GTBI_MODULE_DESC["lang.bun"]="Bun JavaScript/TypeScript runtime"
+GTBI_MODULE_DESC["agents.claude"]="Claude Code CLI agent"
 
 # Phase mapping (determines install order)
-declare -gA ACFS_MODULE_PHASE
-ACFS_MODULE_PHASE["base.system"]="1"
-ACFS_MODULE_PHASE["lang.bun"]="6"
-ACFS_MODULE_PHASE["agents.claude"]="7"
+declare -gA GTBI_MODULE_PHASE
+GTBI_MODULE_PHASE["base.system"]="1"
+GTBI_MODULE_PHASE["lang.bun"]="6"
+GTBI_MODULE_PHASE["agents.claude"]="7"
 
 # Dependency relationships (comma-separated)
-declare -gA ACFS_MODULE_DEPS
-ACFS_MODULE_DEPS["agents.codex"]="lang.bun"
-ACFS_MODULE_DEPS["stack.mcp_agent_mail"]="lang.bun,lang.uv"
+declare -gA GTBI_MODULE_DEPS
+GTBI_MODULE_DEPS["agents.codex"]="lang.bun"
+GTBI_MODULE_DEPS["stack.mcp_agent_mail"]="lang.bun,lang.uv"
 
 # Generated function name mapping
-declare -gA ACFS_MODULE_FUNC
-ACFS_MODULE_FUNC["lang.bun"]="install_lang_bun"
+declare -gA GTBI_MODULE_FUNC
+GTBI_MODULE_FUNC["lang.bun"]="install_lang_bun"
 
 # Category grouping
-declare -gA ACFS_MODULE_CATEGORY
-ACFS_MODULE_CATEGORY["lang.bun"]="lang"
+declare -gA GTBI_MODULE_CATEGORY
+GTBI_MODULE_CATEGORY["lang.bun"]="lang"
 
 # Default inclusion in install
-declare -gA ACFS_MODULE_DEFAULT
-ACFS_MODULE_DEFAULT["lang.bun"]="1"
-ACFS_MODULE_DEFAULT["db.postgres18"]="1"
+declare -gA GTBI_MODULE_DEFAULT
+GTBI_MODULE_DEFAULT["lang.bun"]="1"
+GTBI_MODULE_DEFAULT["db.postgres18"]="1"
 ```
 
 **Runtime Access Pattern:**
 ```bash
 # Iterate modules in deterministic install order
-for module in "${ACFS_MODULES_IN_ORDER[@]}"; do
-  [[ "${ACFS_MODULE_CATEGORY[$module]}" == "agents" ]] || continue
+for module in "${GTBI_MODULES_IN_ORDER[@]}"; do
+  [[ "${GTBI_MODULE_CATEGORY[$module]}" == "agents" ]] || continue
   printf '%s\n' "$module"
 done
 
 # Check if module is default-installed
-[[ "${ACFS_MODULE_DEFAULT[tools.vault]:-1}" == "1" ]]
+[[ "${GTBI_MODULE_DEFAULT[tools.vault]:-1}" == "1" ]]
 
 # Get installation phase
-printf '%s\n' "${ACFS_MODULE_PHASE[stack.ntm]}"  # 9
+printf '%s\n' "${GTBI_MODULE_PHASE[stack.ntm]}"  # 9
 ```
 
 **Use Cases:**
-- `acfs doctor` queries module metadata for health checks
+- `gtbi doctor` queries module metadata for health checks
 - `install.sh --list-modules` displays available modules
 - `--skip <module>` validates module existence before skipping
 - `--only-phase <n|name>` uses phase mapping for selective installs
@@ -3354,7 +3354,7 @@ This allows beginners to get deep context when needed, while experts can skip st
 
 ## Multi-Agent Orchestration Model
 
-ACFS is designed for **multi-agent workflows** where several AI coding agents work on the same project simultaneously.
+GTBI is designed for **multi-agent workflows** where several AI coding agents work on the same project simultaneously.
 
 ### The Coordination Problem
 
@@ -3364,7 +3364,7 @@ Without coordination, multiple agents cause chaos:
 - **Communication gaps** — No visibility into what others are doing
 - **Safety risks** — Dangerous operations without oversight
 
-### The ACFS Solution Stack
+### The GTBI Solution Stack
 
 ```
 ┌───────────────────────────────────────────────────────────────────────────┐
@@ -3428,7 +3428,7 @@ ntm spawn \
 
 Result:
 ```
-tmux session: acfs-swarm
+tmux session: gtbi-swarm
 ├── agent-1: Claude working on auth
 ├── agent-2: Claude working on api
 ├── agent-3: Claude working on tests
@@ -3439,10 +3439,10 @@ tmux session: acfs-swarm
 
 ### Dry-Run Swarm Simulation
 
-Before launching any real swarm, ask ACFS for a queue-aware plan:
+Before launching any real swarm, ask GTBI for a queue-aware plan:
 
 ```bash
-acfs swarm plan --agents 25 --profile balanced --workload standard
+gtbi swarm plan --agents 25 --profile balanced --workload standard
 ```
 
 The planner reads the local swarm status and capacity model, incorporates RCH
@@ -3453,13 +3453,13 @@ reservations, or run build commands. JSON output is available with `--json`,
 and fixture replay is available with `--status-file`.
 
 For multi-host planning, keep a local redacted inventory at
-`~/.acfs/swarm/hosts.inventory.json`:
+`~/.gtbi/swarm/hosts.inventory.json`:
 
 ```bash
-acfs swarm inventory report
-acfs swarm inventory validate --json
-acfs swarm inventory export --format json --output inventory.redacted.json
-acfs swarm inventory import --input inventory.redacted.json
+gtbi swarm inventory report
+gtbi swarm inventory validate --json
+gtbi swarm inventory export --format json --output inventory.redacted.json
+gtbi swarm inventory import --input inventory.redacted.json
 ```
 
 The inventory commands are local and advisory. They read or write JSON files,
@@ -3471,8 +3471,8 @@ For each agent you plan to launch, generate a bounded startup packet from the
 selected Bead plus current repo instructions and bounded CM/CASS context:
 
 ```bash
-acfs swarm packet --bead bd-1234 --agent-name BlueLake --role implementation
-acfs swarm packet --json --bead bd-1234 --agent-name BlueLake
+gtbi swarm packet --bead bd-1234 --agent-name BlueLake --role implementation
+gtbi swarm packet --json --bead bd-1234 --agent-name BlueLake
 ```
 
 The packet is designed for NTM prompt injection. It prioritizes live AGENTS.md,
@@ -3481,10 +3481,10 @@ checks, and preserves exact `bv --robot-*`, `br`, Agent Mail MCP, `rch exec --`,
 and UBS workflow guidance. It is read-only: it does not claim work, reserve
 files, send messages, start agents, run builds, or edit generated files.
 
-Before launching a large real swarm, ACFS can run an offline simulation of the control plane:
+Before launching a large real swarm, GTBI can run an offline simulation of the control plane:
 
 ```bash
-acfs swarm simulate
+gtbi swarm simulate
 ```
 
 The default simulation runs 10, 25, and 50 logical-agent scenarios without launching tmux sessions, model CLIs, Beads mutations, Agent Mail writes, or local CPU-heavy builds. It writes artifacts for each scenario: generated launch plan, telemetry JSON, capacity/resource sample, timing, and pass/fail summary. Treat this as a local readiness harness, not a substitute for provider factory tests on real VPS hosts.
@@ -3493,8 +3493,8 @@ After one or more simulation runs, calibrate the static capacity assumptions
 against those local artifacts:
 
 ```bash
-acfs swarm calibration --artifact-dir ~/.acfs/logs/swarm-simulations
-acfs swarm calibration --json --artifact-dir ./swarm-artifacts --rch-file ./rch-timing.json
+gtbi swarm calibration --artifact-dir ~/.gtbi/logs/swarm-simulations
+gtbi swarm calibration --json --artifact-dir ./swarm-artifacts --rch-file ./rch-timing.json
 ```
 
 The calibration report is read-only. It classifies the local evidence as
@@ -3520,7 +3520,7 @@ The "Agentic Coding Flywheel" is a virtuous cycle:
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-ACFS kicks off this flywheel by providing the **best possible starting environment** for agentic coding.
+GTBI kicks off this flywheel by providing the **best possible starting environment** for agentic coding.
 
 ### Design Principles
 
@@ -3574,7 +3574,7 @@ The magic of vibe coding happens on **ephemeral VPS instances**. When your envir
 - Agents can have dangerous permissions (they can't break what's disposable)
 - You focus on output, not on protecting your setup
 
-This is why ACFS's "vibe mode" enables passwordless sudo and dangerous agent flags—on a $5/month throwaway VPS, there's nothing worth protecting.
+This is why GTBI's "vibe mode" enables passwordless sudo and dangerous agent flags—on a $5/month throwaway VPS, there's nothing worth protecting.
 
 **3. Multi-Agent Is The Default**
 
@@ -3585,7 +3585,7 @@ Vibe coding assumes you'll run multiple agents simultaneously:
 - Codex for rapid prototyping and refactoring
 - Gemini for documentation and research
 
-ACFS provides the coordination layer (Agent Mail, NTM, SLB) that makes this practical.
+GTBI provides the coordination layer (Agent Mail, NTM, SLB) that makes this practical.
 
 ### The Anti-Patterns
 
@@ -3605,17 +3605,17 @@ The goal is **augmented human judgment**, not abdicated human judgment.
 - Long-running servers (use safe mode)
 - Shared team environments (use coordination tools)
 
-Vibe coding is for **greenfield development, prototyping, experimentation, and learning**. Use ACFS's safe mode for everything else.
+Vibe coding is for **greenfield development, prototyping, experimentation, and learning**. Use GTBI's safe mode for everything else.
 
 ---
 
 ## State Machine & Checkpoint System
 
-ACFS implements a robust **checkpoint-based state machine** that enables reliable resume-from-failure. This section explains how it works under the hood.
+GTBI implements a robust **checkpoint-based state machine** that enables reliable resume-from-failure. This section explains how it works under the hood.
 
 ### State File Format
 
-Progress is tracked in `~/.acfs/state.json`:
+Progress is tracked in `~/.gtbi/state.json`:
 
 ```json
 {
@@ -3715,14 +3715,14 @@ This ensures the state file is never partially written, even if the process is k
 
 The state file tracks how long each phase takes. This enables:
 - Accurate progress estimation ("Phase 4/9, ~3 minutes remaining")
-- Performance regression detection across ACFS versions
+- Performance regression detection across GTBI versions
 - Identifying slow phases that need optimization
 
 ---
 
 ## Error Handling & Recovery Patterns
 
-ACFS is designed to **fail gracefully and recover automatically**. This section documents the error handling patterns used throughout the codebase.
+GTBI is designed to **fail gracefully and recover automatically**. This section documents the error handling patterns used throughout the codebase.
 
 ### The Try-Step Pattern
 
@@ -3787,7 +3787,7 @@ wait_for_apt_lock() {
 
 ### Graceful Degradation
 
-When a non-critical tool fails to install, ACFS continues with a warning:
+When a non-critical tool fails to install, GTBI continues with a warning:
 
 ```
 Category: Critical    → Failure aborts installation
@@ -3802,7 +3802,7 @@ Examples:
 
 ### The Error Report
 
-At the end of installation (or on abort), ACFS generates a structured error report:
+At the end of installation (or on abort), GTBI generates a structured error report:
 
 ```
 ═══════════════════════════════════════════════════════════════════════════════
@@ -3826,7 +3826,7 @@ At the end of installation (or on abort), ACFS generates a structured error repo
     Error: tmux.conf syntax error on line 42
 
   Suggested Fix:
-    Check ~/.acfs/tmux/tmux.conf for syntax errors
+    Check ~/.gtbi/tmux/tmux.conf for syntax errors
     Then run: curl ... | bash -s -- --yes --mode vibe --resume
 
 ═══════════════════════════════════════════════════════════════════════════════
@@ -3836,7 +3836,7 @@ At the end of installation (or on abort), ACFS generates a structured error repo
 
 ## Troubleshooting Guide
 
-This section covers common issues and their solutions. For quick debugging, start with `acfs doctor`.
+This section covers common issues and their solutions. For quick debugging, start with `gtbi doctor`.
 
 ### Installation Fails Immediately
 
@@ -3847,7 +3847,7 @@ This section covers common issues and their solutions. For quick debugging, star
 | Cause | Detection | Fix |
 |-------|-----------|-----|
 | Not running as root | "Permission denied" | `sudo bash` or use `sudo` in curl command |
-| Not Ubuntu | "Unsupported OS" | ACFS only supports Ubuntu 22.04+ |
+| Not Ubuntu | "Unsupported OS" | GTBI only supports Ubuntu 22.04+ |
 | No internet | "curl: (6) Could not resolve host" | Check DNS, try `ping google.com` |
 | Old bash | Syntax errors | Upgrade to bash 4+ |
 
@@ -3858,11 +3858,11 @@ When the installer fails mid-way through, it provides an **auto-resume hint** wi
 **What you'll see on failure:**
 
 ```
-[ERROR] ACFS installation failed!
+[ERROR] GTBI installation failed!
 
 To debug:
-  1. Check the log: cat /var/log/acfs/install.log
-  2. If installed, run: acfs doctor (try as ubuntu)
+  1. Check the log: cat /var/log/gtbi/install.log
+  2. If installed, run: gtbi doctor (try as ubuntu)
 
 ╔══════════════════════════════════════════════════════════════╗
 ║  To resume installation from this point:                     ║
@@ -3880,7 +3880,7 @@ To debug:
 |---------|-------------|
 | **Pinned commit** | Uses exact SHA from original run for reproducibility |
 | **Preserved flags** | Includes all original flags (--skip-*, --mode, --strict) |
-| **Automatic detection** | Reads failed phase/step from `~/.acfs/state.json` |
+| **Automatic detection** | Reads failed phase/step from `~/.gtbi/state.json` |
 | **Copyable command** | Ready to paste and run immediately |
 
 **Manual recovery steps:**
@@ -3888,35 +3888,35 @@ To debug:
 1. **Review the error**:
    ```bash
    # Check the full log
-   cat /var/log/acfs/install.log | tail -50
+   cat /var/log/gtbi/install.log | tail -50
 
    # Or search for ERROR
-   grep -i error /var/log/acfs/install.log
+   grep -i error /var/log/gtbi/install.log
    ```
 
 2. **Run diagnostics**:
    ```bash
    # As the target user (ubuntu)
-   acfs doctor
+   gtbi doctor
 
    # If running as root
-   sudo -u ubuntu -i bash -lc 'acfs doctor'
+   sudo -u ubuntu -i bash -lc 'gtbi doctor'
    ```
 
 3. **Resume installation**:
    ```bash
    # Use the exact command from the failure output
    # Or use the generic resume command:
-   curl -fsSL https://acfs.sh | bash -s -- --resume --yes --mode vibe
+   curl -fsSL https://gtbi.sh | bash -s -- --resume --yes --mode vibe
    ```
 
 4. **Check state file** (advanced):
    ```bash
    # View current installation state
-   cat ~/.acfs/state.json | jq .
+   cat ~/.gtbi/state.json | jq .
 
    # See the stored resume hint
-   jq '.resume_hint' ~/.acfs/state.json
+   jq '.resume_hint' ~/.gtbi/state.json
    ```
 
 **Common failure scenarios:**
@@ -3957,11 +3957,11 @@ To debug:
 
 ### Install Logs & Summary JSON
 
-Every ACFS install run produces two artifacts for debugging and tooling:
+Every GTBI install run produces two artifacts for debugging and tooling:
 
 **Log File Location:**
 ```
-~/.acfs/logs/install-YYYYMMDD_HHMMSS.log
+~/.gtbi/logs/install-YYYYMMDD_HHMMSS.log
 ```
 
 The log file captures all stderr output from the installer, with:
@@ -3972,7 +3972,7 @@ The log file captures all stderr output from the installer, with:
 
 **Summary JSON Location:**
 ```
-~/.acfs/logs/install_summary_YYYYMMDD_HHMMSS.json
+~/.gtbi/logs/install_summary_YYYYMMDD_HHMMSS.json
 ```
 
 **Summary JSON Schema (v1):**
@@ -3983,7 +3983,7 @@ The log file captures all stderr output from the installer, with:
   "timestamp": "2026-01-27T...", // ISO 8601
   "total_seconds": 1200,         // Wall clock time
   "environment": {
-    "acfs_version": "0.9.0",
+    "gtbi_version": "0.9.0",
     "mode": "vibe",
     "ubuntu_version": "25.04",
     "target_user": "ubuntu",
@@ -4001,46 +4001,46 @@ The log file captures all stderr output from the installer, with:
   //   "error": "curl failed with exit code 7",
   //   "resume_hint": "curl -fsSL ... | bash -s -- --resume --yes"
   // }
-  "log_file": "/home/ubuntu/.acfs/logs/install-20260127_120000.log"
+  "log_file": "/home/ubuntu/.gtbi/logs/install-20260127_120000.log"
 }
 ```
 
 **Accessing logs:**
 ```bash
 # Find the latest log
-ls -lt ~/.acfs/logs/install-*.log | head -1
+ls -lt ~/.gtbi/logs/install-*.log | head -1
 
 # Find the latest summary
-ls -lt ~/.acfs/logs/install_summary_*.json | head -1
+ls -lt ~/.gtbi/logs/install_summary_*.json | head -1
 
 # Parse summary JSON
-jq . ~/.acfs/logs/install_summary_*.json | head -1
+jq . ~/.gtbi/logs/install_summary_*.json | head -1
 
 # Get failed phase (if any)
-jq '.failure // "No failure"' ~/.acfs/logs/install_summary_*.json | tail -1
+jq '.failure // "No failure"' ~/.gtbi/logs/install_summary_*.json | tail -1
 
 # Get phase timings
-jq '.phases[] | "\(.id): \(.duration_seconds)s"' ~/.acfs/logs/install_summary_*.json | tail -1
+jq '.phases[] | "\(.id): \(.duration_seconds)s"' ~/.gtbi/logs/install_summary_*.json | tail -1
 ```
 
 **Sharing logs for support:**
 
 ```bash
 # Create a support bundle (strips sensitive data)
-acfs support-bundle > support-bundle.txt
+gtbi support-bundle > support-bundle.txt
 
 # Or manually share (review for secrets first):
-cat ~/.acfs/logs/install-*.log | tail -200  # Last 200 lines
-cat ~/.acfs/logs/install_summary_*.json | tail -1  # Latest summary
+cat ~/.gtbi/logs/install-*.log | tail -200  # Last 200 lines
+cat ~/.gtbi/logs/install_summary_*.json | tail -1  # Latest summary
 ```
 
 ### Support Bundle Command
 
-The `acfs support-bundle` command collects all diagnostic data into a single archive for troubleshooting.
+The `gtbi support-bundle` command collects all diagnostic data into a single archive for troubleshooting.
 
 **Usage:**
 ```bash
-acfs support-bundle [options]
+gtbi support-bundle [options]
 ```
 
 **Options:**
@@ -4048,15 +4048,15 @@ acfs support-bundle [options]
 | Option | Description |
 |--------|-------------|
 | `--verbose, -v` | Show detailed output during collection |
-| `--output, -o DIR` | Output directory (default: `~/.acfs/support`) |
+| `--output, -o DIR` | Output directory (default: `~/.gtbi/support`) |
 | `--no-redact` | Disable secret redaction (WARNING: bundle may contain secrets) |
 | `--help, -h` | Show help |
 
 **Output files:**
 ```
-~/.acfs/support/<timestamp>/          # Unpacked bundle directory
-~/.acfs/support/<timestamp>.tar.gz    # Compressed archive (shareable)
-~/.acfs/support/<timestamp>/manifest.json  # Bundle manifest
+~/.gtbi/support/<timestamp>/          # Unpacked bundle directory
+~/.gtbi/support/<timestamp>.tar.gz    # Compressed archive (shareable)
+~/.gtbi/support/<timestamp>/manifest.json  # Bundle manifest
 ```
 
 **What's collected:**
@@ -4064,7 +4064,7 @@ acfs support-bundle [options]
 | File | Description |
 |------|-------------|
 | `state.json` | Installation state and checkpoints |
-| `VERSION` | ACFS version |
+| `VERSION` | GTBI version |
 | `checksums.yaml` | Upstream verification checksums |
 | `logs/install-*.log` | Recent install logs (up to 10) |
 | `logs/install_summary_*.json` | Recent install summaries |
@@ -4072,7 +4072,7 @@ acfs support-bundle [options]
 | `versions.json` | Installed tool versions |
 | `environment.json` | OS, memory, disk, user info |
 | `os-release` | Linux distribution info |
-| `journal-acfs.log` | Systemd journal for ACFS services |
+| `journal-gtbi.log` | Systemd journal for GTBI services |
 | `config/.zshrc` | Shell configuration |
 
 **Security & Redaction:**
@@ -4094,18 +4094,18 @@ By default, sensitive data is automatically redacted:
 Before launching a large agent swarm or sharing a support bundle, run a local credential preflight:
 
 ```bash
-acfs credential-preflight --json
+gtbi credential-preflight --json
 ```
 
-The preflight scans bounded ACFS state/log files plus shell config/history surfaces and reports only categories, counts, file labels, and remediation guidance. It never prints raw secret values or snippets.
+The preflight scans bounded GTBI state/log files plus shell config/history surfaces and reports only categories, counts, file labels, and remediation guidance. It never prints raw secret values or snippets.
 
 **Example workflow:**
 
 ```bash
 # Create support bundle
-acfs support-bundle
+gtbi support-bundle
 
-# Output: ~/.acfs/support/20260127_120000.tar.gz
+# Output: ~/.gtbi/support/20260127_120000.tar.gz
 
 # Share the archive when filing an issue
 # The archive is safe to share (secrets redacted)
@@ -4114,12 +4114,12 @@ acfs support-bundle
 **Disable redaction (use with caution):**
 ```bash
 # WARNING: Bundle may contain API keys, tokens, and passwords
-acfs support-bundle --no-redact
+gtbi support-bundle --no-redact
 ```
 
 **When to use:**
 - Installation failed and you need to share logs
-- Filing a GitHub issue about ACFS
+- Filing a GitHub issue about GTBI
 - Diagnosing tool installation problems
 - Sharing system state with support
 
@@ -4205,7 +4205,7 @@ gemini  # Follow Google login flow, or use /auth inside Gemini CLI
 
 ### Doctor Shows Missing Tools
 
-**Symptom**: `acfs doctor` shows failed checks for tools you expected to be installed.
+**Symptom**: `gtbi doctor` shows failed checks for tools you expected to be installed.
 
 **Understanding doctor output:**
 
@@ -4213,31 +4213,31 @@ Doctor checks are generated directly from the manifest, so they verify the exact
 
 ```
   ✗ tools.lazygit - Lazygit terminal UI not found
-    Fix: acfs install --only tools.lazygit
+    Fix: gtbi install --only tools.lazygit
 ```
 
 **Solutions**:
 
 1. **Re-run the specific module** (use the fix suggestion):
    ```bash
-   acfs install --only tools.lazygit   # Install just that tool
-   acfs install --only lang.go         # Install a language runtime
-   acfs install --only stack.dcg       # Install a stack tool
+   gtbi install --only tools.lazygit   # Install just that tool
+   gtbi install --only lang.go         # Install a language runtime
+   gtbi install --only stack.dcg       # Install a stack tool
    ```
 
 2. **Re-run an entire phase** (for multiple failures in one category):
    ```bash
-   acfs install --only-phase cli     # Re-run CLI tools
-   acfs install --only-phase stack   # Re-run stack tools
+   gtbi install --only-phase cli     # Re-run CLI tools
+   gtbi install --only-phase stack   # Re-run stack tools
    ```
 
 3. **Run auto-fix mode** (applies safe, deterministic fixes):
    ```bash
-   acfs doctor --fix
-   acfs doctor --fix --dry-run  # Preview fixes first
+   gtbi doctor --fix
+   gtbi doctor --fix --dry-run  # Preview fixes first
    ```
 
-**Note**: Doctor checks match the manifest verify commands exactly. If a tool was skipped during installation (e.g., using `--mode safe`), the check will fail. This is expected—run `acfs doctor` to see which tools are missing and decide which to install.
+**Note**: Doctor checks match the manifest verify commands exactly. If a tool was skipped during installation (e.g., using `--mode safe`), the check will fail. This is expected—run `gtbi doctor` to see which tools are missing and decide which to install.
 
 ### Tmux Configuration Errors
 
@@ -4251,15 +4251,15 @@ Doctor checks are generated directly from the manifest, so they verify the exact
    # Will show line number of any errors
    ```
 
-2. **Reset to ACFS defaults**:
+2. **Reset to GTBI defaults**:
    ```bash
-   cp ~/.acfs/tmux/tmux.conf ~/.tmux.conf
+   cp ~/.gtbi/tmux/tmux.conf ~/.tmux.conf
    ```
 
 3. **Version mismatch** (old tmux, new config):
    ```bash
    tmux -V  # Check version
-   # ACFS config requires tmux 3.0+
+   # GTBI config requires tmux 3.0+
    ```
 
 ### Stack Tools Not Working
@@ -4270,7 +4270,7 @@ Doctor checks are generated directly from the manifest, so they verify the exact
 
 1. **Reinstall stack**:
    ```bash
-   acfs update --stack --force
+   gtbi update --stack --force
    ```
 
 2. **Check cargo install worked**:
@@ -4320,23 +4320,23 @@ When all else fails, the nuclear option:
 ```bash
 # Save any important files first!
 
-# Backup ACFS state (recommended)
+# Backup GTBI state (recommended)
 ts="$(date +%Y%m%d_%H%M%S)"
-[ -d ~/.acfs ] && mv ~/.acfs ~/.acfs.backup."$ts"
+[ -d ~/.gtbi ] && mv ~/.gtbi ~/.gtbi.backup."$ts"
 
 # Backup installed configs (optional)
 for f in ~/.zshrc ~/.tmux.conf ~/.p10k.zsh; do
   [ -f "$f" ] && mv "$f" "$f".backup."$ts"
 done
 
-curl -fsSL "https://raw.githubusercontent.com/Dicklesworthstone/agentic_coding_flywheel_setup/main/install.sh?$(date +%s)" | bash -s -- --yes --mode vibe --force-reinstall
+curl -fsSL "https://raw.githubusercontent.com/jonbackhaus/gtbi/main/install.sh?$(date +%s)" | bash -s -- --yes --mode vibe --force-reinstall
 ```
 
 ---
 
 ## Security Threat Model
 
-ACFS takes security seriously while acknowledging the inherent risks of `curl | bash` installation. This section documents our threat model and mitigations.
+GTBI takes security seriously while acknowledging the inherent risks of `curl | bash` installation. This section documents our threat model and mitigations.
 
 ### What We Protect Against
 
@@ -4436,23 +4436,23 @@ Never on:
 
 ## Comparison to Alternatives
 
-How does ACFS compare to other ways of setting up a development environment?
+How does GTBI compare to other ways of setting up a development environment?
 
 ### vs. Manual Setup
 
-| Aspect | Manual | ACFS |
+| Aspect | Manual | GTBI |
 |--------|--------|------|
 | Time | 3-7 hours | 30 minutes |
 | Consistency | Varies | Identical every time |
 | Documentation | Your memory | This README |
 | Resume on failure | Start over | Automatic |
-| Updates | Manual each tool | `acfs update` |
+| Updates | Manual each tool | `gtbi update` |
 
 **When to use manual**: When you need to understand every detail, or have highly specific requirements.
 
 ### vs. Dotfiles Repos
 
-| Aspect | Dotfiles | ACFS |
+| Aspect | Dotfiles | GTBI |
 |--------|----------|------|
 | Scope | Configs only | Full tool installation |
 | Portability | Mac/Linux | Ubuntu-focused |
@@ -4463,7 +4463,7 @@ How does ACFS compare to other ways of setting up a development environment?
 
 ### vs. Nix/NixOS
 
-| Aspect | Nix | ACFS |
+| Aspect | Nix | GTBI |
 |--------|-----|------|
 | Reproducibility | Perfect | Good |
 | Learning curve | Steep | Gentle |
@@ -4475,7 +4475,7 @@ How does ACFS compare to other ways of setting up a development environment?
 
 ### vs. DevContainers
 
-| Aspect | DevContainers | ACFS |
+| Aspect | DevContainers | GTBI |
 |--------|--------------|------|
 | Isolation | Container | Full VPS |
 | Resource overhead | Container runtime | None |
@@ -4486,7 +4486,7 @@ How does ACFS compare to other ways of setting up a development environment?
 
 ### vs. Ansible/Terraform
 
-| Aspect | Ansible/TF | ACFS |
+| Aspect | Ansible/TF | GTBI |
 |--------|------------|------|
 | Scope | Infrastructure | Development env |
 | Complexity | High | Low |
@@ -4495,9 +4495,9 @@ How does ACFS compare to other ways of setting up a development environment?
 
 **When to use Ansible/Terraform**: When you're managing fleets of servers, not individual dev environments.
 
-### The ACFS Sweet Spot
+### The GTBI Sweet Spot
 
-ACFS is optimal when you need:
+GTBI is optimal when you need:
 - **Fast setup** of a complete agentic coding environment
 - **Fresh Ubuntu VPS** as your target
 - **AI coding agents** as primary tools
@@ -4508,7 +4508,7 @@ ACFS is optimal when you need:
 
 ## The Dicklesworthstone Stack Philosophy
 
-The 10-tool stack included in ACFS isn't random—each tool addresses a specific problem discovered through extensive multi-agent development experience.
+The 10-tool stack included in GTBI isn't random—each tool addresses a specific problem discovered through extensive multi-agent development experience.
 
 ### The Problems
 
@@ -4582,36 +4582,36 @@ No single tool is transformative alone. Together, they enable workflows that wou
 
 ## Advanced Configuration
 
-ACFS supports various configuration mechanisms for advanced users.
+GTBI supports various configuration mechanisms for advanced users.
 
 ### Environment Variables
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `ACFS_HOME` | `~/.acfs` | Configuration directory |
-| `ACFS_REF` | `main` | Git ref to install from (tag, branch, or commit SHA) |
-| `ACFS_CHECKSUMS_REF` | `main` (when pinned) / `ACFS_REF` (when branch) | Ref used to fetch `checksums.yaml` |
-| `ACFS_LOG_DIR` | `/var/log/acfs` | Log directory |
+| `GTBI_HOME` | `~/.gtbi` | Configuration directory |
+| `GTBI_REF` | `main` | Git ref to install from (tag, branch, or commit SHA) |
+| `GTBI_CHECKSUMS_REF` | `main` (when pinned) / `GTBI_REF` (when branch) | Ref used to fetch `checksums.yaml` |
+| `GTBI_LOG_DIR` | `/var/log/gtbi` | Log directory |
 | `TARGET_USER` | `ubuntu` | User to configure |
 | `TARGET_HOME` | Resolved from `TARGET_USER` | User home directory (or explicit override) |
 
 **Examples:**
 ```bash
 # Install from a tagged release (recommended for production)
-curl -fsSL "https://raw.githubusercontent.com/Dicklesworthstone/agentic_coding_flywheel_setup/v0.1.0/install.sh" | bash -s -- --yes --mode vibe --ref v0.1.0
+curl -fsSL "https://raw.githubusercontent.com/jonbackhaus/gtbi/v0.1.0/install.sh" | bash -s -- --yes --mode vibe --ref v0.1.0
 
 # Install from a specific branch (development/testing)
-curl -fsSL "https://raw.githubusercontent.com/Dicklesworthstone/agentic_coding_flywheel_setup/feature/new-tool/install.sh" | bash -s -- --yes --mode vibe --ref feature/new-tool
+curl -fsSL "https://raw.githubusercontent.com/jonbackhaus/gtbi/feature/new-tool/install.sh" | bash -s -- --yes --mode vibe --ref feature/new-tool
 
 # Install from a specific commit (reproducibility)
-curl -fsSL "https://raw.githubusercontent.com/Dicklesworthstone/agentic_coding_flywheel_setup/abc1234/install.sh" | bash -s -- --yes --mode vibe --ref abc1234
+curl -fsSL "https://raw.githubusercontent.com/jonbackhaus/gtbi/abc1234/install.sh" | bash -s -- --yes --mode vibe --ref abc1234
 
 # Pin installer version but use latest checksums (avoid stale hash mismatches)
-curl -fsSL "https://raw.githubusercontent.com/Dicklesworthstone/agentic_coding_flywheel_setup/v0.5.0/install.sh" | bash -s -- --yes --mode vibe --ref v0.5.0 --checksums-ref main
+curl -fsSL "https://raw.githubusercontent.com/jonbackhaus/gtbi/v0.5.0/install.sh" | bash -s -- --yes --mode vibe --ref v0.5.0 --checksums-ref main
 ```
 
-> **Tip:** Always match the URL path with `--ref` so the initial script and all subsequently fetched scripts come from the same ref. If you use environment variables in a pipeline, attach them to `bash`, not `curl`: `curl ... | ACFS_REF=v0.5.0 bash -s -- --yes --mode vibe`.
-> **Tip:** For pinned installs (tags/SHAs), checksums default to `main` to avoid stale installer hashes. Override with `ACFS_CHECKSUMS_REF` if you want checksums pinned to the same ref.
+> **Tip:** Always match the URL path with `--ref` so the initial script and all subsequently fetched scripts come from the same ref. If you use environment variables in a pipeline, attach them to `bash`, not `curl`: `curl ... | GTBI_REF=v0.5.0 bash -s -- --yes --mode vibe`.
+> **Tip:** For pinned installs (tags/SHAs), checksums default to `main` to avoid stale installer hashes. Override with `GTBI_CHECKSUMS_REF` if you want checksums pinned to the same ref.
 
 ### Complete Installer CLI Options
 
@@ -4692,20 +4692,20 @@ curl -fsSL "..." | bash -s -- --print-plan
 
 ### Custom Post-Install Hooks
 
-Add custom steps by placing scripts in `~/.acfs/hooks/`:
+Add custom steps by placing scripts in `~/.gtbi/hooks/`:
 
 ```bash
-mkdir -p ~/.acfs/hooks
-cat > ~/.acfs/hooks/post-install.sh << 'EOF'
+mkdir -p ~/.gtbi/hooks
+cat > ~/.gtbi/hooks/post-install.sh << 'EOF'
 #!/bin/bash
 # Custom post-install steps
 echo "Running custom configuration..."
 # Your commands here
 EOF
-chmod +x ~/.acfs/hooks/post-install.sh
+chmod +x ~/.gtbi/hooks/post-install.sh
 ```
 
-ACFS will execute `post-install.sh` after the main installation completes.
+GTBI will execute `post-install.sh` after the main installation completes.
 
 ### Override Tool Versions
 
@@ -4723,13 +4723,13 @@ Note: Not all tools support version pinning. Check individual tool documentation
 
 ## Future Roadmap
 
-ACFS is actively developed. Here's what's coming:
+GTBI is actively developed. Here's what's coming:
 
 ### Near-Term (Q1 2025)
 
 - [ ] **Full manifest-driven execution**: install.sh consumes generated scripts
 - [x] **Tailscale integration**: Zero-config VPN for secure remote access ✓
-- [x] **Services setup wizard**: Guide users through service account setup (`acfs services-setup`) ✓
+- [x] **Services setup wizard**: Guide users through service account setup (`gtbi services-setup`) ✓
 - [ ] **Interactive module selection**: Choose what to install via TUI
 
 ### Mid-Term (Q2 2025)
@@ -4741,8 +4741,8 @@ ACFS is actively developed. Here's what's coming:
 
 ### Long-Term (2025+)
 
-- [ ] **ACFS Cloud**: Managed VPS provisioning + ACFS install in one click
-- [ ] **IDE integrations**: VSCode/Cursor extensions for remote ACFS management
+- [ ] **GTBI Cloud**: Managed VPS provisioning + GTBI install in one click
+- [ ] **IDE integrations**: VSCode/Cursor extensions for remote GTBI management
 - [ ] **Agent marketplace**: Pre-configured agent personalities and workflows
 - [ ] **Enterprise features**: SSO, audit logging, compliance
 
@@ -4798,7 +4798,7 @@ MIT License (with OpenAI/Anthropic Rider). See [LICENSE](LICENSE) for details.
 ## Links
 
 - **Website:** [agent-flywheel.com](https://agent-flywheel.com) — Interactive wizard for beginners
-- **GitHub:** [Dicklesworthstone/agentic_coding_flywheel_setup](https://github.com/Dicklesworthstone/agentic_coding_flywheel_setup)
+- **GitHub:** [Dicklesworthstone/gastown_batteries_included](https://github.com/jonbackhaus/gtbi)
 - **Related Projects:**
   - [ntm](https://github.com/Dicklesworthstone/ntm) - Named Tmux Manager
   - [beads_viewer](https://github.com/Dicklesworthstone/beads_viewer) - Task management TUI

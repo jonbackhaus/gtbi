@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-# ACFS Installer - Tool Classification Library
+# GTBI Installer - Tool Classification Library
 #
 # Classifies tools as CRITICAL vs RECOMMENDED to determine
 # installation failure behavior.
@@ -14,16 +14,16 @@
 #   - User-facing tools that can be installed manually later
 #
 # Related beads:
-#   - agentic_coding_flywheel_setup-v8a: Classify tools
-#   - agentic_coding_flywheel_setup-4jr: Checksum mismatch handling
-#   - agentic_coding_flywheel_setup-5zm: Error reporting
+#   - gastown_batteries_included-v8a: Classify tools
+#   - gastown_batteries_included-4jr: Checksum mismatch handling
+#   - gastown_batteries_included-5zm: Error reporting
 # ============================================================
 
 # Prevent multiple sourcing
-if [[ -n "${_ACFS_TOOLS_SH_LOADED:-}" ]]; then
+if [[ -n "${_GTBI_TOOLS_SH_LOADED:-}" ]]; then
     return 0
 fi
-_ACFS_TOOLS_SH_LOADED=1
+_GTBI_TOOLS_SH_LOADED=1
 
 # ============================================================
 # Tool Classification Constants
@@ -220,8 +220,8 @@ declare -g SKIPPED_TOOLS=()
 #   $2 - Error message/details
 #
 # Environment:
-#   ACFS_STRICT_MODE - If set to "true", treat all failures as critical
-#   ACFS_INTERACTIVE - If "false", auto-skip RECOMMENDED tools
+#   GTBI_STRICT_MODE - If set to "true", treat all failures as critical
+#   GTBI_INTERACTIVE - If "false", auto-skip RECOMMENDED tools
 #
 # Returns:
 #   0 for RECOMMENDED tools (continues)
@@ -235,7 +235,7 @@ handle_tool_failure() {
     classification="$(get_tool_classification "$tool")"
 
     # Strict mode treats all failures as critical
-    if [[ "${ACFS_STRICT_MODE:-false}" == "true" ]]; then
+    if [[ "${GTBI_STRICT_MODE:-false}" == "true" ]]; then
         classification="critical"
     fi
 
@@ -320,7 +320,7 @@ has_skipped_tools() {
 #   $1 - Tool name
 #
 # Environment:
-#   ACFS_INTERACTIVE - "true" for interactive, "false" for non-interactive
+#   GTBI_INTERACTIVE - "true" for interactive, "false" for non-interactive
 #
 # Returns:
 #   0 if should auto-skip
@@ -330,7 +330,7 @@ should_auto_skip_on_failure() {
     local tool="$1"
 
     # In strict mode, we never auto-skip on failure, we abort.
-    if [[ "${ACFS_STRICT_MODE:-false}" == "true" ]]; then
+    if [[ "${GTBI_STRICT_MODE:-false}" == "true" ]]; then
         return 1
     fi
 
@@ -340,7 +340,7 @@ should_auto_skip_on_failure() {
     fi
 
     # In non-interactive mode, RECOMMENDED tools auto-skip
-    if [[ "${ACFS_INTERACTIVE:-true}" == "false" ]]; then
+    if [[ "${GTBI_INTERACTIVE:-true}" == "false" ]]; then
         return 0
     fi
 
@@ -350,7 +350,7 @@ should_auto_skip_on_failure() {
 
 # ============================================================
 # Enhanced Skipped Tools Tracking
-# Related: agentic_coding_flywheel_setup-8z5
+# Related: gastown_batteries_included-8z5
 # ============================================================
 
 # Associative array to store skipped tool details (tool -> "reason|url")
@@ -400,12 +400,12 @@ get_skip_url() {
 # Summary Report
 # ============================================================
 
-# Colors for output (respects NO_COLOR via logging.sh's ACFS_* variables).
+# Colors for output (respects NO_COLOR via logging.sh's GTBI_* variables).
 # Use ${var-default} to preserve empty strings. Related: bd-39ye
-_TOOLS_YELLOW="${ACFS_YELLOW-\033[0;33m}"
-_TOOLS_CYAN="${ACFS_BLUE-\033[0;36m}"
-_TOOLS_DIM="${ACFS_GRAY-\033[2m}"
-_TOOLS_NC="${ACFS_NC-\033[0m}"
+_TOOLS_YELLOW="${GTBI_YELLOW-\033[0;33m}"
+_TOOLS_CYAN="${GTBI_BLUE-\033[0;36m}"
+_TOOLS_DIM="${GTBI_GRAY-\033[2m}"
+_TOOLS_NC="${GTBI_NC-\033[0m}"
 
 # report_skipped_tools - Print comprehensive summary of skipped tools
 #
@@ -413,7 +413,7 @@ _TOOLS_NC="${ACFS_NC-\033[0m}"
 #   - Which tools were skipped
 #   - Why they were skipped
 #   - Installer URLs for manual installation
-#   - Alternative solutions (acfs update)
+#   - Alternative solutions (gtbi update)
 #
 # Call this at the end of installation.
 #
@@ -448,7 +448,7 @@ report_skipped_tools() {
     echo "------------------------------------------------------------" >&2
     echo "" >&2
     echo "You can install these tools manually (bypasses checksum verification):" >&2
-    echo "  - Prefer: update checksums and re-run ACFS where possible." >&2
+    echo "  - Prefer: update checksums and re-run GTBI where possible." >&2
     echo "  - If you must install manually: download, review, then run." >&2
     echo "" >&2
 
@@ -475,11 +475,11 @@ report_skipped_tools() {
         fi
     done
 
-    echo "Or wait for ACFS to update checksums and run:" >&2
-    echo -e "  ${_TOOLS_CYAN}acfs update --stack${_TOOLS_NC}" >&2
+    echo "Or wait for GTBI to update checksums and run:" >&2
+    echo -e "  ${_TOOLS_CYAN}gtbi update --stack${_TOOLS_NC}" >&2
     echo "" >&2
     echo "To see current status:" >&2
-    echo -e "  ${_TOOLS_CYAN}acfs doctor${_TOOLS_NC}" >&2
+    echo -e "  ${_TOOLS_CYAN}gtbi doctor${_TOOLS_NC}" >&2
     echo "" >&2
 }
 

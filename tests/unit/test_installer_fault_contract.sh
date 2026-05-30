@@ -23,7 +23,7 @@ RESCUE_SH="$REPO_ROOT/scripts/lib/rescue.sh"
 SUPPORT_SH="$REPO_ROOT/scripts/lib/support.sh"
 TESTS_PASSED=0
 TESTS_FAILED=0
-ARTIFACT_DIR="${ACFS_FAULT_CONTRACT_ARTIFACTS_DIR:-${TMPDIR:-/tmp}/acfs-fault-contract-artifacts-$(date +%Y%m%d-%H%M%S)-$$}"
+ARTIFACT_DIR="${GTBI_FAULT_CONTRACT_ARTIFACTS_DIR:-${TMPDIR:-/tmp}/gtbi-fault-contract-artifacts-$(date +%Y%m%d-%H%M%S)-$$}"
 
 mkdir -p "$ARTIFACT_DIR"
 
@@ -197,7 +197,7 @@ new_fixture() {
 fixture_upstream_installer_unavailable() {
     local dir
     dir="$(new_fixture upstream-installer-unavailable)"
-    write_failed_state "$dir/state.json" "stack" "Installing RCH" "curl exit 22 while fetching verified installer" "acfs rescue --json"
+    write_failed_state "$dir/state.json" "stack" "Installing RCH" "curl exit 22 while fetching verified installer" "gtbi rescue --json"
     write_file "$dir/logs/install.log" <<'LOG'
 [stack] Installing RCH
 verified installer fetch failed
@@ -205,7 +205,7 @@ curl exit 22
 support evidence: state.json logs/install.log local_progress.json
 LOG
     write_expected "$dir" "upstream-installer-unavailable" "upstream_installer_unavailable" "stack" "failed" 22 \
-        "acfs rescue --json" \
+        "gtbi rescue --json" \
         "Surface the failed phase and collect a support bundle before retrying the same pinned installer." \
         '["verified installer fetch failed", "curl exit 22", "support evidence"]'
 }
@@ -213,7 +213,7 @@ LOG
 fixture_checksum_mismatch() {
     local dir
     dir="$(new_fixture checksum-mismatch)"
-    write_failed_state "$dir/state.json" "languages" "Installing Bun" "checksum mismatch for bun installer" "acfs support-bundle"
+    write_failed_state "$dir/state.json" "languages" "Installing Bun" "checksum mismatch for bun installer" "gtbi support-bundle"
     write_file "$dir/logs/install.log" <<'LOG'
 [languages] Installing Bun
 checksum mismatch for verified installer
@@ -221,7 +221,7 @@ expected sha256 did not match downloaded content
 support evidence: state.json logs/install.log local_progress.json
 LOG
     write_expected "$dir" "checksum-mismatch" "checksum_mismatch" "languages" "failed" 1 \
-        "acfs support-bundle" \
+        "gtbi support-bundle" \
         "Fail closed, do not bypass checksum verification, and preserve evidence for review." \
         '["checksum mismatch", "expected sha256", "support evidence"]'
 }
@@ -229,7 +229,7 @@ LOG
 fixture_network_timeout() {
     local dir
     dir="$(new_fixture network-timeout)"
-    write_failed_state "$dir/state.json" "shell_setup" "Installing Oh My Zsh" "curl exit 28 after retry_with_backoff" "acfs rescue --json"
+    write_failed_state "$dir/state.json" "shell_setup" "Installing Oh My Zsh" "curl exit 28 after retry_with_backoff" "gtbi rescue --json"
     write_file "$dir/logs/install.log" <<'LOG'
 [shell_setup] Installing Oh My Zsh
 network timeout while fetching installer
@@ -238,7 +238,7 @@ retry_with_backoff attempts exhausted
 support evidence: state.json logs/install.log local_progress.json
 LOG
     write_expected "$dir" "network-timeout" "network_timeout" "shell_setup" "failed" 28 \
-        "acfs rescue --json" \
+        "gtbi rescue --json" \
         "Classify as transient, show retry context, and resume from the checkpoint after connectivity is back." \
         '["network timeout", "curl exit 28", "retry_with_backoff attempts exhausted"]'
 }
@@ -246,7 +246,7 @@ LOG
 fixture_permission_denied() {
     local dir
     dir="$(new_fixture permission-denied)"
-    write_failed_state "$dir/state.json" "finalize" "Writing state file" "permission denied writing state file" "acfs support-bundle"
+    write_failed_state "$dir/state.json" "finalize" "Writing state file" "permission denied writing state file" "gtbi support-bundle"
     write_file "$dir/logs/install.log" <<'LOG'
 [finalize] Writing state file
 permission denied writing state file
@@ -254,7 +254,7 @@ state_write_atomic failed
 support evidence: state.json logs/install.log local_progress.json
 LOG
     write_expected "$dir" "permission-denied" "permission_denied" "finalize" "failed" 13 \
-        "acfs support-bundle" \
+        "gtbi support-bundle" \
         "Preserve ownership and path evidence so support can identify the bad writable surface." \
         '["permission denied", "state_write_atomic failed", "support evidence"]'
 }
@@ -272,7 +272,7 @@ fail closed and ask for support bundle
 support evidence: state.json logs/install.log local_progress.json
 LOG
     write_expected "$dir" "malformed-state" "malformed_state" "resume" "malformed" 2 \
-        "acfs support-bundle" \
+        "gtbi support-bundle" \
         "Fail closed because resume cannot safely infer completed phases from malformed state." \
         '["state file is not valid JSON", "fail closed", "support evidence"]'
 }
@@ -288,7 +288,7 @@ checkpoint age seconds: 4000
 support evidence: state.json logs/install.log local_progress.json
 LOG
     write_expected "$dir" "interrupted-resume" "interrupted_resume" "languages" "interrupted" 1 \
-        "acfs continue --status" \
+        "gtbi continue --status" \
         "Prefer status/continue guidance before retrying because no failed phase was recorded." \
         '["checkpoint still marks current phase", "checkpoint age seconds", "support evidence"]'
 }
@@ -301,13 +301,13 @@ fixture_ubuntu_upgrade_interrupted() {
 [ubuntu_upgrade] Awaiting reboot after Ubuntu upgrade hop
 upgrade path: 22.04 -> 24.04 -> 25.04 -> 25.10
 completed hop: 22.04 -> 24.04
-resume service: acfs-upgrade-resume
+resume service: gtbi-upgrade-resume
 support evidence: state.json logs/install.log local_progress.json checkpoint_summary.json
 LOG
     write_expected "$dir" "ubuntu-upgrade-interrupted" "ubuntu_upgrade_interrupted" "ubuntu_upgrade" "ubuntu_upgrade" 1 \
-        "acfs continue --status" \
+        "gtbi continue --status" \
         "Use the upgrade resume/status path and preserve upgrade logs before retrying any installer command." \
-        '["upgrade path: 22.04 -> 24.04 -> 25.04 -> 25.10", "resume service: acfs-upgrade-resume", "support evidence"]'
+        '["upgrade path: 22.04 -> 24.04 -> 25.04 -> 25.10", "resume service: gtbi-upgrade-resume", "support evidence"]'
 }
 
 assert_safe_recovery_command() {
@@ -438,9 +438,9 @@ capture_checkpoint_summary_for_fixture() {
         log_warn() { :; }
         log_error() { :; }
         source "$SUPPORT_SH"
-        _SUPPORT_ACFS_HOME="$FIXTURE_DIR"
+        _SUPPORT_GTBI_HOME="$FIXTURE_DIR"
         BUNDLE_FILES=()
-        ACFS_SUPPORT_NOW_EPOCH=5000 ACFS_CHECKPOINT_STALE_SECONDS=60 capture_checkpoint_summary_json "$FIXTURE_DIR/support"
+        GTBI_SUPPORT_NOW_EPOCH=5000 GTBI_CHECKPOINT_STALE_SECONDS=60 capture_checkpoint_summary_json "$FIXTURE_DIR/support"
     '
 }
 

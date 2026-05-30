@@ -13,12 +13,12 @@ setup() {
     export TEST_DIR
 
     # Set up logging
-    export ACFS_LOG_DIR="$TEST_DIR/logs"
-    mkdir -p "$ACFS_LOG_DIR"
-    export ACFS_LOG_LEVEL=0
+    export GTBI_LOG_DIR="$TEST_DIR/logs"
+    mkdir -p "$GTBI_LOG_DIR"
+    export GTBI_LOG_LEVEL=0
 
     # Create screens directory structure for testing
-    export NEWPROJ_LIB_DIR="$ACFS_LIB_DIR"
+    export NEWPROJ_LIB_DIR="$GTBI_LIB_DIR"
 
     # Source dependencies
     source_lib "newproj_logging"
@@ -174,7 +174,7 @@ teardown() {
     setup_colors
     setup_box_chars
 
-    source "$ACFS_LIB_DIR/newproj_screens/screen_welcome.sh"
+    source "$GTBI_LIB_DIR/newproj_screens/screen_welcome.sh"
 
     [[ "$SCREEN_WELCOME_ID" == "welcome" ]]
     [[ "$SCREEN_WELCOME_NEXT" == "project_name" ]]
@@ -195,7 +195,7 @@ teardown() {
     local output
     output=$(render_welcome_screen 2>&1 | head -20)
 
-    [[ "$output" == *"ACFS"* ]]
+    [[ "$output" == *"GTBI"* ]]
     [[ "$output" == *"Welcome"* ]]
 }
 
@@ -611,8 +611,8 @@ teardown() {
 @test "render_progress_screen tolerates missing step status under set -u" {
     run bash -c '
         set -euo pipefail
-        export NEWPROJ_LIB_DIR="'"$ACFS_LIB_DIR"'"
-        source "'"$ACFS_LIB_DIR"'/newproj_screens.sh"
+        export NEWPROJ_LIB_DIR="'"$GTBI_LIB_DIR"'"
+        source "'"$GTBI_LIB_DIR"'/newproj_screens.sh"
         load_screens >/dev/null
 
         TERM_HAS_UNICODE=false
@@ -686,8 +686,8 @@ teardown() {
 @test "handle_success_input keeps prompting when Claude launch fails" {
     run bash -c '
         set -euo pipefail
-        export NEWPROJ_LIB_DIR="'"$ACFS_LIB_DIR"'"
-        source "'"$ACFS_LIB_DIR"'/newproj_screens.sh"
+        export NEWPROJ_LIB_DIR="'"$GTBI_LIB_DIR"'"
+        source "'"$GTBI_LIB_DIR"'/newproj_screens.sh"
         load_screens >/dev/null
         render_success_screen() { echo "render"; }
         open_in_claude() { echo "claude failed"; return 1; }

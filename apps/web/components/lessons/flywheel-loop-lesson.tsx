@@ -50,10 +50,10 @@ export function FlywheelLoopLesson() {
         Understand how all the tools work together.
       </GoalBanner>
 
-      {/* The ACFS Flywheel */}
+      {/* The GTBI Flywheel */}
       <Section
         {...{
-          title: "The ACFS Flywheel",
+          title: "The GTBI Flywheel",
           icon: <RefreshCw className="h-5 w-5" />,
           delay: 0.1,
         }}
@@ -386,7 +386,7 @@ What kind of project should we create?"`,
         <div className="grid gap-4 sm:grid-cols-3">
           <HelpCard
             {...{
-              command: "acfs doctor",
+              command: "gtbi doctor",
               description: "Check everything is working",
               gradient: "from-emerald-500/20 to-teal-500/20",
             }}
@@ -618,7 +618,7 @@ function AnimatedFlywheel() {
           </circle>
           <circle cx={CX} cy={CY} r={30} fill="hsl(var(--primary))" fillOpacity="0.08" stroke="hsl(var(--primary))" strokeOpacity="0.3" strokeWidth="1.5" />
           <text x={CX} y={CY - 6} textAnchor="middle" fill="white" fontSize="11" fontWeight="700" opacity="0.9">
-            ACFS
+            GTBI
           </text>
           <text x={CX} y={CY + 10} textAnchor="middle" fill="hsl(var(--primary))" fontSize="9" fontWeight="500" opacity="0.7">
             Flywheel
@@ -979,7 +979,7 @@ const FLYWHEEL_STAGES_V2: FlywheelStageData[] = [
     agent: "Brenner",
     description:
       "Scan the backlog, triage issues by priority, and pick the highest-impact task. Beads keeps everything ranked and visible.",
-    commands: ["acfs bv list --priority high", "acfs br ready"],
+    commands: ["gtbi bv list --priority high", "gtbi br ready"],
   },
   {
     id: "plan",
@@ -992,7 +992,7 @@ const FLYWHEEL_STAGES_V2: FlywheelStageData[] = [
     agent: "Context Master",
     description:
       "Review procedural memory, outline the approach, and decide which agents to spawn for parallel work.",
-    commands: ["acfs cm reflect --task $TASK_ID", "cat CLAUDE.md"],
+    commands: ["gtbi cm reflect --task $TASK_ID", "cat CLAUDE.md"],
   },
   {
     id: "implement",
@@ -1006,8 +1006,8 @@ const FLYWHEEL_STAGES_V2: FlywheelStageData[] = [
     description:
       "Spawn parallel coding agents with NTM. Each agent works on a slice of the task, coordinating via Agent Mail.",
     commands: [
-      "acfs ntm spawn --agents 3 --task $TASK_ID",
-      "acfs am send @agent-2 'merge ready'",
+      "gtbi ntm spawn --agents 3 --task $TASK_ID",
+      "gtbi am send @agent-2 'merge ready'",
     ],
   },
   {
@@ -1021,7 +1021,7 @@ const FLYWHEEL_STAGES_V2: FlywheelStageData[] = [
     agent: "UBS Scanner",
     description:
       "Run automated bug scanning, check test coverage, and verify the changes pass all quality gates.",
-    commands: ["acfs ubs scan --deep", "acfs caut check --all"],
+    commands: ["gtbi ubs scan --deep", "gtbi caut check --all"],
   },
   {
     id: "review",
@@ -1034,7 +1034,7 @@ const FLYWHEEL_STAGES_V2: FlywheelStageData[] = [
     agent: "DCG Guardian",
     description:
       "DCG blocks dangerous commands. APR provides automated pull request review with context-aware suggestions.",
-    commands: ["acfs dcg guard --strict", "acfs apr review --pr $PR_NUM"],
+    commands: ["gtbi dcg guard --strict", "gtbi apr review --pr $PR_NUM"],
   },
   {
     id: "deploy",
@@ -1047,7 +1047,7 @@ const FLYWHEEL_STAGES_V2: FlywheelStageData[] = [
     agent: "RU Deployer",
     description:
       "RU handles multi-repo sync, AI-driven commit messages, and coordinated deployments across all projects.",
-    commands: ["acfs ru sync --all", "git push origin main"],
+    commands: ["gtbi ru sync --all", "git push origin main"],
   },
   {
     id: "monitor",
@@ -1056,11 +1056,11 @@ const FLYWHEEL_STAGES_V2: FlywheelStageData[] = [
     icon: Activity,
     color: "#ec4899",
     warmColor: "#f472b6",
-    tools: ["DSR report", "acfs status"],
+    tools: ["DSR report", "gtbi status"],
     agent: "DSR Reporter",
     description:
       "Track deployment health, generate daily status reports, and surface any regressions or anomalies immediately.",
-    commands: ["acfs dsr report --today", "acfs status --verbose"],
+    commands: ["gtbi dsr report --today", "gtbi status --verbose"],
   },
   {
     id: "learn",
@@ -1073,7 +1073,7 @@ const FLYWHEEL_STAGES_V2: FlywheelStageData[] = [
     agent: "CASS Indexer",
     description:
       "CASS indexes session history for future retrieval. CM distills reusable patterns into procedural memory for the next cycle.",
-    commands: ["acfs cass index --session $SID", "acfs cm distill --patterns"],
+    commands: ["gtbi cass index --session $SID", "gtbi cm distill --patterns"],
   },
 ];
 

@@ -41,9 +41,9 @@ type OS = "mac" | "windows" | "linux";
 
 type CheckedState = boolean | "indeterminate";
 
-const COMPLETION_KEY_PREFIX = "acfs-command-";
+const COMPLETION_KEY_PREFIX = "gtbi-command-";
 export const COMMAND_COMPLETION_CHANGED_EVENT =
-  "acfs:command-completion-changed";
+  "gtbi:command-completion-changed";
 
 type CommandCompletionChangedDetail = {
   key: string;

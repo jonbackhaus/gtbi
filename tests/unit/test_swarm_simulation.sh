@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-# Unit tests for acfs swarm simulation harness
+# Unit tests for gtbi swarm simulation harness
 # ============================================================
 
 set -euo pipefail
@@ -10,7 +10,7 @@ SWARM_SIM_SH="$REPO_ROOT/scripts/lib/swarm_simulation.sh"
 
 TESTS_PASSED=0
 TESTS_FAILED=0
-ARTIFACT_DIR="${ACFS_SWARM_SIM_TEST_ARTIFACTS_DIR:-${TMPDIR:-/tmp}/acfs-swarm-sim-test-artifacts-$(date +%Y%m%d-%H%M%S)-$$}"
+ARTIFACT_DIR="${GTBI_SWARM_SIM_TEST_ARTIFACTS_DIR:-${TMPDIR:-/tmp}/gtbi-swarm-sim-test-artifacts-$(date +%Y%m%d-%H%M%S)-$$}"
 
 mkdir -p "$ARTIFACT_DIR"
 
@@ -78,11 +78,11 @@ run_sim_json() {
 
     set +e
     env \
-        ACFS_CAPACITY_CPU_COUNT=128 \
-        ACFS_CAPACITY_MEM_TOTAL_KB=268435456 \
-        ACFS_CAPACITY_DISK_AVAILABLE_KB=419430400 \
-        ACFS_CAPACITY_RCH_AVAILABLE=true \
-        ACFS_CAPACITY_NTM_AVAILABLE=true \
+        GTBI_CAPACITY_CPU_COUNT=128 \
+        GTBI_CAPACITY_MEM_TOTAL_KB=268435456 \
+        GTBI_CAPACITY_DISK_AVAILABLE_KB=419430400 \
+        GTBI_CAPACITY_RCH_AVAILABLE=true \
+        GTBI_CAPACITY_NTM_AVAILABLE=true \
         bash "$SWARM_SIM_SH" --json --status-file "$fixture" --artifact-dir "$run_artifacts" "$@" > "$output_file"
     status=$?
     set -e
@@ -148,11 +148,11 @@ test_low_capacity_fails_large_profile() {
 
     set +e
     output="$(env \
-        ACFS_CAPACITY_CPU_COUNT=2 \
-        ACFS_CAPACITY_MEM_TOTAL_KB=4194304 \
-        ACFS_CAPACITY_DISK_AVAILABLE_KB=20971520 \
-        ACFS_CAPACITY_RCH_AVAILABLE=false \
-        ACFS_CAPACITY_NTM_AVAILABLE=true \
+        GTBI_CAPACITY_CPU_COUNT=2 \
+        GTBI_CAPACITY_MEM_TOTAL_KB=4194304 \
+        GTBI_CAPACITY_DISK_AVAILABLE_KB=20971520 \
+        GTBI_CAPACITY_RCH_AVAILABLE=false \
+        GTBI_CAPACITY_NTM_AVAILABLE=true \
         bash "$SWARM_SIM_SH" --json --status-file "$fixture" --artifact-dir "$ARTIFACT_DIR/low-artifacts" --counts 50)"
     status=$?
     set -e
@@ -170,18 +170,18 @@ test_human_output_declares_simulation_only() {
 
     set +e
     output="$(env \
-        ACFS_CAPACITY_CPU_COUNT=128 \
-        ACFS_CAPACITY_MEM_TOTAL_KB=268435456 \
-        ACFS_CAPACITY_DISK_AVAILABLE_KB=419430400 \
-        ACFS_CAPACITY_RCH_AVAILABLE=true \
-        ACFS_CAPACITY_NTM_AVAILABLE=true \
+        GTBI_CAPACITY_CPU_COUNT=128 \
+        GTBI_CAPACITY_MEM_TOTAL_KB=268435456 \
+        GTBI_CAPACITY_DISK_AVAILABLE_KB=419430400 \
+        GTBI_CAPACITY_RCH_AVAILABLE=true \
+        GTBI_CAPACITY_NTM_AVAILABLE=true \
         bash "$SWARM_SIM_SH" --status-file "$fixture" --artifact-dir "$ARTIFACT_DIR/human-artifacts")"
     status=$?
     set -e
 
     printf '%s\n' "$output" > "$ARTIFACT_DIR/human_output.txt"
     [[ "$status" -eq 0 ]] || return 1
-    grep -Fq "ACFS Swarm Simulation" <<<"$output" || return 1
+    grep -Fq "GTBI Swarm Simulation" <<<"$output" || return 1
     grep -Fq "Simulation only:" <<<"$output" || return 1
     grep -Fq "50 agents: pass" <<<"$output" || return 1
 

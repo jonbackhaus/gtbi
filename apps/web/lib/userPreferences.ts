@@ -26,7 +26,7 @@ const OS_KEY = "agent-flywheel-user-os";
 const VPS_IP_KEY = "agent-flywheel-vps-ip";
 const INSTALL_MODE_KEY = "agent-flywheel-install-mode";
 const SSH_USERNAME_KEY = "agent-flywheel-ssh-username";
-export const ACFS_REF_KEY = "agent-flywheel-acfs-ref";
+export const GTBI_REF_KEY = "agent-flywheel-gtbi-ref";
 export const CREATE_VPS_CHECKLIST_KEY = "agent-flywheel-create-vps-checklist";
 export const VPS_READINESS_SELECTION_KEY = "agent-flywheel-vps-readiness-selection";
 const CHECKED_SERVICES_KEY = "agent-flywheel-checked-services";
@@ -42,11 +42,11 @@ const OS_QUERY_KEY = "os";
 const VPS_IP_QUERY_KEY = "ip";
 const INSTALL_MODE_QUERY_KEY = "mode";
 const SSH_USERNAME_QUERY_KEY = "user";
-const ACFS_REF_QUERY_KEY = "ref";
+const GTBI_REF_QUERY_KEY = "ref";
 const MAX_GIT_REF_LENGTH = 120;
 const GIT_REF_SAFE_PATTERN = /^[A-Za-z0-9._/-]+$/;
 const SSH_USERNAME_PATTERN = /^[a-z_][a-z0-9._-]*$/;
-const USER_PREFERENCES_EVENT = "acfs:user-preferences-updated";
+const USER_PREFERENCES_EVENT = "gtbi:user-preferences-updated";
 const WORKLOAD_IDS: readonly WorkloadId[] = ["light", "standard", "heavy"];
 
 function normalizeStringList(values: unknown): string[] {
@@ -178,7 +178,7 @@ export const userPreferencesKeys = {
   detectedOS: ["userPreferences", "detectedOS"] as const,
   installMode: ["userPreferences", "installMode"] as const,
   sshUsername: ["userPreferences", "sshUsername"] as const,
-  acfsRef: ["userPreferences", "acfsRef"] as const,
+  gtbiRef: ["userPreferences", "gtbiRef"] as const,
   createVPSChecklist: ["userPreferences", "createVPSChecklist"] as const,
   vpsReadinessSelection: ["userPreferences", "vpsReadinessSelection"] as const,
   checkedServices: ["userPreferences", "checkedServices"] as const,
@@ -584,44 +584,44 @@ export function useSSHUsername(): [string, (username: string) => void, boolean] 
   return [data ?? "ubuntu", setUsername, status === "success"];
 }
 
-// --- ACFS Ref (git ref pin) ---
+// --- GTBI Ref (git ref pin) ---
 
-export function getACFSRef(): string | null {
-  const fromQuery = normalizeGitRef(getQueryParam(ACFS_REF_QUERY_KEY));
+export function getGTBIRef(): string | null {
+  const fromQuery = normalizeGitRef(getQueryParam(GTBI_REF_QUERY_KEY));
   if (fromQuery) return fromQuery;
-  return normalizeGitRef(safeGetItem(ACFS_REF_KEY));
+  return normalizeGitRef(safeGetItem(GTBI_REF_KEY));
 }
 
-export function setACFSRef(ref: string | null): boolean {
+export function setGTBIRef(ref: string | null): boolean {
   const raw = ref?.trim() ?? "";
   if (raw && !normalizeGitRef(raw)) {
     return false;
   }
   const value = raw ? normalizeGitRef(raw) : null;
   const storedOk = value
-    ? safeSetItem(ACFS_REF_KEY, value)
-    : safeSetItem(ACFS_REF_KEY, "");
-  const urlOk = setQueryParam(ACFS_REF_QUERY_KEY, value);
+    ? safeSetItem(GTBI_REF_KEY, value)
+    : safeSetItem(GTBI_REF_KEY, "");
+  const urlOk = setQueryParam(GTBI_REF_QUERY_KEY, value);
   if (storedOk || urlOk) {
     emitUserPreferencesUpdate();
   }
   return storedOk || urlOk;
 }
 
-export function useACFSRef(): [string | null, (ref: string | null) => void, boolean] {
+export function useGTBIRef(): [string | null, (ref: string | null) => void, boolean] {
   const queryClient = useQueryClient();
-  usePreferenceSync(userPreferencesKeys.acfsRef);
+  usePreferenceSync(userPreferencesKeys.gtbiRef);
 
   const { data, status } = useQuery({
-    queryKey: userPreferencesKeys.acfsRef,
-    queryFn: getACFSRef,
+    queryKey: userPreferencesKeys.gtbiRef,
+    queryFn: getGTBIRef,
     staleTime: 0,
     gcTime: Infinity,
   });
 
   const setRef = useCallback((newRef: string | null) => {
-    if (setACFSRef(newRef)) {
-      queryClient.setQueryData(userPreferencesKeys.acfsRef, getACFSRef());
+    if (setGTBIRef(newRef)) {
+      queryClient.setQueryData(userPreferencesKeys.gtbiRef, getGTBIRef());
     }
   }, [queryClient]);
 

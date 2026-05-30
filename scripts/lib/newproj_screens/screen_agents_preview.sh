@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # ============================================================
-# ACFS newproj TUI Wizard - AGENTS.md Preview Screen
+# GTBI newproj TUI Wizard - AGENTS.md Preview Screen
 # Shows preview of generated AGENTS.md content
 # ============================================================
 
 # Prevent multiple sourcing
-if [[ -n "${_ACFS_SCREEN_AGENTS_PREVIEW_LOADED:-}" ]]; then
+if [[ -n "${_GTBI_SCREEN_AGENTS_PREVIEW_LOADED:-}" ]]; then
     return 0
 fi
-_ACFS_SCREEN_AGENTS_PREVIEW_LOADED=1
+_GTBI_SCREEN_AGENTS_PREVIEW_LOADED=1
 
 # ============================================================
 # Screen: AGENTS.md Preview

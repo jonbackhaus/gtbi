@@ -64,12 +64,12 @@ fi
 
 # Check 4: Hooks directory
 echo ""
-echo "[4/5] Checking for acfs/claude/hooks/ directory..."
-if [[ -d "acfs/claude/hooks" ]]; then
-    echo "❌ FOUND: acfs/claude/hooks/ directory exists"
+echo "[4/5] Checking for gtbi/claude/hooks/ directory..."
+if [[ -d "gtbi/claude/hooks" ]]; then
+    echo "❌ FOUND: gtbi/claude/hooks/ directory exists"
     FOUND=1
 else
-    echo "✓ Clean: No acfs/claude/hooks/ directory"
+    echo "✓ Clean: No gtbi/claude/hooks/ directory"
 fi
 
 # Check 5: Doctor check function

@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # ============================================================
-# ACFS newproj TUI Wizard - Confirmation Screen
+# GTBI newproj TUI Wizard - Confirmation Screen
 # Shows summary and confirms before project creation
 # ============================================================
 
 # Prevent multiple sourcing
-if [[ -n "${_ACFS_SCREEN_CONFIRMATION_LOADED:-}" ]]; then
+if [[ -n "${_GTBI_SCREEN_CONFIRMATION_LOADED:-}" ]]; then
     return 0
 fi
-_ACFS_SCREEN_CONFIRMATION_LOADED=1
+_GTBI_SCREEN_CONFIRMATION_LOADED=1
 
 # ============================================================
 # Screen: Confirmation

@@ -1,4 +1,4 @@
-# ACFS Manifest Schema vNext Reference
+# GTBI Manifest Schema vNext Reference
 
 Internal maintainer reference for the manifest-driven installer system.
 
@@ -8,14 +8,14 @@ Internal maintainer reference for the manifest-driven installer system.
 
 ## Overview
 
-The ACFS manifest (`acfs.manifest.yaml`) is the single source of truth for all tools installed by the Agentic Coding Flywheel Setup. This document describes the schema vNext fields, validation rules, and maintainer workflows.
+The GTBI manifest (`gtbi.manifest.yaml`) is the single source of truth for all tools installed by the Agentic Coding Flywheel Setup. This document describes the schema vNext fields, validation rules, and maintainer workflows.
 
 ## Manifest Structure
 
 ```yaml
 version: 2                # Schema version
-name: agentic_coding_flywheel_setup
-id: acfs                  # Short identifier (lowercase alphanumeric + underscores)
+name: gastown_batteries_included
+id: gtbi                  # Short identifier (lowercase alphanumeric + underscores)
 
 defaults:
   user: ubuntu            # Target user for installation
@@ -61,7 +61,7 @@ modules:
 - Phase 7: AI agents (Claude, Codex, Gemini)
 - Phase 8: Cloud tools + databases (Vault, PostgreSQL, Wrangler, Supabase, Vercel)
 - Phase 9: Stack tools (ntm, mcp_agent_mail, cass, etc.)
-- Phase 10: ACFS utilities (onboard, doctor)
+- Phase 10: GTBI utilities (onboard, doctor)
 
 ### Installation Fields
 
@@ -117,10 +117,10 @@ This contract defines the shared selection behavior that `install.sh`, generated
 
 | Surface | Responsibility |
 |---------|----------------|
-| `acfs.manifest.yaml` | Source of truth for module IDs, phases, categories, tags, defaults, dependencies, verification, and verified-installer usage |
+| `gtbi.manifest.yaml` | Source of truth for module IDs, phases, categories, tags, defaults, dependencies, verification, and verified-installer usage |
 | `packages/manifest/src/generate.ts` | Sorts modules deterministically and emits data-only Bash arrays in `scripts/generated/manifest_index.sh` |
-| `scripts/generated/manifest_index.sh` | Runtime metadata bridge: `ACFS_MODULES_IN_ORDER`, `ACFS_MODULE_PHASE`, `ACFS_MODULE_DEPS`, `ACFS_MODULE_FUNC`, `ACFS_MODULE_CATEGORY`, `ACFS_MODULE_TAGS`, `ACFS_MODULE_DEFAULT`, and installed-check arrays |
-| `scripts/lib/install_helpers.sh` | Runtime resolver implementation: validates selectors, expands dependencies, applies skips, and populates `ACFS_EFFECTIVE_PLAN`, `ACFS_EFFECTIVE_RUN`, `ACFS_PLAN_REASON`, and `ACFS_PLAN_EXCLUDE_REASON` |
+| `scripts/generated/manifest_index.sh` | Runtime metadata bridge: `GTBI_MODULES_IN_ORDER`, `GTBI_MODULE_PHASE`, `GTBI_MODULE_DEPS`, `GTBI_MODULE_FUNC`, `GTBI_MODULE_CATEGORY`, `GTBI_MODULE_TAGS`, `GTBI_MODULE_DEFAULT`, and installed-check arrays |
+| `scripts/lib/install_helpers.sh` | Runtime resolver implementation: validates selectors, expands dependencies, applies skips, and populates `GTBI_EFFECTIVE_PLAN`, `GTBI_EFFECTIVE_RUN`, `GTBI_PLAN_REASON`, and `GTBI_PLAN_EXCLUDE_REASON` |
 | `install.sh` | Parses CLI flags, maps legacy skip flags, calls the resolver before mutation, prints `--print-plan`, and executes only modules in the effective plan |
 | `apps/web/lib/commandBuilder.ts` | Emits installer commands. Today this only passes mode, ref, and target user; future profile controls must serialize to the same public selectors |
 | `packages/onboard/` | Future TUI selector UI. It must display profiles and modules from generated/shared metadata and submit the same selector payload |
@@ -164,22 +164,22 @@ When both `--only` and `--only-phase` are supplied, the current resolver gives `
 
 Implementations must produce the same effective plan for the same manifest and selector payload:
 
-1. Load `scripts/generated/manifest_index.sh`; fail if `ACFS_MANIFEST_INDEX_LOADED` is not true.
+1. Load `scripts/generated/manifest_index.sh`; fail if `GTBI_MANIFEST_INDEX_LOADED` is not true.
 2. Normalize phase aliases.
-3. Build `module_exists` and `phase_exists` from `ACFS_MODULES_IN_ORDER` and `ACFS_MODULE_PHASE`.
+3. Build `module_exists` and `phase_exists` from `GTBI_MODULES_IN_ORDER` and `GTBI_MODULE_PHASE`.
 4. Choose the starting set:
    - if `ONLY_MODULES` is non-empty, validate each module and mark it `explicitly requested`;
    - else if `ONLY_PHASES` is non-empty, validate each phase and mark modules in those phases as `phase <n>`;
-   - else include every module whose `ACFS_MODULE_DEFAULT` value is `1` or `true` and mark it `default`.
+   - else include every module whose `GTBI_MODULE_DEFAULT` value is `1` or `true` and mark it `default`.
 5. Validate each explicit skip module and build the skip set.
 6. Add modules selected by internal `SKIP_TAGS` and `SKIP_CATEGORIES` to the skip set.
 7. Fail if a module appears in both `ONLY_MODULES` and the skip set. The failure must name the module and the skip reason.
-8. Remove skipped modules from the desired set and record `ACFS_PLAN_EXCLUDE_REASON`.
+8. Remove skipped modules from the desired set and record `GTBI_PLAN_EXCLUDE_REASON`.
 9. If `NO_DEPS` is false, walk dependencies from every desired module and fail if any dependency chain reaches a skipped module. The failure must include the chain.
-10. If `NO_DEPS` is false, recursively add every dependency from `ACFS_MODULE_DEPS`, including dependencies that are disabled by default. Unknown dependencies are manifest errors.
+10. If `NO_DEPS` is false, recursively add every dependency from `GTBI_MODULE_DEPS`, including dependencies that are disabled by default. Unknown dependencies are manifest errors.
 11. If `NO_DEPS` is true, do not add dependencies and print a prominent warning.
-12. Emit `ACFS_EFFECTIVE_PLAN` by iterating `ACFS_MODULES_IN_ORDER`; this preserves phase order and topological order from the generator.
-13. Emit `ACFS_EFFECTIVE_RUN[module]=1` for every included module and exclusion reasons for everything not included.
+12. Emit `GTBI_EFFECTIVE_PLAN` by iterating `GTBI_MODULES_IN_ORDER`; this preserves phase order and topological order from the generator.
+13. Emit `GTBI_EFFECTIVE_RUN[module]=1` for every included module and exclusion reasons for everything not included.
 
 ### Required Core Modules
 
@@ -221,10 +221,10 @@ stack.cm
 stack.dcg
 stack.ru
 stack.rch
-acfs.workspace
-acfs.onboard
-acfs.update
-acfs.doctor
+gtbi.workspace
+gtbi.onboard
+gtbi.update
+gtbi.doctor
 ```
 
 Dependency closure adds required prerequisites such as `base.system`, `users.ubuntu`, `base.filesystem`, `shell.zsh`, `lang.rust`, `lang.go`, `lang.nvm`, and `tools.ast_grep` where the manifest graph requires them. The minimal profile intentionally excludes optional cloud/database modules, optional agents such as `agents.opencode`, broad utility extras, nightly auto-update, and non-essential shell/CLI niceties unless the user adds them explicitly.
@@ -234,14 +234,14 @@ Dependency closure adds required prerequisites such as `base.system`, `users.ubu
 Default vibe install:
 
 ```bash
-curl -fsSL "https://raw.githubusercontent.com/Dicklesworthstone/agentic_coding_flywheel_setup/main/install.sh" \
+curl -fsSL "https://raw.githubusercontent.com/jonbackhaus/gtbi/main/install.sh" \
   | bash -s -- --yes --mode vibe --print-plan
 ```
 
 Safe mode with the same default module set:
 
 ```bash
-curl -fsSL "https://raw.githubusercontent.com/Dicklesworthstone/agentic_coding_flywheel_setup/main/install.sh" \
+curl -fsSL "https://raw.githubusercontent.com/jonbackhaus/gtbi/main/install.sh" \
   | bash -s -- --yes --mode safe --print-plan
 ```
 
@@ -289,7 +289,7 @@ Resolver tests should be writable from this contract without reading historical 
 
 - `name`: stable scenario name.
 - `input`: mode, explicit modules, phases, skips, skip tags, skip categories, dependency mode, and profile if present.
-- `expected_included`: ordered module IDs from `ACFS_EFFECTIVE_PLAN`.
+- `expected_included`: ordered module IDs from `GTBI_EFFECTIVE_PLAN`.
 - `expected_excluded`: module IDs with exclusion reasons when relevant.
 - `expected_errors`: exact error fragments for invalid selectors.
 - `expected_warnings`: warning fragments, especially for `--no-deps`.
@@ -399,7 +399,7 @@ The `web` block drives website content generation. All fields are optional; the 
   tags: [orchestration, critical]
   notes:
     - "Ensure user ubuntu exists with home /home/ubuntu"
-    - "Write /etc/sudoers.d/90-ubuntu-acfs for passwordless sudo"
+    - "Write /etc/sudoers.d/90-ubuntu-gtbi for passwordless sudo"
   install: []
   verify:
     - id ubuntu
@@ -549,7 +549,7 @@ Generated functions must not shadow orchestrator functions.
 **Reserved Names:**
 - `install_all`, `install_base`, `install_lang`, `install_tools`, etc.
 - `log_step`, `log_error`, `log_success`, etc.
-- `acfs_require_contract`, `acfs_security_init`
+- `gtbi_require_contract`, `gtbi_security_init`
 - Shell builtins: `main`, `usage`, `init`, `run`, `exec`, `exit`, `test`
 
 **Error Example:**
@@ -577,17 +577,17 @@ The manifest generates TypeScript data files for the Next.js website. This keeps
 
 ### Web Generation Workflow
 
-1. **Add web metadata** to the module's `web` block in `acfs.manifest.yaml`
+1. **Add web metadata** to the module's `web` block in `gtbi.manifest.yaml`
 2. **Regenerate**: `cd packages/manifest && bun run generate`
 3. **Verify no drift**: `bun run generate:diff` (should exit 0)
 4. **Build website** to verify: `cd apps/web && bun run build`
-5. **Commit** both `acfs.manifest.yaml` and `apps/web/lib/generated/*`
+5. **Commit** both `gtbi.manifest.yaml` and `apps/web/lib/generated/*`
 
 ### Migration Checklist (Adding New Tool to Website)
 
 ```bash
 # 1. Edit manifest - add web block to module
-vim acfs.manifest.yaml
+vim gtbi.manifest.yaml
 
 # 2. Regenerate web data
 cd packages/manifest && bun run generate
@@ -601,7 +601,7 @@ bun run type-check
 bun run build
 
 # 5. Commit everything together
-git add acfs.manifest.yaml apps/web/lib/generated/
+git add gtbi.manifest.yaml apps/web/lib/generated/
 git commit -m "feat(manifest): add web metadata for <tool-name>"
 ```
 
@@ -660,11 +660,11 @@ When adding or modifying modulesâ€”especially ones that run upstream installersâ
      ```bash
      # Run against a tag/sha or branch ref
      curl -fsSL \
-       "https://raw.githubusercontent.com/Dicklesworthstone/agentic_coding_flywheel_setup/<ref>/install.sh" \
+       "https://raw.githubusercontent.com/jonbackhaus/gtbi/<ref>/install.sh" \
        | bash -s -- --print-plan --ref <ref>
      ```
    - The bootstrap flow validates script syntax and ensures `scripts/generated/manifest_index.sh`
-     matches `acfs.manifest.yaml`. If this fails, the ref is inconsistent.
+     matches `gtbi.manifest.yaml`. If this fails, the ref is inconsistent.
 
 4. **Smoke Sanity (optional but recommended)**
    ```bash
@@ -681,7 +681,7 @@ When adding or modifying modulesâ€”especially ones that run upstream installersâ
 
 ```bash
 # Find modules that depend on a specific module (e.g., lang.bun)
-grep -B15 -- "- lang.bun" acfs.manifest.yaml | grep "^  - id:"
+grep -B15 -- "- lang.bun" gtbi.manifest.yaml | grep "^  - id:"
 ```
 
 ### Debugging Validation Errors
@@ -729,7 +729,7 @@ install_all() {
 
 | Path | Description |
 |------|-------------|
-| `acfs.manifest.yaml` | Source of truth manifest |
+| `gtbi.manifest.yaml` | Source of truth manifest |
 | `packages/manifest/src/schema.ts` | Zod schema definitions |
 | `packages/manifest/src/types.ts` | TypeScript type definitions |
 | `packages/manifest/src/validate.ts` | Validation logic |
@@ -742,6 +742,6 @@ install_all() {
 - `mjt.3.1` - Implement schema vNext fields (Zod + TS types)
 - `mjt.3.2` - Add manifest validation (deps, cycles, phases)
 - `mjt.3.3` - Add function name collision + reserved-name validation
-- `mjt.3.4` - Migrate acfs.manifest.yaml to schema vNext
+- `mjt.3.4` - Migrate gtbi.manifest.yaml to schema vNext
 - `mjt.3.5` - Migrate remote installers to verified_installer
 - `mjt.3.6` - Document schema vNext (this document)

@@ -57,7 +57,7 @@ setup_test_env() {
     local test_id="${FUNCNAME[1]:-$$}_$(date +%s%N)"
 
     autofix_release_session_lock 2>/dev/null || true
-    ACFS_SESSION_ID=""
+    GTBI_SESSION_ID=""
     unset -f record_change 2>/dev/null || true
     unset -f sudo 2>/dev/null || true
     unset -f systemctl 2>/dev/null || true
@@ -71,23 +71,23 @@ setup_test_env() {
     unset -f whoami 2>/dev/null || true
     unset -f doctor_fix_run_verified_installer 2>/dev/null || true
     unset -f doctor_fix_system_curl 2>/dev/null || true
-    unset _ACFS_AUTOFIX_SOURCED
-    unset _ACFS_DOCTOR_FIX_LOADED
+    unset _GTBI_AUTOFIX_SOURCED
+    unset _GTBI_DOCTOR_FIX_LOADED
     # shellcheck source=../../scripts/lib/autofix.sh
     source "$REPO_ROOT/scripts/lib/autofix.sh"
     # shellcheck source=../../scripts/lib/doctor_fix.sh
     source "$REPO_ROOT/scripts/lib/doctor_fix.sh"
 
     # Autofix state
-    export ACFS_STATE_DIR="/tmp/test_doctor_fix_${test_id}"
-    export ACFS_CHANGES_FILE="$ACFS_STATE_DIR/changes.jsonl"
-    export ACFS_UNDOS_FILE="$ACFS_STATE_DIR/undos.jsonl"
-    export ACFS_BACKUPS_DIR="$ACFS_STATE_DIR/backups"
-    export ACFS_LOCK_FILE="$ACFS_STATE_DIR/.lock"
-    export ACFS_INTEGRITY_FILE="$ACFS_STATE_DIR/.integrity"
+    export GTBI_STATE_DIR="/tmp/test_doctor_fix_${test_id}"
+    export GTBI_CHANGES_FILE="$GTBI_STATE_DIR/changes.jsonl"
+    export GTBI_UNDOS_FILE="$GTBI_STATE_DIR/undos.jsonl"
+    export GTBI_BACKUPS_DIR="$GTBI_STATE_DIR/backups"
+    export GTBI_LOCK_FILE="$GTBI_STATE_DIR/.lock"
+    export GTBI_INTEGRITY_FILE="$GTBI_STATE_DIR/.integrity"
 
     # Doctor fix state
-    export DOCTOR_FIX_LOG="$ACFS_STATE_DIR/doctor.log"
+    export DOCTOR_FIX_LOG="$GTBI_STATE_DIR/doctor.log"
     export DOCTOR_FIX_DRY_RUN=false
     export DOCTOR_FIX_YES=false
     export DOCTOR_FIX_PROMPT=false
@@ -104,22 +104,22 @@ setup_test_env() {
     FIXES_PROMPTED=()
 
     # Reset autofix state
-    ACFS_CHANGE_RECORDS=()
-    ACFS_CHANGE_ORDER=()
-    ACFS_AUTOFIX_INITIALIZED=false
+    GTBI_CHANGE_RECORDS=()
+    GTBI_CHANGE_ORDER=()
+    GTBI_AUTOFIX_INITIALIZED=false
 
     # Create test directories
-    rm -rf "$ACFS_STATE_DIR"
-    mkdir -p "$ACFS_STATE_DIR"
-    mkdir -p "$ACFS_BACKUPS_DIR"
+    rm -rf "$GTBI_STATE_DIR"
+    mkdir -p "$GTBI_STATE_DIR"
+    mkdir -p "$GTBI_BACKUPS_DIR"
 
     # Create empty files
-    : > "$ACFS_CHANGES_FILE"
-    : > "$ACFS_UNDOS_FILE"
+    : > "$GTBI_CHANGES_FILE"
+    : > "$GTBI_UNDOS_FILE"
 
     # Test home directory simulation
-    export TEST_HOME="$ACFS_STATE_DIR/home"
-    mkdir -p "$TEST_HOME/.acfs/zsh"
+    export TEST_HOME="$GTBI_STATE_DIR/home"
+    mkdir -p "$TEST_HOME/.gtbi/zsh"
     mkdir -p "$TEST_HOME/.local/bin"
     mkdir -p "$TEST_HOME/.cargo/bin"
     mkdir -p "$TEST_HOME/.config/claude-code"
@@ -130,15 +130,15 @@ setup_test_env() {
     export HOME="$TEST_HOME"
     unset TARGET_USER
     export TARGET_HOME="$TEST_HOME"
-    export ACFS_HOME="$TEST_HOME/.acfs"
-    export ACFS_BIN_DIR="$TEST_HOME/.local/bin"
+    export GTBI_HOME="$TEST_HOME/.gtbi"
+    export GTBI_BIN_DIR="$TEST_HOME/.local/bin"
     unset DOCTOR_FIX_SSHD_CONFIG
 }
 
 # Cleanup test environment
 cleanup_test_env() {
     autofix_release_session_lock 2>/dev/null || true
-    ACFS_SESSION_ID=""
+    GTBI_SESSION_ID=""
     unset -f record_change 2>/dev/null || true
     unset -f sudo 2>/dev/null || true
     unset -f systemctl 2>/dev/null || true
@@ -162,8 +162,8 @@ cleanup_test_env() {
     fi
     unset TARGET_USER
     unset TARGET_HOME
-    unset ACFS_HOME
-    unset ACFS_BIN_DIR
+    unset GTBI_HOME
+    unset GTBI_BIN_DIR
     unset DOCTOR_FIX_SSHD_CONFIG
     rm -rf "/tmp/test_doctor_fix_"* 2>/dev/null || true
 }
@@ -190,7 +190,7 @@ test_doctor_fix_prefers_target_home_for_autofix_state() {
 
     local root_home="$temp_root/root-home"
     local target_home="$temp_root/target-home"
-    local installed_lib="$target_home/.acfs/scripts/lib"
+    local installed_lib="$target_home/.gtbi/scripts/lib"
     mkdir -p "$root_home" "$installed_lib"
 
     cp "$REPO_ROOT/scripts/lib/doctor_fix.sh" "$installed_lib/doctor_fix.sh"
@@ -198,19 +198,19 @@ test_doctor_fix_prefers_target_home_for_autofix_state() {
 
     local state_dir=""
     state_dir=$(env -u SCRIPT_DIR \
-        -u ACFS_STATE_DIR \
-        -u ACFS_CHANGES_FILE \
-        -u ACFS_UNDOS_FILE \
-        -u ACFS_BACKUPS_DIR \
-        -u ACFS_LOCK_FILE \
-        -u ACFS_INTEGRITY_FILE \
+        -u GTBI_STATE_DIR \
+        -u GTBI_CHANGES_FILE \
+        -u GTBI_UNDOS_FILE \
+        -u GTBI_BACKUPS_DIR \
+        -u GTBI_LOCK_FILE \
+        -u GTBI_INTEGRITY_FILE \
         HOME="$root_home" \
         TARGET_HOME="$target_home" \
-        bash -lc 'source "$1"; printf "%s\n" "${ACFS_STATE_DIR:-unset}"' _ \
+        bash -lc 'source "$1"; printf "%s\n" "${GTBI_STATE_DIR:-unset}"' _ \
         "$installed_lib/doctor_fix.sh")
 
-    if [[ "$state_dir" != "$target_home/.acfs/autofix" ]]; then
-        echo "  Expected ACFS_STATE_DIR=$target_home/.acfs/autofix, got $state_dir"
+    if [[ "$state_dir" != "$target_home/.gtbi/autofix" ]]; then
+        echo "  Expected GTBI_STATE_DIR=$target_home/.gtbi/autofix, got $state_dir"
         rm -rf "$temp_root"
         return 1
     fi
@@ -219,37 +219,37 @@ test_doctor_fix_prefers_target_home_for_autofix_state() {
     return 0
 }
 
-test_doctor_fix_prefers_target_home_over_poisoned_acfs_home() {
+test_doctor_fix_prefers_target_home_over_poisoned_gtbi_home() {
     local temp_root=""
     temp_root="$(mktemp -d)"
 
     local root_home="$temp_root/root-home"
     local target_home="$temp_root/target-home"
-    local poisoned_acfs_home="$temp_root/poisoned/.acfs"
-    local installed_lib="$target_home/.acfs/scripts/lib"
-    mkdir -p "$root_home" "$poisoned_acfs_home" "$installed_lib"
+    local poisoned_gtbi_home="$temp_root/poisoned/.gtbi"
+    local installed_lib="$target_home/.gtbi/scripts/lib"
+    mkdir -p "$root_home" "$poisoned_gtbi_home" "$installed_lib"
 
     cp "$REPO_ROOT/scripts/lib/doctor_fix.sh" "$installed_lib/doctor_fix.sh"
     cp "$REPO_ROOT/scripts/lib/autofix.sh" "$installed_lib/autofix.sh"
 
     local output=""
-    output=$(env -u SCRIPT_DIR         -u ACFS_STATE_DIR         -u ACFS_CHANGES_FILE         -u ACFS_UNDOS_FILE         -u ACFS_BACKUPS_DIR         -u ACFS_LOCK_FILE         -u ACFS_INTEGRITY_FILE         HOME="$root_home"         TARGET_HOME="$target_home"         ACFS_HOME="$poisoned_acfs_home"         bash -lc 'source "$1"; printf "%s\n%s\n" "${ACFS_STATE_DIR:-unset}" "$(doctor_fix_runtime_acfs_home)"' _         "$installed_lib/doctor_fix.sh")
+    output=$(env -u SCRIPT_DIR         -u GTBI_STATE_DIR         -u GTBI_CHANGES_FILE         -u GTBI_UNDOS_FILE         -u GTBI_BACKUPS_DIR         -u GTBI_LOCK_FILE         -u GTBI_INTEGRITY_FILE         HOME="$root_home"         TARGET_HOME="$target_home"         GTBI_HOME="$poisoned_gtbi_home"         bash -lc 'source "$1"; printf "%s\n%s\n" "${GTBI_STATE_DIR:-unset}" "$(doctor_fix_runtime_gtbi_home)"' _         "$installed_lib/doctor_fix.sh")
 
-    local expected_state_dir="$target_home/.acfs/autofix"
-    local expected_acfs_home="$target_home/.acfs"
+    local expected_state_dir="$target_home/.gtbi/autofix"
+    local expected_gtbi_home="$target_home/.gtbi"
     local actual_state_dir=""
-    local actual_acfs_home=""
+    local actual_gtbi_home=""
     actual_state_dir="$(printf '%s\n' "$output" | sed -n '1p')"
-    actual_acfs_home="$(printf '%s\n' "$output" | sed -n '2p')"
+    actual_gtbi_home="$(printf '%s\n' "$output" | sed -n '2p')"
 
     if [[ "$actual_state_dir" != "$expected_state_dir" ]]; then
-        echo "  Expected ACFS_STATE_DIR=$expected_state_dir, got $actual_state_dir"
+        echo "  Expected GTBI_STATE_DIR=$expected_state_dir, got $actual_state_dir"
         rm -rf "$temp_root"
         return 1
     fi
 
-    if [[ "$actual_acfs_home" != "$expected_acfs_home" ]]; then
-        echo "  Expected doctor_fix_runtime_acfs_home=$expected_acfs_home, got $actual_acfs_home"
+    if [[ "$actual_gtbi_home" != "$expected_gtbi_home" ]]; then
+        echo "  Expected doctor_fix_runtime_gtbi_home=$expected_gtbi_home, got $actual_gtbi_home"
         rm -rf "$temp_root"
         return 1
     fi
@@ -261,14 +261,14 @@ test_doctor_fix_prefers_target_home_over_poisoned_acfs_home() {
 test_doctor_fix_binary_path_ignores_relative_bin_dir() {
     setup_test_env
 
-    export TARGET_HOME="$ACFS_STATE_DIR/target-home"
+    export TARGET_HOME="$GTBI_STATE_DIR/target-home"
     mkdir -p "$TARGET_HOME/.local/bin"
     cat > "$TARGET_HOME/.local/bin/example-tool" <<'EOF'
 #!/usr/bin/env bash
 exit 0
 EOF
     chmod +x "$TARGET_HOME/.local/bin/example-tool"
-    export ACFS_BIN_DIR="relative/bin"
+    export GTBI_BIN_DIR="relative/bin"
 
     local resolved=""
     resolved="$(doctor_fix_binary_path example-tool)"
@@ -286,9 +286,9 @@ EOF
 test_doctor_fix_runtime_path_ignores_relative_bin_dir() {
     setup_test_env
 
-    export TARGET_HOME="$ACFS_STATE_DIR/target-home"
+    export TARGET_HOME="$GTBI_STATE_DIR/target-home"
     mkdir -p "$TARGET_HOME/.local/bin"
-    export ACFS_BIN_DIR="relative/bin"
+    export GTBI_BIN_DIR="relative/bin"
 
     local runtime_path=""
     runtime_path="$(doctor_fix_runtime_path)"
@@ -306,8 +306,8 @@ test_doctor_fix_runtime_path_ignores_relative_bin_dir() {
 test_doctor_fix_runtime_path_prefers_system_bins_over_current_shell_path() {
     setup_test_env
 
-    export TARGET_HOME="$ACFS_STATE_DIR/target-home"
-    local fake_bin="$ACFS_STATE_DIR/fake-bin"
+    export TARGET_HOME="$GTBI_STATE_DIR/target-home"
+    local fake_bin="$GTBI_STATE_DIR/fake-bin"
     mkdir -p "$TARGET_HOME/.local/bin" "$fake_bin"
     export PATH="$fake_bin:/usr/bin:/bin"
 
@@ -346,7 +346,7 @@ test_doctor_fix_runtime_home_ignores_relative_home() {
 test_doctor_fix_runtime_home_fails_closed_for_different_unresolved_target() {
     setup_test_env
 
-    local current_home="$ACFS_STATE_DIR/current-home"
+    local current_home="$GTBI_STATE_DIR/current-home"
     mkdir -p "$current_home"
 
     export HOME="$current_home"
@@ -385,8 +385,8 @@ test_doctor_fix_runtime_home_fails_closed_for_different_unresolved_target() {
 test_doctor_fix_runtime_home_prefers_target_user_passwd_home_over_stale_target_home() {
     setup_test_env
 
-    local stale_home="$ACFS_STATE_DIR/stale-home"
-    local passwd_home="$ACFS_STATE_DIR/passwd-home"
+    local stale_home="$GTBI_STATE_DIR/stale-home"
+    local passwd_home="$GTBI_STATE_DIR/passwd-home"
     mkdir -p "$stale_home" "$passwd_home"
 
     export TARGET_USER="targetuser"
@@ -424,7 +424,7 @@ test_doctor_fix_runtime_home_prefers_target_user_passwd_home_over_stale_target_h
 test_doctor_fix_runtime_home_rejects_invalid_target_user_before_target_home() {
     setup_test_env
 
-    local target_home="$ACFS_STATE_DIR/target-home"
+    local target_home="$GTBI_STATE_DIR/target-home"
     mkdir -p "$target_home"
 
     export TARGET_USER="bad/user"
@@ -446,7 +446,7 @@ test_doctor_fix_runtime_home_rejects_invalid_target_user_before_target_home() {
 test_doctor_fix_runtime_home_fails_closed_for_unresolved_target_with_stale_target_home() {
     setup_test_env
 
-    local stale_home="$ACFS_STATE_DIR/stale-home"
+    local stale_home="$GTBI_STATE_DIR/stale-home"
     mkdir -p "$stale_home"
 
     export TARGET_USER="missinguser"
@@ -477,13 +477,13 @@ test_doctor_fix_runtime_home_fails_closed_for_unresolved_target_with_stale_targe
 test_doctor_fix_runtime_bin_dir_ignores_other_user_bin_dir() {
     setup_test_env
 
-    local current_home="$ACFS_STATE_DIR/current-home"
-    local target_home="$ACFS_STATE_DIR/target-home"
+    local current_home="$GTBI_STATE_DIR/current-home"
+    local target_home="$GTBI_STATE_DIR/target-home"
     mkdir -p "$current_home/.local/bin" "$target_home/.local/bin"
 
     export HOME="$current_home"
     export TARGET_HOME="$target_home"
-    export ACFS_BIN_DIR="$current_home/.local/bin"
+    export GTBI_BIN_DIR="$current_home/.local/bin"
 
     local resolved_bin=""
     resolved_bin="$(doctor_fix_runtime_bin_dir)"
@@ -493,7 +493,7 @@ test_doctor_fix_runtime_bin_dir_ignores_other_user_bin_dir() {
         return 0
     fi
 
-    echo "  Expected runtime bin dir to ignore stale other-user ACFS_BIN_DIR, got $resolved_bin"
+    echo "  Expected runtime bin dir to ignore stale other-user GTBI_BIN_DIR, got $resolved_bin"
     cleanup_test_env
     return 1
 }
@@ -501,8 +501,8 @@ test_doctor_fix_runtime_bin_dir_ignores_other_user_bin_dir() {
 test_doctor_fix_binary_path_ignores_other_user_bin_dir() {
     setup_test_env
 
-    local current_home="$ACFS_STATE_DIR/current-home"
-    local target_home="$ACFS_STATE_DIR/target-home"
+    local current_home="$GTBI_STATE_DIR/current-home"
+    local target_home="$GTBI_STATE_DIR/target-home"
     local tool_name="example-tool"
     mkdir -p "$current_home/.local/bin" "$target_home/.local/bin"
 
@@ -518,7 +518,7 @@ EOF
 
     export HOME="$current_home"
     export TARGET_HOME="$target_home"
-    export ACFS_BIN_DIR="$current_home/.local/bin"
+    export GTBI_BIN_DIR="$current_home/.local/bin"
 
     local resolved=""
     resolved="$(doctor_fix_binary_path "$tool_name")"
@@ -528,7 +528,7 @@ EOF
         return 0
     fi
 
-    echo "  Expected binary lookup to ignore stale other-user ACFS_BIN_DIR, got $resolved"
+    echo "  Expected binary lookup to ignore stale other-user GTBI_BIN_DIR, got $resolved"
     cleanup_test_env
     return 1
 }
@@ -664,7 +664,7 @@ test_doctor_fix_run_rollback_command_uses_noninteractive_sudo() {
 
     cat > "$temp_bin/sudo" <<'EOF'
 #!/bin/sh
-printf '%s\n' "$*" > "$ACFS_FAKE_SUDO_LOG"
+printf '%s\n' "$*" > "$GTBI_FAKE_SUDO_LOG"
 if [ "${1:-}" != "-n" ]; then
     exit 42
 fi
@@ -686,10 +686,10 @@ EOF
         esac
     }
 
-    export ACFS_FAKE_SUDO_LOG="$sudo_log"
+    export GTBI_FAKE_SUDO_LOG="$sudo_log"
     doctor_fix_run_rollback_command "printf ran > '$marker'" true >/dev/null 2>&1
     status=$?
-    unset ACFS_FAKE_SUDO_LOG
+    unset GTBI_FAKE_SUDO_LOG
     eval "$original_resolver"
 
     if [[ $status -ne 0 ]]; then
@@ -715,7 +715,7 @@ EOF
 }
 
 test_doctor_fix_files_json_escapes_special_paths() {
-    local tricky_path='/tmp/acfs "quoted" path\bin'
+    local tricky_path='/tmp/gtbi "quoted" path\bin'
     local files_json=""
     local decoded=""
 
@@ -796,7 +796,7 @@ test_fix_path_ordering_applies() {
     fix_path_ordering "path.ordering" >/dev/null 2>&1
 
     # Verify marker was added
-    if ! grep -q "# ACFS PATH ordering" "$zshrc"; then
+    if ! grep -q "# GTBI PATH ordering" "$zshrc"; then
         echo "  Marker not found in .zshrc"
         cat "$zshrc"
         cleanup_test_env
@@ -829,7 +829,7 @@ test_fix_path_ordering_idempotent() {
     local zshrc="$HOME/.zshrc"
     echo "# Initial zshrc" > "$zshrc"
     echo "" >> "$zshrc"
-    echo "# ACFS PATH ordering (added by doctor --fix)" >> "$zshrc"
+    echo "# GTBI PATH ordering (added by doctor --fix)" >> "$zshrc"
     echo 'export PATH="$HOME/.local/bin:$HOME/.bun/bin:$HOME/.cargo/bin:$HOME/go/bin:$HOME/.atuin/bin:$PATH"' >> "$zshrc"
 
     local initial_lines
@@ -866,7 +866,7 @@ test_fix_path_ordering_repairs_stale_marker_missing_atuin() {
     local zshrc="$HOME/.zshrc"
     echo "# Initial zshrc" > "$zshrc"
     echo "" >> "$zshrc"
-    echo "# ACFS PATH ordering (added by doctor --fix)" >> "$zshrc"
+    echo "# GTBI PATH ordering (added by doctor --fix)" >> "$zshrc"
     echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$zshrc"
 
     start_autofix_session >/dev/null || {
@@ -919,7 +919,7 @@ test_fix_path_ordering_dry_run() {
     fix_path_ordering "path.ordering" >/dev/null 2>&1
 
     # Verify file NOT modified
-    if grep -q "# ACFS PATH ordering" "$zshrc"; then
+    if grep -q "# GTBI PATH ordering" "$zshrc"; then
         echo "  File was modified in dry-run mode"
         cleanup_test_env
         return 1
@@ -1023,8 +1023,8 @@ test_fix_config_copy_applies() {
     setup_test_env
 
     # Create source config
-    local src="$ACFS_STATE_DIR/source_config.txt"
-    local dest="$HOME/.acfs/test_config.txt"
+    local src="$GTBI_STATE_DIR/source_config.txt"
+    local dest="$HOME/.gtbi/test_config.txt"
     echo "config content" > "$src"
 
     # Initialize autofix session
@@ -1067,8 +1067,8 @@ test_fix_config_copy_idempotent() {
     setup_test_env
 
     # Create source and destination
-    local src="$ACFS_STATE_DIR/source_config.txt"
-    local dest="$HOME/.acfs/test_config.txt"
+    local src="$GTBI_STATE_DIR/source_config.txt"
+    local dest="$HOME/.gtbi/test_config.txt"
     echo "config content" > "$src"
     echo "existing content" > "$dest"
 
@@ -1098,7 +1098,7 @@ test_fix_config_copy_missing_source() {
 
     # Source doesn't exist
     local src="/nonexistent/source.txt"
-    local dest="$HOME/.acfs/test_config.txt"
+    local dest="$HOME/.gtbi/test_config.txt"
 
     # Run fixer - should fail
     if fix_config_copy "config.test" "$src" "$dest" 2>/dev/null; then
@@ -1115,8 +1115,8 @@ test_fix_config_copy_dry_run() {
     setup_test_env
 
     # Create source config
-    local src="$ACFS_STATE_DIR/source_config.txt"
-    local dest="$HOME/.acfs/test_config.txt"
+    local src="$GTBI_STATE_DIR/source_config.txt"
+    local dest="$HOME/.gtbi/test_config.txt"
     echo "config content" > "$src"
 
     # Enable dry-run mode
@@ -1147,8 +1147,8 @@ test_fix_config_copy_dry_run() {
 test_fix_config_copy_removes_dest_when_record_change_fails() {
     setup_test_env
 
-    local src="$ACFS_STATE_DIR/source_config.txt"
-    local dest="$HOME/.acfs/test_config.txt"
+    local src="$GTBI_STATE_DIR/source_config.txt"
+    local dest="$HOME/.gtbi/test_config.txt"
     local original_record_change
     printf 'config content\n' > "$src"
     original_record_change="$(declare -f record_change)"
@@ -1193,8 +1193,8 @@ test_fix_config_copy_removes_dest_when_record_change_fails() {
 test_fix_config_copy_removes_created_dirs_when_record_change_fails() {
     setup_test_env
 
-    local src="$ACFS_STATE_DIR/source_config_nested.txt"
-    local dest="$HOME/.brand-new-acfs/zsh/acfs.zshrc"
+    local src="$GTBI_STATE_DIR/source_config_nested.txt"
+    local dest="$HOME/.brand-new-gtbi/zsh/gtbi.zshrc"
     local original_record_change
     printf 'config content\n' > "$src"
     original_record_change="$(declare -f record_change)"
@@ -1224,7 +1224,7 @@ test_fix_config_copy_removes_created_dirs_when_record_change_fails() {
         return 1
     fi
 
-    if [[ -d "$HOME/.brand-new-acfs" || -d "$HOME/.brand-new-acfs/zsh" ]]; then
+    if [[ -d "$HOME/.brand-new-gtbi" || -d "$HOME/.brand-new-gtbi/zsh" ]]; then
         echo "  Nested config copy left newly created parent directories behind after journaling failure"
         end_autofix_session >/dev/null 2>&1 || true
         cleanup_test_env
@@ -1239,8 +1239,8 @@ test_fix_config_copy_removes_created_dirs_when_record_change_fails() {
 test_fix_config_copy_cleans_created_dirs_on_copy_failure() {
     setup_test_env
 
-    local src="$ACFS_STATE_DIR/source_config_copy_failure.txt"
-    local dest="$HOME/.copy-failure-acfs/zsh/acfs.zshrc"
+    local src="$GTBI_STATE_DIR/source_config_copy_failure.txt"
+    local dest="$HOME/.copy-failure-gtbi/zsh/gtbi.zshrc"
     printf 'config content\n' > "$src"
 
     cp() { return 1; }
@@ -1257,7 +1257,7 @@ test_fix_config_copy_cleans_created_dirs_on_copy_failure() {
         return 1
     fi
 
-    if [[ -d "$HOME/.copy-failure-acfs" || -d "$HOME/.copy-failure-acfs/zsh" ]]; then
+    if [[ -d "$HOME/.copy-failure-gtbi" || -d "$HOME/.copy-failure-gtbi/zsh" ]]; then
         echo "  fix_config_copy left newly created parent directories behind after copy failure"
         cleanup_test_env
         return 1
@@ -1650,18 +1650,18 @@ test_fix_plugin_clone_cleans_partial_clone_on_clone_failure() {
 }
 
 # ============================================================
-# Test: fix_acfs_sourcing
+# Test: fix_gtbi_sourcing
 # ============================================================
 
-test_fix_acfs_sourcing_applies() {
+test_fix_gtbi_sourcing_applies() {
     setup_test_env
 
-    # Create .zshrc and acfs.zshrc
+    # Create .zshrc and gtbi.zshrc
     local zshrc="$HOME/.zshrc"
     echo "# Initial zshrc" > "$zshrc"
 
-    local acfs_zshrc="$HOME/.acfs/zsh/acfs.zshrc"
-    echo "# ACFS config" > "$acfs_zshrc"
+    local gtbi_zshrc="$HOME/.gtbi/zsh/gtbi.zshrc"
+    echo "# GTBI config" > "$gtbi_zshrc"
 
     # Initialize autofix session
     start_autofix_session >/dev/null || {
@@ -1671,17 +1671,17 @@ test_fix_acfs_sourcing_applies() {
     }
 
     # Run fixer
-    fix_acfs_sourcing "shell.acfs_sourced" >/dev/null 2>&1
+    fix_gtbi_sourcing "shell.gtbi_sourced" >/dev/null 2>&1
 
     # Verify marker was added
-    if ! grep -q "# ACFS configuration" "$zshrc"; then
-        echo "  ACFS configuration marker not found in .zshrc"
+    if ! grep -q "# GTBI configuration" "$zshrc"; then
+        echo "  GTBI configuration marker not found in .zshrc"
         cleanup_test_env
         return 1
     fi
 
     # Verify source line was added
-    if ! grep -q "source ~/.acfs/zsh/acfs.zshrc" "$zshrc"; then
+    if ! grep -q "source ~/.gtbi/zsh/gtbi.zshrc" "$zshrc"; then
         echo "  Source line not found in .zshrc"
         cleanup_test_env
         return 1
@@ -1699,22 +1699,22 @@ test_fix_acfs_sourcing_applies() {
     return 0
 }
 
-test_fix_acfs_sourcing_idempotent() {
+test_fix_gtbi_sourcing_idempotent() {
     setup_test_env
 
     # Create .zshrc with sourcing already present
     local zshrc="$HOME/.zshrc"
     echo "# Initial zshrc" > "$zshrc"
-    echo "source ~/.acfs/zsh/acfs.zshrc" >> "$zshrc"
+    echo "source ~/.gtbi/zsh/gtbi.zshrc" >> "$zshrc"
 
-    local acfs_zshrc="$HOME/.acfs/zsh/acfs.zshrc"
-    echo "# ACFS config" > "$acfs_zshrc"
+    local gtbi_zshrc="$HOME/.gtbi/zsh/gtbi.zshrc"
+    echo "# GTBI config" > "$gtbi_zshrc"
 
     local initial_lines
     initial_lines=$(wc -l < "$zshrc")
 
     # Run fixer
-    fix_acfs_sourcing "shell.acfs_sourced" >/dev/null 2>&1
+    fix_gtbi_sourcing "shell.gtbi_sourced" >/dev/null 2>&1
 
     # Verify file not modified
     local final_lines
@@ -1737,15 +1737,15 @@ test_fix_acfs_sourcing_idempotent() {
     return 0
 }
 
-test_fix_acfs_sourcing_ignores_commented_loader_mention() {
+test_fix_gtbi_sourcing_ignores_commented_loader_mention() {
     setup_test_env
 
     local zshrc="$HOME/.zshrc"
     echo "# Initial zshrc" > "$zshrc"
-    echo "# source ~/.acfs/zsh/acfs.zshrc" >> "$zshrc"
+    echo "# source ~/.gtbi/zsh/gtbi.zshrc" >> "$zshrc"
 
-    local acfs_zshrc="$HOME/.acfs/zsh/acfs.zshrc"
-    echo "# ACFS config" > "$acfs_zshrc"
+    local gtbi_zshrc="$HOME/.gtbi/zsh/gtbi.zshrc"
+    echo "# GTBI config" > "$gtbi_zshrc"
 
     start_autofix_session >/dev/null || {
         echo "  Failed to start autofix session"
@@ -1753,10 +1753,10 @@ test_fix_acfs_sourcing_ignores_commented_loader_mention() {
         return 1
     }
 
-    fix_acfs_sourcing "shell.acfs_sourced" >/dev/null 2>&1
+    fix_gtbi_sourcing "shell.gtbi_sourced" >/dev/null 2>&1
 
-    if ! grep -Fxq '[[ -f ~/.acfs/zsh/acfs.zshrc ]] && source ~/.acfs/zsh/acfs.zshrc' "$zshrc"; then
-        echo "  Active ACFS source line was not added when only a comment mentioned acfs.zshrc"
+    if ! grep -Fxq '[[ -f ~/.gtbi/zsh/gtbi.zshrc ]] && source ~/.gtbi/zsh/gtbi.zshrc' "$zshrc"; then
+        echo "  Active GTBI source line was not added when only a comment mentioned gtbi.zshrc"
         cat "$zshrc"
         end_autofix_session >/dev/null 2>&1 || true
         cleanup_test_env
@@ -1775,12 +1775,12 @@ test_fix_acfs_sourcing_ignores_commented_loader_mention() {
     return 0
 }
 
-test_fix_acfs_sourcing_uses_target_home() {
+test_fix_gtbi_sourcing_uses_target_home() {
     setup_test_env
 
-    export TARGET_HOME="$ACFS_STATE_DIR/target-home"
-    mkdir -p "$TARGET_HOME/.acfs/zsh"
-    echo "# Target ACFS config" > "$TARGET_HOME/.acfs/zsh/acfs.zshrc"
+    export TARGET_HOME="$GTBI_STATE_DIR/target-home"
+    mkdir -p "$TARGET_HOME/.gtbi/zsh"
+    echo "# Target GTBI config" > "$TARGET_HOME/.gtbi/zsh/gtbi.zshrc"
     echo "# Target zshrc" > "$TARGET_HOME/.zshrc"
     echo "# Caller zshrc" > "$HOME/.zshrc"
 
@@ -1790,15 +1790,15 @@ test_fix_acfs_sourcing_uses_target_home() {
         return 1
     }
 
-    fix_acfs_sourcing "shell.acfs_sourced" >/dev/null 2>&1
+    fix_gtbi_sourcing "shell.gtbi_sourced" >/dev/null 2>&1
 
-    if ! grep -q "source ~/.acfs/zsh/acfs.zshrc" "$TARGET_HOME/.zshrc"; then
+    if ! grep -q "source ~/.gtbi/zsh/gtbi.zshrc" "$TARGET_HOME/.zshrc"; then
         echo "  Target-home .zshrc was not updated"
         cleanup_test_env
         return 1
     fi
 
-    if grep -q "source ~/.acfs/zsh/acfs.zshrc" "$HOME/.zshrc"; then
+    if grep -q "source ~/.gtbi/zsh/gtbi.zshrc" "$HOME/.zshrc"; then
         echo "  Caller HOME .zshrc was modified unexpectedly"
         cleanup_test_env
         return 1
@@ -1812,8 +1812,8 @@ test_fix_acfs_sourcing_uses_target_home() {
 test_dispatch_fix_config_copy_uses_target_home() {
     setup_test_env
 
-    export TARGET_HOME="$ACFS_STATE_DIR/target-home"
-    mkdir -p "$TARGET_HOME/.acfs"
+    export TARGET_HOME="$GTBI_STATE_DIR/target-home"
+    mkdir -p "$TARGET_HOME/.gtbi"
 
     start_autofix_session >/dev/null || {
         echo "  Failed to start autofix session"
@@ -1821,15 +1821,15 @@ test_dispatch_fix_config_copy_uses_target_home() {
         return 1
     }
 
-    dispatch_fix "config.acfs_zshrc" "warn" >/dev/null 2>&1
+    dispatch_fix "config.gtbi_zshrc" "warn" >/dev/null 2>&1
 
-    if [[ ! -f "$TARGET_HOME/.acfs/zsh/acfs.zshrc" ]]; then
+    if [[ ! -f "$TARGET_HOME/.gtbi/zsh/gtbi.zshrc" ]]; then
         echo "  Config copy did not write into TARGET_HOME"
         cleanup_test_env
         return 1
     fi
 
-    if [[ -e "$HOME/.acfs/zsh/acfs.zshrc" ]]; then
+    if [[ -e "$HOME/.gtbi/zsh/gtbi.zshrc" ]]; then
         echo "  Config copy wrote into caller HOME unexpectedly"
         cleanup_test_env
         return 1
@@ -1843,7 +1843,7 @@ test_dispatch_fix_config_copy_uses_target_home() {
 test_dispatch_fix_symlink_uses_target_home() {
     setup_test_env
 
-    export TARGET_HOME="$ACFS_STATE_DIR/target-home"
+    export TARGET_HOME="$GTBI_STATE_DIR/target-home"
     mkdir -p "$TARGET_HOME/.cargo/bin" "$TARGET_HOME/.local/bin"
     printf '#!/usr/bin/env bash\necho br\n' > "$TARGET_HOME/.cargo/bin/br"
     chmod +x "$TARGET_HOME/.cargo/bin/br"
@@ -1873,17 +1873,17 @@ test_dispatch_fix_symlink_uses_target_home() {
     return 0
 }
 
-test_fix_acfs_sourcing_missing_acfs_config() {
+test_fix_gtbi_sourcing_missing_gtbi_config() {
     setup_test_env
 
-    # Create .zshrc but no acfs.zshrc
+    # Create .zshrc but no gtbi.zshrc
     local zshrc="$HOME/.zshrc"
     echo "# Initial zshrc" > "$zshrc"
-    rm -f "$HOME/.acfs/zsh/acfs.zshrc"
+    rm -f "$HOME/.gtbi/zsh/gtbi.zshrc"
 
     # Run fixer - should fail
-    if fix_acfs_sourcing "shell.acfs_sourced" 2>/dev/null; then
-        echo "  Should have failed with missing acfs.zshrc"
+    if fix_gtbi_sourcing "shell.gtbi_sourced" 2>/dev/null; then
+        echo "  Should have failed with missing gtbi.zshrc"
         cleanup_test_env
         return 1
     fi
@@ -1892,24 +1892,24 @@ test_fix_acfs_sourcing_missing_acfs_config() {
     return 0
 }
 
-test_fix_acfs_sourcing_dry_run() {
+test_fix_gtbi_sourcing_dry_run() {
     setup_test_env
 
-    # Create .zshrc and acfs.zshrc
+    # Create .zshrc and gtbi.zshrc
     local zshrc="$HOME/.zshrc"
     echo "# Initial zshrc" > "$zshrc"
 
-    local acfs_zshrc="$HOME/.acfs/zsh/acfs.zshrc"
-    echo "# ACFS config" > "$acfs_zshrc"
+    local gtbi_zshrc="$HOME/.gtbi/zsh/gtbi.zshrc"
+    echo "# GTBI config" > "$gtbi_zshrc"
 
     # Enable dry-run mode
     DOCTOR_FIX_DRY_RUN=true
 
     # Run fixer
-    fix_acfs_sourcing "shell.acfs_sourced" >/dev/null 2>&1
+    fix_gtbi_sourcing "shell.gtbi_sourced" >/dev/null 2>&1
 
     # Verify file NOT modified
-    if grep -q "# ACFS configuration" "$zshrc"; then
+    if grep -q "# GTBI configuration" "$zshrc"; then
         echo "  File was modified in dry-run mode"
         cleanup_test_env
         return 1
@@ -1927,11 +1927,11 @@ test_fix_acfs_sourcing_dry_run() {
     return 0
 }
 
-test_fix_acfs_sourcing_removes_new_file_when_record_change_fails() {
+test_fix_gtbi_sourcing_removes_new_file_when_record_change_fails() {
     setup_test_env
 
     local zshrc="$HOME/.zshrc"
-    echo "# ACFS zsh config" > "$HOME/.acfs/zsh/acfs.zshrc"
+    echo "# GTBI zsh config" > "$HOME/.gtbi/zsh/gtbi.zshrc"
 
     start_autofix_session >/dev/null || {
         echo "  Failed to start autofix session"
@@ -1943,14 +1943,14 @@ test_fix_acfs_sourcing_removes_new_file_when_record_change_fails() {
         return 1
     }
 
-    if fix_acfs_sourcing "shell.acfs_sourced" >/dev/null 2>&1; then
-        echo "  fix_acfs_sourcing unexpectedly succeeded when record_change failed for a new file"
+    if fix_gtbi_sourcing "shell.gtbi_sourced" >/dev/null 2>&1; then
+        echo "  fix_gtbi_sourcing unexpectedly succeeded when record_change failed for a new file"
         cleanup_test_env
         return 1
     fi
 
     if [[ -e "$zshrc" ]]; then
-        echo "  Newly created .zshrc should have been removed after ACFS sourcing journaling failure"
+        echo "  Newly created .zshrc should have been removed after GTBI sourcing journaling failure"
         cleanup_test_env
         return 1
     fi
@@ -1985,7 +1985,7 @@ chmod +x \"$HOME/.local/bin/codex-test-bin\"" >/dev/null 2>&1; then
         return 1
     fi
 
-    if ! jq -e 'select(.description == "Installed codex-test-bin" and .reversible == false)' "$ACFS_CHANGES_FILE" >/dev/null 2>&1; then
+    if ! jq -e 'select(.description == "Installed codex-test-bin" and .reversible == false)' "$GTBI_CHANGES_FILE" >/dev/null 2>&1; then
         echo "  fix_stack_install did not record a non-reversible install change"
         cleanup_test_env
         return 1
@@ -1997,7 +1997,7 @@ chmod +x \"$HOME/.local/bin/codex-test-bin\"" >/dev/null 2>&1; then
 
 test_fix_stack_install_uses_target_runtime_home() {
     setup_test_env
-    export TARGET_HOME="$ACFS_STATE_DIR/target-home"
+    export TARGET_HOME="$GTBI_STATE_DIR/target-home"
     mkdir -p "$TARGET_HOME/.local/bin" "$HOME/.local/bin"
     export PATH="$HOME/.local/bin:$PATH"
 
@@ -2037,7 +2037,7 @@ chmod +x "$HOME/.local/bin/codex-target-bin"'
 
 test_fix_stack_install_runs_from_target_runtime_home() {
     setup_test_env
-    export TARGET_HOME="$ACFS_STATE_DIR/target-home"
+    export TARGET_HOME="$GTBI_STATE_DIR/target-home"
     mkdir -p "$TARGET_HOME/.local/bin"
 
     start_autofix_session >/dev/null || {
@@ -2085,7 +2085,7 @@ test_fix_stack_install_fails_when_binary_missing_after_successful_command() {
         return 1
     fi
 
-    if [[ -s "$ACFS_CHANGES_FILE" ]]; then
+    if [[ -s "$GTBI_CHANGES_FILE" ]]; then
         echo "  fix_stack_install should not record a change when the binary is still missing"
         cleanup_test_env
         return 1
@@ -2128,7 +2128,7 @@ chmod +x \"$HOME/.local/bin/codex-journal-fail\"" >/dev/null 2>&1; then
         return 1
     fi
 
-    if [[ -s "$ACFS_CHANGES_FILE" ]]; then
+    if [[ -s "$GTBI_CHANGES_FILE" ]]; then
         echo "  fix_stack_install should not persist a journal entry when journaling fails"
         cleanup_test_env
         return 1
@@ -2184,7 +2184,7 @@ EOF
         return 1
     fi
 
-    if ! jq -e 'select(.description == "Installed ms-test-bin via verified installer" and .reversible == false)' "$ACFS_CHANGES_FILE" >/dev/null 2>&1; then
+    if ! jq -e 'select(.description == "Installed ms-test-bin via verified installer" and .reversible == false)' "$GTBI_CHANGES_FILE" >/dev/null 2>&1; then
         echo "  fix_verified_install did not record a non-reversible install change"
         eval "$original_doctor_fix_run_verified_installer"
         cleanup_test_env
@@ -2198,12 +2198,12 @@ EOF
 
 test_fix_verified_install_uses_target_runtime_home() {
     setup_test_env
-    export TARGET_HOME="$ACFS_STATE_DIR/target-home"
+    export TARGET_HOME="$GTBI_STATE_DIR/target-home"
     mkdir -p "$TARGET_HOME/.local/bin" "$HOME/.local/bin"
     export PATH="$HOME/.local/bin:$PATH"
 
     local original_doctor_fix_run_verified_installer=""
-    local installer_signal="$ACFS_STATE_DIR/verified-installer-invoked"
+    local installer_signal="$GTBI_STATE_DIR/verified-installer-invoked"
     original_doctor_fix_run_verified_installer="$(declare -f doctor_fix_run_verified_installer)"
 
     cat > "$HOME/.local/bin/ms-target-bin" <<'EOF'
@@ -2286,12 +2286,12 @@ test_fix_verified_install_dry_run() {
 
 test_dispatch_fix_routes_cass_with_target_tmpdir() {
     setup_test_env
-    export TARGET_HOME="$ACFS_STATE_DIR/target-home"
+    export TARGET_HOME="$GTBI_STATE_DIR/target-home"
     mkdir -p "$TARGET_HOME/.local/bin"
     export PATH="$TARGET_HOME/.local/bin:$PATH"
 
     local original_doctor_fix_run_verified_installer_with_env=""
-    local installer_signal="$ACFS_STATE_DIR/cass-installer.env"
+    local installer_signal="$GTBI_STATE_DIR/cass-installer.env"
     original_doctor_fix_run_verified_installer_with_env="$(declare -f doctor_fix_run_verified_installer_with_env)"
 
     start_autofix_session >/dev/null || {
@@ -2308,7 +2308,7 @@ test_dispatch_fix_routes_cass_with_target_tmpdir() {
         printf '%s\n%s\n%s\n' "$tool" "$env_assignment" "$*" > "$installer_signal"
         [[ "$tool" == "cass" ]] || return 1
         case "$env_assignment" in
-            "TMPDIR=$TARGET_HOME/.cache/acfs/installer-tmp/cass."*) ;;
+            "TMPDIR=$TARGET_HOME/.cache/gtbi/installer-tmp/cass."*) ;;
             *) return 1 ;;
         esac
         [[ -d "${env_assignment#TMPDIR=}" ]] || return 1
@@ -2354,7 +2354,7 @@ test_fix_verified_install_ignores_gcloud_bv_shadow() {
     export PATH="$HOME/google-cloud-sdk/bin:$PATH"
 
     local original_doctor_fix_run_verified_installer=""
-    local installer_signal="$ACFS_STATE_DIR/bv-installer-invoked"
+    local installer_signal="$GTBI_STATE_DIR/bv-installer-invoked"
     original_doctor_fix_run_verified_installer="$(declare -f doctor_fix_run_verified_installer)"
 
     cat > "$HOME/google-cloud-sdk/bin/bv" <<'EOF'
@@ -2409,7 +2409,7 @@ EOF
 
 test_fix_verified_install_ms_arm64_fallback_uses_cargo() {
     setup_test_env
-    export TARGET_HOME="$ACFS_STATE_DIR/target-home"
+    export TARGET_HOME="$GTBI_STATE_DIR/target-home"
     mkdir -p "$TARGET_HOME/.cargo/bin" "$TARGET_HOME/.local/bin" "$HOME/.local/bin"
     export PATH="$HOME/.local/bin:$PATH"
 
@@ -2419,8 +2419,8 @@ test_fix_verified_install_ms_arm64_fallback_uses_cargo() {
         return 1
     }
 
-    local cargo_signal="$ACFS_STATE_DIR/target-cargo.args"
-    local caller_signal="$ACFS_STATE_DIR/caller-cargo.args"
+    local cargo_signal="$GTBI_STATE_DIR/target-cargo.args"
+    local caller_signal="$GTBI_STATE_DIR/caller-cargo.args"
     cat > "$HOME/.local/bin/cargo" <<EOF
 #!/usr/bin/env bash
 : > "$caller_signal"
@@ -2537,7 +2537,7 @@ EOF
         return 1
     fi
 
-    if [[ -s "$ACFS_CHANGES_FILE" ]]; then
+    if [[ -s "$GTBI_CHANGES_FILE" ]]; then
         echo "  fix_verified_install should not persist a journal entry when journaling fails"
         cleanup_test_env
         return 1
@@ -2570,7 +2570,7 @@ test_fix_ssh_server_records_change_when_enabling_service() {
     }
 
     original_resolver="$(declare -f doctor_fix_system_binary_path)"
-    temp_bin="$ACFS_STATE_DIR/bin"
+    temp_bin="$GTBI_STATE_DIR/bin"
     mkdir -p "$temp_bin"
     printf '#!/usr/bin/env bash\nexit 0\n' > "$temp_bin/sshd"
     cat > "$temp_bin/systemctl" <<'EOF'
@@ -2604,7 +2604,7 @@ EOF
         return 1
     fi
 
-    if ! jq -e 'select(.description == "Enabled and started SSH server")' "$ACFS_CHANGES_FILE" >/dev/null 2>&1; then
+    if ! jq -e 'select(.description == "Enabled and started SSH server")' "$GTBI_CHANGES_FILE" >/dev/null 2>&1; then
         eval "$original_resolver"
         echo "  fix_ssh_server did not record the SSH enable/start change"
         if [[ "$created_systemd_dir" == "true" ]]; then rmdir /run/systemd/system 2>/dev/null || true; fi
@@ -2641,7 +2641,7 @@ test_fix_ssh_server_fails_when_service_enable_fails() {
     }
 
     original_resolver="$(declare -f doctor_fix_system_binary_path)"
-    temp_bin="$ACFS_STATE_DIR/bin"
+    temp_bin="$GTBI_STATE_DIR/bin"
     mkdir -p "$temp_bin"
     printf '#!/usr/bin/env bash\nexit 0\n' > "$temp_bin/sshd"
     cat > "$temp_bin/systemctl" <<'EOF'
@@ -2675,7 +2675,7 @@ EOF
         return 1
     fi
 
-    if [[ -s "$ACFS_CHANGES_FILE" ]]; then
+    if [[ -s "$GTBI_CHANGES_FILE" ]]; then
         eval "$original_resolver"
         echo "  fix_ssh_server should not record a change when enable/start fails"
         if [[ "$created_systemd_dir" == "true" ]]; then rmdir /run/systemd/system 2>/dev/null || true; fi
@@ -2694,7 +2694,7 @@ test_fix_ssh_keepalive_applies_and_records_change() {
     local original_resolver=""
     local temp_bin=""
 
-    export DOCTOR_FIX_SSHD_CONFIG="$ACFS_STATE_DIR/sshd_config"
+    export DOCTOR_FIX_SSHD_CONFIG="$GTBI_STATE_DIR/sshd_config"
     printf 'Port 22\n' > "$DOCTOR_FIX_SSHD_CONFIG"
 
     start_autofix_session >/dev/null || {
@@ -2704,7 +2704,7 @@ test_fix_ssh_keepalive_applies_and_records_change() {
     }
 
     original_resolver="$(declare -f doctor_fix_system_binary_path)"
-    temp_bin="$ACFS_STATE_DIR/bin"
+    temp_bin="$GTBI_STATE_DIR/bin"
     mkdir -p "$temp_bin"
     cat > "$temp_bin/systemctl" <<'EOF'
 #!/usr/bin/env bash
@@ -2739,7 +2739,7 @@ EOF
         return 1
     fi
 
-    if ! jq -e --arg path "$DOCTOR_FIX_SSHD_CONFIG" 'select(.description == ("Configured SSH keepalive in " + $path))' "$ACFS_CHANGES_FILE" >/dev/null 2>&1; then
+    if ! jq -e --arg path "$DOCTOR_FIX_SSHD_CONFIG" 'select(.description == ("Configured SSH keepalive in " + $path))' "$GTBI_CHANGES_FILE" >/dev/null 2>&1; then
         eval "$original_resolver"
         echo "  fix_ssh_keepalive did not record the keepalive change"
         cleanup_test_env
@@ -2756,7 +2756,7 @@ test_fix_ssh_keepalive_restores_file_when_backup_and_record_change_fail() {
     local original_resolver=""
     local temp_bin=""
 
-    export DOCTOR_FIX_SSHD_CONFIG="$ACFS_STATE_DIR/sshd_config"
+    export DOCTOR_FIX_SSHD_CONFIG="$GTBI_STATE_DIR/sshd_config"
     printf 'Port 22\n' > "$DOCTOR_FIX_SSHD_CONFIG"
     local original_content=""
     local original_create_backup=""
@@ -2774,7 +2774,7 @@ test_fix_ssh_keepalive_restores_file_when_backup_and_record_change_fail() {
     create_backup() { return 1; }
     record_change() { return 1; }
     original_resolver="$(declare -f doctor_fix_system_binary_path)"
-    temp_bin="$ACFS_STATE_DIR/bin"
+    temp_bin="$GTBI_STATE_DIR/bin"
     mkdir -p "$temp_bin"
     cat > "$temp_bin/systemctl" <<'EOF'
 #!/usr/bin/env bash
@@ -2840,14 +2840,14 @@ test_fix_dcg_hook_uninstalls_when_record_change_fails() {
 
     local original_record_change=""
     local original_path="$PATH"
-    export TARGET_HOME="$ACFS_STATE_DIR/target-home"
+    export TARGET_HOME="$GTBI_STATE_DIR/target-home"
     mkdir -p "$TARGET_HOME/.local/bin" "$HOME/.local/bin"
     export PATH="$HOME/.local/bin:$PATH"
     original_record_change="$(declare -f record_change)"
 
     cat > "$HOME/.local/bin/dcg" <<EOF
 #!/usr/bin/env bash
-printf '%s\n' "\$*" >> "$ACFS_STATE_DIR/caller-dcg.log"
+printf '%s\n' "\$*" >> "$GTBI_STATE_DIR/caller-dcg.log"
 case "\$1 \${2-} \${3-}" in
     "doctor --format json")
         printf '{"hook_installed":false,"checks":[]}\n'
@@ -2869,11 +2869,11 @@ case "\$1 \${2-} \${3-}" in
         exit 0
         ;;
     "install  ")
-        : > "$ACFS_STATE_DIR/dcg-installed"
+        : > "$GTBI_STATE_DIR/dcg-installed"
         exit 0
         ;;
     "uninstall  ")
-        : > "$ACFS_STATE_DIR/dcg-uninstalled"
+        : > "$GTBI_STATE_DIR/dcg-uninstalled"
         exit 0
         ;;
 esac
@@ -2902,14 +2902,14 @@ EOF
     eval "$original_record_change"
     export PATH="$original_path"
 
-    if [[ ! -f "$ACFS_STATE_DIR/dcg-uninstalled" ]]; then
+    if [[ ! -f "$GTBI_STATE_DIR/dcg-uninstalled" ]]; then
         echo "  fix_dcg_hook did not roll back install after record_change failure"
         end_autofix_session >/dev/null 2>&1 || true
         cleanup_test_env
         return 1
     fi
 
-    if [[ -f "$ACFS_STATE_DIR/caller-dcg.log" ]]; then
+    if [[ -f "$GTBI_STATE_DIR/caller-dcg.log" ]]; then
         echo "  fix_dcg_hook used caller-shell dcg instead of TARGET_HOME dcg"
         end_autofix_session >/dev/null 2>&1 || true
         cleanup_test_env
@@ -2929,13 +2929,13 @@ EOF
 }
 test_dcg_hook_already_installed_detects_hook_wiring() {
     setup_test_env
-    export TARGET_HOME="$ACFS_STATE_DIR/target-home"
+    export TARGET_HOME="$GTBI_STATE_DIR/target-home"
     mkdir -p "$TARGET_HOME/.local/bin" "$HOME/.local/bin"
     export PATH="$HOME/.local/bin:$PATH"
 
     cat > "$HOME/.local/bin/dcg" <<EOF
 #!/usr/bin/env bash
-printf '%s\n' "\$*" >> "$ACFS_STATE_DIR/caller-dcg.log"
+printf '%s\n' "\$*" >> "$GTBI_STATE_DIR/caller-dcg.log"
 exit 1
 EOF
     chmod +x "$HOME/.local/bin/dcg"
@@ -2958,7 +2958,7 @@ EOF
         return 1
     fi
 
-    if [[ -f "$ACFS_STATE_DIR/caller-dcg.log" ]]; then
+    if [[ -f "$GTBI_STATE_DIR/caller-dcg.log" ]]; then
         echo "  dcg_hook_already_installed used caller-shell dcg instead of TARGET_HOME dcg"
         cleanup_test_env
         return 1
@@ -3039,7 +3039,7 @@ EOF
 test_agent_mail_fix_write_unit_prefers_target_install_over_current_shell_am() {
     setup_test_env
 
-    export TARGET_HOME="$ACFS_STATE_DIR/target-home"
+    export TARGET_HOME="$GTBI_STATE_DIR/target-home"
     mkdir -p "$TARGET_HOME/mcp_agent_mail" "$HOME/current-shell-bin"
     export PATH="$HOME/current-shell-bin:$PATH"
 
@@ -3101,7 +3101,7 @@ EOF
 test_agent_mail_fix_write_unit_escapes_systemd_values() {
     setup_test_env
 
-    export TARGET_HOME="$ACFS_STATE_DIR/target home 100% \$cash"
+    export TARGET_HOME="$GTBI_STATE_DIR/target home 100% \$cash"
     mkdir -p "$TARGET_HOME/mcp_agent_mail"
 
     cat > "$TARGET_HOME/mcp_agent_mail/am" <<'EOF'
@@ -3166,10 +3166,10 @@ EOF
 test_fix_mcp_agent_mail_repairs_missing_symlink_without_using_current_shell_am() {
     setup_test_env
 
-    export TARGET_HOME="$ACFS_STATE_DIR/target-home"
+    export TARGET_HOME="$GTBI_STATE_DIR/target-home"
     mkdir -p "$TARGET_HOME/.local/bin" "$TARGET_HOME/mcp_agent_mail" "$HOME/current-shell-bin"
     export PATH="$HOME/current-shell-bin:$TARGET_HOME/.local/bin:$PATH"
-    export ACFS_BIN_DIR="relative/bin"
+    export GTBI_BIN_DIR="relative/bin"
 
     start_autofix_session >/dev/null || {
         echo "  Failed to start autofix session"
@@ -3299,10 +3299,10 @@ EOF
 test_fix_mcp_agent_mail_uses_target_home_for_systemctl_env() {
     setup_test_env
 
-    export TARGET_HOME="$ACFS_STATE_DIR/target-home"
+    export TARGET_HOME="$GTBI_STATE_DIR/target-home"
     mkdir -p "$TARGET_HOME/.local/bin" "$TARGET_HOME/mcp_agent_mail" "$HOME/current-shell-bin"
     export PATH="$HOME/current-shell-bin:$TARGET_HOME/.local/bin:$PATH"
-    export ACFS_BIN_DIR="relative/bin"
+    export GTBI_BIN_DIR="relative/bin"
 
     start_autofix_session >/dev/null || {
         echo "  Failed to start autofix session"
@@ -3415,19 +3415,19 @@ EOF
         return 1
     fi
 
-    if ! jq -e 'select(.description == "Ran MCP Agent Mail database repair")' "$ACFS_CHANGES_FILE" >/dev/null 2>&1; then
+    if ! jq -e 'select(.description == "Ran MCP Agent Mail database repair")' "$GTBI_CHANGES_FILE" >/dev/null 2>&1; then
         echo "  MCP Agent Mail repair was not recorded in the autofix journal"
         cleanup_test_env
         return 1
     fi
 
-    if ! jq -e 'select(.description == "Applied MCP Agent Mail doctor fixes")' "$ACFS_CHANGES_FILE" >/dev/null 2>&1; then
+    if ! jq -e 'select(.description == "Applied MCP Agent Mail doctor fixes")' "$GTBI_CHANGES_FILE" >/dev/null 2>&1; then
         echo "  MCP Agent Mail doctor fix was not recorded in the autofix journal"
         cleanup_test_env
         return 1
     fi
 
-    if ! jq -e 'select(.description == "Repaired MCP Agent Mail managed service")' "$ACFS_CHANGES_FILE" >/dev/null 2>&1; then
+    if ! jq -e 'select(.description == "Repaired MCP Agent Mail managed service")' "$GTBI_CHANGES_FILE" >/dev/null 2>&1; then
         echo "  MCP Agent Mail service repair was not recorded in the autofix journal"
         cleanup_test_env
         return 1
@@ -3440,7 +3440,7 @@ EOF
 test_fix_mcp_agent_mail_dry_run_reports_symlink_and_repair() {
     setup_test_env
 
-    export TARGET_HOME="$ACFS_STATE_DIR/target-home"
+    export TARGET_HOME="$GTBI_STATE_DIR/target-home"
     mkdir -p "$TARGET_HOME/.local/bin" "$TARGET_HOME/mcp_agent_mail"
     export PATH="$TARGET_HOME/.local/bin:$PATH"
 
@@ -3495,7 +3495,7 @@ EOF
 test_fix_mcp_agent_mail_fails_when_symlink_repair_fails() {
     setup_test_env
 
-    export TARGET_HOME="$ACFS_STATE_DIR/target-home"
+    export TARGET_HOME="$GTBI_STATE_DIR/target-home"
     mkdir -p "$TARGET_HOME/.local/bin" "$TARGET_HOME/mcp_agent_mail"
     export PATH="$TARGET_HOME/.local/bin:$PATH"
 
@@ -3534,7 +3534,7 @@ EOF
         return 1
     fi
 
-    if [[ -s "$ACFS_CHANGES_FILE" ]]; then
+    if [[ -s "$GTBI_CHANGES_FILE" ]]; then
         echo "  fix_mcp_agent_mail should not record changes when symlink repair fails before repair work starts"
         cleanup_test_env
         return 1
@@ -3594,7 +3594,7 @@ test_dispatch_fix_routes_path() {
     dispatch_fix "path.ordering" "fail" "" >/dev/null 2>&1
 
     # Verify fixer was called
-    if ! grep -q "# ACFS PATH ordering" "$zshrc"; then
+    if ! grep -q "# GTBI PATH ordering" "$zshrc"; then
         echo "  path.* check did not route to fix_path_ordering"
         cleanup_test_env
         return 1
@@ -3761,7 +3761,7 @@ main() {
     # Helper tests
     run_test test_file_contains_line
     run_test test_doctor_fix_prefers_target_home_for_autofix_state
-    run_test test_doctor_fix_prefers_target_home_over_poisoned_acfs_home
+    run_test test_doctor_fix_prefers_target_home_over_poisoned_gtbi_home
     run_test test_doctor_fix_binary_path_ignores_relative_bin_dir
     run_test test_doctor_fix_runtime_path_ignores_relative_bin_dir
     run_test test_doctor_fix_runtime_path_prefers_system_bins_over_current_shell_path
@@ -3805,14 +3805,14 @@ main() {
     run_test test_fix_plugin_clone_removes_created_dirs_when_record_change_fails
     run_test test_fix_plugin_clone_cleans_partial_clone_on_clone_failure
 
-    # fix_acfs_sourcing tests
-    run_test test_fix_acfs_sourcing_applies
-    run_test test_fix_acfs_sourcing_idempotent
-    run_test test_fix_acfs_sourcing_ignores_commented_loader_mention
-    run_test test_fix_acfs_sourcing_uses_target_home
-    run_test test_fix_acfs_sourcing_missing_acfs_config
-    run_test test_fix_acfs_sourcing_dry_run
-    run_test test_fix_acfs_sourcing_removes_new_file_when_record_change_fails
+    # fix_gtbi_sourcing tests
+    run_test test_fix_gtbi_sourcing_applies
+    run_test test_fix_gtbi_sourcing_idempotent
+    run_test test_fix_gtbi_sourcing_ignores_commented_loader_mention
+    run_test test_fix_gtbi_sourcing_uses_target_home
+    run_test test_fix_gtbi_sourcing_missing_gtbi_config
+    run_test test_fix_gtbi_sourcing_dry_run
+    run_test test_fix_gtbi_sourcing_removes_new_file_when_record_change_fails
     run_test test_fix_stack_install_applies_and_records_change
     run_test test_fix_stack_install_uses_target_runtime_home
     run_test test_fix_stack_install_runs_from_target_runtime_home
@@ -3865,7 +3865,7 @@ main() {
     echo "============================================================"
 
     # Log results
-    local log_file="/tmp/acfs_doctor_fix_test_$(date +%Y%m%d_%H%M%S).log"
+    local log_file="/tmp/gtbi_doctor_fix_test_$(date +%Y%m%d_%H%M%S).log"
     {
         echo "Doctor Fix Test Results"
         echo "Date: $(date)"

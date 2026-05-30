@@ -1,9 +1,9 @@
 /**
- * Tests for ACFS Manifest Generator outputs
+ * Tests for GTBI Manifest Generator outputs
  * Related: bead dvt.2
  *
  * Validates that generated scripts match expected content from real fixtures.
- * Uses actual acfs.manifest.yaml and validates against generated outputs.
+ * Uses actual gtbi.manifest.yaml and validates against generated outputs.
  */
 
 import { describe, test, expect, beforeAll } from 'bun:test';
@@ -25,7 +25,7 @@ import type { Manifest, Module } from './types.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = resolve(__dirname, '../../..');
-const MANIFEST_PATH = resolve(PROJECT_ROOT, 'acfs.manifest.yaml');
+const MANIFEST_PATH = resolve(PROJECT_ROOT, 'gtbi.manifest.yaml');
 const GENERATED_DIR = resolve(PROJECT_ROOT, 'scripts/generated');
 const WEB_GENERATED_DIR = resolve(PROJECT_ROOT, 'apps/web/lib/generated');
 const MANIFEST_INDEX_PATH = resolve(GENERATED_DIR, 'manifest_index.sh');
@@ -69,22 +69,22 @@ describe('Generated manifest_index.sh content', () => {
   });
 
   test('contains auto-generated header', () => {
-    expect(manifestIndexContent).toContain('AUTO-GENERATED FROM acfs.manifest.yaml');
+    expect(manifestIndexContent).toContain('AUTO-GENERATED FROM gtbi.manifest.yaml');
     expect(manifestIndexContent).toContain('DO NOT EDIT');
   });
 
-  test('contains ACFS_MANIFEST_SHA256', () => {
-    expect(manifestIndexContent).toContain('ACFS_MANIFEST_SHA256=');
+  test('contains GTBI_MANIFEST_SHA256', () => {
+    expect(manifestIndexContent).toContain('GTBI_MANIFEST_SHA256=');
     // SHA256 is 64 hex characters
-    const sha256Match = manifestIndexContent.match(/ACFS_MANIFEST_SHA256="([a-f0-9]{64})"/);
+    const sha256Match = manifestIndexContent.match(/GTBI_MANIFEST_SHA256="([a-f0-9]{64})"/);
     expect(sha256Match).not.toBeNull();
   });
 
-  test('contains ACFS_MODULES_IN_ORDER array', () => {
-    expect(manifestIndexContent).toContain('ACFS_MODULES_IN_ORDER=(');
+  test('contains GTBI_MODULES_IN_ORDER array', () => {
+    expect(manifestIndexContent).toContain('GTBI_MODULES_IN_ORDER=(');
   });
 
-  test('all modules are in ACFS_MODULES_IN_ORDER', () => {
+  test('all modules are in GTBI_MODULES_IN_ORDER', () => {
     for (const module of manifest.modules) {
       expect(manifestIndexContent).toContain(`"${module.id}"`);
     }
@@ -93,7 +93,7 @@ describe('Generated manifest_index.sh content', () => {
   test('modules are in dependency-respecting order', () => {
     // Extract the order from the file
     const orderMatch = manifestIndexContent.match(
-      /ACFS_MODULES_IN_ORDER=\(\s*([\s\S]*?)\s*\)/
+      /GTBI_MODULES_IN_ORDER=\(\s*([\s\S]*?)\s*\)/
     );
     expect(orderMatch).not.toBeNull();
 
@@ -121,8 +121,8 @@ describe('Generated manifest_index.sh content', () => {
     }
   });
 
-  test('contains ACFS_MODULE_PHASE associative array', () => {
-    expect(manifestIndexContent).toContain('declare -gA ACFS_MODULE_PHASE=(');
+  test('contains GTBI_MODULE_PHASE associative array', () => {
+    expect(manifestIndexContent).toContain('declare -gA GTBI_MODULE_PHASE=(');
   });
 
   test('all modules have phase entries', () => {
@@ -133,8 +133,8 @@ describe('Generated manifest_index.sh content', () => {
     }
   });
 
-  test('contains ACFS_MODULE_DEPS associative array', () => {
-    expect(manifestIndexContent).toContain('declare -gA ACFS_MODULE_DEPS=(');
+  test('contains GTBI_MODULE_DEPS associative array', () => {
+    expect(manifestIndexContent).toContain('declare -gA GTBI_MODULE_DEPS=(');
   });
 
   test('dependencies are correctly formatted', () => {
@@ -145,8 +145,8 @@ describe('Generated manifest_index.sh content', () => {
     }
   });
 
-  test('contains ACFS_MODULE_FUNC associative array', () => {
-    expect(manifestIndexContent).toContain('declare -gA ACFS_MODULE_FUNC=(');
+  test('contains GTBI_MODULE_FUNC associative array', () => {
+    expect(manifestIndexContent).toContain('declare -gA GTBI_MODULE_FUNC=(');
   });
 
   test('function names follow convention', () => {
@@ -157,8 +157,8 @@ describe('Generated manifest_index.sh content', () => {
     }
   });
 
-  test('contains ACFS_MODULE_CATEGORY associative array', () => {
-    expect(manifestIndexContent).toContain('declare -gA ACFS_MODULE_CATEGORY=(');
+  test('contains GTBI_MODULE_CATEGORY associative array', () => {
+    expect(manifestIndexContent).toContain('declare -gA GTBI_MODULE_CATEGORY=(');
   });
 
   test('categories are correctly derived from module IDs', () => {
@@ -169,12 +169,12 @@ describe('Generated manifest_index.sh content', () => {
     }
   });
 
-  test('contains ACFS_MODULE_TAGS associative array', () => {
-    expect(manifestIndexContent).toContain('declare -gA ACFS_MODULE_TAGS=(');
+  test('contains GTBI_MODULE_TAGS associative array', () => {
+    expect(manifestIndexContent).toContain('declare -gA GTBI_MODULE_TAGS=(');
   });
 
-  test('contains ACFS_MODULE_DEFAULT associative array', () => {
-    expect(manifestIndexContent).toContain('declare -gA ACFS_MODULE_DEFAULT=(');
+  test('contains GTBI_MODULE_DEFAULT associative array', () => {
+    expect(manifestIndexContent).toContain('declare -gA GTBI_MODULE_DEFAULT=(');
   });
 
   test('default values match manifest', () => {
@@ -185,8 +185,8 @@ describe('Generated manifest_index.sh content', () => {
     }
   });
 
-  test('contains ACFS_MANIFEST_INDEX_LOADED flag', () => {
-    expect(manifestIndexContent).toContain('ACFS_MANIFEST_INDEX_LOADED=true');
+  test('contains GTBI_MANIFEST_INDEX_LOADED flag', () => {
+    expect(manifestIndexContent).toContain('GTBI_MANIFEST_INDEX_LOADED=true');
   });
 });
 
@@ -226,9 +226,9 @@ describe('Generated verified installer args', () => {
     expect(existsSync(stackPath)).toBe(true);
     const stackContent = readFileSync(stackPath, 'utf-8');
 
-    expect(stackContent).toContain('_ACFS_DETECTED_USER="${SUDO_USER:-}"');
-    expect(stackContent).toContain('_ACFS_DETECTED_USER="$(acfs_generated_resolve_current_user 2>/dev/null || true)"');
-    expect(stackContent).not.toContain('_ACFS_DETECTED_USER="${SUDO_USER:-$(whoami)}"');
+    expect(stackContent).toContain('_GTBI_DETECTED_USER="${SUDO_USER:-}"');
+    expect(stackContent).toContain('_GTBI_DETECTED_USER="$(gtbi_generated_resolve_current_user 2>/dev/null || true)"');
+    expect(stackContent).not.toContain('_GTBI_DETECTED_USER="${SUDO_USER:-$(whoami)}"');
     expect(stackContent).not.toContain('TARGET_USER="${TARGET_USER:-ubuntu}"');
   });
 
@@ -252,8 +252,8 @@ describe('Generated verified installer args', () => {
     expect(existsSync(stackPath)).toBe(true);
     const stackContent = readFileSync(stackPath, 'utf-8');
 
-    expect(stackContent).toContain('if declare -f _acfs_resolve_target_home >/dev/null 2>&1; then');
-    expect(stackContent).toContain('TARGET_HOME="$(_acfs_resolve_target_home "${TARGET_USER}" "$_ACFS_EXPLICIT_TARGET_HOME" || true)"');
+    expect(stackContent).toContain('if declare -f _gtbi_resolve_target_home >/dev/null 2>&1; then');
+    expect(stackContent).toContain('TARGET_HOME="$(_gtbi_resolve_target_home "${TARGET_USER}" "$_GTBI_EXPLICIT_TARGET_HOME" || true)"');
     expect(stackContent).toContain(
       'log_error "Invalid TARGET_HOME for \'${TARGET_USER}\': ${TARGET_HOME:-<empty>} (must be an absolute path and cannot be \'/\')"'
     );
@@ -316,7 +316,7 @@ describe('Generated verified installer args', () => {
     const stackContent = readFileSync(stackPath, 'utf-8');
 
     expect(stackContent).toContain(
-      `local verified_installer_tmpdir_template="$TARGET_HOME"'/.cache/acfs/installer-tmp/cass.XXXXXX'`
+      `local verified_installer_tmpdir_template="$TARGET_HOME"'/.cache/gtbi/installer-tmp/cass.XXXXXX'`
     );
     expect(stackContent).toContain('run_as_target mkdir -p "$verified_installer_tmpdir_parent"');
     expect(stackContent).toContain(
@@ -334,28 +334,28 @@ describe('Generated verified installer args', () => {
 
     const generatedPreludeIndex = agentsContent.indexOf('# Generated helper functions used by this child shell.');
     const preludeIndex = agentsContent.indexOf('# Primary-bin helper functions used by this child shell.');
-    const linkIndex = agentsContent.indexOf('acfs_link_primary_bin_command "$claude_candidate" "claude"');
-    const installIndex = agentsContent.indexOf('acfs_install_executable_into_primary_bin "$wrapper_tmp" "codex"');
+    const linkIndex = agentsContent.indexOf('gtbi_link_primary_bin_command "$claude_candidate" "claude"');
+    const installIndex = agentsContent.indexOf('gtbi_install_executable_into_primary_bin "$wrapper_tmp" "codex"');
 
     expect(generatedPreludeIndex).toBeGreaterThanOrEqual(0);
     expect(preludeIndex).toBeGreaterThanOrEqual(0);
     expect(preludeIndex).toBeGreaterThan(generatedPreludeIndex);
     expect(linkIndex).toBeGreaterThan(preludeIndex);
     expect(installIndex).toBeGreaterThan(preludeIndex);
-    expect(agentsContent).toContain('acfs_generated_system_binary_path() {');
-    expect(agentsContent).toContain('acfs_child_primary_bin_dir() {');
-    expect(agentsContent).toContain('acfs_child_primary_bin_tool_path() {');
-    expect(agentsContent).toContain('mkdir_bin="$(acfs_child_primary_bin_tool_path mkdir)" || return 1');
-    expect(agentsContent).toContain('ln_bin="$(acfs_child_primary_bin_tool_path ln)" || return 1');
-    expect(agentsContent).toContain('install_bin="$(acfs_child_primary_bin_tool_path install)" || return 1');
+    expect(agentsContent).toContain('gtbi_generated_system_binary_path() {');
+    expect(agentsContent).toContain('gtbi_child_primary_bin_dir() {');
+    expect(agentsContent).toContain('gtbi_child_primary_bin_tool_path() {');
+    expect(agentsContent).toContain('mkdir_bin="$(gtbi_child_primary_bin_tool_path mkdir)" || return 1');
+    expect(agentsContent).toContain('ln_bin="$(gtbi_child_primary_bin_tool_path ln)" || return 1');
+    expect(agentsContent).toContain('install_bin="$(gtbi_child_primary_bin_tool_path install)" || return 1');
     expect(agentsContent).toContain('Root primary bin command must be an absolute trusted path');
-    expect(agentsContent).toContain('ACFS_BIN_DIR is unset and HOME is not a usable absolute path');
-    expect(agentsContent).not.toContain('${ACFS_BIN_DIR:-${HOME:-}/.local/bin}');
-    expect(agentsContent).not.toContain('acfs_child_run_root_bin_command mkdir -p');
-    expect(agentsContent).not.toContain('acfs_child_run_root_bin_command ln -sf');
-    expect(agentsContent).not.toContain('acfs_child_run_root_bin_command install -m 0755');
-    expect(agentsContent).toContain('acfs_install_executable_into_primary_bin() {');
-    expect(agentsContent).toContain('acfs_link_primary_bin_command() {');
+    expect(agentsContent).toContain('GTBI_BIN_DIR is unset and HOME is not a usable absolute path');
+    expect(agentsContent).not.toContain('${GTBI_BIN_DIR:-${HOME:-}/.local/bin}');
+    expect(agentsContent).not.toContain('gtbi_child_run_root_bin_command mkdir -p');
+    expect(agentsContent).not.toContain('gtbi_child_run_root_bin_command ln -sf');
+    expect(agentsContent).not.toContain('gtbi_child_run_root_bin_command install -m 0755');
+    expect(agentsContent).toContain('gtbi_install_executable_into_primary_bin() {');
+    expect(agentsContent).toContain('gtbi_link_primary_bin_command() {');
   });
 
   test('stack.meta_skill falls back to cargo source install on Linux ARM64', () => {
@@ -382,9 +382,9 @@ describe('Generated verified installer args', () => {
     expect(stackContent).toContain('fsfs_target="aarch64-unknown-linux-musl"');
     expect(stackContent).toContain("https://github.com/Dicklesworthstone/frankensearch/releases/latest");
     expect(stackContent).toContain("https://api.github.com/repos/Dicklesworthstone/frankensearch/releases?per_page=10");
-    expect(stackContent).toContain('done < <(acfs_curl --connect-timeout 30 --max-time 60');
-    expect(stackContent).toContain('fsfs_candidate="$(acfs_curl --connect-timeout 30 --max-time 60');
-    expect(stackContent).toContain('fsfs_checksum="$(acfs_curl --connect-timeout 30 --max-time 60');
+    expect(stackContent).toContain('done < <(gtbi_curl --connect-timeout 30 --max-time 60');
+    expect(stackContent).toContain('fsfs_candidate="$(gtbi_curl --connect-timeout 30 --max-time 60');
+    expect(stackContent).toContain('fsfs_checksum="$(gtbi_curl --connect-timeout 30 --max-time 60');
     expect(stackContent).not.toContain('done < <(curl -fsSL --connect-timeout 30 --max-time 60');
     expect(stackContent).not.toContain('fsfs_candidate="$(curl -fsSL --connect-timeout 30 --max-time 60');
     expect(stackContent).not.toContain('fsfs_checksum="$(curl -fsSL --connect-timeout 30 --max-time 60');
@@ -401,8 +401,8 @@ describe('Generated verified installer args', () => {
     expect(existsSync(stackPath)).toBe(true);
     const stackContent = readFileSync(stackPath, 'utf-8');
 
-    expect(stackContent).toContain('acfs_has_active_go_bin_path() {');
-    expect(stackContent).toContain('if ! acfs_has_active_go_bin_path ~/.zshrc; then');
+    expect(stackContent).toContain('gtbi_has_active_go_bin_path() {');
+    expect(stackContent).toContain('if ! gtbi_has_active_go_bin_path ~/.zshrc; then');
     expect(stackContent).not.toContain("grep -q 'export PATH=.*\\$HOME/go/bin' ~/.zshrc");
   });
 
@@ -462,10 +462,10 @@ describe('Generated verified installer args', () => {
     expect(shellContent).not.toContain('dry-run: install: exit 1 (target_user)');
     expect(shellContent).not.toContain('shell.omz: install command failed: exit 1');
     expect(shellContent).toContain(
-      'dry-run: install: if [[ -f ~/.zshrc ]] && ! acfs_zshrc_is_managed_loader ~/.zshrc; then'
+      'dry-run: install: if [[ -f ~/.zshrc ]] && ! gtbi_zshrc_is_managed_loader ~/.zshrc; then'
     );
     expect(shellContent).toContain(
-      'shell.omz: install command failed: if [[ -f ~/.zshrc ]] && ! acfs_zshrc_is_managed_loader ~/.zshrc; then'
+      'shell.omz: install command failed: if [[ -f ~/.zshrc ]] && ! gtbi_zshrc_is_managed_loader ~/.zshrc; then'
     );
   });
 
@@ -483,17 +483,17 @@ describe('Generated verified installer args', () => {
   });
 
   test('workspace agents alias checks require active alias lines', () => {
-    const acfsPath = resolve(GENERATED_DIR, 'install_acfs.sh');
-    expect(existsSync(acfsPath)).toBe(true);
-    const acfsContent = readFileSync(acfsPath, 'utf-8');
+    const gtbiPath = resolve(GENERATED_DIR, 'install_gtbi.sh');
+    expect(existsSync(gtbiPath)).toBe(true);
+    const gtbiContent = readFileSync(gtbiPath, 'utf-8');
 
-    expect(acfsContent).toContain('acfs_has_active_agents_alias() {');
-    expect(acfsContent).not.toContain('grep -q "alias agents=" ~/.zshrc.local');
-    expect(acfsContent).toContain(
-      'dry-run: install: if ! acfs_has_active_agents_alias ~/.zshrc.local; then'
+    expect(gtbiContent).toContain('gtbi_has_active_agents_alias() {');
+    expect(gtbiContent).not.toContain('grep -q "alias agents=" ~/.zshrc.local');
+    expect(gtbiContent).toContain(
+      'dry-run: install: if ! gtbi_has_active_agents_alias ~/.zshrc.local; then'
     );
-    expect(acfsContent).toContain(
-      'dry-run: verify: acfs_has_active_agents_alias ~/.zshrc.local || acfs_has_active_agents_alias ~/.zshrc'
+    expect(gtbiContent).toContain(
+      'dry-run: verify: gtbi_has_active_agents_alias ~/.zshrc.local || gtbi_has_active_agents_alias ~/.zshrc'
     );
   });
 });
@@ -516,7 +516,7 @@ describe('Generated filesystem script hardening', () => {
 
   test('prefers trusted passwd home and rejects inherited TARGET_HOME fallback', () => {
     const trustedHomeIndex = filesystemContent.indexOf(
-      'target_home="$(acfs_generated_passwd_home_from_entry "$_acfs_passwd_entry" 2>/dev/null || true)"'
+      'target_home="$(gtbi_generated_passwd_home_from_entry "$_gtbi_passwd_entry" 2>/dev/null || true)"'
     );
 
     expect(filesystemContent).toContain('target_home=""');
@@ -530,15 +530,15 @@ describe('Generated filesystem script hardening', () => {
 
   test('direct generated installers repair TARGET_HOME without inherited fallback', () => {
     const resolvedHomeIndex = filesystemContent.indexOf(
-      '_ACFS_RESOLVED_TARGET_HOME="$(_acfs_resolve_target_home "${TARGET_USER}" "$_ACFS_EXPLICIT_TARGET_HOME" || true)"'
+      '_GTBI_RESOLVED_TARGET_HOME="$(_gtbi_resolve_target_home "${TARGET_USER}" "$_GTBI_EXPLICIT_TARGET_HOME" || true)"'
     );
 
-    expect(filesystemContent).toContain('_ACFS_EXPLICIT_TARGET_HOME="${TARGET_HOME:-}"');
-    expect(filesystemContent).toContain('_ACFS_RESOLVED_TARGET_HOME=""');
-    expect(filesystemContent).toContain('if [[ -n "$_ACFS_RESOLVED_TARGET_HOME" ]]; then');
-    expect(filesystemContent).toContain('TARGET_HOME="${_ACFS_RESOLVED_TARGET_HOME%/}"');
-    expect(filesystemContent).not.toMatch(/^\s*elif \[\[ -n "\$_ACFS_EXPLICIT_TARGET_HOME" \]\]; then$/m);
-    expect(filesystemContent).not.toMatch(/^\s*TARGET_HOME="\$_ACFS_EXPLICIT_TARGET_HOME"$/m);
+    expect(filesystemContent).toContain('_GTBI_EXPLICIT_TARGET_HOME="${TARGET_HOME:-}"');
+    expect(filesystemContent).toContain('_GTBI_RESOLVED_TARGET_HOME=""');
+    expect(filesystemContent).toContain('if [[ -n "$_GTBI_RESOLVED_TARGET_HOME" ]]; then');
+    expect(filesystemContent).toContain('TARGET_HOME="${_GTBI_RESOLVED_TARGET_HOME%/}"');
+    expect(filesystemContent).not.toMatch(/^\s*elif \[\[ -n "\$_GTBI_EXPLICIT_TARGET_HOME" \]\]; then$/m);
+    expect(filesystemContent).not.toMatch(/^\s*TARGET_HOME="\$_GTBI_EXPLICIT_TARGET_HOME"$/m);
     expect(filesystemContent).not.toMatch(/^\s*TARGET_HOME="\$\{TARGET_HOME%\/}"$/m);
     expect(resolvedHomeIndex).toBeGreaterThanOrEqual(0);
   });
@@ -554,16 +554,16 @@ describe('Generated filesystem script hardening', () => {
     expect(filesystemContent).toContain('if [[ -e "$p" && -L "$p" ]]; then');
   });
 
-  test('uses no-dereference recursive chown for the ACFS dir', () => {
+  test('uses no-dereference recursive chown for the GTBI dir', () => {
     expect(filesystemContent).toContain('chown -hR');
   });
 
   test('generated helper functions are in scope for child-shell heredocs', () => {
     expect(filesystemContent).toContain('# Generated helper functions used by this child shell.');
-    expect(filesystemContent).toContain('acfs_generated_system_binary_path() {');
+    expect(filesystemContent).toContain('gtbi_generated_system_binary_path() {');
     expect(filesystemContent).toContain('*[!A-Za-z0-9._+-]*)');
     expect(filesystemContent).toContain(
-      '_acfs_passwd_entry="$(acfs_generated_getent_passwd_entry "${TARGET_USER:-ubuntu}" 2>/dev/null || true)"'
+      '_gtbi_passwd_entry="$(gtbi_generated_getent_passwd_entry "${TARGET_USER:-ubuntu}" 2>/dev/null || true)"'
     );
   });
 });
@@ -624,7 +624,7 @@ describe('doctor_checks.sh content', () => {
   });
 
   test('run_manifest_check_command resolves target homes without /home guesses', () => {
-    expect(doctorContent).toContain('resolved_target_home="$(_acfs_resolve_target_home "$target_user" "$explicit_target_home" || true)"');
+    expect(doctorContent).toContain('resolved_target_home="$(_gtbi_resolve_target_home "$target_user" "$explicit_target_home" || true)"');
     expect(doctorContent).not.toContain('target_home="/home/$target_user"');
     expect(doctorContent).toContain(
       'log_error "Invalid TARGET_HOME for \'$target_user\': ${target_home:-<empty>} (must be an absolute path and cannot be \'/\')"'
@@ -633,7 +633,7 @@ describe('doctor_checks.sh content', () => {
 
   test('run_manifest_check_command repairs target_home without inherited fallback', () => {
     const resolvedHomeIndex = doctorContent.indexOf(
-      'resolved_target_home="$(_acfs_resolve_target_home "$target_user" "$explicit_target_home" || true)"'
+      'resolved_target_home="$(_gtbi_resolve_target_home "$target_user" "$explicit_target_home" || true)"'
     );
 
     expect(doctorContent).toContain('local explicit_target_home=""');
@@ -644,7 +644,7 @@ describe('doctor_checks.sh content', () => {
     expect(doctorContent).not.toContain('elif [[ -n "$explicit_target_home" ]]; then');
     expect(doctorContent).not.toContain('target_home="$explicit_target_home"');
     expect(doctorContent).not.toContain('target_home="${target_home%/}"');
-    expect(doctorContent).not.toContain('if [[ -z "$target_home" ]]; then\n        if declare -f _acfs_resolve_target_home');
+    expect(doctorContent).not.toContain('if [[ -z "$target_home" ]]; then\n        if declare -f _gtbi_resolve_target_home');
     expect(resolvedHomeIndex).toBeGreaterThanOrEqual(0);
   });
 
@@ -664,9 +664,9 @@ describe('doctor_checks.sh content', () => {
   });
 
   test('doctor checks inject generated helpers into child bash commands that need them', () => {
-    expect(doctorContent).toContain('if [[ "$cmd" == *"acfs_generated_"* ]]; then');
+    expect(doctorContent).toContain('if [[ "$cmd" == *"gtbi_generated_"* ]]; then');
     expect(doctorContent).toContain(
-      'helper_prelude="$(declare -f acfs_generated_system_binary_path acfs_generated_resolve_current_user acfs_generated_getent_passwd_entry acfs_generated_passwd_home_from_entry 2>/dev/null || true)"'
+      'helper_prelude="$(declare -f gtbi_generated_system_binary_path gtbi_generated_resolve_current_user gtbi_generated_getent_passwd_entry gtbi_generated_passwd_home_from_entry 2>/dev/null || true)"'
     );
     expect(doctorContent).toContain('cmd="${helper_prelude}"$\'\\n\'"${cmd}"');
   });
@@ -785,7 +785,7 @@ describe('Utils: getCategories', () => {
     const categories = getCategories(manifest);
 
     // Expected categories based on manifest
-    const expectedCategories = ['base', 'users', 'shell', 'cli', 'lang', 'tools', 'agents', 'db', 'cloud', 'stack', 'acfs'];
+    const expectedCategories = ['base', 'users', 'shell', 'cli', 'lang', 'tools', 'agents', 'db', 'cloud', 'stack', 'gtbi'];
 
     for (const cat of expectedCategories) {
       expect(categories).toContain(cat);
@@ -820,7 +820,7 @@ describe('Generated script headers', () => {
     const scriptPath = resolve(GENERATED_DIR, 'install_lang.sh');
     if (existsSync(scriptPath)) {
       const content = readFileSync(scriptPath, 'utf-8');
-      expect(content).toContain('source "$ACFS_GENERATED_SCRIPT_DIR/../lib/logging.sh"');
+      expect(content).toContain('source "$GTBI_GENERATED_SCRIPT_DIR/../lib/logging.sh"');
     }
   });
 
@@ -828,7 +828,7 @@ describe('Generated script headers', () => {
     const scriptPath = resolve(GENERATED_DIR, 'install_agents.sh');
     if (existsSync(scriptPath)) {
       const content = readFileSync(scriptPath, 'utf-8');
-      expect(content).toContain('source "$ACFS_GENERATED_SCRIPT_DIR/../lib/install_helpers.sh"');
+      expect(content).toContain('source "$GTBI_GENERATED_SCRIPT_DIR/../lib/install_helpers.sh"');
     }
   });
 });
@@ -870,7 +870,7 @@ describe('Generated web files have correct headers', () => {
       const filepath = resolve(WEB_GENERATED_DIR, filename);
       if (existsSync(filepath)) {
         const content = readFileSync(filepath, 'utf-8');
-        expect(content).toContain('AUTO-GENERATED FROM acfs.manifest.yaml');
+        expect(content).toContain('AUTO-GENERATED FROM gtbi.manifest.yaml');
         expect(content).toContain('DO NOT EDIT');
       }
     });

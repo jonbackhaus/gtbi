@@ -1,11 +1,11 @@
 #!/bin/bash
-# ACFS Auto-Fix: Unattended-Upgrades Conflict Resolution
+# GTBI Auto-Fix: Unattended-Upgrades Conflict Resolution
 # Handles apt lock conflicts caused by unattended-upgrades service
 # Integrates with change recording system from autofix.sh
 
 # Prevent multiple sourcing
-[[ -n "${_ACFS_AUTOFIX_UNATTENDED_SOURCED:-}" ]] && return 0
-_ACFS_AUTOFIX_UNATTENDED_SOURCED=1
+[[ -n "${_GTBI_AUTOFIX_UNATTENDED_SOURCED:-}" ]] && return 0
+_GTBI_AUTOFIX_UNATTENDED_SOURCED=1
 
 # Source the core autofix module
 _AUTOFIX_UNATTENDED_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -397,26 +397,26 @@ _autofix_update_apt() {
 # =============================================================================
 
 # Re-enable unattended-upgrades after installation completes
-# Called at end of ACFS installation to restore normal operation
+# Called at end of GTBI installation to restore normal operation
 autofix_unattended_upgrades_restore() {
     local session_owned=false
 
     # Check if we stopped unattended-upgrades during this session
-    if [[ ! -f "$ACFS_CHANGES_FILE" ]]; then
+    if [[ ! -f "$GTBI_CHANGES_FILE" ]]; then
         log_debug "[POST-INSTALL] No changes file, nothing to restore"
         return 0
     fi
 
     local session_changes
-    session_changes=$(grep '"category":"unattended"' "$ACFS_CHANGES_FILE" 2>/dev/null || true)
+    session_changes=$(grep '"category":"unattended"' "$GTBI_CHANGES_FILE" 2>/dev/null || true)
 
     if [[ -z "$session_changes" ]]; then
         log_debug "[POST-INSTALL] No unattended-upgrades changes to restore"
         return 0
     fi
 
-    if [[ -f "$ACFS_UNDOS_FILE" ]] && grep -q '"auto_restored": "unattended-upgrades"' "$ACFS_UNDOS_FILE" 2>/dev/null; then
-        if autofix_path_exists "$ACFS_STATE_DIR/.session"; then
+    if [[ -f "$GTBI_UNDOS_FILE" ]] && grep -q '"auto_restored": "unattended-upgrades"' "$GTBI_UNDOS_FILE" 2>/dev/null; then
+        if autofix_path_exists "$GTBI_STATE_DIR/.session"; then
             log_error "[POST-INSTALL] Found unattended-upgrades auto-restore marker with unresolved autofix session"
             log_error "[POST-INSTALL] Resolve the previous autofix session before treating unattended-upgrades as restored"
             return 1
@@ -442,7 +442,7 @@ autofix_unattended_upgrades_restore() {
             --arg ts "$(date -Iseconds)" \
             '{auto_restored: "unattended-upgrades", timestamp: $ts}')
 
-        if ! append_atomic "$ACFS_UNDOS_FILE" "$restore_record"; then
+        if ! append_atomic "$GTBI_UNDOS_FILE" "$restore_record"; then
             log_error "[POST-INSTALL] Failed to persist unattended-upgrades auto-restore marker"
             if ! autofix_finalize_managed_session "$session_owned"; then
                 log_error "[POST-INSTALL] Failed to finalize autofix session after restore journaling failure"

@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # ============================================================
-# ACFS newproj TUI Wizard - Welcome Screen
+# GTBI newproj TUI Wizard - Welcome Screen
 # First screen shown when wizard starts
 # ============================================================
 
 # Prevent multiple sourcing
-if [[ -n "${_ACFS_SCREEN_WELCOME_LOADED:-}" ]]; then
+if [[ -n "${_GTBI_SCREEN_WELCOME_LOADED:-}" ]]; then
     return 0
 fi
-_ACFS_SCREEN_WELCOME_LOADED=1
+_GTBI_SCREEN_WELCOME_LOADED=1
 
 # ============================================================
 # Screen: Welcome
@@ -22,7 +22,7 @@ SCREEN_WELCOME_NEXT="project_name"
 
 # Render the welcome screen
 render_welcome_screen() {
-    render_screen_header "Welcome to ACFS Project Setup" "$SCREEN_WELCOME_STEP" 9
+    render_screen_header "Welcome to GTBI Project Setup" "$SCREEN_WELCOME_STEP" 9
 
     # ASCII art banner (works without unicode)
     if [[ "$TERM_HAS_UNICODE" == "true" ]]; then

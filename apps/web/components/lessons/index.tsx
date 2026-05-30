@@ -60,7 +60,7 @@ import { TailscaleLesson } from "./tailscale-lesson";
 import { LangRuntimesLesson } from "./lang-runtimes-lesson";
 import { CloudInfraLesson } from "./cloud-infra-lesson";
 import { SecurityLayersLesson } from "./security-layers-lesson";
-import { AcfsDoctorLesson } from "./acfs-doctor-lesson";
+import { AcfsDoctorLesson } from "./gtbi-doctor-lesson";
 
 // Render the lesson content for a given slug.
 // This intentionally uses a static switch so ESLint can guarantee components are not created during render.
@@ -186,7 +186,7 @@ export function renderLessonComponent(slug: string): React.ReactNode | null {
       return <CloudInfraLesson />;
     case "security-layers":
       return <SecurityLayersLesson />;
-    case "acfs-doctor":
+    case "gtbi-doctor":
       return <AcfsDoctorLesson />;
     default:
       return null;

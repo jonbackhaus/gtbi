@@ -6,12 +6,12 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-TEST_ROOT="${ACFS_OFFLINE_PACK_CONSUMER_TEST_DIR:-${TMPDIR:-/tmp}/acfs-offline-pack-consumer-$(date +%Y%m%d-%H%M%S)-$$}"
+TEST_ROOT="${GTBI_OFFLINE_PACK_CONSUMER_TEST_DIR:-${TMPDIR:-/tmp}/gtbi-offline-pack-consumer-$(date +%Y%m%d-%H%M%S)-$$}"
 TESTS_PASSED=0
 TESTS_FAILED=0
 
 TOOL="fixture_tool"
-URL="https://example.com/acfs/fixture-install.sh"
+URL="https://example.com/gtbi/fixture-install.sh"
 CONTENT='printf "offline fixture\n"'
 
 mkdir -p "$TEST_ROOT"
@@ -39,8 +39,8 @@ write_checksums "$CHECKSUMS_FILE" "$ARTIFACT_SHA"
 # shellcheck source=scripts/lib/security.sh
 source "$REPO_ROOT/scripts/lib/security.sh"
 
-CURRENT_ARCH="$(acfs_offline_pack_current_arch)"
-MANIFEST_SHA="$(calculate_file_sha256 "$REPO_ROOT/acfs.manifest.yaml")"
+CURRENT_ARCH="$(gtbi_offline_pack_current_arch)"
+MANIFEST_SHA="$(calculate_file_sha256 "$REPO_ROOT/gtbi.manifest.yaml")"
 CHECKSUMS_SHA="$(calculate_file_sha256 "$CHECKSUMS_FILE")"
 FUTURE_EXPIRES="$(date -u -d '+1 day' '+%Y-%m-%dT%H:%M:%SZ')"
 PAST_EXPIRES="$(date -u -d '-1 day' '+%Y-%m-%dT%H:%M:%SZ')"
@@ -71,7 +71,7 @@ write_pack() {
     local include_artifact="${4:-yes}"
     local artifact_rel="${5:-artifacts/fixture.module/${TOOL}-install.sh}"
     local output_dir="$TEST_ROOT/$name"
-    local pack_root="$output_dir/acfs-offline-pack"
+    local pack_root="$output_dir/gtbi-offline-pack"
     local artifact_path="$pack_root/$artifact_rel"
     local artifact_size=""
     local artifacts_json="[]"
@@ -82,7 +82,7 @@ write_pack() {
     if [[ "$include_artifact" == "yes" ]]; then
         mkdir -p "${artifact_path%/*}"
         printf '%s' "$CONTENT" > "$artifact_path"
-        artifact_size="$(acfs_security_file_size "$artifact_path")"
+        artifact_size="$(gtbi_security_file_size "$artifact_path")"
     elif [[ "$include_artifact" == "manifest-only" ]]; then
         artifact_size="$(printf '%s' "$CONTENT" | wc -c | tr -d '[:space:]')"
     fi
@@ -120,14 +120,14 @@ write_pack() {
         --arg arch "$arch" \
         --argjson artifacts "$artifacts_json" \
         '{
-            schema: "acfs.offline-artifact-pack.v1",
+            schema: "gtbi.offline-artifact-pack.v1",
             schemaVersion: 1,
             generatedBy: "test fixture",
             generatedAt: $generatedAt,
             expiresAt: $expiresAt,
             staleAfterDays: 30,
             packMode: "complete",
-            acfs: {
+            gtbi: {
                 version: "test",
                 sourceRef: "main",
                 sourceCommit: "test",
@@ -159,11 +159,11 @@ verify_with_pack() {
     local output_file="$2"
     local error_file="$3"
 
-    export ACFS_OFFLINE_PACK="$pack_root"
-    export ACFS_OFFLINE_NETWORK_MODE=offline
-    export ACFS_OFFLINE_PACK_REQUIRED=true
+    export GTBI_OFFLINE_PACK="$pack_root"
+    export GTBI_OFFLINE_NETWORK_MODE=offline
+    export GTBI_OFFLINE_PACK_REQUIRED=true
 
-    acfs_download_to_file() {
+    gtbi_download_to_file() {
         echo "network download should not be used in offline-pack tests" >&2
         return 79
     }
@@ -262,10 +262,10 @@ test_missing_pack_fails_closed() {
     local output_file="$TEST_ROOT/missing-pack.out"
     local error_file="$TEST_ROOT/missing-pack.err"
 
-    export ACFS_OFFLINE_PACK="$TEST_ROOT/no-such-pack"
-    export ACFS_OFFLINE_NETWORK_MODE=offline
-    export ACFS_OFFLINE_PACK_REQUIRED=true
-    acfs_download_to_file() {
+    export GTBI_OFFLINE_PACK="$TEST_ROOT/no-such-pack"
+    export GTBI_OFFLINE_NETWORK_MODE=offline
+    export GTBI_OFFLINE_PACK_REQUIRED=true
+    gtbi_download_to_file() {
         echo "network download should not run for missing offline pack" >&2
         return 79
     }
@@ -287,14 +287,14 @@ test_live_path_still_works_without_pack() {
     local error_file="$TEST_ROOT/live.err"
     local output=""
 
-    unset ACFS_OFFLINE_PACK
-    unset ACFS_OFFLINE_ARTIFACT_PACK
-    unset ACFS_OFFLINE_NETWORK_MODE
-    unset ACFS_OFFLINE_PACK_REQUIRED
-    _acfs_remove_temp_files() {
+    unset GTBI_OFFLINE_PACK
+    unset GTBI_OFFLINE_ARTIFACT_PACK
+    unset GTBI_OFFLINE_NETWORK_MODE
+    unset GTBI_OFFLINE_PACK_REQUIRED
+    _gtbi_remove_temp_files() {
         :
     }
-    acfs_download_to_file() {
+    gtbi_download_to_file() {
         printf '%s' "$CONTENT" > "$2"
     }
 

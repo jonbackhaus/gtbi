@@ -1,12 +1,12 @@
 # Manifest Gap Analysis
 
-> install.sh ↔ acfs.manifest.yaml mapping
+> install.sh ↔ gtbi.manifest.yaml mapping
 >
 > Created: 2025-12-21 | Bead: mjt.2.1
 
 ## Overview
 
-This document maps the relationship between `install.sh` phases and `acfs.manifest.yaml` modules to:
+This document maps the relationship between `install.sh` phases and `gtbi.manifest.yaml` modules to:
 1. Identify what the installer does that isn't in the manifest
 2. Identify what the manifest specifies that the installer doesn't implement
 3. Guide future manifest-driven installer integration
@@ -27,7 +27,7 @@ This document maps the relationship between `install.sh` phases and `acfs.manife
 | Phase 7 | `install_agents()` | `agents.*` | ✓ Aligned |
 | Phase 8 | `install_cloud_db()` | `db.postgres18`, `tools.vault`, `cloud.*` | ✓ Aligned |
 | Phase 9 | `install_stack()` | `stack.*` | ✓ Aligned |
-| Phase 10 | `finalize()` | `acfs.onboard`, `acfs.doctor` | Partial |
+| Phase 10 | `finalize()` | `gtbi.onboard`, `gtbi.doctor` | Partial |
 | Smoke Test | `run_smoke_test()` | — | Installer-only |
 
 ---
@@ -58,7 +58,7 @@ verify:
 **Installer does:**
 - Creates ubuntu user if missing
 - Adds to sudo group
-- Configures passwordless sudo (`/etc/sudoers.d/90-ubuntu-acfs`)
+- Configures passwordless sudo (`/etc/sudoers.d/90-ubuntu-gtbi`)
 - Copies SSH keys from root
 - Adds user to docker group
 
@@ -66,7 +66,7 @@ verify:
 ```yaml
 install:
   - "Ensure user ubuntu exists with home /home/ubuntu"
-  - "Write /etc/sudoers.d/90-ubuntu-acfs: ubuntu ALL=(ALL) NOPASSWD:ALL"
+  - "Write /etc/sudoers.d/90-ubuntu-gtbi: ubuntu ALL=(ALL) NOPASSWD:ALL"
   - "Copy authorized_keys from invoking user to /home/ubuntu/.ssh/"
 verify:
   - id ubuntu
@@ -82,17 +82,17 @@ verify:
 **Installer creates:**
 - `/data/projects`, `/data/cache`
 - `$TARGET_HOME/Development`, `$TARGET_HOME/Projects`, `$TARGET_HOME/dotfiles`
-- `$ACFS_HOME/{zsh,tmux,bin,docs,logs}`
-- `$ACFS_LOG_DIR` (/var/log/acfs)
+- `$GTBI_HOME/{zsh,tmux,bin,docs,logs}`
+- `$GTBI_LOG_DIR` (/var/log/gtbi)
 
 **Manifest specifies (base.filesystem):**
 ```yaml
 install:
   - "Create /data/projects and /data/cache directories"
-  - "Create ~/.acfs/{zsh,tmux,bin,docs,logs} directories"
+  - "Create ~/.gtbi/{zsh,tmux,bin,docs,logs} directories"
 verify:
   - test -d /data/projects
-  - test -d ~/.acfs
+  - test -d ~/.gtbi
 ```
 
 **Gap:** Installer creates more directories (Development, Projects, dotfiles, logs). Manifest uses prose.
@@ -106,8 +106,8 @@ verify:
 - Installs Oh My Zsh (verified upstream script)
 - Installs Powerlevel10k theme (git clone)
 - Installs zsh-autosuggestions, zsh-syntax-highlighting plugins
-- Copies `acfs/zsh/acfs.zshrc` to `~/.acfs/zsh/`
-- Creates `.zshrc` loader that sources the ACFS config
+- Copies `gtbi/zsh/gtbi.zshrc` to `~/.gtbi/zsh/`
+- Creates `.zshrc` loader that sources the GTBI config
 - Sets zsh as default shell
 
 **Manifest specifies (shell.zsh):** ✓ Matches conceptually.
@@ -213,13 +213,13 @@ verify:
 |--------|--------------|
 | Install tmux.conf | ❌ No (orchestration) |
 | Link ~/.tmux.conf | ❌ No |
-| Install onboard lessons (8 files) | `acfs.onboard` (partial) |
-| Install onboard.sh script | `acfs.onboard` ✓ |
+| Install onboard lessons (8 files) | `gtbi.onboard` (partial) |
+| Install onboard.sh script | `gtbi.onboard` ✓ |
 | Install scripts/lib/*.sh | ❌ No (orchestration) |
-| Install acfs-update wrapper | ❌ No |
+| Install gtbi-update wrapper | ❌ No |
 | Install services-setup.sh | ❌ No |
 | Install checksums.yaml + VERSION | ❌ No |
-| Install acfs CLI (doctor.sh) | `acfs.doctor` (partial) |
+| Install gtbi CLI (doctor.sh) | `gtbi.doctor` (partial) |
 | Install DCG (Destructive Command Guard) hook | ❌ No |
 | Create state.json | ❌ No (orchestration) |
 
@@ -240,8 +240,8 @@ These are things the installer does that the manifest doesn't specify:
 7. **lazydocker** installation
 8. **PostgreSQL user/db creation** for target user
 9. **Tmux configuration** linking
-10. **ACFS scripts/lib/** installation
-11. **acfs-update wrapper** installation
+10. **GTBI scripts/lib/** installation
+11. **gtbi-update wrapper** installation
 12. **DCG (Destructive Command Guard)** hook installation
 13. **State file** creation and management
 14. **Smoke test** verification
@@ -257,8 +257,8 @@ These manifest modules don't have full installer implementation:
 | All modules | Use prose descriptions instead of executable commands |
 | `users.ubuntu` | Missing docker group membership |
 | `cli.modern` | Missing gum, gh, git-lfs, system utils |
-| `acfs.onboard` | Verify command uses placeholder |
-| `acfs.doctor` | Verify command uses placeholder |
+| `gtbi.onboard` | Verify command uses placeholder |
+| `gtbi.doctor` | Verify command uses placeholder |
 
 ---
 
@@ -346,7 +346,7 @@ orchestration:
 | `--strict` | All tools critical (checksum abort) | Tag `critical` applied to all |
 | `--skip-preflight` | Skip pre-flight checks | Orchestration |
 
-### acfs update CLI Flags
+### gtbi update CLI Flags
 
 | Flag | Behavior | Proposed Mapping |
 |------|----------|------------------|
@@ -361,7 +361,7 @@ orchestration:
 | `--dry-run` | Preview changes | Orchestration |
 | `--verbose` | Show details | Orchestration |
 
-### acfs doctor CLI Flags
+### gtbi doctor CLI Flags
 
 | Flag | Behavior | Notes |
 |------|----------|-------|
@@ -389,7 +389,7 @@ curl -fsSL "..." | bash -s -- --yes --mode vibe
 7. Pre-Flight Check
 8. **Run Installer** ← hardcoded `--yes --mode vibe`
 9. Reconnect as Ubuntu
-10. Status Check (`acfs doctor`)
+10. Status Check (`gtbi doctor`)
 11. Launch Onboarding
 
 ### Proposed Mode Presets for Manifest
@@ -450,7 +450,7 @@ presets:
 | `cloud` | Optional (skippable) | Phase 8 |
 | `db` | Optional (skippable) | Phase 8 |
 | `stack` | Core value prop | Phase 9 |
-| `acfs` | Silent (orchestration) | Phase 10 |
+| `gtbi` | Silent (orchestration) | Phase 10 |
 
 ---
 
@@ -462,39 +462,39 @@ presets:
 
 In curl|bash mode, `install.sh` fetches assets from GitHub via `install_asset()`:
 ```bash
-acfs_curl -o "$dest_path" "$ACFS_RAW/$rel_path"
-# $ACFS_RAW = https://raw.githubusercontent.com/Dicklesworthstone/agentic_coding_flywheel_setup/main
+gtbi_curl -o "$dest_path" "$GTBI_RAW/$rel_path"
+# $GTBI_RAW = https://raw.githubusercontent.com/jonbackhaus/gtbi/main
 ```
 
 ### Required Runtime Assets
 
 | Asset Path | Target Location | Purpose |
 |------------|-----------------|---------|
-| `acfs/zsh/acfs.zshrc` | `~/.acfs/zsh/acfs.zshrc` | Shell configuration |
-| `acfs/tmux/tmux.conf` | `~/.acfs/tmux/tmux.conf` | Tmux configuration |
-| `packages/onboard/onboard.sh` | `~/.acfs/onboard/onboard.sh` | Onboard TUI script |
-| `scripts/lib/logging.sh` | `~/.acfs/scripts/lib/logging.sh` | Logging library |
-| `scripts/lib/gum_ui.sh` | `~/.acfs/scripts/lib/gum_ui.sh` | Gum UI helpers |
-| `scripts/lib/security.sh` | `~/.acfs/scripts/lib/security.sh` | Checksum verification |
-| `scripts/lib/doctor.sh` | `~/.acfs/scripts/lib/doctor.sh` | Doctor health checks |
-| `scripts/lib/update.sh` | `~/.acfs/scripts/lib/update.sh` | Update functionality |
-| `scripts/acfs-update` | `~/.acfs/bin/acfs-update` | Update wrapper command |
-| `scripts/services-setup.sh` | `~/.acfs/scripts/services-setup.sh` | Services wizard |
-| `checksums.yaml` | `~/.acfs/checksums.yaml` | Upstream checksums |
-| `VERSION` | `~/.acfs/VERSION` | Version metadata |
+| `gtbi/zsh/gtbi.zshrc` | `~/.gtbi/zsh/gtbi.zshrc` | Shell configuration |
+| `gtbi/tmux/tmux.conf` | `~/.gtbi/tmux/tmux.conf` | Tmux configuration |
+| `packages/onboard/onboard.sh` | `~/.gtbi/onboard/onboard.sh` | Onboard TUI script |
+| `scripts/lib/logging.sh` | `~/.gtbi/scripts/lib/logging.sh` | Logging library |
+| `scripts/lib/gum_ui.sh` | `~/.gtbi/scripts/lib/gum_ui.sh` | Gum UI helpers |
+| `scripts/lib/security.sh` | `~/.gtbi/scripts/lib/security.sh` | Checksum verification |
+| `scripts/lib/doctor.sh` | `~/.gtbi/scripts/lib/doctor.sh` | Doctor health checks |
+| `scripts/lib/update.sh` | `~/.gtbi/scripts/lib/update.sh` | Update functionality |
+| `scripts/gtbi-update` | `~/.gtbi/bin/gtbi-update` | Update wrapper command |
+| `scripts/services-setup.sh` | `~/.gtbi/scripts/services-setup.sh` | Services wizard |
+| `checksums.yaml` | `~/.gtbi/checksums.yaml` | Upstream checksums |
+| `VERSION` | `~/.gtbi/VERSION` | Version metadata |
 
 ### Onboard Lessons (8 files)
 
 | Lesson File | Purpose |
 |-------------|---------|
-| `acfs/onboard/lessons/00_welcome.md` | Welcome message |
-| `acfs/onboard/lessons/01_linux_basics.md` | Linux fundamentals |
-| `acfs/onboard/lessons/02_ssh_basics.md` | SSH tutorial |
-| `acfs/onboard/lessons/03_tmux_basics.md` | Tmux primer |
-| `acfs/onboard/lessons/04_agents_login.md` | Agent authentication |
-| `acfs/onboard/lessons/05_ntm_core.md` | NTM basics |
-| `acfs/onboard/lessons/06_ntm_command_palette.md` | NTM commands |
-| `acfs/onboard/lessons/07_flywheel_loop.md` | Workflow loop |
+| `gtbi/onboard/lessons/00_welcome.md` | Welcome message |
+| `gtbi/onboard/lessons/01_linux_basics.md` | Linux fundamentals |
+| `gtbi/onboard/lessons/02_ssh_basics.md` | SSH tutorial |
+| `gtbi/onboard/lessons/03_tmux_basics.md` | Tmux primer |
+| `gtbi/onboard/lessons/04_agents_login.md` | Agent authentication |
+| `gtbi/onboard/lessons/05_ntm_core.md` | NTM basics |
+| `gtbi/onboard/lessons/06_ntm_command_palette.md` | NTM commands |
+| `gtbi/onboard/lessons/07_flywheel_loop.md` | Workflow loop |
 
 ### Scripts Not Downloaded (embedded/generated)
 
@@ -527,21 +527,21 @@ For manifest-driven bootstrap, the following asset categories need specification
 assets:
   # Core shell configuration
   shell_config:
-    - src: acfs/zsh/acfs.zshrc
-      dest: ~/.acfs/zsh/acfs.zshrc
+    - src: gtbi/zsh/gtbi.zshrc
+      dest: ~/.gtbi/zsh/gtbi.zshrc
       mode: 644
 
-  # Runtime scripts (installed to ~/.acfs/)
+  # Runtime scripts (installed to ~/.gtbi/)
   runtime_scripts:
     - src: scripts/lib/doctor.sh
-      dest: ~/.acfs/scripts/lib/doctor.sh
+      dest: ~/.gtbi/scripts/lib/doctor.sh
       mode: 755
     # ... etc
 
   # Onboard lessons (pattern-based)
   lessons:
-    pattern: acfs/onboard/lessons/*.md
-    dest: ~/.acfs/onboard/lessons/
+    pattern: gtbi/onboard/lessons/*.md
+    dest: ~/.gtbi/onboard/lessons/
     mode: 644
 
   # Metadata

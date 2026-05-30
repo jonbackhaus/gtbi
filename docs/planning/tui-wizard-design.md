@@ -194,7 +194,7 @@ Choose where to create the project.
 ```
   ⚠ Directory already exists
     Existing contents will be preserved.
-    ACFS files may be overwritten.
+    GTBI files may be overwritten.
 ```
 
 ### Error State (no parent write permission)
@@ -279,13 +279,13 @@ Detect or select the project's technology stack.
 ## Screen 5: Features
 
 ### Purpose
-Select which ACFS features to enable.
+Select which GTBI features to enable.
 
 ### ASCII Mockup
 ```
 ╭─────────────────────────────────────────────────────────────────╮
 │  Step 4 of 7  ● ● ● ○ ○ ○ ○                                    │
-│  ACFS Features                                                  │
+│  GTBI Features                                                  │
 ╰─────────────────────────────────────────────────────────────────╯
 
   Which features do you want to enable?

@@ -36,10 +36,10 @@ export function ConnectionCheck({
   const alternatePrompt =
     sshUser === "root" ? "ubuntu@vps:~$" : "root@vps:~#";
   const sshCommand = useIdentityFile
-    ? `ssh -i ~/.ssh/acfs_ed25519 ${sshTarget}`
+    ? `ssh -i ~/.ssh/gtbi_ed25519 ${sshTarget}`
     : `ssh ${sshTarget}`;
   const windowsSshCommand = useIdentityFile
-    ? `ssh -i $HOME\\.ssh\\acfs_ed25519 ${sshTarget}`
+    ? `ssh -i $HOME\\.ssh\\gtbi_ed25519 ${sshTarget}`
     : `ssh ${sshTarget}`;
 
   return (

@@ -1,5 +1,5 @@
 /**
- * ACFS Manifest Schema
+ * GTBI Manifest Schema
  * Zod schema definitions for validating manifest files
  */
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Unit tests for ACFS utility tools integration
+# Unit tests for GTBI utility tools integration
 # Tests that all utility binaries exist and basic operations succeed
 #
 # Utilities tested:
@@ -228,7 +228,7 @@ print_summary() {
 
 main() {
     log "========================================"
-    log "ACFS Utility Tools Integration Tests"
+    log "GTBI Utility Tools Integration Tests"
     log "Started: $(date -Iseconds)"
     log "========================================"
 

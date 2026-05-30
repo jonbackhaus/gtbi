@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # ============================================================
-# ACFS newproj TUI Wizard - Progress Screen
+# GTBI newproj TUI Wizard - Progress Screen
 # Shows progress during project creation
 # ============================================================
 
 # Prevent multiple sourcing
-if [[ -n "${_ACFS_SCREEN_PROGRESS_LOADED:-}" ]]; then
+if [[ -n "${_GTBI_SCREEN_PROGRESS_LOADED:-}" ]]; then
     return 0
 fi
-_ACFS_SCREEN_PROGRESS_LOADED=1
+_GTBI_SCREEN_PROGRESS_LOADED=1
 
 # ============================================================
 # Screen: Progress
@@ -218,7 +218,7 @@ execute_step() {
         create_readme)
             local readme_content="# $project_name
 
-Created with ACFS newproj wizard.
+Created with GTBI newproj wizard.
 
 ## Getting Started
 
@@ -389,7 +389,7 @@ __pycache__/
                     git add -A 2>/dev/null
                     git commit -m "Initial commit
 
-Created with ACFS newproj wizard.
+Created with GTBI newproj wizard.
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)" 2>/dev/null
                 ) || true

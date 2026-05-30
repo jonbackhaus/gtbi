@@ -13,17 +13,17 @@ setup() {
     export TEST_DIR
 
     # Set up logging
-    export ACFS_LOG_DIR="$TEST_DIR/logs"
-    mkdir -p "$ACFS_LOG_DIR"
-    export ACFS_LOG_LEVEL=0
+    export GTBI_LOG_DIR="$TEST_DIR/logs"
+    mkdir -p "$GTBI_LOG_DIR"
+    export GTBI_LOG_LEVEL=0
 
     # Set script directory
-    export NEWPROJ_SCRIPT_DIR="$ACFS_LIB_DIR"
+    export NEWPROJ_SCRIPT_DIR="$GTBI_LIB_DIR"
 
     # Source the newproj module (just functions, not main)
     # We need to avoid running main(), so we source with set +e
     set +e
-    source "$ACFS_LIB_DIR/newproj.sh" 2>/dev/null || true
+    source "$GTBI_LIB_DIR/newproj.sh" 2>/dev/null || true
     set -e
 }
 
@@ -192,7 +192,7 @@ teardown() {
     export CI=true  # Force CI mode to make interactive fail fast
 
     run bash -c '
-        source '"$ACFS_LIB_DIR"'/newproj.sh
+        source '"$GTBI_LIB_DIR"'/newproj.sh
         main --interactive 2>&1
     '
 
@@ -204,7 +204,7 @@ teardown() {
     export CI=true
 
     run bash -c '
-        source '"$ACFS_LIB_DIR"'/newproj.sh
+        source '"$GTBI_LIB_DIR"'/newproj.sh
         main -i 2>&1
     '
 
@@ -216,7 +216,7 @@ teardown() {
     export CI=true
 
     run bash -c '
-        source '"$ACFS_LIB_DIR"'/newproj.sh
+        source '"$GTBI_LIB_DIR"'/newproj.sh
         main --interactive myproject 2>&1
     '
 
@@ -228,7 +228,7 @@ teardown() {
     export CI=true
 
     run bash -c '
-        source '"$ACFS_LIB_DIR"'/newproj.sh
+        source '"$GTBI_LIB_DIR"'/newproj.sh
         main --interactive test_project 2>&1
     '
 
@@ -298,7 +298,7 @@ teardown() {
     local test_project="$TEST_DIR/cli-test-project"
 
     run bash -c '
-        source '"$ACFS_LIB_DIR"'/newproj.sh
+        source '"$GTBI_LIB_DIR"'/newproj.sh
         main cli-test-project '"$test_project"' 2>&1
     '
 
@@ -312,7 +312,7 @@ teardown() {
     echo "existing" > "$project_dir/README.md"
 
     run bash -c '
-        source '"$ACFS_LIB_DIR"'/newproj.sh
+        source '"$GTBI_LIB_DIR"'/newproj.sh
         main myproj "'"$project_dir"'" 2>&1
     '
 
@@ -326,7 +326,7 @@ teardown() {
     chmod 600 "$project_dir"
 
     run bash -c '
-        source '"$ACFS_LIB_DIR"'/newproj.sh
+        source '"$GTBI_LIB_DIR"'/newproj.sh
         main myproj "'"$project_dir"'" 2>&1
     '
     local cmd_status="$status"
@@ -344,7 +344,7 @@ teardown() {
     chmod 200 "$parent_dir"
 
     run bash -c '
-        source '"$ACFS_LIB_DIR"'/newproj.sh
+        source '"$GTBI_LIB_DIR"'/newproj.sh
         main myproj "'"$project_dir"'" 2>&1
     '
     local cmd_status="$status"
@@ -359,7 +359,7 @@ teardown() {
     local project_dir="$TEST_DIR/cli-claude-project"
 
     run bash -c '
-        source '"$ACFS_LIB_DIR"'/newproj.sh
+        source '"$GTBI_LIB_DIR"'/newproj.sh
         main --no-br --no-agents myproj "'"$project_dir"'"
     '
     assert_success
@@ -375,7 +375,7 @@ teardown() {
     local project_dir="$TEST_DIR/cli-agents-project"
 
     run bash -c '
-        source '"$ACFS_LIB_DIR"'/newproj.sh
+        source '"$GTBI_LIB_DIR"'/newproj.sh
         main --no-br myproj "'"$project_dir"'"
     '
     assert_success
@@ -396,7 +396,7 @@ teardown() {
     local project_dir="$TEST_DIR/cli-default-project"
 
     run bash -c '
-        source '"$ACFS_LIB_DIR"'/newproj.sh
+        source '"$GTBI_LIB_DIR"'/newproj.sh
         main myproj "'"$project_dir"'"
     '
     assert_success
@@ -417,7 +417,7 @@ teardown() {
     local project_dir="$TEST_DIR/cli-missing-br-project"
 
     run bash -c '
-        source '"$ACFS_LIB_DIR"'/newproj.sh
+        source '"$GTBI_LIB_DIR"'/newproj.sh
         command() {
             if [[ "$1" == "-v" ]] && [[ "${2:-}" == "br" ]]; then
                 return 1
@@ -434,7 +434,7 @@ teardown() {
 
 @test "main rejects unknown flags" {
     run bash -c '
-        source '"$ACFS_LIB_DIR"'/newproj.sh
+        source '"$GTBI_LIB_DIR"'/newproj.sh
         main --unknown-flag 2>&1
     '
 
@@ -444,7 +444,7 @@ teardown() {
 
 @test "main rejects project names that the TUI would reject" {
     run bash -c '
-        source '"$ACFS_LIB_DIR"'/newproj.sh
+        source '"$GTBI_LIB_DIR"'/newproj.sh
         main 1app 2>&1
     '
 
@@ -452,7 +452,7 @@ teardown() {
     [[ "$output" == *"must start with a letter"* ]]
 
     run bash -c '
-        source '"$ACFS_LIB_DIR"'/newproj.sh
+        source '"$GTBI_LIB_DIR"'/newproj.sh
         main com.example.app 2>&1
     '
 
@@ -468,7 +468,7 @@ teardown() {
     export CI=true
 
     run bash -c '
-        source '"$ACFS_LIB_DIR"'/newproj.sh
+        source '"$GTBI_LIB_DIR"'/newproj.sh
         main --interactive --no-br 2>&1
     '
 
@@ -481,7 +481,7 @@ teardown() {
     export CI=true
 
     run bash -c '
-        source '"$ACFS_LIB_DIR"'/newproj.sh
+        source '"$GTBI_LIB_DIR"'/newproj.sh
         main -i myproject /tmp/myproject 2>&1
     '
 
@@ -497,7 +497,7 @@ teardown() {
     export CI=true
 
     run bash -c '
-        source '"$ACFS_LIB_DIR"'/newproj.sh
+        source '"$GTBI_LIB_DIR"'/newproj.sh
         main --interactive 2>&1
     '
 
@@ -507,7 +507,7 @@ teardown() {
 
 @test "CLI mode without project name fails" {
     run bash -c '
-        source '"$ACFS_LIB_DIR"'/newproj.sh
+        source '"$GTBI_LIB_DIR"'/newproj.sh
         main 2>&1
     '
 

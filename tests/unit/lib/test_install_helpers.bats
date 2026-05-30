@@ -8,17 +8,17 @@ setup() {
     source_lib "install_helpers"
     
     # Mock manifest data
-    export ACFS_MANIFEST_INDEX_LOADED=true
+    export GTBI_MANIFEST_INDEX_LOADED=true
     
     # We must unset arrays first to avoid "cannot assign to element of array" if re-declaring types?
-    unset ACFS_MODULES_IN_ORDER ACFS_MODULE_PHASE ACFS_MODULE_DEFAULT ACFS_MODULE_CATEGORY ACFS_MODULE_DEPS ACFS_MODULE_TAGS
+    unset GTBI_MODULES_IN_ORDER GTBI_MODULE_PHASE GTBI_MODULE_DEFAULT GTBI_MODULE_CATEGORY GTBI_MODULE_DEPS GTBI_MODULE_TAGS
     
-    ACFS_MODULES_IN_ORDER=("mod1" "mod2" "mod3")
-    declare -gA ACFS_MODULE_PHASE=( ["mod1"]="1" ["mod2"]="2" ["mod3"]="3" )
-    declare -gA ACFS_MODULE_DEFAULT=( ["mod1"]="1" ["mod2"]="1" ["mod3"]="0" )
-    declare -gA ACFS_MODULE_CATEGORY=( ["mod1"]="base" ["mod2"]="lang" ["mod3"]="tools" )
-    declare -gA ACFS_MODULE_DEPS=()
-    declare -gA ACFS_MODULE_TAGS=()
+    GTBI_MODULES_IN_ORDER=("mod1" "mod2" "mod3")
+    declare -gA GTBI_MODULE_PHASE=( ["mod1"]="1" ["mod2"]="2" ["mod3"]="3" )
+    declare -gA GTBI_MODULE_DEFAULT=( ["mod1"]="1" ["mod2"]="1" ["mod3"]="0" )
+    declare -gA GTBI_MODULE_CATEGORY=( ["mod1"]="base" ["mod2"]="lang" ["mod3"]="tools" )
+    declare -gA GTBI_MODULE_DEPS=()
+    declare -gA GTBI_MODULE_TAGS=()
     
     # Selection globals (reset)
     ONLY_MODULES=()
@@ -37,16 +37,16 @@ teardown() {
 
 use_spy_sudo() {
     spy_command "sudo"
-    export ACFS_TEST_SUDO_BIN="$STUB_DIR/sudo"
+    export GTBI_TEST_SUDO_BIN="$STUB_DIR/sudo"
 
-    _acfs_system_binary_path() {
+    _gtbi_system_binary_path() {
         local name="${1:-}"
         local candidate=""
 
         [[ -n "$name" ]] || return 1
 
-        if [[ "$name" == "sudo" && -n "${ACFS_TEST_SUDO_BIN:-}" && -x "$ACFS_TEST_SUDO_BIN" ]]; then
-            printf '%s\n' "$ACFS_TEST_SUDO_BIN"
+        if [[ "$name" == "sudo" && -n "${GTBI_TEST_SUDO_BIN:-}" && -x "$GTBI_TEST_SUDO_BIN" ]]; then
+            printf '%s\n' "$GTBI_TEST_SUDO_BIN"
             return 0
         fi
 
@@ -67,66 +67,66 @@ use_spy_sudo() {
     }
 }
 
-@test "acfs_flag_bool: parses boolean values" {
+@test "gtbi_flag_bool: parses boolean values" {
     export TEST_VAR="true"
-    run acfs_flag_bool "TEST_VAR"
+    run gtbi_flag_bool "TEST_VAR"
     assert_output "1"
     
     export TEST_VAR="False"
-    run acfs_flag_bool "TEST_VAR"
+    run gtbi_flag_bool "TEST_VAR"
     assert_output "0"
     
     export TEST_VAR="1"
-    run acfs_flag_bool "TEST_VAR"
+    run gtbi_flag_bool "TEST_VAR"
     assert_output "1"
     
     export TEST_VAR="invalid"
-    run acfs_flag_bool "TEST_VAR"
+    run gtbi_flag_bool "TEST_VAR"
     # Output contains warning
     assert_output --partial "Ignoring invalid"
 }
 
-@test "acfs_resolve_selection: default selection" {
-    acfs_resolve_selection
+@test "gtbi_resolve_selection: default selection" {
+    gtbi_resolve_selection
     
     # mod1 (default=1) should be selected
-    if [[ -z "${ACFS_EFFECTIVE_RUN[mod1]}" ]]; then fail "mod1 not selected"; fi
+    if [[ -z "${GTBI_EFFECTIVE_RUN[mod1]}" ]]; then fail "mod1 not selected"; fi
     # mod3 (default=0) should NOT be selected
-    if [[ -n "${ACFS_EFFECTIVE_RUN[mod3]}" ]]; then fail "mod3 selected"; fi
+    if [[ -n "${GTBI_EFFECTIVE_RUN[mod3]}" ]]; then fail "mod3 selected"; fi
 }
 
-@test "acfs_resolve_selection: --only module" {
+@test "gtbi_resolve_selection: --only module" {
     ONLY_MODULES=("mod3")
-    acfs_resolve_selection
+    gtbi_resolve_selection
     
-    if [[ -z "${ACFS_EFFECTIVE_RUN[mod3]}" ]]; then fail "mod3 not selected"; fi
-    if [[ -n "${ACFS_EFFECTIVE_RUN[mod1]}" ]]; then fail "mod1 selected"; fi
+    if [[ -z "${GTBI_EFFECTIVE_RUN[mod3]}" ]]; then fail "mod3 not selected"; fi
+    if [[ -n "${GTBI_EFFECTIVE_RUN[mod1]}" ]]; then fail "mod1 selected"; fi
 }
 
-@test "acfs_resolve_selection: --skip module" {
+@test "gtbi_resolve_selection: --skip module" {
     SKIP_MODULES=("mod1")
-    acfs_resolve_selection
+    gtbi_resolve_selection
     
-    if [[ -n "${ACFS_EFFECTIVE_RUN[mod1]}" ]]; then fail "mod1 selected"; fi
-    if [[ -z "${ACFS_EFFECTIVE_RUN[mod2]}" ]]; then fail "mod2 not selected"; fi
+    if [[ -n "${GTBI_EFFECTIVE_RUN[mod1]}" ]]; then fail "mod1 selected"; fi
+    if [[ -z "${GTBI_EFFECTIVE_RUN[mod2]}" ]]; then fail "mod2 not selected"; fi
 }
 
-@test "acfs_resolve_selection: --only and --skip same module fails" {
+@test "gtbi_resolve_selection: --only and --skip same module fails" {
     ONLY_MODULES=("mod1")
     SKIP_MODULES=("mod1")
 
-    if acfs_resolve_selection 2>/dev/null; then
+    if gtbi_resolve_selection 2>/dev/null; then
         fail "selection should fail when a directly requested module is also skipped"
     fi
 }
 
-@test "acfs_resolve_selection: --only-phase can skip a selected module" {
+@test "gtbi_resolve_selection: --only-phase can skip a selected module" {
     ONLY_PHASES=("1")
     SKIP_MODULES=("mod1")
 
-    acfs_resolve_selection
+    gtbi_resolve_selection
 
-    if [[ -n "${ACFS_EFFECTIVE_RUN[mod1]}" ]]; then fail "mod1 selected"; fi
+    if [[ -n "${GTBI_EFFECTIVE_RUN[mod1]}" ]]; then fail "mod1 selected"; fi
 }
 
 @test "run_as_current_shell: executes command" {
@@ -149,16 +149,16 @@ use_spy_sudo() {
     if [[ "$out" != *"run_as_target called with: "* ]]; then
         fail "Did not call run_as_target with env-backed bash path"
     fi
-    if [[ "$out" != *" ACFS_BASH_BIN="* ]]; then
+    if [[ "$out" != *" GTBI_BASH_BIN="* ]]; then
         fail "Did not pass bash path as env data"
     fi
     if [[ "$out" != *"/bash -c "* ]]; then
         fail "Did not call bash -c"
     fi
-    if [[ "$out" != *'_acfs_primary_bin="${ACFS_BIN_DIR:-$HOME/.local/bin}"'* ]]; then
+    if [[ "$out" != *'_gtbi_primary_bin="${GTBI_BIN_DIR:-$HOME/.local/bin}"'* ]]; then
         fail "Did not compute primary bin from runtime HOME"
     fi
-    if [[ "$out" != *'export PATH="${_acfs_primary_bin}:$HOME/.local/bin:$HOME/.acfs/bin:$HOME/.cargo/bin:$HOME/.bun/bin:$HOME/.atuin/bin:$HOME/go/bin:$PATH"'* ]]; then
+    if [[ "$out" != *'export PATH="${_gtbi_primary_bin}:$HOME/.local/bin:$HOME/.gtbi/bin:$HOME/.cargo/bin:$HOME/.bun/bin:$HOME/.atuin/bin:$HOME/go/bin:$PATH"'* ]]; then
         fail "Did not export user tool PATH"
     fi
     if [[ "$out" != *'eval "$1" _ echo test'* ]]; then
@@ -166,44 +166,44 @@ use_spy_sudo() {
     fi
 }
 
-@test "run_as_current_shell: treats ACFS_BIN_DIR as inert PATH data" {
+@test "run_as_current_shell: treats GTBI_BIN_DIR as inert PATH data" {
     local marker="$BATS_TEST_TMPDIR/current-shell-path-injection"
-    export ACFS_BIN_DIR="\$(printf pwn > '$marker')"
+    export GTBI_BIN_DIR="\$(printf pwn > '$marker')"
 
     run run_as_current_shell "printf 'ok\n'"
     assert_success
     assert_output "ok"
-    [[ ! -e "$marker" ]] || fail "ACFS_BIN_DIR command substitution executed"
+    [[ ! -e "$marker" ]] || fail "GTBI_BIN_DIR command substitution executed"
 }
 
 @test "run_as_current_shell: resolves HOME-relative tool paths" {
     export HOME="$BATS_TEST_TMPDIR/home"
     export PATH="/usr/bin:/bin"
     mkdir -p "$HOME/.cargo/bin"
-    cat > "$HOME/.cargo/bin/acfs-home-path-tool" <<'EOF'
+    cat > "$HOME/.cargo/bin/gtbi-home-path-tool" <<'EOF'
 #!/usr/bin/env bash
 printf 'home-path-ok\n'
 EOF
-    chmod +x "$HOME/.cargo/bin/acfs-home-path-tool"
+    chmod +x "$HOME/.cargo/bin/gtbi-home-path-tool"
 
-    run run_as_current_shell "acfs-home-path-tool"
+    run run_as_current_shell "gtbi-home-path-tool"
     assert_success
     assert_output "home-path-ok"
 }
 
-@test "run_as_current_shell stdin mode treats ACFS_BIN_DIR as inert PATH data" {
+@test "run_as_current_shell stdin mode treats GTBI_BIN_DIR as inert PATH data" {
     local marker="$BATS_TEST_TMPDIR/current-shell-stdin-path-injection"
     local out
-    export ACFS_BIN_DIR="\$(printf pwn > '$marker')"
+    export GTBI_BIN_DIR="\$(printf pwn > '$marker')"
 
     out="$(printf "printf 'ok\\n'\n" | run_as_current_shell)"
     [[ "$out" == "ok" ]] || fail "Expected ok, got: $out"
-    [[ ! -e "$marker" ]] || fail "ACFS_BIN_DIR command substitution executed"
+    [[ ! -e "$marker" ]] || fail "GTBI_BIN_DIR command substitution executed"
 }
 
-@test "run_as_target_shell: treats ACFS_BIN_DIR as inert PATH data" {
+@test "run_as_target_shell: treats GTBI_BIN_DIR as inert PATH data" {
     local marker="$BATS_TEST_TMPDIR/target-shell-path-injection"
-    export ACFS_BIN_DIR="\$(printf pwn > '$marker')"
+    export GTBI_BIN_DIR="\$(printf pwn > '$marker')"
 
     run_as_target() {
         "$@"
@@ -212,16 +212,16 @@ EOF
     run run_as_target_shell "printf 'ok\n'"
     assert_success
     assert_output "ok"
-    [[ ! -e "$marker" ]] || fail "ACFS_BIN_DIR command substitution executed"
+    [[ ! -e "$marker" ]] || fail "GTBI_BIN_DIR command substitution executed"
 }
 
-@test "run_as_root_shell: sudo path passes command as argv and keeps ACFS_BIN_DIR inert" {
+@test "run_as_root_shell: sudo path passes command as argv and keeps GTBI_BIN_DIR inert" {
     [[ "$EUID" -ne 0 ]] || skip "sudo path is bypassed when tests run as root"
 
     local marker="$BATS_TEST_TMPDIR/root-shell-path-injection"
     local fake_sudo="$BATS_TEST_TMPDIR/fake-sudo"
     export CAPTURE_FILE="$BATS_TEST_TMPDIR/root-shell-sudo-argv.txt"
-    export ACFS_BIN_DIR="\$(printf pwn > '$marker')"
+    export GTBI_BIN_DIR="\$(printf pwn > '$marker')"
     export SUDO="$fake_sudo"
 
     cat > "$fake_sudo" <<'EOF'
@@ -237,7 +237,7 @@ EOF
     run run_as_root_shell "printf 'root-ok\n'"
     assert_success
     assert_output "root-ok"
-    [[ ! -e "$marker" ]] || fail "ACFS_BIN_DIR command substitution executed"
+    [[ ! -e "$marker" ]] || fail "GTBI_BIN_DIR command substitution executed"
 
     local -a argv=()
     mapfile -t argv < "$CAPTURE_FILE"
@@ -302,7 +302,7 @@ exec "$@"
 EOF
     chmod +x "$fake_sudo"
 
-    _acfs_system_binary_path() {
+    _gtbi_system_binary_path() {
         case "${1:-}" in
             sudo) printf '%s\n' "$FAKE_DISCOVERED_SUDO" ;;
             env) printf '/usr/bin/env\n' ;;
@@ -320,10 +320,10 @@ EOF
     [[ "${argv[0]:-}" == "-n" ]] || fail "Expected noninteractive sudo (-n), got: ${argv[*]}"
 }
 
-@test "run_as_target_shell stdin mode treats ACFS_BIN_DIR as inert PATH data" {
+@test "run_as_target_shell stdin mode treats GTBI_BIN_DIR as inert PATH data" {
     local marker="$BATS_TEST_TMPDIR/target-shell-stdin-path-injection"
     local out
-    export ACFS_BIN_DIR="\$(printf pwn > '$marker')"
+    export GTBI_BIN_DIR="\$(printf pwn > '$marker')"
 
     run_as_target() {
         "$@"
@@ -331,15 +331,15 @@ EOF
 
     out="$(printf "printf 'ok\\n'\n" | run_as_target_shell)"
     [[ "$out" == "ok" ]] || fail "Expected ok, got: $out"
-    [[ ! -e "$marker" ]] || fail "ACFS_BIN_DIR command substitution executed"
+    [[ ! -e "$marker" ]] || fail "GTBI_BIN_DIR command substitution executed"
 }
 
 @test "run_as_target: extends PATH for target-user non-login shells" {
     export TARGET_USER="testuser"
     export TARGET_HOME="/home/testuser"
-    export ACFS_BIN_DIR="/home/testuser/.local/bin"
+    export GTBI_BIN_DIR="/home/testuser/.local/bin"
 
-    _acfs_getent_passwd_entry() {
+    _gtbi_getent_passwd_entry() {
         if [[ "${1:-}" == "testuser" ]]; then
             printf 'testuser:x:1000:1000::/home/testuser:/bin/bash\n'
             return 0
@@ -354,7 +354,7 @@ EOF
 
     local captured
     captured="$(cat "$STUB_DIR/sudo.log")"
-    [[ "$captured" == *"PATH=/home/testuser/.local/bin:/home/testuser/.local/bin:/home/testuser/.acfs/bin:/home/testuser/.cargo/bin:/home/testuser/.bun/bin:/home/testuser/.atuin/bin:/home/testuser/go/bin:"* ]] \
+    [[ "$captured" == *"PATH=/home/testuser/.local/bin:/home/testuser/.local/bin:/home/testuser/.gtbi/bin:/home/testuser/.cargo/bin:/home/testuser/.bun/bin:/home/testuser/.atuin/bin:/home/testuser/go/bin:"* ]] \
         || fail "Expected run_as_target to extend PATH for target-user bins, got: $captured"
 }
 
@@ -378,10 +378,10 @@ EOF
     run grep -F '"$sudo_bin" -n "$apt_get_bin" update -qq && "$sudo_bin" -n "$apt_get_bin" install -y jq' "$installer"
     assert_success
 
-    run grep -F '"$sudo_bin" -n "$mkdir_bin" -p "${ACFS_RESUME_DIR:-/var/lib/acfs}"' "$installer"
+    run grep -F '"$sudo_bin" -n "$mkdir_bin" -p "${GTBI_RESUME_DIR:-/var/lib/gtbi}"' "$installer"
     assert_success
 
-    run grep -F '"$sudo_bin" -n "$chown_bin" "$("$id_bin" -u):$("$id_bin" -g)" "${ACFS_RESUME_DIR:-/var/lib/acfs}"' "$installer"
+    run grep -F '"$sudo_bin" -n "$chown_bin" "$("$id_bin" -u):$("$id_bin" -g)" "${GTBI_RESUME_DIR:-/var/lib/gtbi}"' "$installer"
     assert_success
 }
 
@@ -392,16 +392,16 @@ EOF
 
     target_home="$(create_temp_dir)"
     stale_home="$(create_temp_dir)"
-    mkdir -p "$target_home/.local/bin" "$target_home/.acfs" "$stale_home/.local/bin" "$stale_home/.acfs"
+    mkdir -p "$target_home/.local/bin" "$target_home/.gtbi" "$stale_home/.local/bin" "$stale_home/.gtbi"
 
-    export TARGET_USER="acfstestuser"
+    export TARGET_USER="gtbitestuser"
     export TARGET_HOME="$stale_home"
-    export ACFS_BIN_DIR="$stale_home/.local/bin"
-    export ACFS_HOME="$stale_home/.acfs"
+    export GTBI_BIN_DIR="$stale_home/.local/bin"
+    export GTBI_HOME="$stale_home/.gtbi"
 
-    _acfs_getent_passwd_entry() {
-        if [[ "${1:-}" == "acfstestuser" ]]; then
-            printf 'acfstestuser:x:1000:1000::%s:/bin/bash\n' "$target_home"
+    _gtbi_getent_passwd_entry() {
+        if [[ "${1:-}" == "gtbitestuser" ]]; then
+            printf 'gtbitestuser:x:1000:1000::%s:/bin/bash\n' "$target_home"
             return 0
         fi
         return 1
@@ -415,8 +415,8 @@ EOF
     captured="$(cat "$STUB_DIR/sudo.log")"
     [[ "$captured" == *"HOME=$target_home"* ]] || fail "Expected passwd target HOME, got: $captured"
     [[ "$captured" == *"TARGET_HOME=$target_home"* ]] || fail "Expected passwd TARGET_HOME, got: $captured"
-    [[ "$captured" == *"ACFS_BIN_DIR=$target_home/.local/bin"* ]] || fail "Expected repaired ACFS_BIN_DIR, got: $captured"
-    [[ "$captured" == *"ACFS_HOME=$target_home/.acfs"* ]] || fail "Expected repaired ACFS_HOME, got: $captured"
+    [[ "$captured" == *"GTBI_BIN_DIR=$target_home/.local/bin"* ]] || fail "Expected repaired GTBI_BIN_DIR, got: $captured"
+    [[ "$captured" == *"GTBI_HOME=$target_home/.gtbi"* ]] || fail "Expected repaired GTBI_HOME, got: $captured"
     [[ "$captured" != *"$stale_home"* ]] || fail "Stale home leaked into target environment: $captured"
 }
 
@@ -425,16 +425,16 @@ EOF
     local captured
 
     target_home="$(create_temp_dir)"
-    mkdir -p "$target_home/.local/bin" "$target_home/.acfs"
+    mkdir -p "$target_home/.local/bin" "$target_home/.gtbi"
 
-    export TARGET_USER="acfstestuser"
+    export TARGET_USER="gtbitestuser"
     export TARGET_HOME="/"
-    export ACFS_BIN_DIR="/usr/local/bin"
-    export ACFS_HOME="/opt/acfs"
+    export GTBI_BIN_DIR="/usr/local/bin"
+    export GTBI_HOME="/opt/gtbi"
 
-    _acfs_getent_passwd_entry() {
-        if [[ "${1:-}" == "acfstestuser" ]]; then
-            printf 'acfstestuser:x:1000:1000::%s:/bin/bash\n' "$target_home"
+    _gtbi_getent_passwd_entry() {
+        if [[ "${1:-}" == "gtbitestuser" ]]; then
+            printf 'gtbitestuser:x:1000:1000::%s:/bin/bash\n' "$target_home"
             return 0
         fi
         return 1
@@ -448,37 +448,37 @@ EOF
     captured="$(cat "$STUB_DIR/sudo.log")"
     [[ "$captured" == *"HOME=$target_home"* ]] || fail "Expected passwd target HOME, got: $captured"
     [[ "$captured" == *"TARGET_HOME=$target_home"* ]] || fail "Expected passwd TARGET_HOME, got: $captured"
-    [[ "$captured" == *"ACFS_BIN_DIR=/usr/local/bin"* ]] || fail "Slash TARGET_HOME rewrote ACFS_BIN_DIR: $captured"
-    [[ "$captured" == *"ACFS_HOME=/opt/acfs"* ]] || fail "Slash TARGET_HOME rewrote ACFS_HOME: $captured"
+    [[ "$captured" == *"GTBI_BIN_DIR=/usr/local/bin"* ]] || fail "Slash TARGET_HOME rewrote GTBI_BIN_DIR: $captured"
+    [[ "$captured" == *"GTBI_HOME=/opt/gtbi"* ]] || fail "Slash TARGET_HOME rewrote GTBI_HOME: $captured"
 }
 
-@test "primary bin helpers fail clearly without HOME or ACFS_BIN_DIR" {
-    run env -i PATH="/usr/bin:/bin" bash -c 'set -euo pipefail; source "$1"; source "$2"; acfs_link_primary_bin_command /tmp/source cmd' _ "$PROJECT_ROOT/scripts/lib/logging.sh" "$PROJECT_ROOT/scripts/lib/install_helpers.sh"
+@test "primary bin helpers fail clearly without HOME or GTBI_BIN_DIR" {
+    run env -i PATH="/usr/bin:/bin" bash -c 'set -euo pipefail; source "$1"; source "$2"; gtbi_link_primary_bin_command /tmp/source cmd' _ "$PROJECT_ROOT/scripts/lib/logging.sh" "$PROJECT_ROOT/scripts/lib/install_helpers.sh"
     assert_failure
-    assert_output --partial "ACFS_BIN_DIR must be an absolute path"
+    assert_output --partial "GTBI_BIN_DIR must be an absolute path"
     refute_output --partial "unbound variable"
 
-    run env -i PATH="/usr/bin:/bin" bash -c 'set -euo pipefail; source "$1"; source "$2"; acfs_install_executable_into_primary_bin /tmp/source cmd' _ "$PROJECT_ROOT/scripts/lib/logging.sh" "$PROJECT_ROOT/scripts/lib/install_helpers.sh"
+    run env -i PATH="/usr/bin:/bin" bash -c 'set -euo pipefail; source "$1"; source "$2"; gtbi_install_executable_into_primary_bin /tmp/source cmd' _ "$PROJECT_ROOT/scripts/lib/logging.sh" "$PROJECT_ROOT/scripts/lib/install_helpers.sh"
     assert_failure
-    assert_output --partial "ACFS_BIN_DIR must be an absolute path"
+    assert_output --partial "GTBI_BIN_DIR must be an absolute path"
     refute_output --partial "unbound variable"
 }
 
-@test "run_as_target: preserves ACFS bootstrap context for generated child shells" {
+@test "run_as_target: preserves GTBI bootstrap context for generated child shells" {
     export TARGET_USER="testuser"
     export TARGET_HOME="/home/testuser"
-    export ACFS_HOME="/home/testuser/.acfs"
-    export ACFS_BIN_DIR="/home/testuser/.local/bin"
-    export ACFS_BOOTSTRAP_DIR="/tmp/acfs-bootstrap"
-    export ACFS_LIB_DIR="/tmp/acfs-bootstrap/scripts/lib"
-    export ACFS_GENERATED_DIR="/tmp/acfs-bootstrap/scripts/generated"
-    export ACFS_ASSETS_DIR="/tmp/acfs-bootstrap/acfs"
-    export ACFS_CHECKSUMS_YAML="/tmp/acfs-bootstrap/checksums.yaml"
-    export ACFS_MANIFEST_YAML="/tmp/acfs-bootstrap/acfs.manifest.yaml"
-    export CHECKSUMS_FILE="/tmp/acfs-bootstrap/checksums.yaml"
-    export ACFS_REF="main"
+    export GTBI_HOME="/home/testuser/.gtbi"
+    export GTBI_BIN_DIR="/home/testuser/.local/bin"
+    export GTBI_BOOTSTRAP_DIR="/tmp/gtbi-bootstrap"
+    export GTBI_LIB_DIR="/tmp/gtbi-bootstrap/scripts/lib"
+    export GTBI_GENERATED_DIR="/tmp/gtbi-bootstrap/scripts/generated"
+    export GTBI_ASSETS_DIR="/tmp/gtbi-bootstrap/gtbi"
+    export GTBI_CHECKSUMS_YAML="/tmp/gtbi-bootstrap/checksums.yaml"
+    export GTBI_MANIFEST_YAML="/tmp/gtbi-bootstrap/gtbi.manifest.yaml"
+    export CHECKSUMS_FILE="/tmp/gtbi-bootstrap/checksums.yaml"
+    export GTBI_REF="main"
 
-    _acfs_getent_passwd_entry() {
+    _gtbi_getent_passwd_entry() {
         if [[ "${1:-}" == "testuser" ]]; then
             printf 'testuser:x:1000:1000::/home/testuser:/bin/bash\n'
             return 0
@@ -493,32 +493,32 @@ EOF
 
     local captured
     captured="$(cat "$STUB_DIR/sudo.log")"
-    [[ "$captured" == *"ACFS_BOOTSTRAP_DIR=/tmp/acfs-bootstrap"* ]] || fail "Missing ACFS_BOOTSTRAP_DIR: $captured"
-    [[ "$captured" == *"ACFS_LIB_DIR=/tmp/acfs-bootstrap/scripts/lib"* ]] || fail "Missing ACFS_LIB_DIR: $captured"
-    [[ "$captured" == *"ACFS_GENERATED_DIR=/tmp/acfs-bootstrap/scripts/generated"* ]] || fail "Missing ACFS_GENERATED_DIR: $captured"
-    [[ "$captured" == *"ACFS_ASSETS_DIR=/tmp/acfs-bootstrap/acfs"* ]] || fail "Missing ACFS_ASSETS_DIR: $captured"
-    [[ "$captured" == *"ACFS_CHECKSUMS_YAML=/tmp/acfs-bootstrap/checksums.yaml"* ]] || fail "Missing ACFS_CHECKSUMS_YAML: $captured"
-    [[ "$captured" == *"ACFS_MANIFEST_YAML=/tmp/acfs-bootstrap/acfs.manifest.yaml"* ]] || fail "Missing ACFS_MANIFEST_YAML: $captured"
-    [[ "$captured" == *"CHECKSUMS_FILE=/tmp/acfs-bootstrap/checksums.yaml"* ]] || fail "Missing CHECKSUMS_FILE: $captured"
-    [[ "$captured" == *"ACFS_REF=main"* ]] || fail "Missing ACFS_REF: $captured"
+    [[ "$captured" == *"GTBI_BOOTSTRAP_DIR=/tmp/gtbi-bootstrap"* ]] || fail "Missing GTBI_BOOTSTRAP_DIR: $captured"
+    [[ "$captured" == *"GTBI_LIB_DIR=/tmp/gtbi-bootstrap/scripts/lib"* ]] || fail "Missing GTBI_LIB_DIR: $captured"
+    [[ "$captured" == *"GTBI_GENERATED_DIR=/tmp/gtbi-bootstrap/scripts/generated"* ]] || fail "Missing GTBI_GENERATED_DIR: $captured"
+    [[ "$captured" == *"GTBI_ASSETS_DIR=/tmp/gtbi-bootstrap/gtbi"* ]] || fail "Missing GTBI_ASSETS_DIR: $captured"
+    [[ "$captured" == *"GTBI_CHECKSUMS_YAML=/tmp/gtbi-bootstrap/checksums.yaml"* ]] || fail "Missing GTBI_CHECKSUMS_YAML: $captured"
+    [[ "$captured" == *"GTBI_MANIFEST_YAML=/tmp/gtbi-bootstrap/gtbi.manifest.yaml"* ]] || fail "Missing GTBI_MANIFEST_YAML: $captured"
+    [[ "$captured" == *"CHECKSUMS_FILE=/tmp/gtbi-bootstrap/checksums.yaml"* ]] || fail "Missing CHECKSUMS_FILE: $captured"
+    [[ "$captured" == *"GTBI_REF=main"* ]] || fail "Missing GTBI_REF: $captured"
 }
 
-@test "_acfs_resolve_target_home: fails closed when NSS cannot resolve another user" {
+@test "_gtbi_resolve_target_home: fails closed when NSS cannot resolve another user" {
     stub_command "getent" "" 2
     export HOME="$BATS_TEST_TMPDIR/current-home"
 
-    run _acfs_resolve_target_home "missinguser"
+    run _gtbi_resolve_target_home "missinguser"
     assert_failure
     assert_output ""
 }
 
-@test "_acfs_resolve_target_home: ignores slash passwd homes and falls back to current HOME" {
+@test "_gtbi_resolve_target_home: ignores slash passwd homes and falls back to current HOME" {
     local current_user
     current_user="$(command id -un 2>/dev/null || command whoami 2>/dev/null)"
     export HOME="$BATS_TEST_TMPDIR/current-home"
     mkdir -p "$HOME"
 
-    _acfs_getent_passwd_entry() {
+    _gtbi_getent_passwd_entry() {
         if [[ "${1:-}" == "$current_user" ]]; then
             printf '%s\n' "$current_user:x:1000:1000::/:/bin/bash"
             return 0
@@ -526,12 +526,12 @@ EOF
         return 2
     }
 
-    run _acfs_resolve_target_home "$current_user"
+    run _gtbi_resolve_target_home "$current_user"
     assert_success
     assert_output "$HOME"
 }
 
-@test "_acfs_resolve_target_home: current HOME fallback cannot override explicit target home" {
+@test "_gtbi_resolve_target_home: current HOME fallback cannot override explicit target home" {
     local current_user
     local current_home
     local target_home
@@ -541,36 +541,36 @@ EOF
     target_home="$(create_temp_dir)"
     export HOME="$current_home"
 
-    _acfs_getent_passwd_entry() {
+    _gtbi_getent_passwd_entry() {
         return 2
     }
 
-    run _acfs_resolve_target_home "$current_user" "$target_home"
+    run _gtbi_resolve_target_home "$current_user" "$target_home"
     assert_failure
     assert_output ""
 
-    run _acfs_resolve_target_home "$current_user" "$current_home"
+    run _gtbi_resolve_target_home "$current_user" "$current_home"
     assert_success
     assert_output "$current_home"
 }
 
-@test "_acfs_resolve_target_home: rejects slash HOME for current user when passwd resolution is unavailable" {
+@test "_gtbi_resolve_target_home: rejects slash HOME for current user when passwd resolution is unavailable" {
     local current_user
     current_user="$(command id -un 2>/dev/null || command whoami 2>/dev/null)"
     export HOME="/"
 
-    _acfs_getent_passwd_entry() {
+    _gtbi_getent_passwd_entry() {
         return 2
     }
 
-    run _acfs_resolve_target_home "$current_user"
+    run _gtbi_resolve_target_home "$current_user"
     assert_failure
     assert_output ""
 }
 
 @test "run_as_target: fails closed when target home cannot be resolved" {
     export TARGET_USER="missinguser"
-    unset TARGET_HOME ACFS_BIN_DIR ACFS_HOME
+    unset TARGET_HOME GTBI_BIN_DIR GTBI_HOME
     stub_command "getent" "" 2
     use_spy_sudo
 
@@ -611,7 +611,7 @@ EOF
     fi
 }
 
-@test "_acfs_resolve_target_home: ignores function-poisoned passwd and identity shims" {
+@test "_gtbi_resolve_target_home: ignores function-poisoned passwd and identity shims" {
     local current_user=""
     local current_home=""
 
@@ -633,7 +633,7 @@ EOF
         printf '%s\n' 'poisoned'
     }
 
-    run _acfs_resolve_target_home "$current_user"
+    run _gtbi_resolve_target_home "$current_user"
     assert_success
     assert_output "$current_home"
 }
@@ -651,7 +651,7 @@ EOF
 
     export TARGET_USER="$current_user"
     export TARGET_HOME="$current_home"
-    unset ACFS_BIN_DIR ACFS_HOME
+    unset GTBI_BIN_DIR GTBI_HOME
 
     whoami() {
         printf '%s\n' 'poisoned'
@@ -678,13 +678,13 @@ EOF
 
     export TARGET_USER="testuser"
     export TARGET_HOME="$target_home"
-    unset ACFS_BIN_DIR ACFS_HOME
+    unset GTBI_BIN_DIR GTBI_HOME
 
-    _acfs_resolve_current_user() {
+    _gtbi_resolve_current_user() {
         printf 'testuser\n'
     }
 
-    _acfs_getent_passwd_entry() {
+    _gtbi_getent_passwd_entry() {
         if [[ "${1:-}" == "testuser" ]]; then
             printf 'testuser:x:1000:1000::%s:/bin/bash\n' "$target_home"
             return 0
@@ -701,10 +701,10 @@ EOF
     [[ "$after_pwd" == "$caller_dir" ]] || fail "run_as_target leaked cwd: $after_pwd"
 }
 
-@test "acfs_ensure_primary_bin_dir: rejects invalid ACFS_BIN_DIR before mkdir" {
+@test "gtbi_ensure_primary_bin_dir: rejects invalid GTBI_BIN_DIR before mkdir" {
     export TARGET_USER="testuser"
     export TARGET_HOME="/home/testuser"
-    export ACFS_BIN_DIR="relative/bin"
+    export GTBI_BIN_DIR="relative/bin"
     use_spy_sudo
 
     run_as_target() {
@@ -712,38 +712,38 @@ EOF
         return 0
     }
 
-    run acfs_ensure_primary_bin_dir
+    run gtbi_ensure_primary_bin_dir
     assert_failure
-    assert_output --partial "ACFS_BIN_DIR must be an absolute path and cannot be '/'"
+    assert_output --partial "GTBI_BIN_DIR must be an absolute path and cannot be '/'"
     refute_output --partial "run_as_target invoked"
 
     if [[ -f "$STUB_DIR/sudo.log" ]] && [[ -s "$STUB_DIR/sudo.log" ]]; then
-        fail "acfs_ensure_primary_bin_dir should not invoke sudo for invalid ACFS_BIN_DIR"
+        fail "gtbi_ensure_primary_bin_dir should not invoke sudo for invalid GTBI_BIN_DIR"
     fi
 }
 
-@test "acfs_ensure_primary_bin_dir: does not use current HOME when TARGET_HOME is unresolved" {
+@test "gtbi_ensure_primary_bin_dir: does not use current HOME when TARGET_HOME is unresolved" {
     export TARGET_USER="missinguser"
     unset TARGET_HOME
     export HOME="$(create_temp_dir)"
-    export ACFS_BIN_DIR="/usr/local/bin"
+    export GTBI_BIN_DIR="/usr/local/bin"
 
     use_spy_sudo
     stub_command "getent" "" 2
     stub_command "id" "otheruser" 0
     stub_command "whoami" "otheruser" 0
 
-    run acfs_ensure_primary_bin_dir
+    run gtbi_ensure_primary_bin_dir
     assert_failure
     assert_output --partial "Invalid TARGET_HOME for 'missinguser'"
 
     if [[ -f "$STUB_DIR/sudo.log" ]] && [[ -s "$STUB_DIR/sudo.log" ]]; then
-        fail "acfs_ensure_primary_bin_dir should not invoke sudo when TARGET_HOME cannot be resolved"
+        fail "gtbi_ensure_primary_bin_dir should not invoke sudo when TARGET_HOME cannot be resolved"
     fi
 }
 
-@test "_acfs_run_root_bin_command: rejects bare command names" {
-    run _acfs_run_root_bin_command mkdir -p "$BATS_TEST_TMPDIR/root-bin"
+@test "_gtbi_run_root_bin_command: rejects bare command names" {
+    run _gtbi_run_root_bin_command mkdir -p "$BATS_TEST_TMPDIR/root-bin"
 
     assert_failure
     assert_output --partial "Root primary bin command must be an absolute trusted path"
@@ -754,9 +754,9 @@ EOF
 
     export TARGET_USER="testuser"
     export TARGET_HOME="/home/testuser"
-    export ACFS_BIN_DIR="/usr/local/bin"
+    export GTBI_BIN_DIR="/usr/local/bin"
 
-    _acfs_system_binary_path() {
+    _gtbi_system_binary_path() {
         case "${1:-}" in
             mkdir|ln|install)
                 printf '/trusted/%s\n' "$1"
@@ -766,15 +766,15 @@ EOF
         return 1
     }
 
-    _acfs_run_root_bin_command() {
+    _gtbi_run_root_bin_command() {
         printf '%s\n' "$*" >> "$calls_file"
         return 0
     }
 
-    run acfs_link_primary_bin_command /tmp/source-tool tool
+    run gtbi_link_primary_bin_command /tmp/source-tool tool
     assert_success
 
-    run acfs_install_executable_into_primary_bin /tmp/source-tool installed-tool
+    run gtbi_install_executable_into_primary_bin /tmp/source-tool installed-tool
     assert_success
 
     local calls
@@ -787,15 +787,15 @@ EOF
     [[ "$calls" != *$'\n'"install "* ]] || fail "bare install leaked into root helper: $calls"
 }
 
-@test "_acfs_force_reinstall_enabled: returns 0 when true" {
-    export ACFS_FORCE_REINSTALL="true"
-    run _acfs_force_reinstall_enabled
+@test "_gtbi_force_reinstall_enabled: returns 0 when true" {
+    export GTBI_FORCE_REINSTALL="true"
+    run _gtbi_force_reinstall_enabled
     assert_success
 }
 
-@test "_acfs_force_reinstall_enabled: returns 1 when false" {
-    export ACFS_FORCE_REINSTALL="false"
-    run _acfs_force_reinstall_enabled
+@test "_gtbi_force_reinstall_enabled: returns 1 when false" {
+    export GTBI_FORCE_REINSTALL="false"
+    run _gtbi_force_reinstall_enabled
     assert_failure
 }
 
@@ -803,58 +803,58 @@ EOF
 # Skip-if-installed tests (bd-1eop)
 # -------------------------------------------------
 
-@test "acfs_module_is_installed: returns false when no check defined" {
+@test "gtbi_module_is_installed: returns false when no check defined" {
     # Clear installed_check arrays
-    unset ACFS_MODULE_INSTALLED_CHECK ACFS_MODULE_INSTALLED_CHECK_RUN_AS
-    declare -gA ACFS_MODULE_INSTALLED_CHECK=()
-    declare -gA ACFS_MODULE_INSTALLED_CHECK_RUN_AS=()
+    unset GTBI_MODULE_INSTALLED_CHECK GTBI_MODULE_INSTALLED_CHECK_RUN_AS
+    declare -gA GTBI_MODULE_INSTALLED_CHECK=()
+    declare -gA GTBI_MODULE_INSTALLED_CHECK_RUN_AS=()
 
-    run acfs_module_is_installed "mod1"
+    run gtbi_module_is_installed "mod1"
     assert_failure
 }
 
-@test "acfs_module_is_installed: returns true when check succeeds" {
-    unset ACFS_MODULE_INSTALLED_CHECK ACFS_MODULE_INSTALLED_CHECK_RUN_AS
-    declare -gA ACFS_MODULE_INSTALLED_CHECK=( ["mod1"]="true" )
-    declare -gA ACFS_MODULE_INSTALLED_CHECK_RUN_AS=( ["mod1"]="current" )
+@test "gtbi_module_is_installed: returns true when check succeeds" {
+    unset GTBI_MODULE_INSTALLED_CHECK GTBI_MODULE_INSTALLED_CHECK_RUN_AS
+    declare -gA GTBI_MODULE_INSTALLED_CHECK=( ["mod1"]="true" )
+    declare -gA GTBI_MODULE_INSTALLED_CHECK_RUN_AS=( ["mod1"]="current" )
 
-    run acfs_module_is_installed "mod1"
+    run gtbi_module_is_installed "mod1"
     assert_success
 }
 
-@test "acfs_module_is_installed: returns false when check fails" {
-    unset ACFS_MODULE_INSTALLED_CHECK ACFS_MODULE_INSTALLED_CHECK_RUN_AS
-    declare -gA ACFS_MODULE_INSTALLED_CHECK=( ["mod1"]="false" )
-    declare -gA ACFS_MODULE_INSTALLED_CHECK_RUN_AS=( ["mod1"]="current" )
+@test "gtbi_module_is_installed: returns false when check fails" {
+    unset GTBI_MODULE_INSTALLED_CHECK GTBI_MODULE_INSTALLED_CHECK_RUN_AS
+    declare -gA GTBI_MODULE_INSTALLED_CHECK=( ["mod1"]="false" )
+    declare -gA GTBI_MODULE_INSTALLED_CHECK_RUN_AS=( ["mod1"]="current" )
 
-    run acfs_module_is_installed "mod1"
+    run gtbi_module_is_installed "mod1"
     assert_failure
 }
 
-@test "acfs_should_skip_module: skips installed modules" {
-    unset ACFS_MODULE_INSTALLED_CHECK ACFS_MODULE_INSTALLED_CHECK_RUN_AS
-    declare -gA ACFS_MODULE_INSTALLED_CHECK=( ["mod1"]="true" )
-    declare -gA ACFS_MODULE_INSTALLED_CHECK_RUN_AS=( ["mod1"]="current" )
-    export ACFS_FORCE_REINSTALL=false
+@test "gtbi_should_skip_module: skips installed modules" {
+    unset GTBI_MODULE_INSTALLED_CHECK GTBI_MODULE_INSTALLED_CHECK_RUN_AS
+    declare -gA GTBI_MODULE_INSTALLED_CHECK=( ["mod1"]="true" )
+    declare -gA GTBI_MODULE_INSTALLED_CHECK_RUN_AS=( ["mod1"]="current" )
+    export GTBI_FORCE_REINSTALL=false
 
-    run acfs_should_skip_module "mod1"
+    run gtbi_should_skip_module "mod1"
     assert_success  # 0 means should skip
 }
 
-@test "acfs_should_skip_module: does not skip when force reinstall" {
-    unset ACFS_MODULE_INSTALLED_CHECK ACFS_MODULE_INSTALLED_CHECK_RUN_AS
-    declare -gA ACFS_MODULE_INSTALLED_CHECK=( ["mod1"]="true" )
-    declare -gA ACFS_MODULE_INSTALLED_CHECK_RUN_AS=( ["mod1"]="current" )
-    export ACFS_FORCE_REINSTALL=true
+@test "gtbi_should_skip_module: does not skip when force reinstall" {
+    unset GTBI_MODULE_INSTALLED_CHECK GTBI_MODULE_INSTALLED_CHECK_RUN_AS
+    declare -gA GTBI_MODULE_INSTALLED_CHECK=( ["mod1"]="true" )
+    declare -gA GTBI_MODULE_INSTALLED_CHECK_RUN_AS=( ["mod1"]="current" )
+    export GTBI_FORCE_REINSTALL=true
 
-    run acfs_should_skip_module "mod1"
+    run gtbi_should_skip_module "mod1"
     assert_failure  # 1 means do not skip (install)
 }
 
-@test "acfs_module_is_installed: respects run_as target_user" {
-    unset ACFS_MODULE_INSTALLED_CHECK ACFS_MODULE_INSTALLED_CHECK_RUN_AS
-    declare -gA ACFS_MODULE_INSTALLED_CHECK=( ["mod1"]="true" )
-    declare -gA ACFS_MODULE_INSTALLED_CHECK_RUN_AS=( ["mod1"]="target_user" )
+@test "gtbi_module_is_installed: respects run_as target_user" {
+    unset GTBI_MODULE_INSTALLED_CHECK GTBI_MODULE_INSTALLED_CHECK_RUN_AS
+    declare -gA GTBI_MODULE_INSTALLED_CHECK=( ["mod1"]="true" )
+    declare -gA GTBI_MODULE_INSTALLED_CHECK_RUN_AS=( ["mod1"]="target_user" )
 
     # Mock run_as_target to just pass through to bash
     # Note: We need to export the function for subshells
@@ -863,14 +863,14 @@ EOF
     }
     export -f run_as_target
 
-    run acfs_module_is_installed "mod1"
+    run gtbi_module_is_installed "mod1"
     assert_success
 }
 
-@test "acfs_module_is_installed: target_user checks include ACFS user PATH prefix" {
-    unset ACFS_MODULE_INSTALLED_CHECK ACFS_MODULE_INSTALLED_CHECK_RUN_AS
-    declare -gA ACFS_MODULE_INSTALLED_CHECK=( ["mod1"]="command -v br" )
-    declare -gA ACFS_MODULE_INSTALLED_CHECK_RUN_AS=( ["mod1"]="target_user" )
+@test "gtbi_module_is_installed: target_user checks include GTBI user PATH prefix" {
+    unset GTBI_MODULE_INSTALLED_CHECK GTBI_MODULE_INSTALLED_CHECK_RUN_AS
+    declare -gA GTBI_MODULE_INSTALLED_CHECK=( ["mod1"]="command -v br" )
+    declare -gA GTBI_MODULE_INSTALLED_CHECK_RUN_AS=( ["mod1"]="target_user" )
 
     export CAPTURE_FILE="$BATS_TEST_TMPDIR/run_as_target_args.txt"
     run_as_target() {
@@ -879,28 +879,28 @@ EOF
     }
     export -f run_as_target
 
-    run acfs_module_is_installed "mod1"
+    run gtbi_module_is_installed "mod1"
     assert_success
 
     local captured
     captured="$(cat "$CAPTURE_FILE")"
-    [[ "$captured" == *'_acfs_primary_bin="${ACFS_BIN_DIR:-$HOME/.local/bin}"'* ]] \
+    [[ "$captured" == *'_gtbi_primary_bin="${GTBI_BIN_DIR:-$HOME/.local/bin}"'* ]] \
         || fail "Expected target-user installed check to compute runtime primary bin, got: $captured"
-    [[ "$captured" == *'export PATH="${_acfs_primary_bin}:$HOME/.local/bin:$HOME/.acfs/bin:$HOME/.cargo/bin:$HOME/.bun/bin:$HOME/.atuin/bin:$HOME/go/bin:$PATH"'* ]] \
+    [[ "$captured" == *'export PATH="${_gtbi_primary_bin}:$HOME/.local/bin:$HOME/.gtbi/bin:$HOME/.cargo/bin:$HOME/.bun/bin:$HOME/.atuin/bin:$HOME/go/bin:$PATH"'* ]] \
         || fail "Expected target-user installed check to extend PATH, got: $captured"
     [[ "$captured" == *'eval "$1" _ command -v br'* ]] \
         || fail "Expected target-user installed check to extend PATH, got: $captured"
 }
 
-@test "acfs_module_is_installed: target_user checks fail closed without run_as_target" {
-    unset ACFS_MODULE_INSTALLED_CHECK ACFS_MODULE_INSTALLED_CHECK_RUN_AS
-    declare -gA ACFS_MODULE_INSTALLED_CHECK=( ["mod1"]="command -v false-positive-tool" )
-    declare -gA ACFS_MODULE_INSTALLED_CHECK_RUN_AS=( ["mod1"]="target_user" )
+@test "gtbi_module_is_installed: target_user checks fail closed without run_as_target" {
+    unset GTBI_MODULE_INSTALLED_CHECK GTBI_MODULE_INSTALLED_CHECK_RUN_AS
+    declare -gA GTBI_MODULE_INSTALLED_CHECK=( ["mod1"]="command -v false-positive-tool" )
+    declare -gA GTBI_MODULE_INSTALLED_CHECK_RUN_AS=( ["mod1"]="target_user" )
 
     export TARGET_USER="ubuntu"
     export TARGET_HOME="$BATS_TEST_TMPDIR/target-home"
-    export ACFS_BIN_DIR="$TARGET_HOME/.local/bin"
-    mkdir -p "$ACFS_BIN_DIR" "$BATS_TEST_TMPDIR/global-bin"
+    export GTBI_BIN_DIR="$TARGET_HOME/.local/bin"
+    mkdir -p "$GTBI_BIN_DIR" "$BATS_TEST_TMPDIR/global-bin"
 
     cat > "$BATS_TEST_TMPDIR/global-bin/false-positive-tool" <<'EOF'
 #!/usr/bin/env bash
@@ -911,14 +911,14 @@ EOF
 
     unset -f run_as_target
 
-    run acfs_module_is_installed "mod1"
+    run gtbi_module_is_installed "mod1"
     assert_failure
 }
 
-@test "acfs_module_is_installed: root checks fail closed without sudo" {
-    unset ACFS_MODULE_INSTALLED_CHECK ACFS_MODULE_INSTALLED_CHECK_RUN_AS
-    declare -gA ACFS_MODULE_INSTALLED_CHECK=( ["mod1"]="command -v false-positive-root-tool" )
-    declare -gA ACFS_MODULE_INSTALLED_CHECK_RUN_AS=( ["mod1"]="root" )
+@test "gtbi_module_is_installed: root checks fail closed without sudo" {
+    unset GTBI_MODULE_INSTALLED_CHECK GTBI_MODULE_INSTALLED_CHECK_RUN_AS
+    declare -gA GTBI_MODULE_INSTALLED_CHECK=( ["mod1"]="command -v false-positive-root-tool" )
+    declare -gA GTBI_MODULE_INSTALLED_CHECK_RUN_AS=( ["mod1"]="root" )
     local original_path="$PATH"
 
     mkdir -p "$BATS_TEST_TMPDIR/global-bin"
@@ -935,7 +935,7 @@ EOF
     chmod +x "$BATS_TEST_TMPDIR/global-bin/false-positive-root-tool"
     export PATH="$BATS_TEST_TMPDIR/global-bin"
 
-    run acfs_module_is_installed "mod1"
+    run gtbi_module_is_installed "mod1"
     export PATH="$original_path"
     assert_failure
 }

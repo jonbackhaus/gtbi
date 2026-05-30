@@ -216,7 +216,7 @@ teardown() {
 
     # Use a subshell to test the case where br command doesn't exist
     run bash -c '
-        source '"$ACFS_LIB_DIR"'/newproj_errors.sh
+        source '"$GTBI_LIB_DIR"'/newproj_errors.sh
         # Override command -v to report br as missing
         command() {
             if [[ "$2" == "br" ]]; then

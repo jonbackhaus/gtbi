@@ -1,7 +1,7 @@
 /**
- * Service Catalog for ACFS
+ * Service Catalog for GTBI
  *
- * Defines all services that ACFS recommends or installs.
+ * Defines all services that GTBI recommends or installs.
  * Used by the Accounts wizard step and other components.
  */
 
@@ -61,7 +61,7 @@ export interface Service {
   /** Command to run after install for authentication */
   postInstallCommand?: string;
 
-  /** Whether this service is installed by ACFS */
+  /** Whether this service is installed by GTBI */
   installedByAcfs: boolean;
 
   /** External documentation URL */

@@ -26,9 +26,9 @@ bash /repo/tests/vm/selection_checks.sh
 
 cd /repo
 
-TEST_MODE="${ACFS_TEST_MODE:-vibe}"
+TEST_MODE="${GTBI_TEST_MODE:-vibe}"
 INSTALL_ARGS=(--yes --skip-ubuntu-upgrade --mode "${TEST_MODE}")
-if [[ "${ACFS_TEST_STRICT:-false}" == "true" ]]; then
+if [[ "${GTBI_TEST_STRICT:-false}" == "true" ]]; then
     INSTALL_ARGS+=(--strict)
 fi
 
@@ -59,10 +59,10 @@ run_check() {
 
 failed_checks=0
 
-run_check "doctor" "zsh -ic 'acfs doctor'" || failed_checks=$((failed_checks + 1))
-run_check "state_file" "test -f ~/.acfs/VERSION" || failed_checks=$((failed_checks + 1))
+run_check "doctor" "zsh -ic 'gtbi doctor'" || failed_checks=$((failed_checks + 1))
+run_check "state_file" "test -f ~/.gtbi/VERSION" || failed_checks=$((failed_checks + 1))
 run_check "onboard" "zsh -ic 'onboard --help >/dev/null'" || failed_checks=$((failed_checks + 1))
-run_check "onboard_noninteractive_lesson" "zsh -ic 'progress=\$(mktemp); exec </dev/null; ACFS_PROGRESS_FILE=\"\$progress\" onboard 1 >/dev/null'" || failed_checks=$((failed_checks + 1))
+run_check "onboard_noninteractive_lesson" "zsh -ic 'progress=\$(mktemp); exec </dev/null; GTBI_PROGRESS_FILE=\"\$progress\" onboard 1 >/dev/null'" || failed_checks=$((failed_checks + 1))
 run_check "onboard_noninteractive_menu" "zsh -ic 'out=\$(mktemp); if timeout 5s onboard </dev/null >\"\$out\" 2>&1; then false; else menu_status=\$?; command grep -q \"Interactive menu requires a TTY\" \"\$out\" && [ \"\$menu_status\" -eq 1 ]; fi'" || failed_checks=$((failed_checks + 1))
 run_check "ntm" "zsh -ic 'ntm --help >/dev/null'" || failed_checks=$((failed_checks + 1))
 run_check "gh" "zsh -ic 'gh --version >/dev/null'" || failed_checks=$((failed_checks + 1))
@@ -94,7 +94,7 @@ fi
 
 # PHASE 2.4: Optional Real Cross-Agent Resume E2E
 # Requires authenticated codex/claude/gemini accounts in the test environment.
-if [[ "${ACFS_RUN_REAL_AGENT_RESUME_E2E:-false}" == "true" ]]; then
+if [[ "${GTBI_RUN_REAL_AGENT_RESUME_E2E:-false}" == "true" ]]; then
     log "PHASE 2.4: Real Cross-Agent Resume E2E"
     REAL_RESUME_LOG="${ARTIFACTS_DIR}/cross_agent_resume.log"
     if su - ubuntu -c "zsh -ic 'cd /repo && bash tests/e2e/test_cross_agent_resume_e2e.sh'" > "$REAL_RESUME_LOG" 2>&1; then
@@ -110,7 +110,7 @@ if [[ "${ACFS_RUN_REAL_AGENT_RESUME_E2E:-false}" == "true" ]]; then
         cp "$f" "$ARTIFACTS_DIR/" 2>/dev/null || true
     done
 else
-    log "Skipping real cross-agent resume E2E (set ACFS_RUN_REAL_AGENT_RESUME_E2E=true)"
+    log "Skipping real cross-agent resume E2E (set GTBI_RUN_REAL_AGENT_RESUME_E2E=true)"
 fi
 
 # PHASE 2.5: Install Artifacts (bd-31ps.3.3)
@@ -119,12 +119,12 @@ ARTIFACTS_LOG="${ARTIFACTS_DIR}/artifacts_test.log"
 if bash /repo/tests/vm/test_install_artifacts.sh --user ubuntu --home /home/ubuntu > "$ARTIFACTS_LOG" 2>&1; then
     log "Install artifacts validation passed"
     # Copy any test logs for debugging
-    cp /tmp/acfs_install_artifacts_test_*.log "$ARTIFACTS_DIR/" 2>/dev/null || true
+    cp /tmp/gtbi_install_artifacts_test_*.log "$ARTIFACTS_DIR/" 2>/dev/null || true
 else
     log "Install artifacts validation failed! See $ARTIFACTS_LOG"
     cat "$ARTIFACTS_LOG"
     # Copy test logs for debugging
-    cp /tmp/acfs_install_artifacts_test_*.log "$ARTIFACTS_DIR/" 2>/dev/null || true
+    cp /tmp/gtbi_install_artifacts_test_*.log "$ARTIFACTS_DIR/" 2>/dev/null || true
     fail "Install artifacts validation failed"
 fi
 
@@ -148,13 +148,13 @@ log "PHASE 2.7: Expanded New Tools E2E"
 NEW_TOOLS_LOG="${ARTIFACTS_DIR}/new_tools_e2e.log"
 if su - ubuntu -c "zsh -ic 'cd /repo && bash tests/e2e/test_new_tools_e2e.sh'" > "$NEW_TOOLS_LOG" 2>&1; then
     log "Expanded new tools E2E passed"
-    cp /tmp/acfs_e2e_tools_*.log "$ARTIFACTS_DIR/" 2>/dev/null || true
-    cp /tmp/acfs_e2e_results_*.json "$ARTIFACTS_DIR/" 2>/dev/null || true
+    cp /tmp/gtbi_e2e_tools_*.log "$ARTIFACTS_DIR/" 2>/dev/null || true
+    cp /tmp/gtbi_e2e_results_*.json "$ARTIFACTS_DIR/" 2>/dev/null || true
 else
     log "Expanded new tools E2E failed! See $NEW_TOOLS_LOG"
     cat "$NEW_TOOLS_LOG"
-    cp /tmp/acfs_e2e_tools_*.log "$ARTIFACTS_DIR/" 2>/dev/null || true
-    cp /tmp/acfs_e2e_results_*.json "$ARTIFACTS_DIR/" 2>/dev/null || true
+    cp /tmp/gtbi_e2e_tools_*.log "$ARTIFACTS_DIR/" 2>/dev/null || true
+    cp /tmp/gtbi_e2e_results_*.json "$ARTIFACTS_DIR/" 2>/dev/null || true
     fail "Expanded new tools E2E failed"
 fi
 
@@ -169,7 +169,7 @@ else
 fi
 
 # Check that nothing major broke after re-run
-if ! su - ubuntu -c "zsh -ic 'acfs doctor'" >/dev/null 2>&1; then
+if ! su - ubuntu -c "zsh -ic 'gtbi doctor'" >/dev/null 2>&1; then
     fail "Doctor failed after idempotency run"
 fi
 

@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # ============================================================
-# ACFS Capacity Report
+# GTBI Capacity Report
 #
-# Fast, offline host sizing for multi-agent ACFS workflows.
+# Fast, offline host sizing for multi-agent GTBI workflows.
 # ============================================================
 
 set -uo pipefail
@@ -18,7 +18,7 @@ CAPACITY_RESOURCE_PROFILE_ROOT=""
 
 capacity_usage() {
     cat <<'EOF'
-Usage: acfs capacity [OPTIONS]
+Usage: gtbi capacity [OPTIONS]
 
 Options:
   --json                  Emit machine-readable JSON
@@ -27,21 +27,21 @@ Options:
   --recommend-ntm         Include an NTM launch recommendation
   --resource-profile      Report opt-in systemd resource profile wrappers
   --apply-resource-profile
-                          Write opt-in ACFS wrapper files under ~/.acfs
+                          Write opt-in GTBI wrapper files under ~/.gtbi
   --disable-resource-profile
                           Write a disabled profile marker/snippet, no deletion
   -h, --help              Show this help
 
 Environment overrides for tests:
-  ACFS_CAPACITY_CPU_COUNT
-  ACFS_CAPACITY_MEM_TOTAL_KB
-  ACFS_CAPACITY_DISK_AVAILABLE_KB
-  ACFS_CAPACITY_RCH_AVAILABLE=true|false
-  ACFS_CAPACITY_NTM_AVAILABLE=true|false
-  ACFS_CAPACITY_SYSTEMD_RUN_AVAILABLE=true|false
-  ACFS_CAPACITY_SYSTEMD_USER_AVAILABLE=true|false
-  ACFS_CAPACITY_BIN_DIR
-  ACFS_RESOURCE_PROFILE_HOME
+  GTBI_CAPACITY_CPU_COUNT
+  GTBI_CAPACITY_MEM_TOTAL_KB
+  GTBI_CAPACITY_DISK_AVAILABLE_KB
+  GTBI_CAPACITY_RCH_AVAILABLE=true|false
+  GTBI_CAPACITY_NTM_AVAILABLE=true|false
+  GTBI_CAPACITY_SYSTEMD_RUN_AVAILABLE=true|false
+  GTBI_CAPACITY_SYSTEMD_USER_AVAILABLE=true|false
+  GTBI_CAPACITY_BIN_DIR
+  GTBI_RESOURCE_PROFILE_HOME
 EOF
 }
 
@@ -86,7 +86,7 @@ capacity_parse_args() {
                 ;;
             *)
                 echo "Error: unknown option: $1" >&2
-                echo "Run 'acfs capacity --help' for usage." >&2
+                echo "Run 'gtbi capacity --help' for usage." >&2
                 return 2
                 ;;
         esac
@@ -117,8 +117,8 @@ capacity_system_binary_path() {
             ;;
     esac
 
-    if [[ -n "${ACFS_CAPACITY_BIN_DIR:-}" ]]; then
-        candidate="${ACFS_CAPACITY_BIN_DIR%/}/$name"
+    if [[ -n "${GTBI_CAPACITY_BIN_DIR:-}" ]]; then
+        candidate="${GTBI_CAPACITY_BIN_DIR%/}/$name"
         if [[ -x "$candidate" ]]; then
             printf '%s\n' "$candidate"
             return 0
@@ -150,8 +150,8 @@ capacity_system_binary_path() {
 }
 
 capacity_read_cpu_count() {
-    if [[ "${ACFS_CAPACITY_CPU_COUNT:-}" =~ ^[0-9]+$ ]] && [[ "${ACFS_CAPACITY_CPU_COUNT}" -gt 0 ]]; then
-        printf '%s\n' "$ACFS_CAPACITY_CPU_COUNT"
+    if [[ "${GTBI_CAPACITY_CPU_COUNT:-}" =~ ^[0-9]+$ ]] && [[ "${GTBI_CAPACITY_CPU_COUNT}" -gt 0 ]]; then
+        printf '%s\n' "$GTBI_CAPACITY_CPU_COUNT"
         return 0
     fi
 
@@ -165,8 +165,8 @@ capacity_read_cpu_count() {
 }
 
 capacity_read_mem_total_kb() {
-    if [[ "${ACFS_CAPACITY_MEM_TOTAL_KB:-}" =~ ^[0-9]+$ ]] && [[ "${ACFS_CAPACITY_MEM_TOTAL_KB}" -gt 0 ]]; then
-        printf '%s\n' "$ACFS_CAPACITY_MEM_TOTAL_KB"
+    if [[ "${GTBI_CAPACITY_MEM_TOTAL_KB:-}" =~ ^[0-9]+$ ]] && [[ "${GTBI_CAPACITY_MEM_TOTAL_KB}" -gt 0 ]]; then
+        printf '%s\n' "$GTBI_CAPACITY_MEM_TOTAL_KB"
         return 0
     fi
 
@@ -174,12 +174,12 @@ capacity_read_mem_total_kb() {
 }
 
 capacity_read_disk_available_kb() {
-    if [[ "${ACFS_CAPACITY_DISK_AVAILABLE_KB:-}" =~ ^[0-9]+$ ]] && [[ "${ACFS_CAPACITY_DISK_AVAILABLE_KB}" -ge 0 ]]; then
-        printf '%s\n' "$ACFS_CAPACITY_DISK_AVAILABLE_KB"
+    if [[ "${GTBI_CAPACITY_DISK_AVAILABLE_KB:-}" =~ ^[0-9]+$ ]] && [[ "${GTBI_CAPACITY_DISK_AVAILABLE_KB}" -ge 0 ]]; then
+        printf '%s\n' "$GTBI_CAPACITY_DISK_AVAILABLE_KB"
         return 0
     fi
 
-    local target="${ACFS_CAPACITY_DISK_PATH:-${HOME:-/}}"
+    local target="${GTBI_CAPACITY_DISK_PATH:-${HOME:-/}}"
     df -Pk "$target" 2>/dev/null | awk 'NR == 2 {print $4; exit}' || printf '0\n'
 }
 
@@ -236,14 +236,14 @@ capacity_resource_profile_root() {
         return 0
     fi
 
-    CAPACITY_RESOURCE_PROFILE_ROOT="${ACFS_RESOURCE_PROFILE_HOME:-${HOME:-/tmp}/.acfs/resource-profile}"
+    CAPACITY_RESOURCE_PROFILE_ROOT="${GTBI_RESOURCE_PROFILE_HOME:-${HOME:-/tmp}/.gtbi/resource-profile}"
     printf '%s\n' "$CAPACITY_RESOURCE_PROFILE_ROOT"
 }
 
 capacity_resource_systemd_run_available() {
-    case "${ACFS_CAPACITY_SYSTEMD_RUN_AVAILABLE:-}" in
+    case "${GTBI_CAPACITY_SYSTEMD_RUN_AVAILABLE:-}" in
         true|false)
-            printf '%s\n' "$ACFS_CAPACITY_SYSTEMD_RUN_AVAILABLE"
+            printf '%s\n' "$GTBI_CAPACITY_SYSTEMD_RUN_AVAILABLE"
             return 0
             ;;
     esac
@@ -258,9 +258,9 @@ capacity_resource_systemd_run_available() {
 capacity_resource_systemd_user_available() {
     local systemctl_bin=""
 
-    case "${ACFS_CAPACITY_SYSTEMD_USER_AVAILABLE:-}" in
+    case "${GTBI_CAPACITY_SYSTEMD_USER_AVAILABLE:-}" in
         true|false)
-            printf '%s\n' "$ACFS_CAPACITY_SYSTEMD_USER_AVAILABLE"
+            printf '%s\n' "$GTBI_CAPACITY_SYSTEMD_USER_AVAILABLE"
             return 0
             ;;
     esac
@@ -291,7 +291,7 @@ capacity_resource_profile_json() {
     local status="${5:-pass}"
     local failure_reason="${6:-}"
     local bin_dir="$root/bin"
-    local env_file="$root/acfs-resource-profile.sh"
+    local env_file="$root/gtbi-resource-profile.sh"
     local manifest_file="$root/profile.json"
 
     command -v jq >/dev/null 2>&1 || {
@@ -328,29 +328,29 @@ capacity_resource_profile_json() {
                 no_hard_memory_limits_by_default: true,
                 direct_agent_aliases_unchanged: true,
                 rch_remains_preferred_build_path: true,
-                limited_to_acfs_owned_files: true,
+                limited_to_gtbi_owned_files: true,
                 destructive_cleanup_required: false
             },
             classes: [
-                {name: "agent", slice: "acfs-agent.slice", properties: ["CPUAccounting=yes", "MemoryAccounting=yes", "IOAccounting=yes", "TasksAccounting=yes", "CPUWeight=100", "IOWeight=100", "TasksMax=512"]},
-                {name: "background", slice: "acfs-background.slice", properties: ["CPUAccounting=yes", "MemoryAccounting=yes", "IOAccounting=yes", "TasksAccounting=yes", "CPUWeight=40", "IOWeight=50", "TasksMax=512"]},
-                {name: "local-build", slice: "acfs-local-build.slice", properties: ["CPUAccounting=yes", "MemoryAccounting=yes", "IOAccounting=yes", "TasksAccounting=yes", "CPUWeight=60", "IOWeight=50", "TasksMax=512"]},
-                {name: "support", slice: "acfs-support.slice", properties: ["CPUAccounting=yes", "MemoryAccounting=yes", "IOAccounting=yes", "TasksAccounting=yes", "CPUWeight=80", "IOWeight=100", "TasksMax=256"]},
-                {name: "rch", slice: "acfs-rch.slice", properties: ["CPUAccounting=yes", "MemoryAccounting=yes", "IOAccounting=yes", "TasksAccounting=yes", "CPUWeight=100", "IOWeight=100", "TasksMax=512"]}
+                {name: "agent", slice: "gtbi-agent.slice", properties: ["CPUAccounting=yes", "MemoryAccounting=yes", "IOAccounting=yes", "TasksAccounting=yes", "CPUWeight=100", "IOWeight=100", "TasksMax=512"]},
+                {name: "background", slice: "gtbi-background.slice", properties: ["CPUAccounting=yes", "MemoryAccounting=yes", "IOAccounting=yes", "TasksAccounting=yes", "CPUWeight=40", "IOWeight=50", "TasksMax=512"]},
+                {name: "local-build", slice: "gtbi-local-build.slice", properties: ["CPUAccounting=yes", "MemoryAccounting=yes", "IOAccounting=yes", "TasksAccounting=yes", "CPUWeight=60", "IOWeight=50", "TasksMax=512"]},
+                {name: "support", slice: "gtbi-support.slice", properties: ["CPUAccounting=yes", "MemoryAccounting=yes", "IOAccounting=yes", "TasksAccounting=yes", "CPUWeight=80", "IOWeight=100", "TasksMax=256"]},
+                {name: "rch", slice: "gtbi-rch.slice", properties: ["CPUAccounting=yes", "MemoryAccounting=yes", "IOAccounting=yes", "TasksAccounting=yes", "CPUWeight=100", "IOWeight=100", "TasksMax=512"]}
             ],
             wrappers: [
-                {name: "acfs-scope", path: ($bin_dir + "/acfs-scope"), purpose: "Run an explicit command in an opt-in ACFS systemd user scope when available; otherwise execute directly."},
-                {name: "ccs", path: ($bin_dir + "/ccs"), command: "acfs-scope agent -- claude"},
-                {name: "cods", path: ($bin_dir + "/cods"), command: "acfs-scope agent -- codex"},
-                {name: "gmis", path: ($bin_dir + "/gmis"), command: "acfs-scope agent -- gemini"},
-                {name: "acfs-local-build", path: ($bin_dir + "/acfs-local-build"), command: "acfs-scope local-build --"}
+                {name: "gtbi-scope", path: ($bin_dir + "/gtbi-scope"), purpose: "Run an explicit command in an opt-in GTBI systemd user scope when available; otherwise execute directly."},
+                {name: "ccs", path: ($bin_dir + "/ccs"), command: "gtbi-scope agent -- claude"},
+                {name: "cods", path: ($bin_dir + "/cods"), command: "gtbi-scope agent -- codex"},
+                {name: "gmis", path: ($bin_dir + "/gmis"), command: "gtbi-scope agent -- gemini"},
+                {name: "gtbi-local-build", path: ($bin_dir + "/gtbi-local-build"), command: "gtbi-scope local-build --"}
             ],
             managed_files: [
-                ($bin_dir + "/acfs-scope"),
+                ($bin_dir + "/gtbi-scope"),
                 ($bin_dir + "/ccs"),
                 ($bin_dir + "/cods"),
                 ($bin_dir + "/gmis"),
-                ($bin_dir + "/acfs-local-build"),
+                ($bin_dir + "/gtbi-local-build"),
                 $env_file,
                 $manifest_file
             ],
@@ -359,8 +359,8 @@ capacity_resource_profile_json() {
                 if $state == "error" then
                     [
                         "Resource profile application did not complete.",
-                        "Inspect filesystem permissions under the ACFS resource profile root.",
-                        "Fix the reported write failure, then rerun acfs capacity --resource-profile --apply-resource-profile."
+                        "Inspect filesystem permissions under the GTBI resource profile root.",
+                        "Fix the reported write failure, then rerun gtbi capacity --resource-profile --apply-resource-profile."
                     ] + (if $failure_reason == "" then [] else [$failure_reason] end)
                 else
                     []
@@ -374,7 +374,7 @@ capacity_resource_profile_json() {
                 elif $state == "applying" then
                     ["started profile write", "will write opt-in wrappers", "will write shell snippet", "will write final manifest"]
                 elif $state == "error" then
-                    ["failed before completing resource profile write", "left any already-written ACFS-owned files for inspection", "reported remediation guidance"]
+                    ["failed before completing resource profile write", "left any already-written GTBI-owned files for inspection", "reported remediation guidance"]
                 else
                     ["wrote wrapper directory", "wrote opt-in wrappers", "wrote shell snippet", "wrote manifest"]
                 end
@@ -390,9 +390,9 @@ set -euo pipefail
 
 usage() {
     cat <<'USAGE'
-Usage: acfs-scope <agent|background|local-build|support|rch> -- <command> [args...]
+Usage: gtbi-scope <agent|background|local-build|support|rch> -- <command> [args...]
 
-Runs a command inside an opt-in ACFS systemd user scope when systemd user
+Runs a command inside an opt-in GTBI systemd user scope when systemd user
 scopes are available. Falls back to direct execution when unavailable.
 USAGE
 }
@@ -416,27 +416,27 @@ slice=""
 properties=()
 case "$class" in
     agent)
-        slice="acfs-agent.slice"
+        slice="gtbi-agent.slice"
         properties=(CPUAccounting=yes MemoryAccounting=yes IOAccounting=yes TasksAccounting=yes CPUWeight=100 IOWeight=100 TasksMax=512)
         ;;
     background)
-        slice="acfs-background.slice"
+        slice="gtbi-background.slice"
         properties=(CPUAccounting=yes MemoryAccounting=yes IOAccounting=yes TasksAccounting=yes CPUWeight=40 IOWeight=50 TasksMax=512)
         ;;
     local-build)
-        slice="acfs-local-build.slice"
+        slice="gtbi-local-build.slice"
         properties=(CPUAccounting=yes MemoryAccounting=yes IOAccounting=yes TasksAccounting=yes CPUWeight=60 IOWeight=50 TasksMax=512)
         ;;
     support)
-        slice="acfs-support.slice"
+        slice="gtbi-support.slice"
         properties=(CPUAccounting=yes MemoryAccounting=yes IOAccounting=yes TasksAccounting=yes CPUWeight=80 IOWeight=100 TasksMax=256)
         ;;
     rch)
-        slice="acfs-rch.slice"
+        slice="gtbi-rch.slice"
         properties=(CPUAccounting=yes MemoryAccounting=yes IOAccounting=yes TasksAccounting=yes CPUWeight=100 IOWeight=100 TasksMax=512)
         ;;
     *)
-        echo "Error: unknown ACFS resource class: $class" >&2
+        echo "Error: unknown GTBI resource class: $class" >&2
         exit 2
         ;;
 esac
@@ -465,7 +465,7 @@ capacity_write_resource_command_wrapper() {
     {
         printf '#!/usr/bin/env bash\n'
         printf 'set -euo pipefail\n'
-        printf 'exec acfs-scope %q --' "$class"
+        printf 'exec gtbi-scope %q --' "$class"
         printf ' %q' "$@"
         printf ' "$@"\n'
     } > "$path"
@@ -476,15 +476,15 @@ capacity_apply_resource_profile() {
     local state="$2"
     local profile_json="$3"
     local bin_dir="$root/bin"
-    local env_file="$root/acfs-resource-profile.sh"
+    local env_file="$root/gtbi-resource-profile.sh"
     local manifest_file="$root/profile.json"
 
     mkdir -p "$bin_dir" || return 1
 
     if [[ "$state" == "disabled" ]]; then
         cat > "$env_file" <<'EOF' || return 1
-# ACFS resource profile disabled.
-# Re-enable with: acfs capacity --resource-profile --apply-resource-profile
+# GTBI resource profile disabled.
+# Re-enable with: gtbi capacity --resource-profile --apply-resource-profile
 EOF
         printf '%s\n' "$profile_json" > "$manifest_file" || return 1
         return 0
@@ -494,15 +494,15 @@ EOF
     applying_json="$(capacity_resource_profile_json "$root" "applying" "$(capacity_resource_systemd_run_available)" "$(capacity_resource_systemd_user_available)" "pending")" || return 1
     printf '%s\n' "$applying_json" > "$manifest_file" || return 1
 
-    capacity_write_resource_scope_wrapper "$bin_dir/acfs-scope" || return 1
+    capacity_write_resource_scope_wrapper "$bin_dir/gtbi-scope" || return 1
     capacity_write_resource_command_wrapper "$bin_dir/ccs" agent claude || return 1
     capacity_write_resource_command_wrapper "$bin_dir/cods" agent codex || return 1
     capacity_write_resource_command_wrapper "$bin_dir/gmis" agent gemini || return 1
-    capacity_write_resource_command_wrapper "$bin_dir/acfs-local-build" local-build || return 1
-    chmod +x "$bin_dir/acfs-scope" "$bin_dir/ccs" "$bin_dir/cods" "$bin_dir/gmis" "$bin_dir/acfs-local-build" || return 1
+    capacity_write_resource_command_wrapper "$bin_dir/gtbi-local-build" local-build || return 1
+    chmod +x "$bin_dir/gtbi-scope" "$bin_dir/ccs" "$bin_dir/cods" "$bin_dir/gmis" "$bin_dir/gtbi-local-build" || return 1
 
     cat > "$env_file" <<EOF || return 1
-# ACFS opt-in resource profile wrappers.
+# GTBI opt-in resource profile wrappers.
 # Source this file to add wrapper commands without changing cc/cod/gmi.
 case ":\${PATH:-}:" in
   *":$bin_dir:"*) ;;
@@ -522,7 +522,7 @@ capacity_emit_resource_profile_json() {
 
     if [[ "$CAPACITY_RESOURCE_PROFILE_APPLY" == true || "$CAPACITY_RESOURCE_PROFILE_DISABLE" == true ]]; then
         if ! capacity_apply_resource_profile "$root" "$state" "$profile_json"; then
-            failure_reason="Failed to write the complete ACFS resource profile."
+            failure_reason="Failed to write the complete GTBI resource profile."
             profile_json="$(capacity_resource_profile_json "$root" "error" "$systemd_run_available" "$systemd_user_available" "fail" "$failure_reason")"
             printf '%s\n' "$profile_json"
             return 1
@@ -553,14 +553,14 @@ capacity_emit_resource_profile_human() {
         if ! capacity_apply_resource_profile "$root" "$state" "$profile_json"; then
             apply_failed=true
             state="error"
-            failure_reason="Failed to write the complete ACFS resource profile."
+            failure_reason="Failed to write the complete GTBI resource profile."
             profile_json="$(capacity_resource_profile_json "$root" "$state" "$systemd_run_available" "$systemd_user_available" "fail" "$failure_reason")"
         else
             profile_json="$(capacity_resource_profile_json "$root" "$state" "$systemd_run_available" "$systemd_user_available")"
         fi
     fi
 
-    echo "ACFS Resource Profile"
+    echo "GTBI Resource Profile"
     echo "Mode: $state"
     echo "Root: $root"
     echo "Systemd user manager: $systemd_user_available"
@@ -583,16 +583,16 @@ capacity_emit_resource_profile_human() {
 
     if [[ "$state" == "dry-run" ]]; then
         echo ""
-        echo "Apply: acfs capacity --resource-profile --apply-resource-profile"
-        echo "Disable marker/snippet: acfs capacity --resource-profile --disable-resource-profile"
+        echo "Apply: gtbi capacity --resource-profile --apply-resource-profile"
+        echo "Disable marker/snippet: gtbi capacity --resource-profile --disable-resource-profile"
     elif [[ "$state" == "applied" ]]; then
         echo ""
-        echo "Enable in current shell: source $root/acfs-resource-profile.sh"
-        echo "Inspect: $root/bin/acfs-scope --help"
-        echo "Disable marker/snippet: acfs capacity --resource-profile --disable-resource-profile"
+        echo "Enable in current shell: source $root/gtbi-resource-profile.sh"
+        echo "Inspect: $root/bin/gtbi-scope --help"
+        echo "Disable marker/snippet: gtbi capacity --resource-profile --disable-resource-profile"
     else
         echo ""
-        echo "Disabled. Re-enable with: acfs capacity --resource-profile --apply-resource-profile"
+        echo "Disabled. Re-enable with: gtbi capacity --resource-profile --apply-resource-profile"
     fi
 
     if [[ "$apply_failed" == true ]]; then
@@ -607,8 +607,8 @@ capacity_collect_model() {
     cpu_count="$(capacity_read_cpu_count)"
     mem_total_kb="$(capacity_read_mem_total_kb)"
     disk_available_kb="$(capacity_read_disk_available_kb)"
-    rch_available="$(capacity_tool_available rch ACFS_CAPACITY_RCH_AVAILABLE)"
-    ntm_available="$(capacity_tool_available ntm ACFS_CAPACITY_NTM_AVAILABLE)"
+    rch_available="$(capacity_tool_available rch GTBI_CAPACITY_RCH_AVAILABLE)"
+    ntm_available="$(capacity_tool_available ntm GTBI_CAPACITY_NTM_AVAILABLE)"
 
     local mem_total_mib disk_available_mib reserve_mib usable_mem_mib
     mem_total_mib=$((mem_total_kb / 1024))
@@ -798,7 +798,7 @@ capacity_emit_json() {
 }
 
 capacity_emit_human() {
-    echo "ACFS Capacity Report"
+    echo "GTBI Capacity Report"
     echo "Workload: $CAPACITY_WORKLOAD"
     echo ""
     echo "Host"

@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # ============================================================
-# ACFS Dashboard - Static HTML Generation & Serving
+# GTBI Dashboard - Static HTML Generation & Serving
 #
-# Generates a local HTML dashboard using `acfs info --html`
+# Generates a local HTML dashboard using `gtbi info --html`
 # and optionally serves it via a temporary HTTP server.
 #
 # Usage:
-#   acfs dashboard generate [--force]
-#   acfs dashboard serve [--port PORT]
+#   gtbi dashboard generate [--force]
+#   gtbi dashboard serve [--port PORT]
 # ============================================================
 
 _DASHBOARD_WAS_SOURCED=false
@@ -200,7 +200,7 @@ dashboard_initial_current_home() {
     local cached_home=""
     local resolved_home=""
 
-    if [[ "${_DASHBOARD_WAS_SOURCED:-false}" == "true" ]] && [[ -z "${TARGET_HOME:-}${TARGET_USER:-}${ACFS_HOME:-}${ACFS_STATE_FILE:-}${ACFS_SYSTEM_STATE_FILE:-}" ]]; then
+    if [[ "${_DASHBOARD_WAS_SOURCED:-false}" == "true" ]] && [[ -z "${TARGET_HOME:-}${TARGET_USER:-}${GTBI_HOME:-}${GTBI_STATE_FILE:-}${GTBI_SYSTEM_STATE_FILE:-}" ]]; then
         cached_home="$(dashboard_sanitize_abs_nonroot_path "${_DASHBOARD_ORIGINAL_HOME:-${HOME:-}}" 2>/dev/null || true)"
         if [[ -n "$cached_home" ]]; then
             printf '%s\n' "$cached_home"
@@ -230,29 +230,29 @@ if [[ -n "$_DASHBOARD_CURRENT_HOME" ]]; then
     export HOME
 fi
 
-_DASHBOARD_EXPLICIT_ACFS_HOME="$(dashboard_sanitize_abs_nonroot_path "${ACFS_HOME:-}" 2>/dev/null || true)"
-_DASHBOARD_DEFAULT_ACFS_HOME=""
-[[ -n "$_DASHBOARD_CURRENT_HOME" ]] && _DASHBOARD_DEFAULT_ACFS_HOME="${_DASHBOARD_CURRENT_HOME}/.acfs"
-_DASHBOARD_ACFS_HOME="${_DASHBOARD_EXPLICIT_ACFS_HOME:-$_DASHBOARD_DEFAULT_ACFS_HOME}"
+_DASHBOARD_EXPLICIT_GTBI_HOME="$(dashboard_sanitize_abs_nonroot_path "${GTBI_HOME:-}" 2>/dev/null || true)"
+_DASHBOARD_DEFAULT_GTBI_HOME=""
+[[ -n "$_DASHBOARD_CURRENT_HOME" ]] && _DASHBOARD_DEFAULT_GTBI_HOME="${_DASHBOARD_CURRENT_HOME}/.gtbi"
+_DASHBOARD_GTBI_HOME="${_DASHBOARD_EXPLICIT_GTBI_HOME:-$_DASHBOARD_DEFAULT_GTBI_HOME}"
 _DASHBOARD_SYSTEM_STATE_WAS_EXPLICIT=false
-[[ -n "${ACFS_SYSTEM_STATE_FILE:-}" ]] && [[ "${ACFS_SYSTEM_STATE_FILE%/}" != "/var/lib/acfs/state.json" ]] && _DASHBOARD_SYSTEM_STATE_WAS_EXPLICIT=true
-_DASHBOARD_SYSTEM_STATE_FILE="$(dashboard_sanitize_abs_nonroot_path "${ACFS_SYSTEM_STATE_FILE:-/var/lib/acfs/state.json}" 2>/dev/null || true)"
+[[ -n "${GTBI_SYSTEM_STATE_FILE:-}" ]] && [[ "${GTBI_SYSTEM_STATE_FILE%/}" != "/var/lib/gtbi/state.json" ]] && _DASHBOARD_SYSTEM_STATE_WAS_EXPLICIT=true
+_DASHBOARD_SYSTEM_STATE_FILE="$(dashboard_sanitize_abs_nonroot_path "${GTBI_SYSTEM_STATE_FILE:-/var/lib/gtbi/state.json}" 2>/dev/null || true)"
 if [[ -z "$_DASHBOARD_SYSTEM_STATE_FILE" ]]; then
-    _DASHBOARD_SYSTEM_STATE_FILE="/var/lib/acfs/state.json"
+    _DASHBOARD_SYSTEM_STATE_FILE="/var/lib/gtbi/state.json"
 fi
 _DASHBOARD_EXPLICIT_TARGET_HOME_RAW="${TARGET_HOME:-}"
 _DASHBOARD_EXPLICIT_TARGET_USER_RAW="${TARGET_USER:-}"
 _DASHBOARD_EXPLICIT_TARGET_HOME="$(dashboard_existing_abs_home "${TARGET_HOME:-}" 2>/dev/null || true)"
-_DASHBOARD_RESOLVED_ACFS_HOME=""
-_DASHBOARD_RESOLVED_ACFS_HOME_SOURCE=""
+_DASHBOARD_RESOLVED_GTBI_HOME=""
+_DASHBOARD_RESOLVED_GTBI_HOME_SOURCE=""
 _DASHBOARD_RESOLVED_TARGET_USER=""
 _DASHBOARD_RESOLVED_TARGET_HOME=""
 
 dashboard_usage() {
-    echo "Usage: acfs dashboard <command>"
+    echo "Usage: gtbi dashboard <command>"
     echo ""
     echo "Commands:"
-    echo "  generate [--force]   Generate ~/.acfs/dashboard/index.html"
+    echo "  generate [--force]   Generate ~/.gtbi/dashboard/index.html"
     echo "  serve [--port PORT] [--host HOST] [--public]  Start a temporary HTTP server for the dashboard"
     echo "  help                 Show this help"
 }
@@ -305,7 +305,7 @@ dashboard_resolve_explicit_target_home() {
             return 0
         fi
         target_home="$_DASHBOARD_EXPLICIT_TARGET_HOME"
-        if [[ -n "$target_home" ]] && [[ "$target_home" != "${_DASHBOARD_CURRENT_HOME:-}" ]] && dashboard_candidate_has_acfs_data "$target_home/.acfs"; then
+        if [[ -n "$target_home" ]] && [[ "$target_home" != "${_DASHBOARD_CURRENT_HOME:-}" ]] && dashboard_candidate_has_gtbi_data "$target_home/.gtbi"; then
             printf '%s\n' "${target_home%/}"
             return 0
         fi
@@ -356,7 +356,7 @@ dashboard_read_user_for_home() {
         return 0
     fi
 
-    state_file="$user_home/.acfs/state.json"
+    state_file="$user_home/.gtbi/state.json"
     candidate_user="$(dashboard_read_state_string "$state_file" "target_user" 2>/dev/null || true)"
     if [[ -n "$candidate_user" ]]; then
         current_home="$(dashboard_home_for_user "$candidate_user" 2>/dev/null || true)"
@@ -403,21 +403,21 @@ dashboard_read_target_home_from_state() {
     printf '%s\n' "${target_home%/}"
 }
 
-dashboard_candidate_has_acfs_data() {
+dashboard_candidate_has_gtbi_data() {
     local candidate="$1"
     [[ -n "$candidate" ]] || return 1
     [[ -f "$candidate/state.json" || -f "$candidate/VERSION" || -d "$candidate/dashboard" || -d "$candidate/onboard" || -f "$candidate/scripts/lib/info.sh" ]]
 }
 
-dashboard_script_acfs_home() {
+dashboard_script_gtbi_home() {
     local candidate=""
     candidate=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." 2>/dev/null && pwd) || return 1
-    [[ "$(basename "$candidate")" == ".acfs" ]] || return 1
+    [[ "$(basename "$candidate")" == ".gtbi" ]] || return 1
     printf '%s\n' "$candidate"
 }
 
-dashboard_current_home_acfs_candidate() {
-    local candidate="$_DASHBOARD_DEFAULT_ACFS_HOME"
+dashboard_current_home_gtbi_candidate() {
+    local candidate="$_DASHBOARD_DEFAULT_GTBI_HOME"
     local current_home="$_DASHBOARD_CURRENT_HOME"
     local current_user=""
     local original_home=""
@@ -427,7 +427,7 @@ dashboard_current_home_acfs_candidate() {
 
     [[ -n "$candidate" && -n "$current_home" ]] || return 1
     [[ "$current_home" != "/root" ]] || return 1
-    dashboard_candidate_has_acfs_data "$candidate" || return 1
+    dashboard_candidate_has_gtbi_data "$candidate" || return 1
 
     if [[ "${_DASHBOARD_ORIGINAL_HOME_WAS_SET:-false}" == true ]]; then
         original_home="$(dashboard_sanitize_abs_nonroot_path "$_DASHBOARD_ORIGINAL_HOME" 2>/dev/null || true)"
@@ -451,9 +451,9 @@ dashboard_current_home_acfs_candidate() {
     printf '%s\n' "$candidate"
 }
 
-dashboard_resolve_acfs_home() {
-    if [[ -n "$_DASHBOARD_RESOLVED_ACFS_HOME" ]]; then
-        printf '%s\n' "$_DASHBOARD_RESOLVED_ACFS_HOME"
+dashboard_resolve_gtbi_home() {
+    if [[ -n "$_DASHBOARD_RESOLVED_GTBI_HOME" ]]; then
+        printf '%s\n' "$_DASHBOARD_RESOLVED_GTBI_HOME"
         return 0
     fi
 
@@ -462,69 +462,69 @@ dashboard_resolve_acfs_home() {
     local target_user=""
     local explicit_target_home=""
 
-    _DASHBOARD_RESOLVED_ACFS_HOME_SOURCE=""
+    _DASHBOARD_RESOLVED_GTBI_HOME_SOURCE=""
 
-    candidate=$(dashboard_script_acfs_home 2>/dev/null || true)
-    if dashboard_candidate_has_acfs_data "$candidate"; then
-        _DASHBOARD_RESOLVED_ACFS_HOME="$candidate"
-        _DASHBOARD_RESOLVED_ACFS_HOME_SOURCE="script_acfs_home"
-        printf '%s\n' "$_DASHBOARD_RESOLVED_ACFS_HOME"
+    candidate=$(dashboard_script_gtbi_home 2>/dev/null || true)
+    if dashboard_candidate_has_gtbi_data "$candidate"; then
+        _DASHBOARD_RESOLVED_GTBI_HOME="$candidate"
+        _DASHBOARD_RESOLVED_GTBI_HOME_SOURCE="script_gtbi_home"
+        printf '%s\n' "$_DASHBOARD_RESOLVED_GTBI_HOME"
         return 0
     fi
 
     explicit_target_home="$(dashboard_resolve_explicit_target_home 2>/dev/null || true)"
     if [[ -n "$explicit_target_home" ]]; then
-        candidate="${explicit_target_home}/.acfs"
-        if dashboard_candidate_has_acfs_data "$candidate"; then
-            _DASHBOARD_RESOLVED_ACFS_HOME="$candidate"
-            _DASHBOARD_RESOLVED_ACFS_HOME_SOURCE="explicit_target_home"
-            printf '%s\n' "$_DASHBOARD_RESOLVED_ACFS_HOME"
+        candidate="${explicit_target_home}/.gtbi"
+        if dashboard_candidate_has_gtbi_data "$candidate"; then
+            _DASHBOARD_RESOLVED_GTBI_HOME="$candidate"
+            _DASHBOARD_RESOLVED_GTBI_HOME_SOURCE="explicit_target_home"
+            printf '%s\n' "$_DASHBOARD_RESOLVED_GTBI_HOME"
             return 0
         fi
     fi
 
-    if [[ ! -f "$_DASHBOARD_SYSTEM_STATE_FILE" ]] && [[ -n "$_DASHBOARD_EXPLICIT_ACFS_HOME" ]] && dashboard_candidate_has_acfs_data "$_DASHBOARD_EXPLICIT_ACFS_HOME"; then
-        _DASHBOARD_RESOLVED_ACFS_HOME="$_DASHBOARD_EXPLICIT_ACFS_HOME"
-        _DASHBOARD_RESOLVED_ACFS_HOME_SOURCE="explicit_acfs_home"
-        printf '%s\n' "$_DASHBOARD_RESOLVED_ACFS_HOME"
+    if [[ ! -f "$_DASHBOARD_SYSTEM_STATE_FILE" ]] && [[ -n "$_DASHBOARD_EXPLICIT_GTBI_HOME" ]] && dashboard_candidate_has_gtbi_data "$_DASHBOARD_EXPLICIT_GTBI_HOME"; then
+        _DASHBOARD_RESOLVED_GTBI_HOME="$_DASHBOARD_EXPLICIT_GTBI_HOME"
+        _DASHBOARD_RESOLVED_GTBI_HOME_SOURCE="explicit_gtbi_home"
+        printf '%s\n' "$_DASHBOARD_RESOLVED_GTBI_HOME"
         return 0
     fi
 
-    candidate="$(dashboard_current_home_acfs_candidate 2>/dev/null || true)"
+    candidate="$(dashboard_current_home_gtbi_candidate 2>/dev/null || true)"
     if [[ -n "$candidate" ]]; then
-        _DASHBOARD_RESOLVED_ACFS_HOME="$candidate"
-        _DASHBOARD_RESOLVED_ACFS_HOME_SOURCE="current_home"
-        printf '%s\n' "$_DASHBOARD_RESOLVED_ACFS_HOME"
+        _DASHBOARD_RESOLVED_GTBI_HOME="$candidate"
+        _DASHBOARD_RESOLVED_GTBI_HOME_SOURCE="current_home"
+        printf '%s\n' "$_DASHBOARD_RESOLVED_GTBI_HOME"
         return 0
     fi
 
     if [[ "$_DASHBOARD_SYSTEM_STATE_WAS_EXPLICIT" == true ]]; then
         target_home=$(dashboard_read_target_home_from_state "$_DASHBOARD_SYSTEM_STATE_FILE" 2>/dev/null || true)
-        candidate="${target_home}/.acfs"
-        if [[ -n "$target_home" ]] && dashboard_candidate_has_acfs_data "$candidate"; then
-            _DASHBOARD_RESOLVED_ACFS_HOME="$candidate"
-            _DASHBOARD_RESOLVED_ACFS_HOME_SOURCE="system_state_target_home"
-            printf '%s\n' "$_DASHBOARD_RESOLVED_ACFS_HOME"
+        candidate="${target_home}/.gtbi"
+        if [[ -n "$target_home" ]] && dashboard_candidate_has_gtbi_data "$candidate"; then
+            _DASHBOARD_RESOLVED_GTBI_HOME="$candidate"
+            _DASHBOARD_RESOLVED_GTBI_HOME_SOURCE="system_state_target_home"
+            printf '%s\n' "$_DASHBOARD_RESOLVED_GTBI_HOME"
             return 0
         fi
 
         target_user=$(dashboard_read_state_string "$_DASHBOARD_SYSTEM_STATE_FILE" "target_user" 2>/dev/null || true)
         if [[ -n "$target_user" ]]; then
             target_home=$(dashboard_home_for_user "$target_user" 2>/dev/null || true)
-            candidate="${target_home}/.acfs"
-            if [[ -n "$target_home" ]] && dashboard_candidate_has_acfs_data "$candidate"; then
-                _DASHBOARD_RESOLVED_ACFS_HOME="$candidate"
-                _DASHBOARD_RESOLVED_ACFS_HOME_SOURCE="system_state_target_user"
-                printf '%s\n' "$_DASHBOARD_RESOLVED_ACFS_HOME"
+            candidate="${target_home}/.gtbi"
+            if [[ -n "$target_home" ]] && dashboard_candidate_has_gtbi_data "$candidate"; then
+                _DASHBOARD_RESOLVED_GTBI_HOME="$candidate"
+                _DASHBOARD_RESOLVED_GTBI_HOME_SOURCE="system_state_target_user"
+                printf '%s\n' "$_DASHBOARD_RESOLVED_GTBI_HOME"
                 return 0
             fi
         fi
     fi
 
-    if [[ -n "$_DASHBOARD_EXPLICIT_ACFS_HOME" ]] && dashboard_candidate_has_acfs_data "$_DASHBOARD_EXPLICIT_ACFS_HOME"; then
-        _DASHBOARD_RESOLVED_ACFS_HOME="$_DASHBOARD_EXPLICIT_ACFS_HOME"
-        _DASHBOARD_RESOLVED_ACFS_HOME_SOURCE="explicit_acfs_home"
-        printf '%s\n' "$_DASHBOARD_RESOLVED_ACFS_HOME"
+    if [[ -n "$_DASHBOARD_EXPLICIT_GTBI_HOME" ]] && dashboard_candidate_has_gtbi_data "$_DASHBOARD_EXPLICIT_GTBI_HOME"; then
+        _DASHBOARD_RESOLVED_GTBI_HOME="$_DASHBOARD_EXPLICIT_GTBI_HOME"
+        _DASHBOARD_RESOLVED_GTBI_HOME_SOURCE="explicit_gtbi_home"
+        printf '%s\n' "$_DASHBOARD_RESOLVED_GTBI_HOME"
         return 0
     fi
 
@@ -534,21 +534,21 @@ dashboard_resolve_acfs_home() {
 
     if [[ -n "${SUDO_USER:-}" ]]; then
         target_home=$(dashboard_home_for_user "$SUDO_USER" 2>/dev/null || true)
-        candidate="${target_home}/.acfs"
-        if [[ -n "$target_home" ]] && dashboard_candidate_has_acfs_data "$candidate"; then
-            _DASHBOARD_RESOLVED_ACFS_HOME="$candidate"
-            _DASHBOARD_RESOLVED_ACFS_HOME_SOURCE="sudo_user_home"
-            printf '%s\n' "$_DASHBOARD_RESOLVED_ACFS_HOME"
+        candidate="${target_home}/.gtbi"
+        if [[ -n "$target_home" ]] && dashboard_candidate_has_gtbi_data "$candidate"; then
+            _DASHBOARD_RESOLVED_GTBI_HOME="$candidate"
+            _DASHBOARD_RESOLVED_GTBI_HOME_SOURCE="sudo_user_home"
+            printf '%s\n' "$_DASHBOARD_RESOLVED_GTBI_HOME"
             return 0
         fi
     fi
 
     target_home=$(dashboard_read_target_home_from_state "$_DASHBOARD_SYSTEM_STATE_FILE" 2>/dev/null || true)
-    candidate="${target_home}/.acfs"
-    if [[ -n "$target_home" ]] && dashboard_candidate_has_acfs_data "$candidate"; then
-        _DASHBOARD_RESOLVED_ACFS_HOME="$candidate"
-        _DASHBOARD_RESOLVED_ACFS_HOME_SOURCE="system_state_target_home"
-        printf '%s\n' "$_DASHBOARD_RESOLVED_ACFS_HOME"
+    candidate="${target_home}/.gtbi"
+    if [[ -n "$target_home" ]] && dashboard_candidate_has_gtbi_data "$candidate"; then
+        _DASHBOARD_RESOLVED_GTBI_HOME="$candidate"
+        _DASHBOARD_RESOLVED_GTBI_HOME_SOURCE="system_state_target_home"
+        printf '%s\n' "$_DASHBOARD_RESOLVED_GTBI_HOME"
         return 0
     fi
 
@@ -557,25 +557,25 @@ dashboard_resolve_acfs_home() {
         if [[ -z "$target_home" ]]; then
             target_home=$(dashboard_home_for_user "$target_user" 2>/dev/null || true)
         fi
-        candidate="${target_home}/.acfs"
-        if [[ -n "$target_home" ]] && dashboard_candidate_has_acfs_data "$candidate"; then
-            _DASHBOARD_RESOLVED_ACFS_HOME="$candidate"
-            _DASHBOARD_RESOLVED_ACFS_HOME_SOURCE="system_state_target_user"
-            printf '%s\n' "$_DASHBOARD_RESOLVED_ACFS_HOME"
+        candidate="${target_home}/.gtbi"
+        if [[ -n "$target_home" ]] && dashboard_candidate_has_gtbi_data "$candidate"; then
+            _DASHBOARD_RESOLVED_GTBI_HOME="$candidate"
+            _DASHBOARD_RESOLVED_GTBI_HOME_SOURCE="system_state_target_user"
+            printf '%s\n' "$_DASHBOARD_RESOLVED_GTBI_HOME"
             return 0
         fi
     fi
 
-    _DASHBOARD_RESOLVED_ACFS_HOME="$_DASHBOARD_DEFAULT_ACFS_HOME"
-    _DASHBOARD_RESOLVED_ACFS_HOME_SOURCE="current_home"
-    printf '%s\n' "$_DASHBOARD_RESOLVED_ACFS_HOME"
+    _DASHBOARD_RESOLVED_GTBI_HOME="$_DASHBOARD_DEFAULT_GTBI_HOME"
+    _DASHBOARD_RESOLVED_GTBI_HOME_SOURCE="current_home"
+    printf '%s\n' "$_DASHBOARD_RESOLVED_GTBI_HOME"
 }
 
 dashboard_resolve_state_file() {
     local candidate=""
 
-    if [[ -n "$_DASHBOARD_ACFS_HOME" ]]; then
-        candidate="${_DASHBOARD_ACFS_HOME}/state.json"
+    if [[ -n "$_DASHBOARD_GTBI_HOME" ]]; then
+        candidate="${_DASHBOARD_GTBI_HOME}/state.json"
     fi
 
     if [[ -n "$candidate" ]] && [[ -f "$candidate" ]]; then
@@ -591,26 +591,26 @@ dashboard_resolve_state_file() {
     printf '%s\n' "$candidate"
 }
 
-dashboard_infer_target_home_from_acfs_home() {
-    local acfs_home_candidate=""
+dashboard_infer_target_home_from_gtbi_home() {
+    local gtbi_home_candidate=""
     local inferred_home=""
 
-    acfs_home_candidate="$(dashboard_sanitize_abs_nonroot_path "${_DASHBOARD_ACFS_HOME:-}" 2>/dev/null || true)"
-    [[ -n "$acfs_home_candidate" ]] || return 1
-    [[ "$(basename "$acfs_home_candidate")" == ".acfs" ]] || return 1
-    [[ -f "$acfs_home_candidate/state.json" || -f "$acfs_home_candidate/VERSION" || -d "$acfs_home_candidate/dashboard" || -d "$acfs_home_candidate/onboard" || -f "$acfs_home_candidate/scripts/lib/info.sh" ]] || return 1
+    gtbi_home_candidate="$(dashboard_sanitize_abs_nonroot_path "${_DASHBOARD_GTBI_HOME:-}" 2>/dev/null || true)"
+    [[ -n "$gtbi_home_candidate" ]] || return 1
+    [[ "$(basename "$gtbi_home_candidate")" == ".gtbi" ]] || return 1
+    [[ -f "$gtbi_home_candidate/state.json" || -f "$gtbi_home_candidate/VERSION" || -d "$gtbi_home_candidate/dashboard" || -d "$gtbi_home_candidate/onboard" || -f "$gtbi_home_candidate/scripts/lib/info.sh" ]] || return 1
 
-    if [[ -n "$_DASHBOARD_EXPLICIT_ACFS_HOME" ]] && [[ "$acfs_home_candidate" == "$_DASHBOARD_EXPLICIT_ACFS_HOME" ]]; then
+    if [[ -n "$_DASHBOARD_EXPLICIT_GTBI_HOME" ]] && [[ "$gtbi_home_candidate" == "$_DASHBOARD_EXPLICIT_GTBI_HOME" ]]; then
         :
-    elif [[ -n "$_DASHBOARD_DEFAULT_ACFS_HOME" ]] && [[ "$acfs_home_candidate" == "$_DASHBOARD_DEFAULT_ACFS_HOME" ]]; then
+    elif [[ -n "$_DASHBOARD_DEFAULT_GTBI_HOME" ]] && [[ "$gtbi_home_candidate" == "$_DASHBOARD_DEFAULT_GTBI_HOME" ]]; then
         :
-    elif [[ "${_DASHBOARD_RESOLVED_ACFS_HOME_SOURCE:-}" == "explicit_target_home" ]]; then
+    elif [[ "${_DASHBOARD_RESOLVED_GTBI_HOME_SOURCE:-}" == "explicit_target_home" ]]; then
         :
     else
         return 1
     fi
 
-    inferred_home="${acfs_home_candidate%/.acfs}"
+    inferred_home="${gtbi_home_candidate%/.gtbi}"
     inferred_home="$(dashboard_sanitize_abs_nonroot_path "$inferred_home" 2>/dev/null || true)"
     [[ -n "$inferred_home" ]] || return 1
     printf '%s\n' "$inferred_home"
@@ -626,9 +626,9 @@ dashboard_prepare_context() {
 
     _DASHBOARD_RESOLVED_TARGET_USER=""
     _DASHBOARD_RESOLVED_TARGET_HOME=""
-    _DASHBOARD_ACFS_HOME="$(dashboard_resolve_acfs_home 2>/dev/null || true)"
+    _DASHBOARD_GTBI_HOME="$(dashboard_resolve_gtbi_home 2>/dev/null || true)"
     state_file="$(dashboard_resolve_state_file)"
-    path_home="$(dashboard_infer_target_home_from_acfs_home 2>/dev/null || true)"
+    path_home="$(dashboard_infer_target_home_from_gtbi_home 2>/dev/null || true)"
     explicit_target_home="$(dashboard_resolve_explicit_target_home 2>/dev/null || true)"
     if [[ -n "$path_home" ]]; then
         state_target_user="$(dashboard_read_state_string "$state_file" "target_user" 2>/dev/null || true)"
@@ -673,11 +673,11 @@ dashboard_prepare_context() {
         target_home_source="path_home"
     fi
 
-    if [[ -z "$_DASHBOARD_RESOLVED_TARGET_HOME" ]] && [[ "$_DASHBOARD_ACFS_HOME" == */.acfs ]]; then
-        resolved_target_home="$(dashboard_existing_abs_home "${_DASHBOARD_ACFS_HOME%/.acfs}" 2>/dev/null || true)"
+    if [[ -z "$_DASHBOARD_RESOLVED_TARGET_HOME" ]] && [[ "$_DASHBOARD_GTBI_HOME" == */.gtbi ]]; then
+        resolved_target_home="$(dashboard_existing_abs_home "${_DASHBOARD_GTBI_HOME%/.gtbi}" 2>/dev/null || true)"
         if [[ -n "$resolved_target_home" ]]; then
             _DASHBOARD_RESOLVED_TARGET_HOME="$resolved_target_home"
-            target_home_source="acfs_home_path"
+            target_home_source="gtbi_home_path"
         fi
     fi
 
@@ -720,8 +720,8 @@ find_info_script() {
         return 0
     fi
 
-    if [[ -n "$_DASHBOARD_ACFS_HOME" ]] && [[ -f "$_DASHBOARD_ACFS_HOME/scripts/lib/info.sh" ]]; then
-        echo "$_DASHBOARD_ACFS_HOME/scripts/lib/info.sh"
+    if [[ -n "$_DASHBOARD_GTBI_HOME" ]] && [[ -f "$_DASHBOARD_GTBI_HOME/scripts/lib/info.sh" ]]; then
+        echo "$_DASHBOARD_GTBI_HOME/scripts/lib/info.sh"
         return 0
     fi
 
@@ -767,13 +767,13 @@ dashboard_generate() {
 
     dashboard_prepare_context
 
-    if [[ -z "$_DASHBOARD_ACFS_HOME" ]]; then
-        echo "Error: ACFS home not found" >&2
-        echo "Provide ACFS_SYSTEM_STATE_FILE with target_home, or re-run the installer." >&2
+    if [[ -z "$_DASHBOARD_GTBI_HOME" ]]; then
+        echo "Error: GTBI home not found" >&2
+        echo "Provide GTBI_SYSTEM_STATE_FILE with target_home, or re-run the installer." >&2
         return 1
     fi
 
-    local dashboard_dir="${_DASHBOARD_ACFS_HOME}/dashboard"
+    local dashboard_dir="${_DASHBOARD_GTBI_HOME}/dashboard"
     local html_file="${dashboard_dir}/index.html"
     local timestamp_file="${dashboard_dir}/.last_generated"
 
@@ -798,7 +798,7 @@ dashboard_generate() {
     local info_script
     if ! info_script="$(find_info_script)"; then
         echo "Error: info.sh not found" >&2
-        echo "Re-run the ACFS installer to get the latest scripts." >&2
+        echo "Re-run the GTBI installer to get the latest scripts." >&2
         return 1
     fi
 
@@ -862,7 +862,7 @@ dashboard_serve() {
                 host="0.0.0.0"
                 ;;
             --help|-h)
-                echo "Usage: acfs dashboard serve [--port PORT] [--host HOST] [--public]"
+                echo "Usage: gtbi dashboard serve [--port PORT] [--host HOST] [--public]"
                 echo ""
                 echo "Starts a temporary HTTP server to view the dashboard."
                 echo "Default port: 8080"
@@ -897,13 +897,13 @@ dashboard_serve() {
 
     dashboard_prepare_context
 
-    if [[ -z "$_DASHBOARD_ACFS_HOME" ]]; then
-        echo "Error: ACFS home not found" >&2
-        echo "Provide ACFS_SYSTEM_STATE_FILE with target_home, or re-run the installer." >&2
+    if [[ -z "$_DASHBOARD_GTBI_HOME" ]]; then
+        echo "Error: GTBI home not found" >&2
+        echo "Provide GTBI_SYSTEM_STATE_FILE with target_home, or re-run the installer." >&2
         return 1
     fi
 
-    local dashboard_dir="${_DASHBOARD_ACFS_HOME}/dashboard"
+    local dashboard_dir="${_DASHBOARD_GTBI_HOME}/dashboard"
     local html_file="${dashboard_dir}/index.html"
 
     # Auto-generate dashboard if missing
@@ -924,7 +924,7 @@ dashboard_serve() {
     # Fallback if hostname -I returned empty
     [[ -z "$ip" ]] && ip="<your-server-ip>"
 
-    # Prefer the invoking user for SSH tunnel instructions (handles `sudo acfs ...`).
+    # Prefer the invoking user for SSH tunnel instructions (handles `sudo gtbi ...`).
     local ssh_user=""
     if [[ -n "$_DASHBOARD_RESOLVED_TARGET_USER" ]]; then
         ssh_user="$_DASHBOARD_RESOLVED_TARGET_USER"
@@ -939,7 +939,7 @@ dashboard_serve() {
     lsof_bin="$(dashboard_system_binary_path lsof 2>/dev/null || true)"
     if [[ -n "$lsof_bin" ]] && "$lsof_bin" -i :"$port" &>/dev/null; then
         echo "Warning: Port $port appears to be in use." >&2
-        echo "Try a different port: acfs dashboard serve --port 8081" >&2
+        echo "Try a different port: gtbi dashboard serve --port 8081" >&2
         return 1
     fi
 
@@ -948,7 +948,7 @@ dashboard_serve() {
         cat <<EOF
 
 ╭─────────────────────────────────────────────────────────────╮
-│  📊 ACFS Dashboard Server                                   │
+│  📊 GTBI Dashboard Server                                   │
 ├─────────────────────────────────────────────────────────────┤
 │  Local URL:   http://localhost:${port} (server-side only)      │
 │                                                             │
@@ -967,7 +967,7 @@ EOF
         cat <<EOF
 
 ╭─────────────────────────────────────────────────────────────╮
-│  📊 ACFS Dashboard Server                                   │
+│  📊 GTBI Dashboard Server                                   │
 ├─────────────────────────────────────────────────────────────┤
 │  Local URL:   http://localhost:${port}                         │
 │  Network URL: http://${ip}:${port}

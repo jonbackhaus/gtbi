@@ -23,18 +23,18 @@ import {
 import { Jargon } from "@/components/jargon";
 
 const GENERATE_SSH_KEY_COMMAND = [
-  "if [ -f ~/.ssh/acfs_ed25519 ]; then",
-  "ssh-keygen -y -f ~/.ssh/acfs_ed25519 > ~/.ssh/acfs_ed25519.pub;",
+  "if [ -f ~/.ssh/gtbi_ed25519 ]; then",
+  "ssh-keygen -y -f ~/.ssh/gtbi_ed25519 > ~/.ssh/gtbi_ed25519.pub;",
   "else",
-  'ssh-keygen -t ed25519 -C "acfs" -f ~/.ssh/acfs_ed25519 -N "";',
+  'ssh-keygen -t ed25519 -C "gtbi" -f ~/.ssh/gtbi_ed25519 -N "";',
   "fi",
 ].join(" ");
 
 const GENERATE_SSH_KEY_WINDOWS_COMMAND = [
-  "if (Test-Path $HOME\\.ssh\\acfs_ed25519) {",
-  "ssh-keygen -y -f $HOME\\.ssh\\acfs_ed25519 | Set-Content $HOME\\.ssh\\acfs_ed25519.pub",
+  "if (Test-Path $HOME\\.ssh\\gtbi_ed25519) {",
+  "ssh-keygen -y -f $HOME\\.ssh\\gtbi_ed25519 | Set-Content $HOME\\.ssh\\gtbi_ed25519.pub",
   "} else {",
-  'ssh-keygen -t ed25519 -C "acfs" -f $HOME\\.ssh\\acfs_ed25519 -N ""',
+  'ssh-keygen -t ed25519 -C "gtbi" -f $HOME\\.ssh\\gtbi_ed25519 -N ""',
   "}",
 ].join(" ");
 
@@ -172,7 +172,7 @@ export default function GenerateSSHKeyPage() {
             These commands run <strong className="text-foreground/80">entirely on your machine</strong>. This website cannot see, access, or store your SSH keys.
             We&apos;re just showing you what to type. The{" "}
             <a
-              href="https://github.com/Dicklesworthstone/agentic_coding_flywheel_setup"
+              href="https://github.com/jonbackhaus/gtbi"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-0.5 font-medium text-[oklch(0.75_0.18_195)] hover:underline"
@@ -202,7 +202,7 @@ export default function GenerateSSHKeyPage() {
         <h2 className="text-xl font-semibold">Step 2: Generate or reuse the key</h2>
         <p className="text-sm text-muted-foreground">
           Run this command in your <Jargon term="terminal">terminal</Jargon>. It is safe to rerun:
-          if the ACFS key already exists, it reuses it and refreshes the public key file.
+          if the GTBI key already exists, it reuses it and refreshes the public key file.
         </p>
         <div className="rounded-lg border border-border/50 bg-muted/30 p-3 text-sm">
           <div className="space-y-2">
@@ -230,8 +230,8 @@ export default function GenerateSSHKeyPage() {
           .
         </p>
         <CommandCard
-          command="cat ~/.ssh/acfs_ed25519.pub"
-          windowsCommand="type $HOME\\.ssh\\acfs_ed25519.pub"
+          command="cat ~/.ssh/gtbi_ed25519.pub"
+          windowsCommand="type $HOME\\.ssh\\gtbi_ed25519.pub"
           showCheckbox
           persistKey="copy-ssh-pubkey"
         />
@@ -241,7 +241,7 @@ export default function GenerateSSHKeyPage() {
       <AlertCard variant="warning" title="Save your public key for later">
         Save this somewhere safe like a notes app. If your VPS was created with password-only access,
         you may need it for the follow-up SSH key command after installation. Do not paste the same
-        public key into multiple setup steps; if that already happened, ACFS skips exact duplicate
+        public key into multiple setup steps; if that already happened, GTBI skips exact duplicate
         key lines when it copies server keys.
       </AlertCard>
 
@@ -320,21 +320,21 @@ export default function GenerateSSHKeyPage() {
 
               <GuideStep number={4} title="Let the command finish">
                 The command handles the file path and empty passphrase for you. It also checks
-                for an existing ACFS key before creating anything new.
+                for an existing GTBI key before creating anything new.
 
                 <div className="mt-4 space-y-4">
                   <div>
                     <p className="mb-2 font-medium text-foreground">If this is your first run</p>
                     <OutputPreview title="You will see:">
-                      <p className="text-[oklch(0.72_0.19_145)]">Your identification has been saved in /Users/you/.ssh/acfs_ed25519</p>
-                      <p className="text-[oklch(0.72_0.19_145)]">Your public key has been saved in /Users/you/.ssh/acfs_ed25519.pub</p>
+                      <p className="text-[oklch(0.72_0.19_145)]">Your identification has been saved in /Users/you/.ssh/gtbi_ed25519</p>
+                      <p className="text-[oklch(0.72_0.19_145)]">Your public key has been saved in /Users/you/.ssh/gtbi_ed25519.pub</p>
                     </OutputPreview>
                     <p className="mt-2 text-sm text-muted-foreground">
                       The new key was created without asking you where to save it or what passphrase to use.
                     </p>
                     <div className="mt-2 rounded border border-border/30 bg-muted/20 p-2 text-xs text-muted-foreground">
                       <strong className="text-foreground">What this means:</strong> The path shown (like{" "}
-                      <code className="rounded bg-muted px-1 py-0.5 font-mono">/Users/you/.ssh/acfs_ed25519</code>) is where your
+                      <code className="rounded bg-muted px-1 py-0.5 font-mono">/Users/you/.ssh/gtbi_ed25519</code>) is where your
                       key files will be saved. The <code className="rounded bg-muted px-1 py-0.5 font-mono">.ssh</code> folder
                       is a standard location for SSH keys on all computers.
                     </div>
@@ -343,7 +343,7 @@ export default function GenerateSSHKeyPage() {
                   <div>
                     <p className="mb-2 font-medium text-foreground">If you already ran this before</p>
                     <OutputPreview title="You may see little or no output">
-                      <p className="text-[oklch(0.72_0.19_145)]">The command rebuilds acfs_ed25519.pub from your existing private key.</p>
+                      <p className="text-[oklch(0.72_0.19_145)]">The command rebuilds gtbi_ed25519.pub from your existing private key.</p>
                     </OutputPreview>
                     <p className="mt-2 text-sm text-muted-foreground">
                       It should not ask whether to overwrite your existing key.
@@ -362,10 +362,10 @@ export default function GenerateSSHKeyPage() {
                 When a new key is created, you&apos;ll see a confirmation:
                 <div className="mt-3">
                   <OutputPreview title="You will see something like:">
-                    <p className="text-[oklch(0.72_0.19_145)]">Your identification has been saved in /Users/you/.ssh/acfs_ed25519</p>
-                    <p className="text-[oklch(0.72_0.19_145)]">Your public key has been saved in /Users/you/.ssh/acfs_ed25519.pub</p>
+                    <p className="text-[oklch(0.72_0.19_145)]">Your identification has been saved in /Users/you/.ssh/gtbi_ed25519</p>
+                    <p className="text-[oklch(0.72_0.19_145)]">Your public key has been saved in /Users/you/.ssh/gtbi_ed25519.pub</p>
                     <p className="mt-2 text-muted-foreground">The key fingerprint is:</p>
-                    <p className="text-muted-foreground">SHA256:xYz123abc... acfs</p>
+                    <p className="text-muted-foreground">SHA256:xYz123abc... gtbi</p>
                     <p className="mt-2 text-muted-foreground">The key&apos;s randomart image is:</p>
                     <pre className="text-xs text-muted-foreground">{`+--[ED25519 256]--+
 |     .o+*o.      |
@@ -394,8 +394,8 @@ export default function GenerateSSHKeyPage() {
             <div className="space-y-4">
               <GuideStep number={1} title="Check the files exist">
                 <CommandCard
-                  command="ls -la ~/.ssh/acfs_*"
-                  windowsCommand="dir $HOME\\.ssh\\acfs_*"
+                  command="ls -la ~/.ssh/gtbi_*"
+                  windowsCommand="dir $HOME\\.ssh\\gtbi_*"
                   description="List your new key files"
                 />
                 <p className="mt-3 text-sm text-muted-foreground">
@@ -403,11 +403,11 @@ export default function GenerateSSHKeyPage() {
                 </p>
                 <ul className="mt-2 list-disc space-y-1 pl-5 text-sm">
                   <li>
-                    <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">acfs_ed25519</code>
+                    <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">gtbi_ed25519</code>
                     <span className="text-muted-foreground"> — Your <strong className="text-foreground">private key</strong> (keep this secret!)</span>
                   </li>
                   <li>
-                    <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">acfs_ed25519.pub</code>
+                    <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">gtbi_ed25519.pub</code>
                     <span className="text-muted-foreground"> — Your <strong className="text-foreground">public key</strong> (this gets shared)</span>
                   </li>
                 </ul>
@@ -452,9 +452,9 @@ export default function GenerateSSHKeyPage() {
           <GuideTip>
             Your public key looks something like this:
             <div className="mt-2">
-              <CodeBlock code="ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGx... acfs" variant="compact" />
+              <CodeBlock code="ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGx... gtbi" variant="compact" />
             </div>
-            Make sure you copy the WHOLE thing, from &quot;ssh-ed25519&quot; to &quot;acfs&quot;!
+            Make sure you copy the WHOLE thing, from &quot;ssh-ed25519&quot; to &quot;gtbi&quot;!
           </GuideTip>
 
           <GuideCaution>
@@ -475,7 +475,7 @@ export default function GenerateSSHKeyPage() {
                 <CodeBlock code="mkdir -p ~/.ssh && chmod 700 ~/.ssh" variant="compact" />
               </div>
               <strong>&quot;File already exists&quot;:</strong> Make sure you copied the full command
-              from Step 2. The ACFS command checks for an existing private key first and should
+              from Step 2. The GTBI command checks for an existing private key first and should
               not ask to overwrite it.
             </p>
           </GuideSection>

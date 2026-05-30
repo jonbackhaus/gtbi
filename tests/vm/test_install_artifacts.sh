@@ -74,10 +74,10 @@ if [[ -z "${TARGET_HOME:-}" ]] || [[ "${TARGET_HOME}" != /* ]] || [[ "${TARGET_H
 fi
 
 TARGET_HOME="${TARGET_HOME%/}"
-ACFS_LOGS_DIR="${TARGET_HOME}/.acfs/logs"
+GTBI_LOGS_DIR="${TARGET_HOME}/.gtbi/logs"
 
 # Logging
-LOG_FILE="/tmp/acfs_install_artifacts_test_$(date +%Y%m%d_%H%M%S).log"
+LOG_FILE="/tmp/gtbi_install_artifacts_test_$(date +%Y%m%d_%H%M%S).log"
 
 log() {
     local msg
@@ -102,10 +102,10 @@ test_fail() {
 # ============================================================
 test_log_file_exists() {
     local log_files
-    log_files=$(find "$ACFS_LOGS_DIR" -name 'install-*.log' -type f 2>/dev/null | head -1)
+    log_files=$(find "$GTBI_LOGS_DIR" -name 'install-*.log' -type f 2>/dev/null | head -1)
 
     if [[ -z "$log_files" ]]; then
-        test_fail "log_file_exists" "No install log file found in $ACFS_LOGS_DIR"
+        test_fail "log_file_exists" "No install log file found in $GTBI_LOGS_DIR"
         return 1
     fi
 
@@ -125,7 +125,7 @@ test_log_file_content() {
     fi
 
     # Check for expected header
-    if ! grep -q "=== ACFS Install Log ===" "$log_file" 2>/dev/null; then
+    if ! grep -q "=== GTBI Install Log ===" "$log_file" 2>/dev/null; then
         test_fail "log_file_content" "Log file missing header: $log_file"
         return 1
     fi
@@ -151,10 +151,10 @@ test_log_file_content() {
 # ============================================================
 test_summary_json_exists() {
     local summary_files
-    summary_files=$(find "$ACFS_LOGS_DIR" -name 'install_summary_*.json' -type f 2>/dev/null | head -1)
+    summary_files=$(find "$GTBI_LOGS_DIR" -name 'install_summary_*.json' -type f 2>/dev/null | head -1)
 
     if [[ -z "$summary_files" ]]; then
-        test_fail "summary_json_exists" "No summary JSON file found in $ACFS_LOGS_DIR"
+        test_fail "summary_json_exists" "No summary JSON file found in $GTBI_LOGS_DIR"
         return 1
     fi
 
@@ -258,7 +258,7 @@ test_summary_json_environment() {
 
     # Required environment fields
     local env_fields=(
-        "acfs_version"
+        "gtbi_version"
         "mode"
         "ubuntu_version"
         "target_user"
@@ -349,10 +349,10 @@ test_log_summary_cross_reference() {
 # ============================================================
 test_performance_budget_json_exists() {
     local budget_files
-    budget_files=$(find "$ACFS_LOGS_DIR" -name 'performance_budget_*.json' -type f 2>/dev/null | head -1)
+    budget_files=$(find "$GTBI_LOGS_DIR" -name 'performance_budget_*.json' -type f 2>/dev/null | head -1)
 
     if [[ -z "$budget_files" ]]; then
-        test_fail "performance_budget_json_exists" "No performance budget JSON file found in $ACFS_LOGS_DIR"
+        test_fail "performance_budget_json_exists" "No performance budget JSON file found in $GTBI_LOGS_DIR"
         return 1
     fi
 
@@ -476,18 +476,18 @@ test_performance_budget_summary_reference() {
 # ============================================================
 main() {
     log "============================================================"
-    log "ACFS Install Artifacts Test"
+    log "GTBI Install Artifacts Test"
     log "============================================================"
     log "Target user: $TARGET_USER"
     log "Target home: $TARGET_HOME"
-    log "Logs dir: $ACFS_LOGS_DIR"
+    log "Logs dir: $GTBI_LOGS_DIR"
     log "Test log: $LOG_FILE"
     log ""
 
     # Check if logs directory exists
-    if [[ ! -d "$ACFS_LOGS_DIR" ]]; then
-        log "ERROR: ACFS logs directory not found: $ACFS_LOGS_DIR"
-        log "This may indicate ACFS was not installed or logging is disabled."
+    if [[ ! -d "$GTBI_LOGS_DIR" ]]; then
+        log "ERROR: GTBI logs directory not found: $GTBI_LOGS_DIR"
+        log "This may indicate GTBI was not installed or logging is disabled."
         exit 1
     fi
 
@@ -495,7 +495,7 @@ main() {
     log "--- Log File Tests ---"
     local log_file
     test_log_file_exists || true
-    log_file=$(find "$ACFS_LOGS_DIR" -name 'install-*.log' -type f 2>/dev/null | head -1)
+    log_file=$(find "$GTBI_LOGS_DIR" -name 'install-*.log' -type f 2>/dev/null | head -1)
     if [[ -n "$log_file" && -f "$log_file" ]]; then
         test_log_file_content "$log_file"
     fi
@@ -504,7 +504,7 @@ main() {
     log "--- Summary JSON Tests ---"
     local summary_file
     test_summary_json_exists || true
-    summary_file=$(find "$ACFS_LOGS_DIR" -name 'install_summary_*.json' -type f 2>/dev/null | head -1)
+    summary_file=$(find "$GTBI_LOGS_DIR" -name 'install_summary_*.json' -type f 2>/dev/null | head -1)
     if [[ -n "$summary_file" && -f "$summary_file" ]]; then
         test_summary_json_valid "$summary_file"
         test_summary_json_schema "$summary_file"
@@ -517,7 +517,7 @@ main() {
     log "--- Performance Budget JSON Tests ---"
     local budget_file
     test_performance_budget_json_exists || true
-    budget_file=$(find "$ACFS_LOGS_DIR" -name 'performance_budget_*.json' -type f 2>/dev/null | head -1)
+    budget_file=$(find "$GTBI_LOGS_DIR" -name 'performance_budget_*.json' -type f 2>/dev/null | head -1)
     if [[ -n "$budget_file" && -f "$budget_file" ]]; then
         test_performance_budget_json_valid "$budget_file"
         test_performance_budget_json_schema "$budget_file"

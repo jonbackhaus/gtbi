@@ -1,20 +1,20 @@
 #!/usr/bin/env bash
 # ============================================================
-# ACFS Failure Reporting Library
+# GTBI Failure Reporting Library
 #
 # Provides structured failure reporting with pretty terminal output
 # and JSON logging for tooling.
 #
 # Related beads:
-#   - agentic_coding_flywheel_setup-5zm: Implement report_failure()
-#   - agentic_coding_flywheel_setup-fkf: EPIC: Per-Phase Error Reporting
+#   - gastown_batteries_included-5zm: Implement report_failure()
+#   - gastown_batteries_included-fkf: EPIC: Per-Phase Error Reporting
 # ============================================================
 
 # Prevent multiple sourcing
-if [[ -n "${_ACFS_REPORT_SH_LOADED:-}" ]]; then
+if [[ -n "${_GTBI_REPORT_SH_LOADED:-}" ]]; then
     return 0
 fi
-_ACFS_REPORT_SH_LOADED=1
+_GTBI_REPORT_SH_LOADED=1
 
 # ============================================================
 # Configuration
@@ -30,13 +30,13 @@ REPORT_BOLD="${REPORT_BOLD:-\033[1m}"
 REPORT_NC="${REPORT_NC:-\033[0m}"
 
 # Log file for JSON output
-ACFS_LOG_FILE="${ACFS_LOG_FILE:-/var/log/acfs/install.log}"
+GTBI_LOG_FILE="${GTBI_LOG_FILE:-/var/log/gtbi/install.log}"
 
 # ============================================================
 # Log helpers
 # ============================================================
 
-_acfs_report_sudo_binary_path() {
+_gtbi_report_sudo_binary_path() {
     local candidate=""
 
     for candidate in \
@@ -55,24 +55,24 @@ _acfs_report_sudo_binary_path() {
     return 1
 }
 
-_acfs_report_sudo() {
+_gtbi_report_sudo() {
     local sudo_bin=""
 
-    sudo_bin="$(_acfs_report_sudo_binary_path 2>/dev/null || true)"
+    sudo_bin="$(_gtbi_report_sudo_binary_path 2>/dev/null || true)"
     [[ -n "$sudo_bin" ]] || return 1
     "$sudo_bin" -n "$@"
 }
 
-_acfs_append_log_entry() {
+_gtbi_append_log_entry() {
     local entry="$1"
-    local log_file="$ACFS_LOG_FILE"
+    local log_file="$GTBI_LOG_FILE"
     local log_dir
     log_dir="$(dirname "$log_file")"
 
     if [[ ! -d "$log_dir" ]]; then
         mkdir -p "$log_dir" 2>/dev/null || {
-            if _acfs_report_sudo_binary_path >/dev/null 2>&1; then
-                _acfs_report_sudo mkdir -p "$log_dir" 2>/dev/null || return 0
+            if _gtbi_report_sudo_binary_path >/dev/null 2>&1; then
+                _gtbi_report_sudo mkdir -p "$log_dir" 2>/dev/null || return 0
             else
                 return 0
             fi
@@ -84,8 +84,8 @@ _acfs_append_log_entry() {
         return 0
     fi
 
-    if _acfs_report_sudo_binary_path >/dev/null 2>&1; then
-        printf '%s\n' "$entry" | _acfs_report_sudo tee -a "$log_file" >/dev/null 2>&1 || true
+    if _gtbi_report_sudo_binary_path >/dev/null 2>&1; then
+        printf '%s\n' "$entry" | _gtbi_report_sudo tee -a "$log_file" >/dev/null 2>&1 || true
     fi
 }
 
@@ -196,7 +196,7 @@ report_build_resume_command() {
     if [[ "${YES_MODE:-false}" == "true" ]]; then
         resume_args+=(--yes)
     fi
-    if [[ "${STRICT_MODE:-false}" == "true" || "${ACFS_STRICT_MODE:-false}" == "true" ]]; then
+    if [[ "${STRICT_MODE:-false}" == "true" || "${GTBI_STRICT_MODE:-false}" == "true" ]]; then
         resume_args+=(--strict)
     fi
     [[ "${SKIP_POSTGRES:-false}" == "true" ]] && resume_args+=(--skip-postgres)
@@ -205,22 +205,22 @@ report_build_resume_command() {
     [[ "${SKIP_PREFLIGHT:-false}" == "true" ]] && resume_args+=(--skip-preflight)
     [[ "${SKIP_UBUNTU_UPGRADE:-false}" == "true" ]] && resume_args+=(--skip-ubuntu-upgrade)
 
-    if [[ -n "${ACFS_COMMIT_SHA_FULL:-}" ]]; then
-        resume_ref="$ACFS_COMMIT_SHA_FULL"
+    if [[ -n "${GTBI_COMMIT_SHA_FULL:-}" ]]; then
+        resume_ref="$GTBI_COMMIT_SHA_FULL"
         resume_ref_pinned_from_commit=true
-    elif [[ -n "${ACFS_REF_INPUT:-}" && "${ACFS_REF_INPUT}" != "main" ]]; then
-        resume_ref="$ACFS_REF_INPUT"
-    elif [[ -n "${ACFS_REF:-}" && "${ACFS_REF}" != "main" ]]; then
-        resume_ref="$ACFS_REF"
+    elif [[ -n "${GTBI_REF_INPUT:-}" && "${GTBI_REF_INPUT}" != "main" ]]; then
+        resume_ref="$GTBI_REF_INPUT"
+    elif [[ -n "${GTBI_REF:-}" && "${GTBI_REF}" != "main" ]]; then
+        resume_ref="$GTBI_REF"
     fi
     if [[ -n "$resume_ref" ]]; then
         resume_args+=(--ref "$resume_ref")
     fi
 
-    if [[ "${ACFS_CHECKSUMS_REF_EXPLICIT:-false}" == "true" && -n "${ACFS_CHECKSUMS_REF:-}" ]]; then
-        resume_args+=(--checksums-ref "$ACFS_CHECKSUMS_REF")
-    elif [[ "$resume_ref_pinned_from_commit" == "true" && -n "${ACFS_CHECKSUMS_REF:-}" && "$ACFS_CHECKSUMS_REF" != "main" ]]; then
-        resume_args+=(--checksums-ref "$ACFS_CHECKSUMS_REF")
+    if [[ "${GTBI_CHECKSUMS_REF_EXPLICIT:-false}" == "true" && -n "${GTBI_CHECKSUMS_REF:-}" ]]; then
+        resume_args+=(--checksums-ref "$GTBI_CHECKSUMS_REF")
+    elif [[ "$resume_ref_pinned_from_commit" == "true" && -n "${GTBI_CHECKSUMS_REF:-}" && "$GTBI_CHECKSUMS_REF" != "main" ]]; then
+        resume_args+=(--checksums-ref "$GTBI_CHECKSUMS_REF")
     fi
 
     if [[ -n "${SCRIPT_DIR:-}" ]]; then
@@ -228,14 +228,14 @@ report_build_resume_command() {
         printf -v local_install '%q' "$local_install"
         resume_cmd="bash $local_install"
     else
-        if [[ -n "${ACFS_COMMIT_SHA_FULL:-}" ]]; then
-            install_url="https://raw.githubusercontent.com/Dicklesworthstone/agentic_coding_flywheel_setup/${ACFS_COMMIT_SHA_FULL}/install.sh"
-        elif [[ -n "${ACFS_REF_INPUT:-}" && "${ACFS_REF_INPUT}" != "main" ]]; then
-            install_url="https://raw.githubusercontent.com/Dicklesworthstone/agentic_coding_flywheel_setup/${ACFS_REF_INPUT}/install.sh"
-        elif [[ -n "${ACFS_RAW:-}" ]]; then
-            install_url="${ACFS_RAW%/}/install.sh"
+        if [[ -n "${GTBI_COMMIT_SHA_FULL:-}" ]]; then
+            install_url="https://raw.githubusercontent.com/jonbackhaus/gtbi/${GTBI_COMMIT_SHA_FULL}/install.sh"
+        elif [[ -n "${GTBI_REF_INPUT:-}" && "${GTBI_REF_INPUT}" != "main" ]]; then
+            install_url="https://raw.githubusercontent.com/jonbackhaus/gtbi/${GTBI_REF_INPUT}/install.sh"
+        elif [[ -n "${GTBI_RAW:-}" ]]; then
+            install_url="${GTBI_RAW%/}/install.sh"
         else
-            install_url="https://acfs.sh"
+            install_url="https://gtbi.sh"
         fi
         printf -v install_url_q '%q' "$install_url"
         resume_cmd="${curl_cmd} ${install_url_q} | bash -s --"
@@ -267,10 +267,10 @@ report_failure() {
     local state_failed_step=""
     local state_failed_error=""
 
-    if [[ -n "${ACFS_STATE_FILE:-}" && -r "${ACFS_STATE_FILE:-}" ]] && command -v jq &>/dev/null; then
-        state_failed_phase="$(jq -r '.failed_phase // empty' "$ACFS_STATE_FILE" 2>/dev/null || true)"
-        state_failed_step="$(jq -r '.failed_step // empty' "$ACFS_STATE_FILE" 2>/dev/null || true)"
-        state_failed_error="$(jq -r '.failed_error // empty' "$ACFS_STATE_FILE" 2>/dev/null || true)"
+    if [[ -n "${GTBI_STATE_FILE:-}" && -r "${GTBI_STATE_FILE:-}" ]] && command -v jq &>/dev/null; then
+        state_failed_phase="$(jq -r '.failed_phase // empty' "$GTBI_STATE_FILE" 2>/dev/null || true)"
+        state_failed_step="$(jq -r '.failed_step // empty' "$GTBI_STATE_FILE" 2>/dev/null || true)"
+        state_failed_error="$(jq -r '.failed_error // empty' "$GTBI_STATE_FILE" 2>/dev/null || true)"
     fi
 
     if [[ ( -z "$phase" || "$phase" == "unknown" ) && -n "$state_failed_phase" ]]; then
@@ -278,8 +278,8 @@ report_failure() {
     fi
     if [[ ( -z "$phase_name" || "$phase_name" == "Unknown Phase" ) && -n "$phase" && "$phase" != "unknown" ]]; then
         local mapped_phase_name=""
-        if declare -p ACFS_PHASE_NAMES >/dev/null 2>&1; then
-            mapped_phase_name="${ACFS_PHASE_NAMES[$phase]:-}"
+        if declare -p GTBI_PHASE_NAMES >/dev/null 2>&1; then
+            mapped_phase_name="${GTBI_PHASE_NAMES[$phase]:-}"
         fi
         if [[ -n "$mapped_phase_name" ]]; then
             phase_name="$mapped_phase_name"
@@ -375,7 +375,7 @@ report_failure_plain() {
     echo -e "  ${REPORT_BLUE}${resume_cmd}${REPORT_NC}"
 
     echo ""
-    echo -e "${REPORT_GRAY}Full log: ${ACFS_LOG_FILE}${REPORT_NC}"
+    echo -e "${REPORT_GRAY}Full log: ${GTBI_LOG_FILE}${REPORT_NC}"
     echo ""
     echo -e "${REPORT_RED}================================================================${REPORT_NC}"
 }
@@ -422,7 +422,7 @@ report_failure_gum() {
 
     # Log location
     echo ""
-    gum style --faint "Full log: ${ACFS_LOG_FILE}"
+    gum style --faint "Full log: ${GTBI_LOG_FILE}"
 }
 
 # JSON failure report (appends to log file)
@@ -438,7 +438,7 @@ report_failure_json() {
 
     # Ensure log directory exists
     local log_dir
-    log_dir=$(dirname "$ACFS_LOG_FILE")
+    log_dir=$(dirname "$GTBI_LOG_FILE")
     if [[ ! -d "$log_dir" ]]; then
         mkdir -p "$log_dir" 2>/dev/null || true
     fi
@@ -463,7 +463,7 @@ report_failure_json() {
             --arg error "$error" \
             --arg error_output "$error_output" \
             --arg suggested_fix "$suggested_fix" \
-            --arg version "${ACFS_VERSION:-0.1.0}" \
+            --arg version "${GTBI_VERSION:-0.1.0}" \
             --arg mode "${MODE:-unknown}" \
             '{
                 type: $type,
@@ -496,7 +496,7 @@ report_failure_json() {
         escaped_timestamp="${escaped_timestamp//$'\r'/\\r}"
         escaped_timestamp="${escaped_timestamp//$'\t'/\\t}"
 
-        local escaped_version="${ACFS_VERSION:-0.1.0}"
+        local escaped_version="${GTBI_VERSION:-0.1.0}"
         escaped_version="${escaped_version//\\/\\\\}"
         escaped_version="${escaped_version//\"/\\\"}"
         escaped_version="${escaped_version//$'\n'/\\n}"
@@ -553,7 +553,7 @@ EOF
     fi
 
     # Append to log file
-    _acfs_append_log_entry "$json_entry"
+    _gtbi_append_log_entry "$json_entry"
 }
 
 # ============================================================
@@ -581,8 +581,8 @@ report_success() {
         time_str="unknown"
     fi
 
-    if declare -p ACFS_PHASE_IDS >/dev/null 2>&1; then
-        total_phases="${#ACFS_PHASE_IDS[@]}"
+    if declare -p GTBI_PHASE_IDS >/dev/null 2>&1; then
+        total_phases="${#GTBI_PHASE_IDS[@]}"
     fi
     if [[ -z "$total_phases" ]]; then
         total_phases="$phase_count"
@@ -609,7 +609,7 @@ report_success() {
                 "    2. Run: onboard" \
                 "    3. Start coding with: cc, cod, or gmi" \
                 "" \
-                "  Logs: ${ACFS_LOG_FILE}"
+                "  Logs: ${GTBI_LOG_FILE}"
         else
             echo -e "${REPORT_GREEN}${REPORT_BOLD}"
             echo "================================================================"
@@ -624,7 +624,7 @@ report_success() {
             echo "    2. Run: onboard"
             echo "    3. Start coding with: cc, cod, or gmi"
             echo ""
-            echo "  Logs: ${ACFS_LOG_FILE}"
+            echo "  Logs: ${GTBI_LOG_FILE}"
             echo ""
             echo -e "${REPORT_GREEN}================================================================${REPORT_NC}"
         fi
@@ -638,13 +638,13 @@ report_success() {
             --arg timestamp "$(date -Iseconds)" \
             --argjson phases "$phase_count" \
             --argjson duration "$total_time" \
-            --arg version "${ACFS_VERSION:-0.1.0}" \
+            --arg version "${GTBI_VERSION:-0.1.0}" \
             --arg mode "${MODE:-unknown}" \
             '{type: $type, timestamp: $timestamp, version: $version, mode: $mode, phases: $phases, duration: $duration}')
     else
-        json_entry="{\"type\":\"success\",\"timestamp\":\"$(date -Iseconds)\",\"version\":\"${ACFS_VERSION:-0.1.0}\",\"mode\":\"${MODE:-unknown}\",\"phases\":${phase_count},\"duration\":${total_time}}"
+        json_entry="{\"type\":\"success\",\"timestamp\":\"$(date -Iseconds)\",\"version\":\"${GTBI_VERSION:-0.1.0}\",\"mode\":\"${MODE:-unknown}\",\"phases\":${phase_count},\"duration\":${total_time}}"
     fi
-    _acfs_append_log_entry "$json_entry"
+    _gtbi_append_log_entry "$json_entry"
 }
 
 # ============================================================
@@ -723,6 +723,6 @@ report_skipped_summary() {
         fi
 
         echo ""
-        echo "These items can be installed later with: acfs update --force"
+        echo "These items can be installed later with: gtbi update --force"
     } >&2
 }

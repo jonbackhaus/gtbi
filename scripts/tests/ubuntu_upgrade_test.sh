@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # ============================================================
-# ACFS Ubuntu Upgrade Unit Tests
+# GTBI Ubuntu Upgrade Unit Tests
 # Tests for scripts/lib/ubuntu_upgrade.sh
 #
 # Usage: ./scripts/tests/ubuntu_upgrade_test.sh
-# Related beads: agentic_coding_flywheel_setup-dwh (ubu.7)
+# Related beads: gastown_batteries_included-dwh (ubu.7)
 # ============================================================
 
 set -euo pipefail
@@ -476,13 +476,13 @@ test_upgrade_rehearsal_state_machine_multi_hop() {
 
     local test_dir=""
     local state_file=""
-    test_dir="$(mktemp -d "${TMPDIR:-/tmp}/acfs-upgrade-rehearsal.XXXXXX")"
+    test_dir="$(mktemp -d "${TMPDIR:-/tmp}/gtbi-upgrade-rehearsal.XXXXXX")"
     state_file="$test_dir/state.json"
     _write_base_state_fixture "$state_file"
 
     if (
         set -euo pipefail
-        export ACFS_STATE_FILE="$state_file"
+        export GTBI_STATE_FILE="$state_file"
         # shellcheck source=scripts/lib/state.sh
         source "$PROJECT_ROOT/scripts/lib/state.sh"
 
@@ -534,14 +534,14 @@ test_upgrade_rehearsal_reboot_marker_context() {
     local state_file=""
     local args_line=""
 
-    test_dir="$(mktemp -d "${TMPDIR:-/tmp}/acfs-upgrade-reboot-marker.XXXXXX")"
+    test_dir="$(mktemp -d "${TMPDIR:-/tmp}/gtbi-upgrade-reboot-marker.XXXXXX")"
     state_file="$test_dir/pre/state.json"
     _write_upgrade_stage_fixture "$state_file" "pre_upgrade_reboot"
     if args_line="$(
         set -euo pipefail
-        export ACFS_RESUME_DIR="$test_dir/pre/resume"
-        export ACFS_STATE_FILE="$state_file"
-        export ACFS_HOME="$test_dir/pre/home/.acfs"
+        export GTBI_RESUME_DIR="$test_dir/pre/resume"
+        export GTBI_STATE_FILE="$state_file"
+        export GTBI_HOME="$test_dir/pre/home/.gtbi"
         export TARGET_USER="alice"
         unset TARGET_HOME
         HOME="/root"
@@ -555,13 +555,13 @@ test_upgrade_rehearsal_reboot_marker_context() {
         chmod() { command chmod "$@" 2>/dev/null || true; }
         systemctl() { :; }
         mkdir() {
-            [[ "$*" == "-p /var/log/acfs" ]] && return 0
+            [[ "$*" == "-p /var/log/gtbi" ]] && return 0
             command mkdir "$@"
         }
         upgrade_create_status_script() { :; }
         upgrade_setup_infrastructure "$PROJECT_ROOT" --yes --mode vibe >/dev/null
         # shellcheck disable=SC1091
-        source "$ACFS_RESUME_DIR/continue_context.env"
+        source "$GTBI_RESUME_DIR/continue_context.env"
         printf '%s\n' "${CONTINUE_INSTALL_ARGS[*]}"
     )"; then
         if [[ "$args_line" == "--yes --mode vibe" ]]; then
@@ -577,9 +577,9 @@ test_upgrade_rehearsal_reboot_marker_context() {
     _write_upgrade_stage_fixture "$state_file" "awaiting_reboot"
     if args_line="$(
         set -euo pipefail
-        export ACFS_RESUME_DIR="$test_dir/awaiting/resume"
-        export ACFS_STATE_FILE="$state_file"
-        export ACFS_HOME="$test_dir/awaiting/home/.acfs"
+        export GTBI_RESUME_DIR="$test_dir/awaiting/resume"
+        export GTBI_STATE_FILE="$state_file"
+        export GTBI_HOME="$test_dir/awaiting/home/.gtbi"
         export TARGET_USER="alice"
         unset TARGET_HOME
         HOME="/root"
@@ -593,13 +593,13 @@ test_upgrade_rehearsal_reboot_marker_context() {
         chmod() { command chmod "$@" 2>/dev/null || true; }
         systemctl() { :; }
         mkdir() {
-            [[ "$*" == "-p /var/log/acfs" ]] && return 0
+            [[ "$*" == "-p /var/log/gtbi" ]] && return 0
             command mkdir "$@"
         }
         upgrade_create_status_script() { :; }
         upgrade_setup_infrastructure "$PROJECT_ROOT" --yes --mode vibe >/dev/null
         # shellcheck disable=SC1091
-        source "$ACFS_RESUME_DIR/continue_context.env"
+        source "$GTBI_RESUME_DIR/continue_context.env"
         printf '%s\n' "${CONTINUE_INSTALL_ARGS[*]}"
     )"; then
         if [[ "$args_line" == "--yes --mode vibe --skip-ubuntu-upgrade" ]]; then
@@ -704,12 +704,12 @@ test_upgrade_setup_infrastructure_persists_resolved_target_home() {
 
     local test_dir=""
     local result=""
-    test_dir="$(mktemp -d "${TMPDIR:-/tmp}/acfs-ubuntu-upgrade-test.XXXXXX")"
+    test_dir="$(mktemp -d "${TMPDIR:-/tmp}/gtbi-ubuntu-upgrade-test.XXXXXX")"
 
     if result="$(
-        ACFS_RESUME_DIR="$test_dir/resume"
+        GTBI_RESUME_DIR="$test_dir/resume"
         TARGET_USER="alice"
-        unset TARGET_HOME ACFS_HOME ACFS_STATE_FILE
+        unset TARGET_HOME GTBI_HOME GTBI_STATE_FILE
         HOME="/root"
         ubuntu_lookup_passwd_home() {
             if [[ "${1:-}" == "alice" ]]; then
@@ -722,16 +722,16 @@ test_upgrade_setup_infrastructure_persists_resolved_target_home() {
         chmod() { :; }
         systemctl() { :; }
         mkdir() {
-            [[ "$*" == "-p /var/log/acfs" ]] && return 0
+            [[ "$*" == "-p /var/log/gtbi" ]] && return 0
             command mkdir "$@"
         }
         state_get_file() { return 1; }
         upgrade_setup_infrastructure "$PROJECT_ROOT" --yes >/dev/null 2>&1 || exit 1
         # shellcheck disable=SC1090
-        source "$ACFS_RESUME_DIR/continue_context.env"
-        printf 'target=%s\nacfs=%s\nstate=%s\nhome=%s\n'             "$CONTINUE_TARGET_HOME" "$CONTINUE_ACFS_HOME" "$CONTINUE_ACFS_STATE_FILE" "$CONTINUE_HOME"
+        source "$GTBI_RESUME_DIR/continue_context.env"
+        printf 'target=%s\ngtbi=%s\nstate=%s\nhome=%s\n'             "$CONTINUE_TARGET_HOME" "$CONTINUE_GTBI_HOME" "$CONTINUE_GTBI_STATE_FILE" "$CONTINUE_HOME"
     )"; then
-        if [[ "$result" == $'target=/srv/alice\nacfs=/srv/alice/.acfs\nstate=/srv/alice/.acfs/state.json\nhome=/srv/alice' ]]; then
+        if [[ "$result" == $'target=/srv/alice\ngtbi=/srv/alice/.gtbi\nstate=/srv/alice/.gtbi/state.json\nhome=/srv/alice' ]]; then
             log_pass "resume context uses resolved target home"
         else
             log_fail "resume context uses resolved target home: unexpected output: $result"
@@ -746,13 +746,13 @@ test_upgrade_setup_infrastructure_persists_explicit_new_user_home_for_root() {
 
     local test_dir=""
     local result=""
-    test_dir="$(mktemp -d "${TMPDIR:-/tmp}/acfs-ubuntu-upgrade-test.XXXXXX")"
+    test_dir="$(mktemp -d "${TMPDIR:-/tmp}/gtbi-ubuntu-upgrade-test.XXXXXX")"
 
     if result="$(
-        ACFS_RESUME_DIR="$test_dir/resume"
+        GTBI_RESUME_DIR="$test_dir/resume"
         TARGET_USER="alice"
         TARGET_HOME="/srv/alice"
-        unset ACFS_HOME ACFS_STATE_FILE
+        unset GTBI_HOME GTBI_STATE_FILE
         HOME="/root"
         ubuntu_lookup_passwd_home() { return 1; }
         ubuntu_resolve_current_user() { printf '%s\n' 'root'; }
@@ -760,16 +760,16 @@ test_upgrade_setup_infrastructure_persists_explicit_new_user_home_for_root() {
         chmod() { :; }
         systemctl() { :; }
         mkdir() {
-            [[ "$*" == "-p /var/log/acfs" ]] && return 0
+            [[ "$*" == "-p /var/log/gtbi" ]] && return 0
             command mkdir "$@"
         }
         state_get_file() { return 1; }
         upgrade_setup_infrastructure "$PROJECT_ROOT" --yes >/dev/null 2>&1 || exit 1
         # shellcheck disable=SC1090
-        source "$ACFS_RESUME_DIR/continue_context.env"
-        printf 'target=%s\nacfs=%s\nstate=%s\nhome=%s\n'             "$CONTINUE_TARGET_HOME" "$CONTINUE_ACFS_HOME" "$CONTINUE_ACFS_STATE_FILE" "$CONTINUE_HOME"
+        source "$GTBI_RESUME_DIR/continue_context.env"
+        printf 'target=%s\ngtbi=%s\nstate=%s\nhome=%s\n'             "$CONTINUE_TARGET_HOME" "$CONTINUE_GTBI_HOME" "$CONTINUE_GTBI_STATE_FILE" "$CONTINUE_HOME"
     )"; then
-        if [[ "$result" == $'target=/srv/alice\nacfs=/srv/alice/.acfs\nstate=/srv/alice/.acfs/state.json\nhome=/srv/alice' ]]; then
+        if [[ "$result" == $'target=/srv/alice\ngtbi=/srv/alice/.gtbi\nstate=/srv/alice/.gtbi/state.json\nhome=/srv/alice' ]]; then
             log_pass "resume context keeps explicit new-user target home"
         else
             log_fail "resume context keeps explicit new-user target home: unexpected output: $result"
@@ -783,12 +783,12 @@ test_upgrade_setup_infrastructure_rejects_unresolved_target_home() {
     log_test "Resume Infrastructure Rejects Unresolved Target Home"
 
     local test_dir=""
-    test_dir="$(mktemp -d "${TMPDIR:-/tmp}/acfs-ubuntu-upgrade-test.XXXXXX")"
+    test_dir="$(mktemp -d "${TMPDIR:-/tmp}/gtbi-ubuntu-upgrade-test.XXXXXX")"
 
     if (
-        ACFS_RESUME_DIR="$test_dir/resume"
+        GTBI_RESUME_DIR="$test_dir/resume"
         TARGET_USER="missinguser"
-        unset TARGET_HOME ACFS_HOME ACFS_STATE_FILE
+        unset TARGET_HOME GTBI_HOME GTBI_STATE_FILE
         HOME="/root"
         ubuntu_lookup_passwd_home() { return 1; }
         ubuntu_resolve_current_user() { printf '%s\n' 'root'; }
@@ -809,11 +809,11 @@ test_upgrade_lock_rejects_contender_without_truncating_pid() {
     local lockfile=""
     local first_pid=""
     local after_contender_pid=""
-    test_dir="$(mktemp -d "${TMPDIR:-/tmp}/acfs-ubuntu-upgrade-lock.XXXXXX")"
-    lockfile="$test_dir/acfs-upgrade.lock"
+    test_dir="$(mktemp -d "${TMPDIR:-/tmp}/gtbi-ubuntu-upgrade-lock.XXXXXX")"
+    lockfile="$test_dir/gtbi-upgrade.lock"
 
-    ACFS_UPGRADE_LOCK="$lockfile"
-    ACFS_UPGRADE_LOCK_FD=""
+    GTBI_UPGRADE_LOCK="$lockfile"
+    GTBI_UPGRADE_LOCK_FD=""
     if ! upgrade_acquire_lock; then
         log_fail "first upgrade lock acquisition should succeed"
         return 1
@@ -830,8 +830,8 @@ test_upgrade_lock_rejects_contender_without_truncating_pid() {
         { exec 197>&-; } 2>/dev/null || true
         { exec 196>&-; } 2>/dev/null || true
         source "$1"
-        ACFS_UPGRADE_LOCK="$2"
-        ACFS_UPGRADE_LOCK_FD=""
+        GTBI_UPGRADE_LOCK="$2"
+        GTBI_UPGRADE_LOCK_FD=""
         upgrade_acquire_lock
     ' _ "$PROJECT_ROOT/scripts/lib/ubuntu_upgrade.sh" "$lockfile" >"$test_dir/contender.out" 2>&1; then
         log_fail "contending lock acquisition should fail"
@@ -846,8 +846,8 @@ test_upgrade_lock_rejects_contender_without_truncating_pid() {
 
     if bash -c '
         source "$1"
-        ACFS_UPGRADE_LOCK="$2"
-        ACFS_UPGRADE_LOCK_FD=""
+        GTBI_UPGRADE_LOCK="$2"
+        GTBI_UPGRADE_LOCK_FD=""
         upgrade_acquire_lock
         upgrade_release_lock
     ' _ "$PROJECT_ROOT/scripts/lib/ubuntu_upgrade.sh" "$lockfile" >"$test_dir/reacquire.out" 2>&1; then
@@ -856,9 +856,9 @@ test_upgrade_lock_rejects_contender_without_truncating_pid() {
         log_fail "lock should be reacquirable after release"
     fi
 
-    ACFS_UPGRADE_LOCK="$lockfile"
-    ACFS_UPGRADE_LOCK_FD=197
-    _ACFS_UPGRADE_LOCK_FILE="${lockfile}.old"
+    GTBI_UPGRADE_LOCK="$lockfile"
+    GTBI_UPGRADE_LOCK_FD=197
+    _GTBI_UPGRADE_LOCK_FILE="${lockfile}.old"
     if upgrade_acquire_lock; then
         log_pass "stale descriptor metadata is ignored"
         upgrade_release_lock
@@ -941,7 +941,7 @@ test_json_escape() {
 run_all_tests() {
     echo ""
     echo "=============================================="
-    echo "  ACFS Ubuntu Upgrade Unit Tests"
+    echo "  GTBI Ubuntu Upgrade Unit Tests"
     echo "=============================================="
     echo ""
 

@@ -7,7 +7,7 @@
 
 STACK_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-if [[ -z "${ACFS_BLUE:-}" ]]; then
+if [[ -z "${GTBI_BLUE:-}" ]]; then
     # shellcheck source=logging.sh
     source "$STACK_SCRIPT_DIR/logging.sh"
 fi
@@ -59,7 +59,7 @@ stack_bd_verify() {
 }
 
 # ============================================================
-# Stack health check (called by acfs doctor)
+# Stack health check (called by gtbi doctor)
 # ============================================================
 
 stack_doctor() {

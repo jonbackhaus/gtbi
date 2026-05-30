@@ -1,6 +1,6 @@
 #cloud-config
 # ============================================================
-# ACFS Hetzner Cloud-Init Template
+# GTBI Hetzner Cloud-Init Template
 # ============================================================
 #
 # Usage (Hetzner Cloud Console or hcloud CLI):
@@ -11,21 +11,21 @@
 #
 # hcloud CLI example:
 #   hcloud server create \
-#     --name acfs-dev \
+#     --name gtbi-dev \
 #     --type cpx31 \
 #     --image ubuntu-24.04 \
 #     --ssh-key your-key-name \
 #     --user-data-from-file scripts/providers/hetzner-cloud-init.yml
 #
-# After boot (~5-10 min), SSH in and ACFS will be fully installed.
-# To monitor install progress: tail -f /var/log/acfs/install.log
+# After boot (~5-10 min), SSH in and GTBI will be fully installed.
+# To monitor install progress: tail -f /var/log/gtbi/install.log
 # ============================================================
 
 # Set locale and timezone
 locale: en_US.UTF-8
 timezone: UTC
 
-# Ensure system is updated before ACFS install
+# Ensure system is updated before GTBI install
 package_update: true
 package_upgrade: true
 
@@ -38,7 +38,7 @@ packages:
   - unzip
   - tmux
 
-# Create the target user (ACFS will configure the rest)
+# Create the target user (GTBI will configure the rest)
 users:
   - name: ubuntu
     groups: sudo
@@ -48,24 +48,24 @@ users:
       # Replace with your SSH public key(s):
       - ssh-ed25519 AAAA... your-email@example.com
 
-# Run ACFS installer after first boot
+# Run GTBI installer after first boot
 runcmd:
   # Log everything for debugging
-  - mkdir -p /var/log/acfs
+  - mkdir -p /var/log/gtbi
   - |
-    exec > >(tee -a /var/log/acfs/cloud-init.log) 2>&1
-    echo "=== ACFS cloud-init started at $(date -Iseconds) ==="
+    exec > >(tee -a /var/log/gtbi/cloud-init.log) 2>&1
+    echo "=== GTBI cloud-init started at $(date -Iseconds) ==="
 
-    # Run the ACFS installer in non-interactive mode
+    # Run the GTBI installer in non-interactive mode
     # --yes: skip all prompts
     # --mode vibe: enable passwordless sudo and full agent permissions
-    curl -fsSL "https://raw.githubusercontent.com/Dicklesworthstone/agentic_coding_flywheel_setup/main/install.sh" \
-      | bash -s -- --yes --mode vibe 2>&1 | tee -a /var/log/acfs/install.log
+    curl -fsSL "https://raw.githubusercontent.com/jonbackhaus/gtbi/main/install.sh" \
+      | bash -s -- --yes --mode vibe 2>&1 | tee -a /var/log/gtbi/install.log
 
-    echo "=== ACFS cloud-init finished at $(date -Iseconds) ==="
+    echo "=== GTBI cloud-init finished at $(date -Iseconds) ==="
 
 # Write a post-install message
 final_message: |
-  ACFS cloud-init complete.
+  GTBI cloud-init complete.
   System uptime: $UPTIME
   SSH as 'ubuntu' and run 'onboard' to get started.

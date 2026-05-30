@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 #
-# onboard - ACFS Interactive Onboarding TUI
+# onboard - GTBI Interactive Onboarding TUI
 #
-# Teaches users the ACFS workflow through interactive lessons.
+# Teaches users the GTBI workflow through interactive lessons.
 # Uses gum for TUI elements with fallback to basic bash menus.
 #
 # Usage:
@@ -36,7 +36,7 @@ fi
 set -euo pipefail
 
 # Resolve the physical script path so installed symlinks (e.g. ~/.local/bin/onboard)
-# still map back to the real ~/.acfs/onboard tree.
+# still map back to the real ~/.gtbi/onboard tree.
 resolve_onboard_script_path() {
     local source_path="${BASH_SOURCE[0]}"
     local dir=""
@@ -271,14 +271,14 @@ if [[ -n "$_ONBOARD_CURRENT_HOME" ]]; then
     export HOME
 fi
 
-_ONBOARD_EXPLICIT_ACFS_HOME="$(onboard_sanitize_abs_nonroot_path "${ACFS_HOME:-}" 2>/dev/null || true)"
-_ONBOARD_DEFAULT_ACFS_HOME=""
+_ONBOARD_EXPLICIT_GTBI_HOME="$(onboard_sanitize_abs_nonroot_path "${GTBI_HOME:-}" 2>/dev/null || true)"
+_ONBOARD_DEFAULT_GTBI_HOME=""
 if [[ -n "$_ONBOARD_CURRENT_HOME" ]]; then
-    _ONBOARD_DEFAULT_ACFS_HOME="${_ONBOARD_CURRENT_HOME}/.acfs"
+    _ONBOARD_DEFAULT_GTBI_HOME="${_ONBOARD_CURRENT_HOME}/.gtbi"
 fi
-_ONBOARD_SYSTEM_STATE_FILE="$(onboard_sanitize_abs_nonroot_path "${ACFS_SYSTEM_STATE_FILE:-/var/lib/acfs/state.json}" 2>/dev/null || true)"
+_ONBOARD_SYSTEM_STATE_FILE="$(onboard_sanitize_abs_nonroot_path "${GTBI_SYSTEM_STATE_FILE:-/var/lib/gtbi/state.json}" 2>/dev/null || true)"
 if [[ -z "$_ONBOARD_SYSTEM_STATE_FILE" ]]; then
-    _ONBOARD_SYSTEM_STATE_FILE="/var/lib/acfs/state.json"
+    _ONBOARD_SYSTEM_STATE_FILE="/var/lib/gtbi/state.json"
 fi
 _ONBOARD_FALLBACK_TMPDIR="$(onboard_sanitize_abs_nonroot_path "${TMPDIR:-/tmp}" 2>/dev/null || true)"
 if [[ -z "$_ONBOARD_FALLBACK_TMPDIR" ]]; then
@@ -286,7 +286,7 @@ if [[ -z "$_ONBOARD_FALLBACK_TMPDIR" ]]; then
 fi
 _ONBOARD_EXPLICIT_TARGET_USER_RAW="${TARGET_USER:-}"
 _ONBOARD_EXPLICIT_TARGET_HOME="$(onboard_existing_abs_home "${TARGET_HOME:-}" 2>/dev/null || true)"
-_ONBOARD_ACFS_HOME_SOURCE=""
+_ONBOARD_GTBI_HOME_SOURCE=""
 _ONBOARD_RUNTIME_HOME=""
 _ONBOARD_RUNTIME_HOME_SOURCE=""
 
@@ -307,7 +307,7 @@ onboard_resolve_explicit_runtime_home() {
             return 0
         fi
         target_home="$_ONBOARD_EXPLICIT_TARGET_HOME"
-        if [[ -n "$target_home" ]] && [[ "$target_home" != "${_ONBOARD_CURRENT_HOME:-}" ]] && onboard_candidate_has_acfs_data "$target_home/.acfs"; then
+        if [[ -n "$target_home" ]] && [[ "$target_home" != "${_ONBOARD_CURRENT_HOME:-}" ]] && onboard_candidate_has_gtbi_data "$target_home/.gtbi"; then
             printf '%s\n' "${target_home%/}"
             return 0
         fi
@@ -381,36 +381,36 @@ onboard_read_state_string() {
     printf '%s\n' "$value"
 }
 
-onboard_script_acfs_home() {
+onboard_script_gtbi_home() {
     local candidate=""
 
     candidate="$(cd "$_ONBOARD_SCRIPT_DIR/.." 2>/dev/null && pwd)" || return 1
-    [[ "$(basename "$candidate")" == ".acfs" ]] || return 1
+    [[ "$(basename "$candidate")" == ".gtbi" ]] || return 1
     [[ -d "$candidate/onboard" ]] || return 1
     printf '%s\n' "$candidate"
 }
 
-onboard_acfs_home_target_home() {
-    local acfs_home="$1"
+onboard_gtbi_home_target_home() {
+    local gtbi_home="$1"
     local target_home=""
 
-    [[ "$acfs_home" == */.acfs ]] || return 1
-    target_home="$(onboard_existing_abs_home "${acfs_home%/.acfs}" 2>/dev/null || true)"
+    [[ "$gtbi_home" == */.gtbi ]] || return 1
+    target_home="$(onboard_existing_abs_home "${gtbi_home%/.gtbi}" 2>/dev/null || true)"
     [[ -n "$target_home" ]] || return 1
     printf '%s\n' "${target_home%/}"
 }
 
-onboard_candidate_has_acfs_data() {
+onboard_candidate_has_gtbi_data() {
     local candidate="${1:-}"
 
     candidate="$(onboard_sanitize_abs_nonroot_path "$candidate" 2>/dev/null || true)"
     [[ -n "$candidate" ]] || return 1
 
-    [[ -f "$candidate/state.json" || -f "$candidate/VERSION" || -f "$candidate/onboard_progress.json" || -d "$candidate/onboard" || -f "$candidate/scripts/lib/cheatsheet.sh" || -f "$candidate/zsh/acfs.zshrc" ]]
+    [[ -f "$candidate/state.json" || -f "$candidate/VERSION" || -f "$candidate/onboard_progress.json" || -d "$candidate/onboard" || -f "$candidate/scripts/lib/cheatsheet.sh" || -f "$candidate/zsh/gtbi.zshrc" ]]
 }
 
-onboard_current_home_acfs_candidate() {
-    local candidate="$_ONBOARD_DEFAULT_ACFS_HOME"
+onboard_current_home_gtbi_candidate() {
+    local candidate="$_ONBOARD_DEFAULT_GTBI_HOME"
     local current_home="$_ONBOARD_CURRENT_HOME"
     local current_user=""
     local original_home=""
@@ -418,11 +418,11 @@ onboard_current_home_acfs_candidate() {
     local state_user=""
     local state_user_home=""
 
-    [[ -z "${TARGET_HOME:-}${TARGET_USER:-}${ACFS_HOME:-}" ]] || return 1
+    [[ -z "${TARGET_HOME:-}${TARGET_USER:-}${GTBI_HOME:-}" ]] || return 1
     [[ -n "$candidate" && -n "$current_home" ]] || return 1
     [[ "$current_home" != "/root" ]] || return 1
     [[ -f "$candidate/state.json" ]] || return 1
-    onboard_candidate_has_acfs_data "$candidate" || return 1
+    onboard_candidate_has_gtbi_data "$candidate" || return 1
 
     if [[ "${_ONBOARD_ORIGINAL_HOME_WAS_SET:-false}" == true ]]; then
         original_home="$(onboard_sanitize_abs_nonroot_path "$_ONBOARD_ORIGINAL_HOME" 2>/dev/null || true)"
@@ -462,7 +462,7 @@ onboard_validate_bin_dir_for_home() {
 
     case "$bin_dir" in
         */.local/bin) hinted_home="${bin_dir%/.local/bin}" ;;
-        */.acfs/bin) hinted_home="${bin_dir%/.acfs/bin}" ;;
+        */.gtbi/bin) hinted_home="${bin_dir%/.gtbi/bin}" ;;
         */.bun/bin) hinted_home="${bin_dir%/.bun/bin}" ;;
         */.cargo/bin) hinted_home="${bin_dir%/.cargo/bin}" ;;
         */.atuin/bin) hinted_home="${bin_dir%/.atuin/bin}" ;;
@@ -487,49 +487,49 @@ onboard_validate_bin_dir_for_home() {
 }
 
 
-onboard_resolve_acfs_home() {
+onboard_resolve_gtbi_home() {
     local installed_home=""
     local target_home=""
     local target_user=""
     local candidate=""
     local explicit_target_home=""
 
-    _ONBOARD_ACFS_HOME_SOURCE=""
+    _ONBOARD_GTBI_HOME_SOURCE=""
 
-    installed_home="$(onboard_script_acfs_home 2>/dev/null || true)"
-    if onboard_candidate_has_acfs_data "$installed_home"; then
-        _ONBOARD_ACFS_HOME_SOURCE="script_acfs_home"
+    installed_home="$(onboard_script_gtbi_home 2>/dev/null || true)"
+    if onboard_candidate_has_gtbi_data "$installed_home"; then
+        _ONBOARD_GTBI_HOME_SOURCE="script_gtbi_home"
         printf '%s\n' "$installed_home"
         return 0
     fi
 
     if [[ -n "${SUDO_USER:-}" ]]; then
         target_home="$(onboard_existing_abs_home "$(onboard_home_for_user "$SUDO_USER" 2>/dev/null || true)" 2>/dev/null || true)"
-        candidate="${target_home}/.acfs"
-        if [[ -n "$target_home" ]] && onboard_candidate_has_acfs_data "$candidate"; then
-            _ONBOARD_ACFS_HOME_SOURCE="sudo_user_home"
+        candidate="${target_home}/.gtbi"
+        if [[ -n "$target_home" ]] && onboard_candidate_has_gtbi_data "$candidate"; then
+            _ONBOARD_GTBI_HOME_SOURCE="sudo_user_home"
             printf '%s\n' "$candidate"
             return 0
         fi
     fi
 
-    if [[ ! -f "$_ONBOARD_SYSTEM_STATE_FILE" ]] && onboard_candidate_has_acfs_data "$_ONBOARD_EXPLICIT_ACFS_HOME"; then
-        _ONBOARD_ACFS_HOME_SOURCE="explicit_acfs_home"
-        printf '%s\n' "$_ONBOARD_EXPLICIT_ACFS_HOME"
+    if [[ ! -f "$_ONBOARD_SYSTEM_STATE_FILE" ]] && onboard_candidate_has_gtbi_data "$_ONBOARD_EXPLICIT_GTBI_HOME"; then
+        _ONBOARD_GTBI_HOME_SOURCE="explicit_gtbi_home"
+        printf '%s\n' "$_ONBOARD_EXPLICIT_GTBI_HOME"
         return 0
     fi
 
-    candidate="$(onboard_current_home_acfs_candidate 2>/dev/null || true)"
+    candidate="$(onboard_current_home_gtbi_candidate 2>/dev/null || true)"
     if [[ -n "$candidate" ]]; then
-        _ONBOARD_ACFS_HOME_SOURCE="current_home"
+        _ONBOARD_GTBI_HOME_SOURCE="current_home"
         printf '%s\n' "$candidate"
         return 0
     fi
 
     target_home="$(onboard_existing_abs_home "$(onboard_read_state_string "$_ONBOARD_SYSTEM_STATE_FILE" "target_home" 2>/dev/null || true)" 2>/dev/null || true)"
-    candidate="${target_home}/.acfs"
-    if [[ -n "$target_home" ]] && onboard_candidate_has_acfs_data "$candidate"; then
-        _ONBOARD_ACFS_HOME_SOURCE="system_state_target_home"
+    candidate="${target_home}/.gtbi"
+    if [[ -n "$target_home" ]] && onboard_candidate_has_gtbi_data "$candidate"; then
+        _ONBOARD_GTBI_HOME_SOURCE="system_state_target_home"
         printf '%s\n' "$candidate"
         return 0
     fi
@@ -539,25 +539,25 @@ onboard_resolve_acfs_home() {
         if [[ -z "$target_home" ]]; then
             target_home="$(onboard_existing_abs_home "$(onboard_home_for_user "$target_user" 2>/dev/null || true)" 2>/dev/null || true)"
         fi
-        candidate="${target_home}/.acfs"
-        if [[ -n "$target_home" ]] && onboard_candidate_has_acfs_data "$candidate"; then
-            _ONBOARD_ACFS_HOME_SOURCE="system_state_target_user"
+        candidate="${target_home}/.gtbi"
+        if [[ -n "$target_home" ]] && onboard_candidate_has_gtbi_data "$candidate"; then
+            _ONBOARD_GTBI_HOME_SOURCE="system_state_target_user"
             printf '%s\n' "$candidate"
             return 0
         fi
     fi
 
-    if onboard_candidate_has_acfs_data "$_ONBOARD_EXPLICIT_ACFS_HOME"; then
-        _ONBOARD_ACFS_HOME_SOURCE="explicit_acfs_home"
-        printf '%s\n' "$_ONBOARD_EXPLICIT_ACFS_HOME"
+    if onboard_candidate_has_gtbi_data "$_ONBOARD_EXPLICIT_GTBI_HOME"; then
+        _ONBOARD_GTBI_HOME_SOURCE="explicit_gtbi_home"
+        printf '%s\n' "$_ONBOARD_EXPLICIT_GTBI_HOME"
         return 0
     fi
 
     explicit_target_home="$(onboard_resolve_explicit_runtime_home 2>/dev/null || true)"
     if [[ -n "$explicit_target_home" ]]; then
-        candidate="${explicit_target_home}/.acfs"
-        if onboard_candidate_has_acfs_data "$candidate"; then
-            _ONBOARD_ACFS_HOME_SOURCE="explicit_target_home"
+        candidate="${explicit_target_home}/.gtbi"
+        if onboard_candidate_has_gtbi_data "$candidate"; then
+            _ONBOARD_GTBI_HOME_SOURCE="explicit_target_home"
             printf '%s\n' "$candidate"
             return 0
         fi
@@ -568,27 +568,27 @@ onboard_resolve_acfs_home() {
         return 0
     fi
 
-    if onboard_candidate_has_acfs_data "$_ONBOARD_DEFAULT_ACFS_HOME"; then
-        _ONBOARD_ACFS_HOME_SOURCE="default_acfs_home"
-        printf '%s\n' "$_ONBOARD_DEFAULT_ACFS_HOME"
+    if onboard_candidate_has_gtbi_data "$_ONBOARD_DEFAULT_GTBI_HOME"; then
+        _ONBOARD_GTBI_HOME_SOURCE="default_gtbi_home"
+        printf '%s\n' "$_ONBOARD_DEFAULT_GTBI_HOME"
         return 0
     fi
 
-    if [[ -n "$_ONBOARD_DEFAULT_ACFS_HOME" ]]; then
-        _ONBOARD_ACFS_HOME_SOURCE="default_acfs_home"
-        printf '%s\n' "$_ONBOARD_DEFAULT_ACFS_HOME"
+    if [[ -n "$_ONBOARD_DEFAULT_GTBI_HOME" ]]; then
+        _ONBOARD_GTBI_HOME_SOURCE="default_gtbi_home"
+        printf '%s\n' "$_ONBOARD_DEFAULT_GTBI_HOME"
         return 0
     fi
 
     return 1
 }
 
-_ONBOARD_ACFS_HOME="$(onboard_resolve_acfs_home 2>/dev/null || true)"
+_ONBOARD_GTBI_HOME="$(onboard_resolve_gtbi_home 2>/dev/null || true)"
 
 onboard_resolve_runtime_home() {
     local target_home=""
     local target_user=""
-    local acfs_path_home=""
+    local gtbi_path_home=""
     local current_candidate=""
     local state_target_home=""
     local state_target_user_home=""
@@ -596,22 +596,22 @@ onboard_resolve_runtime_home() {
     _ONBOARD_RUNTIME_HOME=""
     _ONBOARD_RUNTIME_HOME_SOURCE=""
 
-    if onboard_candidate_has_acfs_data "$_ONBOARD_ACFS_HOME"; then
-        acfs_path_home="$(onboard_acfs_home_target_home "$_ONBOARD_ACFS_HOME" 2>/dev/null || true)"
+    if onboard_candidate_has_gtbi_data "$_ONBOARD_GTBI_HOME"; then
+        gtbi_path_home="$(onboard_gtbi_home_target_home "$_ONBOARD_GTBI_HOME" 2>/dev/null || true)"
     fi
 
-    current_candidate="$(onboard_current_home_acfs_candidate 2>/dev/null || true)"
-    if [[ -n "$acfs_path_home" ]] && { [[ "${_ONBOARD_ACFS_HOME_SOURCE:-}" == "current_home" ]] || [[ -n "$current_candidate" && "$_ONBOARD_ACFS_HOME" == "$current_candidate" ]]; }; then
-        _ONBOARD_RUNTIME_HOME="${acfs_path_home%/}"
+    current_candidate="$(onboard_current_home_gtbi_candidate 2>/dev/null || true)"
+    if [[ -n "$gtbi_path_home" ]] && { [[ "${_ONBOARD_GTBI_HOME_SOURCE:-}" == "current_home" ]] || [[ -n "$current_candidate" && "$_ONBOARD_GTBI_HOME" == "$current_candidate" ]]; }; then
+        _ONBOARD_RUNTIME_HOME="${gtbi_path_home%/}"
         _ONBOARD_RUNTIME_HOME_SOURCE="current_home"
         return 0
     fi
 
     target_home="$(onboard_existing_abs_home "$(onboard_read_state_string "$_ONBOARD_SYSTEM_STATE_FILE" "target_home" 2>/dev/null || true)" 2>/dev/null || true)"
     if [[ -n "$target_home" ]]; then
-        if ! onboard_candidate_has_acfs_data "$target_home/.acfs" && [[ -n "$acfs_path_home" ]] && onboard_path_looks_like_user_home "$acfs_path_home"; then
-            _ONBOARD_RUNTIME_HOME="${acfs_path_home%/}"
-            _ONBOARD_RUNTIME_HOME_SOURCE="acfs_home_path"
+        if ! onboard_candidate_has_gtbi_data "$target_home/.gtbi" && [[ -n "$gtbi_path_home" ]] && onboard_path_looks_like_user_home "$gtbi_path_home"; then
+            _ONBOARD_RUNTIME_HOME="${gtbi_path_home%/}"
+            _ONBOARD_RUNTIME_HOME_SOURCE="gtbi_home_path"
             return 0
         fi
         _ONBOARD_RUNTIME_HOME="${target_home%/}"
@@ -629,37 +629,37 @@ onboard_resolve_runtime_home() {
         fi
     fi
 
-    if onboard_candidate_has_acfs_data "$_ONBOARD_ACFS_HOME"; then
-        state_target_home="$(onboard_existing_abs_home "$(onboard_read_state_string "$_ONBOARD_ACFS_HOME/state.json" "target_home" 2>/dev/null || true)" 2>/dev/null || true)"
+    if onboard_candidate_has_gtbi_data "$_ONBOARD_GTBI_HOME"; then
+        state_target_home="$(onboard_existing_abs_home "$(onboard_read_state_string "$_ONBOARD_GTBI_HOME/state.json" "target_home" 2>/dev/null || true)" 2>/dev/null || true)"
 
         if [[ -n "$state_target_home" ]]; then
-            if [[ -n "$acfs_path_home" ]] && [[ "$acfs_path_home" == "$state_target_home" ]]; then
-                _ONBOARD_RUNTIME_HOME="${acfs_path_home%/}"
-                _ONBOARD_RUNTIME_HOME_SOURCE="acfs_home_path"
+            if [[ -n "$gtbi_path_home" ]] && [[ "$gtbi_path_home" == "$state_target_home" ]]; then
+                _ONBOARD_RUNTIME_HOME="${gtbi_path_home%/}"
+                _ONBOARD_RUNTIME_HOME_SOURCE="gtbi_home_path"
                 return 0
             fi
-            if [[ -n "$acfs_path_home" ]] && onboard_path_looks_like_user_home "$acfs_path_home"; then
-                _ONBOARD_RUNTIME_HOME="${acfs_path_home%/}"
-                _ONBOARD_RUNTIME_HOME_SOURCE="acfs_home_path"
+            if [[ -n "$gtbi_path_home" ]] && onboard_path_looks_like_user_home "$gtbi_path_home"; then
+                _ONBOARD_RUNTIME_HOME="${gtbi_path_home%/}"
+                _ONBOARD_RUNTIME_HOME_SOURCE="gtbi_home_path"
                 return 0
             fi
             _ONBOARD_RUNTIME_HOME="${state_target_home%/}"
-            _ONBOARD_RUNTIME_HOME_SOURCE="acfs_state_target_home"
+            _ONBOARD_RUNTIME_HOME_SOURCE="gtbi_state_target_home"
             return 0
         fi
 
-        if [[ -n "$acfs_path_home" ]]; then
-            _ONBOARD_RUNTIME_HOME="${acfs_path_home%/}"
-            _ONBOARD_RUNTIME_HOME_SOURCE="acfs_home_path"
+        if [[ -n "$gtbi_path_home" ]]; then
+            _ONBOARD_RUNTIME_HOME="${gtbi_path_home%/}"
+            _ONBOARD_RUNTIME_HOME_SOURCE="gtbi_home_path"
             return 0
         fi
 
-        target_user="$(onboard_read_state_string "$_ONBOARD_ACFS_HOME/state.json" "target_user" 2>/dev/null || true)"
+        target_user="$(onboard_read_state_string "$_ONBOARD_GTBI_HOME/state.json" "target_user" 2>/dev/null || true)"
         if [[ -n "$target_user" ]]; then
             state_target_user_home="$(onboard_existing_abs_home "$(onboard_home_for_user "$target_user" 2>/dev/null || true)" 2>/dev/null || true)"
             if [[ -n "$state_target_user_home" ]]; then
                 _ONBOARD_RUNTIME_HOME="${state_target_user_home%/}"
-                _ONBOARD_RUNTIME_HOME_SOURCE="acfs_state_target_user"
+                _ONBOARD_RUNTIME_HOME_SOURCE="gtbi_state_target_user"
                 return 0
             fi
         fi
@@ -715,7 +715,7 @@ onboard_preferred_bin_dir() {
     runtime_home="$(onboard_existing_abs_home "$runtime_home" 2>/dev/null || true)"
     [[ -n "$runtime_home" ]] || return 1
 
-    candidate="$(onboard_sanitize_abs_nonroot_path "$(onboard_read_state_string "$_ONBOARD_ACFS_HOME/state.json" "bin_dir" 2>/dev/null || true)" 2>/dev/null || true)"
+    candidate="$(onboard_sanitize_abs_nonroot_path "$(onboard_read_state_string "$_ONBOARD_GTBI_HOME/state.json" "bin_dir" 2>/dev/null || true)" 2>/dev/null || true)"
     candidate="$(onboard_validate_bin_dir_for_home "$candidate" "$runtime_home" 2>/dev/null || true)"
     if [[ -n "$candidate" ]]; then
         printf '%s\n' "$candidate"
@@ -729,7 +729,7 @@ onboard_preferred_bin_dir() {
         return 0
     fi
 
-    candidate="$(onboard_sanitize_abs_nonroot_path "${ACFS_BIN_DIR:-}" 2>/dev/null || true)"
+    candidate="$(onboard_sanitize_abs_nonroot_path "${GTBI_BIN_DIR:-}" 2>/dev/null || true)"
     candidate="$(onboard_validate_bin_dir_for_home "$candidate" "$runtime_home" 2>/dev/null || true)"
     if [[ -n "$candidate" ]]; then
         printf '%s\n' "$candidate"
@@ -763,7 +763,7 @@ onboard_runtime_binary_path() {
     for candidate in \
         "$primary_bin_dir/$name" \
         "$runtime_home/.local/bin/$name" \
-        "$runtime_home/.acfs/bin/$name" \
+        "$runtime_home/.gtbi/bin/$name" \
         "$runtime_home/.cargo/bin/$name" \
         "$runtime_home/.bun/bin/$name" \
         "$runtime_home/.atuin/bin/$name" \
@@ -798,13 +798,13 @@ onboard_runtime_binary_path() {
 
     return 1
 }
-LESSONS_DIR="${ACFS_LESSONS_DIR:-${_ONBOARD_ACFS_HOME:+$_ONBOARD_ACFS_HOME/onboard/lessons}}"
-PROGRESS_FILE="${ACFS_PROGRESS_FILE:-${_ONBOARD_ACFS_HOME:+$_ONBOARD_ACFS_HOME/onboard_progress.json}}"
+LESSONS_DIR="${GTBI_LESSONS_DIR:-${_ONBOARD_GTBI_HOME:+$_ONBOARD_GTBI_HOME/onboard/lessons}}"
+PROGRESS_FILE="${GTBI_PROGRESS_FILE:-${_ONBOARD_GTBI_HOME:+$_ONBOARD_GTBI_HOME/onboard_progress.json}}"
 if [[ -z "$LESSONS_DIR" ]]; then
-    LESSONS_DIR="$_ONBOARD_FALLBACK_TMPDIR/acfs-onboard-empty-lessons"
+    LESSONS_DIR="$_ONBOARD_FALLBACK_TMPDIR/gtbi-onboard-empty-lessons"
 fi
 if [[ -z "$PROGRESS_FILE" ]]; then
-    PROGRESS_FILE="$_ONBOARD_FALLBACK_TMPDIR/acfs-onboard-progress.${UID:-$(id -u 2>/dev/null || printf 0)}.$$.json"
+    PROGRESS_FILE="$_ONBOARD_FALLBACK_TMPDIR/gtbi-onboard-progress.${UID:-$(id -u 2>/dev/null || printf 0)}.$$.json"
 fi
 PROGRESS_LOCK_FILE="${PROGRESS_FILE}.lock"
 VERSION="0.1.0"
@@ -825,7 +825,7 @@ trap _onboard_cleanup INT TERM HUP
 for candidate in \
     "$_ONBOARD_SCRIPT_DIR/../scripts/lib/gum_ui.sh" \
     "$_ONBOARD_SCRIPT_DIR/../../scripts/lib/gum_ui.sh" \
-    "$_ONBOARD_ACFS_HOME/scripts/lib/gum_ui.sh"; do
+    "$_ONBOARD_GTBI_HOME/scripts/lib/gum_ui.sh"; do
     if [[ -f "$candidate" ]]; then
         # shellcheck disable=SC1090,SC1091
         source "$candidate"
@@ -833,13 +833,13 @@ for candidate in \
     fi
 done
 
-if [[ -z "${ACFS_LOCAL_PROGRESS_FILE:-}" && -n "$_ONBOARD_ACFS_HOME" ]]; then
-    ACFS_LOCAL_PROGRESS_FILE="$_ONBOARD_ACFS_HOME/local_progress.json"
+if [[ -z "${GTBI_LOCAL_PROGRESS_FILE:-}" && -n "$_ONBOARD_GTBI_HOME" ]]; then
+    GTBI_LOCAL_PROGRESS_FILE="$_ONBOARD_GTBI_HOME/local_progress.json"
 fi
 for candidate in \
     "$_ONBOARD_SCRIPT_DIR/../scripts/lib/progress.sh" \
     "$_ONBOARD_SCRIPT_DIR/../../scripts/lib/progress.sh" \
-    "$_ONBOARD_ACFS_HOME/scripts/lib/progress.sh"; do
+    "$_ONBOARD_GTBI_HOME/scripts/lib/progress.sh"; do
     if [[ -f "$candidate" ]]; then
         # shellcheck disable=SC1090,SC1091
         source "$candidate" 2>/dev/null || true
@@ -932,7 +932,7 @@ discover_lessons
 
 # Lesson summaries - key learning points for celebration screen (pipe-separated)
 declare -gA LESSON_SUMMARIES=(
-    [0]="Understanding the ACFS philosophy|How AI agents fit into development|Your path to productivity"
+    [0]="Understanding the GTBI philosophy|How AI agents fit into development|Your path to productivity"
     [1]="Navigating with pwd, ls, cd|Creating files and directories|Understanding file paths"
     [2]="SSH key-based authentication|Keeping sessions alive|Remote work best practices"
     [3]="Creating and managing sessions|Window and pane navigation|Session persistence"
@@ -1051,15 +1051,15 @@ DIM='\033[2m'
 NC='\033[0m' # No Color
 
 # Catppuccin Mocha color scheme (if not already set by gum_ui)
-ACFS_PRIMARY="${ACFS_PRIMARY:-#89b4fa}"
-ACFS_SECONDARY="${ACFS_SECONDARY:-#74c7ec}"
-ACFS_SUCCESS="${ACFS_SUCCESS:-#a6e3a1}"
-ACFS_WARNING="${ACFS_WARNING:-#f9e2af}"
-ACFS_ERROR="${ACFS_ERROR:-#f38ba8}"
-ACFS_MUTED="${ACFS_MUTED:-#6c7086}"
-ACFS_ACCENT="${ACFS_ACCENT:-#cba6f7}"
-ACFS_PINK="${ACFS_PINK:-#f5c2e7}"
-ACFS_TEAL="${ACFS_TEAL:-#94e2d5}"
+GTBI_PRIMARY="${GTBI_PRIMARY:-#89b4fa}"
+GTBI_SECONDARY="${GTBI_SECONDARY:-#74c7ec}"
+GTBI_SUCCESS="${GTBI_SUCCESS:-#a6e3a1}"
+GTBI_WARNING="${GTBI_WARNING:-#f9e2af}"
+GTBI_ERROR="${GTBI_ERROR:-#f38ba8}"
+GTBI_MUTED="${GTBI_MUTED:-#6c7086}"
+GTBI_ACCENT="${GTBI_ACCENT:-#cba6f7}"
+GTBI_PINK="${GTBI_PINK:-#f5c2e7}"
+GTBI_TEAL="${GTBI_TEAL:-#94e2d5}"
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Utility Functions
@@ -1336,7 +1336,7 @@ write_default_progress_file() {
     progress_dir="$(dirname "$PROGRESS_FILE")"
     mkdir -p "$progress_dir" 2>/dev/null || true
 
-    tmp=$(mktemp "${progress_dir}/.acfs_onboard.XXXXXX" 2>/dev/null) || {
+    tmp=$(mktemp "${progress_dir}/.gtbi_onboard.XXXXXX" 2>/dev/null) || {
         echo -e "${RED}Error: could not initialize progress (mktemp failed).${NC}" >&2
         return 1
     }
@@ -1445,7 +1445,7 @@ write_progress_without_jq() {
     progress_dir="$(dirname "$PROGRESS_FILE")"
     mkdir -p "$progress_dir" 2>/dev/null || true
 
-    tmp=$(mktemp "${progress_dir}/.acfs_onboard.XXXXXX" 2>/dev/null) || {
+    tmp=$(mktemp "${progress_dir}/.gtbi_onboard.XXXXXX" 2>/dev/null) || {
         echo -e "${RED}Error: could not save progress (mktemp failed).${NC}" >&2
         return 1
     }
@@ -1600,7 +1600,7 @@ mark_completed() {
             return 1
         fi
 
-        tmp=$(mktemp "${progress_dir}/.acfs_onboard.XXXXXX" 2>/dev/null) || {
+        tmp=$(mktemp "${progress_dir}/.gtbi_onboard.XXXXXX" 2>/dev/null) || {
             echo -e "${RED}Error: could not save progress (mktemp failed).${NC}" >&2
             { exec {lock_fd}>&-; } 2>/dev/null || true
             return 1
@@ -1683,7 +1683,7 @@ set_current() {
             return 1
         fi
 
-        tmp=$(mktemp "${progress_dir}/.acfs_onboard.XXXXXX" 2>/dev/null) || {
+        tmp=$(mktemp "${progress_dir}/.gtbi_onboard.XXXXXX" 2>/dev/null) || {
             echo -e "${RED}Error: could not update progress (mktemp failed).${NC}" >&2
             { exec {lock_fd}>&-; } 2>/dev/null || true
             return 1
@@ -1762,7 +1762,7 @@ reset_progress() {
     local now
     now="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
     local tmp
-    tmp=$(mktemp "${progress_dir}/.acfs_onboard.XXXXXX" 2>/dev/null) || {
+    tmp=$(mktemp "${progress_dir}/.gtbi_onboard.XXXXXX" 2>/dev/null) || {
         echo -e "${RED}Error: could not reset progress (mktemp failed).${NC}" >&2
         { exec {lock_fd}>&-; } 2>/dev/null || true
         return 1
@@ -2040,11 +2040,11 @@ show_auth_flow() {
         if has_gum; then
             gum style \
                 --border rounded \
-                --border-foreground "$ACFS_ACCENT" \
+                --border-foreground "$GTBI_ACCENT" \
                 --padding "1 4" \
                 --margin "1" \
-                "$(gum style --foreground "$ACFS_PINK" --bold '🔐 Service Authentication')" \
-                "$(gum style --foreground "$ACFS_MUTED" --italic "Connect your services for the full experience")"
+                "$(gum style --foreground "$GTBI_PINK" --bold '🔐 Service Authentication')" \
+                "$(gum style --foreground "$GTBI_MUTED" --italic "Connect your services for the full experience")"
         else
             echo ""
             echo -e "${BOLD}${MAGENTA}╭─────────────────────────────────────────╮${NC}"
@@ -2105,8 +2105,8 @@ show_auth_flow() {
 
             local choice
             choice=$(printf '%s\n' "${items[@]}" | gum choose \
-                --cursor.foreground "$ACFS_ACCENT" \
-                --selected.foreground "$ACFS_SUCCESS" 2>/dev/null) || true
+                --cursor.foreground "$GTBI_ACCENT" \
+                --selected.foreground "$GTBI_SUCCESS" 2>/dev/null) || true
 
             # Empty choice (Esc or Ctrl+C) -> back to menu
             if [[ -z "$choice" ]]; then
@@ -2178,14 +2178,14 @@ show_auth_service() {
     if has_gum; then
         gum style \
             --border rounded \
-            --border-foreground "$ACFS_PRIMARY" \
+            --border-foreground "$GTBI_PRIMARY" \
             --padding "1 2" \
-            "$(gum style --foreground "$ACFS_ACCENT" "🔑 Authenticate $name")"
+            "$(gum style --foreground "$GTBI_ACCENT" "🔑 Authenticate $name")"
 
         echo ""
         echo "To authenticate $name, run this command:"
         echo ""
-        gum style --foreground "$ACFS_TEAL" --bold "  $cmd"
+        gum style --foreground "$GTBI_TEAL" --bold "  $cmd"
         echo ""
         auth_service_guidance "$service"
         echo ""
@@ -2244,18 +2244,18 @@ render_progress_bar() {
 
 show_no_lessons_notice() {
     local message="No lesson markdown files were found in ${LESSONS_DIR}."
-    local hint="Re-run the installer or set ACFS_LESSONS_DIR to a directory with onboarding lessons."
+    local hint="Re-run the installer or set GTBI_LESSONS_DIR to a directory with onboarding lessons."
 
     echo ""
     if has_gum; then
         gum style \
             --border rounded \
-            --border-foreground "$ACFS_WARNING" \
+            --border-foreground "$GTBI_WARNING" \
             --padding "1 2" \
             --margin "0 0 1 0" \
-            "$(gum style --foreground "$ACFS_WARNING" --bold '⚠️  No lessons available')" \
-            "$(gum style --foreground "$ACFS_MUTED" "$message")" \
-            "$(gum style --foreground "$ACFS_MUTED" "$hint")"
+            "$(gum style --foreground "$GTBI_WARNING" --bold '⚠️  No lessons available')" \
+            "$(gum style --foreground "$GTBI_MUTED" "$message")" \
+            "$(gum style --foreground "$GTBI_MUTED" "$hint")"
     else
         echo -e "${YELLOW}${BOLD}No lessons available.${NC}"
         echo -e "${DIM}${message}${NC}"
@@ -2291,12 +2291,12 @@ print_header() {
 
         gum style \
             --border rounded \
-            --border-foreground "$ACFS_ACCENT" \
+            --border-foreground "$GTBI_ACCENT" \
             --padding "1 4" \
             --margin "1" \
-            "$(gum style --foreground "$ACFS_PINK" --bold '📚 ACFS Onboarding')" \
-            "$(gum style --foreground "$ACFS_PRIMARY" "$bar") $(gum style --foreground "$ACFS_SUCCESS" --bold "$completed/$total") $(gum style --foreground "$ACFS_MUTED" "($percent%)")" \
-            "$(gum style --foreground "$ACFS_MUTED" --italic "$time_text")"
+            "$(gum style --foreground "$GTBI_PINK" --bold '📚 GTBI Onboarding')" \
+            "$(gum style --foreground "$GTBI_PRIMARY" "$bar") $(gum style --foreground "$GTBI_SUCCESS" --bold "$completed/$total") $(gum style --foreground "$GTBI_MUTED" "($percent%)")" \
+            "$(gum style --foreground "$GTBI_MUTED" --italic "$time_text")"
     else
         # Plain text fallback
         local time_text=""
@@ -2314,7 +2314,7 @@ print_header() {
 
         echo ""
         echo -e "${BOLD}${MAGENTA}╭─────────────────────────────────────────────────────╮${NC}"
-        echo -e "${BOLD}${MAGENTA}│${NC}  ${BOLD}📚 ACFS Onboarding${NC}                                   ${BOLD}${MAGENTA}│${NC}"
+        echo -e "${BOLD}${MAGENTA}│${NC}  ${BOLD}📚 GTBI Onboarding${NC}                                   ${BOLD}${MAGENTA}│${NC}"
         echo -e "${BOLD}${MAGENTA}│${NC}  ${CYAN}${bar}${NC} ${GREEN}${completed}/${total}${NC} (${percent}%)            ${BOLD}${MAGENTA}│${NC}"
         echo -e "${BOLD}${MAGENTA}│${NC}  ${DIM}${time_text}${NC}$(printf '%*s' $((27 - ${#time_text})) '')${BOLD}${MAGENTA}│${NC}"
         echo -e "${BOLD}${MAGENTA}╰─────────────────────────────────────────────────────╯${NC}"
@@ -2379,9 +2379,9 @@ show_menu_gum() {
     # Show menu with gum using Catppuccin colors
     local choice=""
     choice=$(printf '%s\n' "${items[@]}" | gum choose \
-        --cursor.foreground "$ACFS_ACCENT" \
-        --selected.foreground "$ACFS_SUCCESS" \
-        --header.foreground "$ACFS_PRIMARY" \
+        --cursor.foreground "$GTBI_ACCENT" \
+        --selected.foreground "$GTBI_SUCCESS" \
+        --header.foreground "$GTBI_PRIMARY" \
         --header "Select a lesson:" 2>/dev/null) || true
 
     # Parse choice (handles single and double digit lesson numbers)
@@ -2521,24 +2521,24 @@ show_celebration() {
         if [[ -n "$summaries" ]]; then
             IFS='|' read -ra items <<< "$summaries"
             for item in "${items[@]}"; do
-                summary_text+="$(gum style --foreground "$ACFS_TEAL" "  ✦ $item")"$'\n'
+                summary_text+="$(gum style --foreground "$GTBI_TEAL" "  ✦ $item")"$'\n'
             done
         fi
 
         gum style \
             --border double \
-            --border-foreground "$ACFS_SUCCESS" \
+            --border-foreground "$GTBI_SUCCESS" \
             --padding "2 4" \
             --margin "2" \
             --align center \
-            "$(gum style --foreground "$ACFS_SUCCESS" --bold '🎉 Lesson Complete!')" \
+            "$(gum style --foreground "$GTBI_SUCCESS" --bold '🎉 Lesson Complete!')" \
             "" \
-            "$(gum style --foreground "$ACFS_PINK" --bold "Lesson ${lesson_number}: $title")" \
+            "$(gum style --foreground "$GTBI_PINK" --bold "Lesson ${lesson_number}: $title")" \
             "" \
-            "$(gum style --foreground "$ACFS_MUTED" 'You learned:')" \
+            "$(gum style --foreground "$GTBI_MUTED" 'You learned:')" \
             "$summary_text" \
             "" \
-            "$(gum style --foreground "$ACFS_ACCENT" "Progress: ${completed_count}/${total} lessons")"
+            "$(gum style --foreground "$GTBI_ACCENT" "Progress: ${completed_count}/${total} lessons")"
 
         sleep 2
     else
@@ -2576,28 +2576,28 @@ show_completion_certificate() {
     if has_gum; then
         gum style \
             --border double \
-            --border-foreground "$ACFS_SUCCESS" \
+            --border-foreground "$GTBI_SUCCESS" \
             --padding "2 6" \
             --margin "2" \
             --align center \
-            "$(gum style --foreground "$ACFS_ACCENT" --bold '╔═══════════════════════════════════════╗')" \
-            "$(gum style --foreground "$ACFS_ACCENT" --bold '║     CERTIFICATE OF COMPLETION         ║')" \
-            "$(gum style --foreground "$ACFS_ACCENT" --bold '╚═══════════════════════════════════════╝')" \
+            "$(gum style --foreground "$GTBI_ACCENT" --bold '╔═══════════════════════════════════════╗')" \
+            "$(gum style --foreground "$GTBI_ACCENT" --bold '║     CERTIFICATE OF COMPLETION         ║')" \
+            "$(gum style --foreground "$GTBI_ACCENT" --bold '╚═══════════════════════════════════════╝')" \
             "" \
-            "$(gum style --foreground "$ACFS_SUCCESS" --bold '🏆 ACFS Onboarding Complete! 🏆')" \
+            "$(gum style --foreground "$GTBI_SUCCESS" --bold '🏆 GTBI Onboarding Complete! 🏆')" \
             "" \
-            "$(gum style --foreground "$ACFS_PINK" "You have successfully completed all $NUM_LESSONS lessons")" \
-            "$(gum style --foreground "$ACFS_PINK" "of the Agentic Coding Flywheel Setup tutorial.")" \
+            "$(gum style --foreground "$GTBI_PINK" "You have successfully completed all $NUM_LESSONS lessons")" \
+            "$(gum style --foreground "$GTBI_PINK" "of the Agentic Coding Flywheel Setup tutorial.")" \
             "" \
-            "$(gum style --foreground "$ACFS_TEAL" "Curriculum Highlights:")" \
-            "$(gum style --foreground "$ACFS_MUTED" "  • Linux, SSH, tmux, and shell workflow")" \
-            "$(gum style --foreground "$ACFS_MUTED" "  • AI agents, prompts, and local skills")" \
-            "$(gum style --foreground "$ACFS_MUTED" "  • Coordination, safety, triage, and memory systems")" \
-            "$(gum style --foreground "$ACFS_MUTED" "  • Search, debugging, maintenance, and release tooling")" \
+            "$(gum style --foreground "$GTBI_TEAL" "Curriculum Highlights:")" \
+            "$(gum style --foreground "$GTBI_MUTED" "  • Linux, SSH, tmux, and shell workflow")" \
+            "$(gum style --foreground "$GTBI_MUTED" "  • AI agents, prompts, and local skills")" \
+            "$(gum style --foreground "$GTBI_MUTED" "  • Coordination, safety, triage, and memory systems")" \
+            "$(gum style --foreground "$GTBI_MUTED" "  • Search, debugging, maintenance, and release tooling")" \
             "" \
-            "$(gum style --foreground "$ACFS_PRIMARY" "Completed: $completed_at")" \
+            "$(gum style --foreground "$GTBI_PRIMARY" "Completed: $completed_at")" \
             "" \
-            "$(gum style --foreground "$ACFS_SUCCESS" --bold '🚀 You are ready to fly! 🚀')"
+            "$(gum style --foreground "$GTBI_SUCCESS" --bold '🚀 You are ready to fly! 🚀')"
 
         echo ""
         gum confirm --affirmative "Continue" --negative "" || true
@@ -2607,7 +2607,7 @@ show_completion_certificate() {
         echo -e "${CYAN}${BOLD}║              CERTIFICATE OF COMPLETION                     ║${NC}"
         echo -e "${CYAN}${BOLD}╚═══════════════════════════════════════════════════════════╝${NC}"
         echo ""
-        echo -e "${GREEN}${BOLD}         🏆 ACFS Onboarding Complete! 🏆${NC}"
+        echo -e "${GREEN}${BOLD}         🏆 GTBI Onboarding Complete! 🏆${NC}"
         echo ""
         echo -e "  You have successfully completed all $NUM_LESSONS lessons"
         echo -e "  of the Agentic Coding Flywheel Setup tutorial."
@@ -2635,11 +2635,11 @@ show_lesson() {
 
     if [[ ! -f "$file" ]]; then
         if has_gum; then
-            gum style --foreground "$ACFS_ERROR" "Error: Lesson file not found: $file"
+            gum style --foreground "$GTBI_ERROR" "Error: Lesson file not found: $file"
         else
             echo -e "${RED}Error: Lesson file not found: $file${NC}"
         fi
-        echo "Please ensure ACFS is properly installed."
+        echo "Please ensure GTBI is properly installed."
         return 1
     fi
 
@@ -2653,22 +2653,22 @@ show_lesson() {
         local dots=""
         for ((i = 0; i < NUM_LESSONS; i++)); do
             if is_completed "$i"; then
-                dots+="$(gum style --foreground "$ACFS_SUCCESS" "●") "
+                dots+="$(gum style --foreground "$GTBI_SUCCESS" "●") "
             elif [[ $i -eq $idx ]]; then
-                dots+="$(gum style --foreground "$ACFS_PRIMARY" --bold "●") "
+                dots+="$(gum style --foreground "$GTBI_PRIMARY" --bold "●") "
             else
-                dots+="$(gum style --foreground "$ACFS_MUTED" "○") "
+                dots+="$(gum style --foreground "$GTBI_MUTED" "○") "
             fi
         done
 
         gum style \
             --border rounded \
-            --border-foreground "$ACFS_PRIMARY" \
+            --border-foreground "$GTBI_PRIMARY" \
             --padding "1 2" \
             --margin "0 0 1 0" \
-            "$(gum style --foreground "$ACFS_ACCENT" "Lesson ${lesson_number} ($((idx + 1))/$NUM_LESSONS)")
+            "$(gum style --foreground "$GTBI_ACCENT" "Lesson ${lesson_number} ($((idx + 1))/$NUM_LESSONS)")
 $dots
-$(gum style --foreground "$ACFS_PINK" --bold "${LESSON_TITLES[$idx]}")"
+$(gum style --foreground "$GTBI_PINK" --bold "${LESSON_TITLES[$idx]}")"
     else
         echo -e "${BOLD}${MAGENTA}Lesson ${lesson_number}: ${LESSON_TITLES[$idx]}${NC}"
         echo -e "${DIM}─────────────────────────────────────────${NC}"
@@ -2683,7 +2683,7 @@ $(gum style --foreground "$ACFS_PINK" --bold "${LESSON_TITLES[$idx]}")"
     # Navigation with gum
     local last_idx=$((NUM_LESSONS - 1))
     if has_gum_ui; then
-        gum style --foreground "$ACFS_MUTED" "─────────────────────────────────────────"
+        gum style --foreground "$GTBI_MUTED" "─────────────────────────────────────────"
 
         # Build navigation options
         local -a nav_items=()
@@ -2695,8 +2695,8 @@ $(gum style --foreground "$ACFS_PINK" --bold "${LESSON_TITLES[$idx]}")"
 
         local action=""
         action=$(printf '%s\n' "${nav_items[@]}" | gum choose \
-            --cursor.foreground "$ACFS_ACCENT" \
-            --selected.foreground "$ACFS_SUCCESS" 2>/dev/null) || true
+            --cursor.foreground "$GTBI_ACCENT" \
+            --selected.foreground "$GTBI_SUCCESS" 2>/dev/null) || true
 
         # Handle empty action (Esc pressed or gum failed) -> return to menu
         if [[ -z "$action" ]]; then
@@ -2851,12 +2851,12 @@ show_status() {
 
         gum style \
             --border rounded \
-            --border-foreground "$ACFS_ACCENT" \
+            --border-foreground "$GTBI_ACCENT" \
             --padding "1 2" \
             --margin "0 0 1 0" \
-            "$(gum style --foreground "$ACFS_PINK" --bold "📊 Progress: $completed_count/$NUM_LESSONS lessons")
+            "$(gum style --foreground "$GTBI_PINK" --bold "📊 Progress: $completed_count/$NUM_LESSONS lessons")
 
-$(gum style --foreground "$ACFS_PRIMARY" "$bar") $(gum style --foreground "$ACFS_SUCCESS" --bold "$percent%")"
+$(gum style --foreground "$GTBI_PRIMARY" "$bar") $(gum style --foreground "$GTBI_SUCCESS" --bold "$percent%")"
 
         # Lesson list with styled status
         echo ""
@@ -2865,24 +2865,24 @@ $(gum style --foreground "$ACFS_PRIMARY" "$bar") $(gum style --foreground "$ACFS
             local status_color
             if is_completed "$i"; then
                 status_icon="✓"
-                status_color="$ACFS_SUCCESS"
+                status_color="$GTBI_SUCCESS"
             elif [[ "$i" == "$(get_current)" ]]; then
                 status_icon="●"
-                status_color="$ACFS_PRIMARY"
+                status_color="$GTBI_PRIMARY"
             else
                 status_icon="○"
-                status_color="$ACFS_MUTED"
+                status_color="$GTBI_MUTED"
             fi
             local lesson_number
             lesson_number="$(get_lesson_number "$i" || printf '%d' "$((i + 1))")"
-            echo "  $(gum style --foreground "$status_color" "$status_icon") $(gum style --foreground "$ACFS_TEAL" "[${lesson_number}]") ${LESSON_TITLES[$i]}"
+            echo "  $(gum style --foreground "$status_color" "$status_icon") $(gum style --foreground "$GTBI_TEAL" "[${lesson_number}]") ${LESSON_TITLES[$i]}"
         done
 
         echo ""
 
         if all_lessons_complete; then
             gum style \
-                --foreground "$ACFS_SUCCESS" \
+                --foreground "$GTBI_SUCCESS" \
                 --bold \
                 "🎉 All lessons complete! You're ready to fly!"
         else
@@ -2890,7 +2890,7 @@ $(gum style --foreground "$ACFS_PRIMARY" "$bar") $(gum style --foreground "$ACFS
             next_idx=$(get_next_incomplete)
             local next_lesson_number
             next_lesson_number="$(get_lesson_number "$next_idx" || printf '%d' "$((next_idx + 1))")"
-            echo "$(gum style --foreground "$ACFS_MUTED" "Next up:") $(gum style --foreground "$ACFS_PRIMARY" "Lesson ${next_lesson_number} - ${LESSON_TITLES[$next_idx]}")"
+            echo "$(gum style --foreground "$GTBI_MUTED" "Next up:") $(gum style --foreground "$GTBI_PRIMARY" "Lesson ${next_lesson_number} - ${LESSON_TITLES[$next_idx]}")"
         fi
 
         echo ""
@@ -3038,7 +3038,7 @@ onboard_main() {
         --cheatsheet|cheatsheet)
             shift || true
             for candidate in \
-                "$_ONBOARD_ACFS_HOME/scripts/lib/cheatsheet.sh" \
+                "$_ONBOARD_GTBI_HOME/scripts/lib/cheatsheet.sh" \
                 "$_ONBOARD_SCRIPT_DIR/../../scripts/lib/cheatsheet.sh" \
                 "$_ONBOARD_SCRIPT_DIR/../scripts/lib/cheatsheet.sh"; do
                 if [[ -f "$candidate" ]]; then
@@ -3049,14 +3049,14 @@ onboard_main() {
 
             if [[ -z "$cheatsheet_script" ]]; then
                 echo "Error: cheatsheet.sh not found" >&2
-                echo "Re-run the ACFS installer or update to get the latest scripts." >&2
+                echo "Re-run the GTBI installer or update to get the latest scripts." >&2
                 return 1
             fi
 
-            ACFS_HOME="${_ONBOARD_ACFS_HOME:-}" \
+            GTBI_HOME="${_ONBOARD_GTBI_HOME:-}" \
                 TARGET_HOME="${_ONBOARD_RUNTIME_HOME:-}" \
-                ACFS_SYSTEM_STATE_FILE="${_ONBOARD_SYSTEM_STATE_FILE:-}" \
-                ACFS_BIN_DIR="$(onboard_preferred_bin_dir "${_ONBOARD_RUNTIME_HOME:-}" 2>/dev/null || true)" \
+                GTBI_SYSTEM_STATE_FILE="${_ONBOARD_SYSTEM_STATE_FILE:-}" \
+                GTBI_BIN_DIR="$(onboard_preferred_bin_dir "${_ONBOARD_RUNTIME_HOME:-}" 2>/dev/null || true)" \
                 bash "$cheatsheet_script" "$@"
             return $?
             ;;
@@ -3076,7 +3076,7 @@ onboard_main() {
             ;;
         help|--help|-h)
             cat <<EOF
-ACFS Onboarding Tutorial
+GTBI Onboarding Tutorial
 
 Usage:
   onboard           Launch interactive menu
@@ -3088,7 +3088,7 @@ Usage:
   onboard reset     Reset all progress
   onboard --reset   Alias for 'reset'
   onboard help      Alias for '--help'
-  onboard --cheatsheet [query]  Show ACFS command cheatsheet
+  onboard --cheatsheet [query]  Show GTBI command cheatsheet
   onboard version   Show version
   onboard --help    Show this help
 
@@ -3102,10 +3102,10 @@ else
 fi)
 
 Environment:
-  ACFS_LESSONS_DIR   Path to lesson files (default: $LESSONS_DIR)
-  ACFS_PROGRESS_FILE Path to progress file (default: $PROGRESS_FILE)
-  ACFS_LOCAL_PROGRESS=off disables local milestone recording
-  ACFS_LOCAL_PROGRESS_FILE overrides the milestone file path
+  GTBI_LESSONS_DIR   Path to lesson files (default: $LESSONS_DIR)
+  GTBI_PROGRESS_FILE Path to progress file (default: $PROGRESS_FILE)
+  GTBI_LOCAL_PROGRESS=off disables local milestone recording
+  GTBI_LOCAL_PROGRESS_FILE overrides the milestone file path
 EOF
             return 0
             ;;

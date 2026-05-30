@@ -1,26 +1,26 @@
 # Offline Artifact Pack Manifest And Trust Policy
 
-This note records the `bd-8woeg` design for verified ACFS offline artifact
+This note records the `bd-8woeg` design for verified GTBI offline artifact
 packs. It is a contract for later builder and installer-consumer beads; it does
 not describe current installer behavior.
 
 ## Purpose
 
-ACFS already supports limited offline/cache checks during preflight, and the
-bootstrap tests can stage a local copy of ACFS scripts. A full artifact pack is
+GTBI already supports limited offline/cache checks during preflight, and the
+bootstrap tests can stage a local copy of GTBI scripts. A full artifact pack is
 different: it is a user-provided bundle of upstream installer scripts, release
-archives, generated ACFS assets, and provenance metadata that lets the installer
+archives, generated GTBI assets, and provenance metadata that lets the installer
 work when the target machine has weak or no network access.
 
-Offline mode is only safe if ACFS can prove exactly what is inside the pack. The
-pack manifest must be explicit enough for a future `acfs artifact-pack verify`
+Offline mode is only safe if GTBI can prove exactly what is inside the pack. The
+pack manifest must be explicit enough for a future `gtbi artifact-pack verify`
 command and an installer consumer to make the same decision without contacting
 an upstream provider.
 
 The pack answers:
 
 > Which exact bytes may the installer use instead of live downloads, where did
-> they come from, which ACFS modules do they satisfy, and when must the pack be
+> they come from, which GTBI modules do they satisfy, and when must the pack be
 > rejected as stale, incomplete, unsupported, or untrusted?
 
 ## Non-Goals
@@ -32,7 +32,7 @@ The pack answers:
 - It is not a provider automation bundle. VPS creation, payment, DNS ownership,
   OAuth device flows, and cloud login flows still require live user action.
 - It does not weaken verified installers. A packed artifact must match the same
-  policy ACFS would enforce online.
+  policy GTBI would enforce online.
 - It does not replace `checksums.yaml`; it references and extends it with
   per-pack artifact hashes.
 
@@ -41,15 +41,15 @@ The pack answers:
 Use a single top-level directory before compression:
 
 ```text
-acfs-offline-pack/
+gtbi-offline-pack/
 ├── manifest.json
 ├── checksums.yaml
-├── acfs.manifest.yaml
+├── gtbi.manifest.yaml
 ├── VERSION
 ├── scripts/
 │   ├── lib/
 │   └── generated/
-├── acfs/
+├── gtbi/
 ├── artifacts/
 │   └── <module-id>/
 │       └── <artifact-file>
@@ -60,7 +60,7 @@ acfs-offline-pack/
 
 Compressed packs should use `tar.gz` first because the installer and offline
 bootstrap tests already rely on GNU tar. The archive must contain exactly one
-top-level `acfs-offline-pack/` directory. Consumers must reject archives with
+top-level `gtbi-offline-pack/` directory. Consumers must reject archives with
 absolute paths, `..` path traversal, symlinks escaping the pack root, duplicate
 manifest entries, or files not represented in `manifest.json`.
 
@@ -70,17 +70,17 @@ manifest entries, or files not represented in `manifest.json`.
 
 ```json
 {
-  "schema": "acfs.offline-artifact-pack.v1",
+  "schema": "gtbi.offline-artifact-pack.v1",
   "schemaVersion": 1,
-  "generatedBy": "acfs-artifact-pack-builder",
+  "generatedBy": "gtbi-artifact-pack-builder",
   "generatedAt": "2026-05-08T00:00:00Z",
   "expiresAt": "2026-06-07T00:00:00Z",
   "staleAfterDays": 30,
-  "acfs": {
+  "gtbi": {
     "version": "0.0.0-dev",
     "sourceRef": "main",
     "sourceCommit": "0123456789abcdef0123456789abcdef01234567",
-    "manifestSha256": "<sha256 of acfs.manifest.yaml>",
+    "manifestSha256": "<sha256 of gtbi.manifest.yaml>",
     "checksumsYamlSha256": "<sha256 of checksums.yaml>",
     "generatedIndexSha256": "<sha256 of scripts/generated/manifest_index.sh>"
   },
@@ -147,11 +147,11 @@ Every v1 pack manifest must include:
 
 - `schema`, `schemaVersion`, `generatedBy`, `generatedAt`, `expiresAt`,
   `staleAfterDays`
-- `acfs.version`, `acfs.sourceRef`, `acfs.sourceCommit`,
-  `acfs.manifestSha256`, `acfs.checksumsYamlSha256`,
-  `acfs.generatedIndexSha256`
+- `gtbi.version`, `gtbi.sourceRef`, `gtbi.sourceCommit`,
+  `gtbi.manifestSha256`, `gtbi.checksumsYamlSha256`,
+  `gtbi.generatedIndexSha256`
 - at least one `targets[]` entry with `os`, `versions`, `arch`, and `libc`
-- one `modules[]` entry for every ACFS manifest module the pack claims to cover
+- one `modules[]` entry for every GTBI manifest module the pack claims to cover
 - one `artifacts[]` entry for every packed file under `artifacts/`
 - `policy.failClosed: true`, `policy.allowLiveFallback: false`,
   `policy.allowSecrets: false`, and
@@ -162,9 +162,9 @@ Every v1 pack manifest must include:
 Each artifact entry must record:
 
 - stable `id`
-- `moduleId` matching an ACFS manifest module id
+- `moduleId` matching an GTBI manifest module id
 - `kind`: `verified_installer_script`, `release_archive`, `release_binary`,
-  `generated_acfs_file`, `metadata`, or `operator_note`
+  `generated_gtbi_file`, `metadata`, or `operator_note`
 - relative `path` inside the pack
 - HTTPS `sourceUrl` and final `resolvedUrl`
 - exact `version` or `sourceRef`
@@ -176,7 +176,7 @@ Each artifact entry must record:
 
 Artifact paths must be normalized POSIX paths. Consumers must reject absolute
 paths, empty path segments, `.` segments, `..` segments, backslashes, and paths
-outside `artifacts/`, `scripts/`, `acfs/`, `provenance/`, or the explicit root
+outside `artifacts/`, `scripts/`, `gtbi/`, `provenance/`, or the explicit root
 files in the layout section.
 
 ## Bundling Policy
@@ -192,11 +192,11 @@ files in the layout section.
 
 The builder may bundle:
 
-- ACFS scripts, generated installer files, `acfs/` config assets, `VERSION`, and
-  `acfs.manifest.yaml`
+- GTBI scripts, generated installer files, `gtbi/` config assets, `VERSION`, and
+  `gtbi.manifest.yaml`
 - verified upstream installer scripts listed in `checksums.yaml`
 - GitHub release archives or binaries when the release publishes a checksum or
-  when ACFS records a reviewed sha256 in the pack manifest
+  when GTBI records a reviewed sha256 in the pack manifest
 - static documentation needed by the installer or support bundle
 
 The builder must mark these as `live_required` or `metadata_only` unless a later
@@ -214,22 +214,22 @@ The builder must mark these as `prohibited`:
 - SSH private keys, API tokens, cookies, session stores, credential helper
   databases, Vault root tokens, provider account ids when not redacted, and
   local machine hostnames
-- generated logs or support bundles that have not passed ACFS redaction
+- generated logs or support bundles that have not passed GTBI redaction
 - mutable cache directories whose contents are not individually hashed
 
 ## Trust Model
 
 The pack is trusted only after all verification steps pass:
 
-1. The archive extracts to exactly one `acfs-offline-pack/` root without path
+1. The archive extracts to exactly one `gtbi-offline-pack/` root without path
    traversal or unsafe symlinks.
 2. `manifest.json` parses as v1 JSON and contains all required fields.
 3. `manifest.json` has not expired (`expiresAt`) and is not older than
    `staleAfterDays`.
 4. The target Ubuntu version and architecture match one of `targets[]`.
-5. `acfs.manifest.yaml`, `checksums.yaml`, and generated manifest indexes match
-   the hashes declared under `acfs`.
-6. Every file in `artifacts/`, `scripts/`, `acfs/`, and `provenance/` has a
+5. `gtbi.manifest.yaml`, `checksums.yaml`, and generated manifest indexes match
+   the hashes declared under `gtbi`.
+6. Every file in `artifacts/`, `scripts/`, `gtbi/`, and `provenance/` has a
    manifest entry or is an allowed root metadata file.
 7. Every artifact hash and size matches its manifest entry.
 8. Every `verified_installer_script` matches both its artifact sha256 and the
@@ -249,10 +249,10 @@ entries. A pack can include a copy of `checksums.yaml`, but it cannot weaken it:
 
 - If an artifact has `verifiedInstallerKey`, its `checksumsYamlSha256` must equal
   the sha256 for that key in the packed `checksums.yaml`.
-- If the packed `checksums.yaml` differs from the ACFS ref used by the
+- If the packed `checksums.yaml` differs from the GTBI ref used by the
   installer, the installer must report a policy error unless the operator has
   explicitly pinned the same ref.
-- If a module uses `verified_installer` in `acfs.manifest.yaml` but the pack has
+- If a module uses `verified_installer` in `gtbi.manifest.yaml` but the pack has
   no matching artifact, the module is not offline installable.
 - A pack builder may refresh checksums only through the canonical
   `./scripts/lib/security.sh --update-checksums` review flow. The pack manifest
@@ -270,9 +270,9 @@ Consumers must reject a pack with:
 - target Ubuntu version not listed in `targets[].versions`
 - target architecture not listed in `targets[].arch`
 - stale or expired manifest timestamps
-- missing ACFS root files (`VERSION`, `acfs.manifest.yaml`, `checksums.yaml`,
+- missing GTBI root files (`VERSION`, `gtbi.manifest.yaml`, `checksums.yaml`,
   generated manifest index)
-- module ids not present in `acfs.manifest.yaml`
+- module ids not present in `gtbi.manifest.yaml`
 - duplicate artifact ids or duplicate artifact paths
 - required modules marked `metadata_only`, `live_required`, or `prohibited`
   when the install was requested as fully offline
@@ -303,7 +303,7 @@ Future commands should use stable machine-readable reasons:
 | `pack_unbundled_required_module` | Fully offline install requested a module not bundled. |
 | `pack_live_auth_required` | A requested module requires live auth. |
 | `pack_provider_interaction_required` | A requested module requires live provider action. |
-| `pack_unknown_module` | Manifest references a module absent from `acfs.manifest.yaml`. |
+| `pack_unknown_module` | Manifest references a module absent from `gtbi.manifest.yaml`. |
 | `pack_duplicate_artifact` | Duplicate artifact id or path. |
 
 ## Support And Redaction
@@ -311,7 +311,7 @@ Future commands should use stable machine-readable reasons:
 Support-bundle output may include:
 
 - pack schema, version, generation timestamp, expiry timestamp, and status
-- ACFS version/ref/commit
+- GTBI version/ref/commit
 - target OS and architecture
 - module ids, artifact ids, hashes, sizes, and source URLs
 - verification error codes and redacted messages
@@ -319,7 +319,7 @@ Support-bundle output may include:
 Support-bundle output must not include:
 
 - private keys, provider tokens, OAuth tokens, passwords, cookies, Vault secrets,
-  credential helper files, local usernames except the target ACFS username,
+  credential helper files, local usernames except the target GTBI username,
   raw hostnames, raw IP addresses, or unredacted provider account ids
 - artifact file contents unless a future command explicitly emits a redacted,
   bounded excerpt
@@ -330,7 +330,7 @@ Future pack builder commands must:
 
 - generate `manifest.json` deterministically except for documented timestamps
 - sort modules and artifacts by id
-- record the exact ACFS source ref and commit
+- record the exact GTBI source ref and commit
 - compute sha256 after files are written into their final pack paths
 - refuse dirty generated artifacts unless the operator explicitly points at a
   committed source tree
@@ -340,18 +340,18 @@ Future pack builder commands must:
 
 ## Builder Command
 
-`acfs offline-pack build` prepares `acfs-offline-pack/` from a connected
+`gtbi offline-pack build` prepares `gtbi-offline-pack/` from a connected
 machine:
 
 ```bash
-acfs offline-pack build --output /tmp/acfs-pack --module stack.rch
-acfs offline-pack build --dry-run --json
+gtbi offline-pack build --output /tmp/gtbi-pack --module stack.rch
+gtbi offline-pack build --dry-run --json
 ```
 
-The command resolves modules from `acfs.manifest.yaml`, includes only modules
+The command resolves modules from `gtbi.manifest.yaml`, includes only modules
 with `verified_installer` metadata, reads source URLs and SHA256 values from
 `checksums.yaml`, downloads each approved installer into `artifacts/`, verifies
-the downloaded bytes, copies the local ACFS scripts/configuration needed for
+the downloaded bytes, copies the local GTBI scripts/configuration needed for
 offline verification, and writes `manifest.json`.
 
 Default behavior is fail-closed: any missing checksum entry, unsupported module,
@@ -373,20 +373,20 @@ Future installer consumers must:
 The installer accepts an extracted pack with:
 
 ```bash
-./install.sh --offline-pack /path/to/acfs-offline-pack --yes --mode vibe
+./install.sh --offline-pack /path/to/gtbi-offline-pack --yes --mode vibe
 ```
 
 The equivalent environment contract is:
 
 ```bash
-ACFS_OFFLINE_PACK=/path/to/acfs-offline-pack
-ACFS_OFFLINE_NETWORK_MODE=offline
-ACFS_OFFLINE_PACK_REQUIRED=true
+GTBI_OFFLINE_PACK=/path/to/gtbi-offline-pack
+GTBI_OFFLINE_NETWORK_MODE=offline
+GTBI_OFFLINE_PACK_REQUIRED=true
 ```
 
-When `ACFS_OFFLINE_PACK` is unset, verified installers keep the normal live
+When `GTBI_OFFLINE_PACK` is unset, verified installers keep the normal live
 download behavior. When it is set, `verify_checksum` must prefer a matching
-local artifact and fail closed for `ACFS_OFFLINE_NETWORK_MODE=offline`.
+local artifact and fail closed for `GTBI_OFFLINE_NETWORK_MODE=offline`.
 
 ## Test Plan
 

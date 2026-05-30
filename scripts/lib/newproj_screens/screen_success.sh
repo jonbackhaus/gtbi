@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # ============================================================
-# ACFS newproj TUI Wizard - Success Screen
+# GTBI newproj TUI Wizard - Success Screen
 # Shows success message and next steps
 # ============================================================
 
 # Prevent multiple sourcing
-if [[ -n "${_ACFS_SCREEN_SUCCESS_LOADED:-}" ]]; then
+if [[ -n "${_GTBI_SCREEN_SUCCESS_LOADED:-}" ]]; then
     return 0
 fi
-_ACFS_SCREEN_SUCCESS_LOADED=1
+_GTBI_SCREEN_SUCCESS_LOADED=1
 
 # ============================================================
 # Screen: Success
@@ -111,7 +111,7 @@ EOF
     fi
 
     echo "  For help, run:"
-    printf "%b\n" "     ${TUI_CYAN}acfs help${TUI_NC}"
+    printf "%b\n" "     ${TUI_CYAN}gtbi help${TUI_NC}"
     echo ""
 
     draw_line 50

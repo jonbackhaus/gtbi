@@ -11,7 +11,7 @@ import { ConnectionCheck } from "@/components/connection-check";
 import { formatSshTarget } from "@/lib/commandBuilder";
 import { markStepComplete } from "@/lib/wizardSteps";
 import { useWizardAnalytics } from "@/lib/hooks/useWizardAnalytics";
-import { normalizeGitRef, useACFSRef, useVPSIP } from "@/lib/userPreferences";
+import { normalizeGitRef, useGTBIRef, useVPSIP } from "@/lib/userPreferences";
 import { withCurrentSearch } from "@/lib/utils";
 import {
   SimplerGuide,
@@ -23,7 +23,7 @@ import {
 import { Jargon } from "@/components/jargon";
 
 const PREFLIGHT_SCRIPT_BASE_URL =
-  "https://raw.githubusercontent.com/Dicklesworthstone/agentic_coding_flywheel_setup";
+  "https://raw.githubusercontent.com/jonbackhaus/gtbi";
 const DEFAULT_PREFLIGHT_REF = "main";
 
 const TROUBLESHOOTING = [
@@ -75,11 +75,11 @@ const TROUBLESHOOTING = [
 export default function PreflightCheckPage() {
   const router = useRouter();
   const [vpsIP, , vpsIPLoaded] = useVPSIP();
-  const [acfsRef, , acfsRefLoaded] = useACFSRef();
+  const [gtbiRef, , gtbiRefLoaded] = useGTBIRef();
   const [ackPassed, setAckPassed] = useState(false);
   const [ackFailed, setAckFailed] = useState(false);
   const [isNavigating, setIsNavigating] = useState(false);
-  const ready = vpsIPLoaded && acfsRefLoaded;
+  const ready = vpsIPLoaded && gtbiRefLoaded;
 
   // Analytics tracking for this wizard step
   const { markComplete } = useWizardAnalytics({
@@ -91,7 +91,7 @@ export default function PreflightCheckPage() {
   const displayIP = vpsIP || "YOUR_VPS_IP";
   const rootTarget = formatSshTarget("root", displayIP);
   const ubuntuTarget = formatSshTarget("ubuntu", displayIP);
-  const preflightRef = normalizeGitRef(acfsRef) ?? DEFAULT_PREFLIGHT_REF;
+  const preflightRef = normalizeGitRef(gtbiRef) ?? DEFAULT_PREFLIGHT_REF;
   const preflightCommand = useMemo(
     () =>
       `curl -fsSL "${PREFLIGHT_SCRIPT_BASE_URL}/${preflightRef}/scripts/preflight.sh?$(date +%s)" | bash`,
@@ -196,7 +196,7 @@ export default function PreflightCheckPage() {
         <h2 className="text-xl font-semibold">Run this command</h2>
         <CommandCard
           command={preflightCommand}
-          description="ACFS pre-flight validation"
+          description="GTBI pre-flight validation"
           runLocation="vps"
           showCheckbox
           persistKey="preflight-check"
@@ -206,7 +206,7 @@ export default function PreflightCheckPage() {
       {/* Expected output */}
       <OutputPreview title="Expected output (example)">
         <div className="space-y-1 font-mono text-xs">
-          <p className="text-muted-foreground">ACFS Pre-Flight Check</p>
+          <p className="text-muted-foreground">GTBI Pre-Flight Check</p>
           <p className="text-muted-foreground">---------------------</p>
           <p className="text-[oklch(0.72_0.19_145)]">[✓] Operating System: Ubuntu 25.10 (or 24.04 before upgrade)</p>
           <p className="text-[oklch(0.72_0.19_145)]">[✓] Architecture: x86_64</p>

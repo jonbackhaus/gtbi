@@ -3,7 +3,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-PALETTE_SOURCE="$REPO_ROOT/acfs/onboard/docs/ntm/command_palette.md"
+PALETTE_SOURCE="$REPO_ROOT/gtbi/onboard/docs/ntm/command_palette.md"
 
 pass() { echo "✅ PASS: $1"; }
 fail() { echo "❌ FAIL: $1"; exit 1; }

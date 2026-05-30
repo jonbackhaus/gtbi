@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-# Unit tests for acfs capacity report
+# Unit tests for gtbi capacity report
 # ============================================================
 
 set -euo pipefail
@@ -10,7 +10,7 @@ CAPACITY_SH="$REPO_ROOT/scripts/lib/capacity.sh"
 
 TESTS_PASSED=0
 TESTS_FAILED=0
-ARTIFACT_DIR="${ACFS_CAPACITY_TEST_ARTIFACTS_DIR:-${TMPDIR:-/tmp}/acfs-capacity-test-artifacts-$(date +%Y%m%d-%H%M%S)-$$}"
+ARTIFACT_DIR="${GTBI_CAPACITY_TEST_ARTIFACTS_DIR:-${TMPDIR:-/tmp}/gtbi-capacity-test-artifacts-$(date +%Y%m%d-%H%M%S)-$$}"
 
 mkdir -p "$ARTIFACT_DIR"
 
@@ -26,11 +26,11 @@ fail() {
 }
 
 run_capacity_json() {
-    ACFS_CAPACITY_CPU_COUNT="$1" \
-    ACFS_CAPACITY_MEM_TOTAL_KB="$2" \
-    ACFS_CAPACITY_DISK_AVAILABLE_KB="$3" \
-    ACFS_CAPACITY_RCH_AVAILABLE="$4" \
-    ACFS_CAPACITY_NTM_AVAILABLE="$5" \
+    GTBI_CAPACITY_CPU_COUNT="$1" \
+    GTBI_CAPACITY_MEM_TOTAL_KB="$2" \
+    GTBI_CAPACITY_DISK_AVAILABLE_KB="$3" \
+    GTBI_CAPACITY_RCH_AVAILABLE="$4" \
+    GTBI_CAPACITY_NTM_AVAILABLE="$5" \
     bash "$CAPACITY_SH" --json "${@:6}"
 }
 
@@ -98,7 +98,7 @@ EOF
 
     cat > "$fake_bin/systemd-run" <<'EOF'
 #!/usr/bin/env bash
-printf '%s\n' "$*" >> "${ACFS_FAKE_SYSTEMD_RUN_LOG:?}"
+printf '%s\n' "$*" >> "${GTBI_FAKE_SYSTEMD_RUN_LOG:?}"
 while [[ $# -gt 0 && "$1" == --* ]]; do
     shift
 done
@@ -122,7 +122,7 @@ EOF
 
     cat > "$fake_bin/systemd-run" <<'EOF'
 #!/usr/bin/env bash
-printf '%s\n' "$*" >> "${ACFS_FAKE_SYSTEMD_RUN_LOG:?}"
+printf '%s\n' "$*" >> "${GTBI_FAKE_SYSTEMD_RUN_LOG:?}"
 exit 99
 EOF
     chmod +x "$fake_bin/systemd-run"
@@ -222,17 +222,17 @@ test_invalid_workload_exits_2() {
 test_human_output() {
     local output
     output="$(
-        ACFS_CAPACITY_CPU_COUNT=8 \
-        ACFS_CAPACITY_MEM_TOTAL_KB=33554432 \
-        ACFS_CAPACITY_DISK_AVAILABLE_KB=104857600 \
-        ACFS_CAPACITY_RCH_AVAILABLE=true \
-        ACFS_CAPACITY_NTM_AVAILABLE=false \
+        GTBI_CAPACITY_CPU_COUNT=8 \
+        GTBI_CAPACITY_MEM_TOTAL_KB=33554432 \
+        GTBI_CAPACITY_DISK_AVAILABLE_KB=104857600 \
+        GTBI_CAPACITY_RCH_AVAILABLE=true \
+        GTBI_CAPACITY_NTM_AVAILABLE=false \
         bash "$CAPACITY_SH" --workload standard --profile 5 --recommend-ntm
     )"
     write_fixture_artifact human_output 8 33554432 104857600 true false --workload standard --profile 5 --recommend-ntm
     write_output_artifact "human_output" "txt" "$output"
 
-    grep -Fq "ACFS Capacity Report" <<<"$output" || return 1
+    grep -Fq "GTBI Capacity Report" <<<"$output" || return 1
     grep -Fq "Recommended agents:" <<<"$output" || return 1
     grep -Fq "Profile Check" <<<"$output" || return 1
     grep -Fq "Launch Profiles" <<<"$output" || return 1
@@ -246,7 +246,7 @@ test_resource_profile_dry_run_json_is_read_only() {
     local root output
     root="$ARTIFACT_DIR/resource-dry-run-home"
     output="$(
-        ACFS_RESOURCE_PROFILE_HOME="$root" \
+        GTBI_RESOURCE_PROFILE_HOME="$root" \
         bash "$CAPACITY_SH" --json --resource-profile
     )"
     write_output_artifact "resource_profile_dry_run" "json" "$output"
@@ -258,10 +258,10 @@ test_resource_profile_dry_run_json_is_read_only() {
       .safety.direct_agent_aliases_unchanged == true and
       .safety.rch_remains_preferred_build_path == true and
       ([.classes[].properties[] | select(startswith("MemoryMax="))] | length) == 0 and
-      (.wrappers[] | select(.name == "acfs-scope")) and
+      (.wrappers[] | select(.name == "gtbi-scope")) and
       (.actions[] | select(contains("would write")))
     ' <<<"$output" >/dev/null || return 1
-    [[ ! -e "$root/bin/acfs-scope" ]] || return 1
+    [[ ! -e "$root/bin/gtbi-scope" ]] || return 1
 
     pass "resource_profile_dry_run_json_is_read_only"
 }
@@ -273,9 +273,9 @@ test_resource_profile_apply_writes_opt_in_wrappers() {
     log_file="$ARTIFACT_DIR/resource-apply-systemd-run.log"
 
     output="$(
-        ACFS_RESOURCE_PROFILE_HOME="$root" \
-        ACFS_CAPACITY_BIN_DIR="$fake_bin" \
-        ACFS_FAKE_SYSTEMD_RUN_LOG="$log_file" \
+        GTBI_RESOURCE_PROFILE_HOME="$root" \
+        GTBI_CAPACITY_BIN_DIR="$fake_bin" \
+        GTBI_FAKE_SYSTEMD_RUN_LOG="$log_file" \
         bash "$CAPACITY_SH" --json --resource-profile --apply-resource-profile
     )"
     write_output_artifact "resource_profile_apply" "json" "$output"
@@ -284,24 +284,24 @@ test_resource_profile_apply_writes_opt_in_wrappers() {
       .mode == "applied" and
       .systemd.systemd_run_available == true and
       .systemd.user_manager_available == true and
-      (.managed_files | index("'"$root"'/bin/acfs-scope")) and
+      (.managed_files | index("'"$root"'/bin/gtbi-scope")) and
       (.wrappers[] | select(.name == "ccs" and (.command | contains("claude"))))
     ' <<<"$output" >/dev/null || return 1
 
-    [[ -x "$root/bin/acfs-scope" ]] || return 1
+    [[ -x "$root/bin/gtbi-scope" ]] || return 1
     [[ -x "$root/bin/ccs" ]] || return 1
     [[ -x "$root/bin/cods" ]] || return 1
     [[ -x "$root/bin/gmis" ]] || return 1
-    [[ -x "$root/bin/acfs-local-build" ]] || return 1
-    grep -Fq "export PATH=\"$root/bin:" "$root/acfs-resource-profile.sh" || return 1
+    [[ -x "$root/bin/gtbi-local-build" ]] || return 1
+    grep -Fq "export PATH=\"$root/bin:" "$root/gtbi-resource-profile.sh" || return 1
     jq -e '.mode == "applied"' "$root/profile.json" >/dev/null || return 1
     ! grep -R "MemoryMax=" "$root" >/dev/null 2>&1 || return 1
     ! grep -R -E "pkill|killall|loginctl[[:space:]]+kill|systemctl[[:space:]]+--user[[:space:]]+stop" "$root/bin" >/dev/null 2>&1 || return 1
 
-    ACFS_FAKE_SYSTEMD_RUN_LOG="$log_file" \
+    GTBI_FAKE_SYSTEMD_RUN_LOG="$log_file" \
     PATH="$fake_bin:$root/bin:/usr/bin:/bin" \
-    "$root/bin/acfs-scope" agent -- true
-    grep -Fq -- "--slice=acfs-agent.slice" "$log_file" || return 1
+    "$root/bin/gtbi-scope" agent -- true
+    grep -Fq -- "--slice=gtbi-agent.slice" "$log_file" || return 1
 
     pass "resource_profile_apply_writes_opt_in_wrappers"
 }
@@ -312,21 +312,21 @@ test_resource_profile_apply_is_idempotent() {
     fake_bin="$(make_resource_profile_fake_bin resource-idempotent)"
 
     first_output="$(
-        ACFS_RESOURCE_PROFILE_HOME="$root" \
-        ACFS_CAPACITY_BIN_DIR="$fake_bin" \
+        GTBI_RESOURCE_PROFILE_HOME="$root" \
+        GTBI_CAPACITY_BIN_DIR="$fake_bin" \
         bash "$CAPACITY_SH" --json --resource-profile --apply-resource-profile
     )"
-    first_hash="$(sha256sum "$root/bin/acfs-scope" | awk '{print $1}')"
+    first_hash="$(sha256sum "$root/bin/gtbi-scope" | awk '{print $1}')"
     second_output="$(
-        ACFS_RESOURCE_PROFILE_HOME="$root" \
-        ACFS_CAPACITY_BIN_DIR="$fake_bin" \
+        GTBI_RESOURCE_PROFILE_HOME="$root" \
+        GTBI_CAPACITY_BIN_DIR="$fake_bin" \
         bash "$CAPACITY_SH" --json --resource-profile --apply-resource-profile
     )"
-    second_hash="$(sha256sum "$root/bin/acfs-scope" | awk '{print $1}')"
+    second_hash="$(sha256sum "$root/bin/gtbi-scope" | awk '{print $1}')"
     write_output_artifact "resource_profile_idempotent_first" "json" "$first_output"
     write_output_artifact "resource_profile_idempotent_second" "json" "$second_output"
 
-    line_count="$(grep -Fc "export PATH=\"$root/bin:" "$root/acfs-resource-profile.sh")"
+    line_count="$(grep -Fc "export PATH=\"$root/bin:" "$root/gtbi-resource-profile.sh")"
 
     [[ "$first_hash" == "$second_hash" ]] || return 1
     [[ "$line_count" -eq 1 ]] || return 1
@@ -342,12 +342,12 @@ test_resource_profile_partial_failure_reports_error() {
     root="$ARTIFACT_DIR/resource-partial-failure-home"
     fake_bin="$(make_resource_profile_fake_bin resource-partial-failure)"
     stderr_file="$ARTIFACT_DIR/resource_profile_partial_failure.stderr"
-    mkdir -p "$root/bin" "$root/acfs-resource-profile.sh"
+    mkdir -p "$root/bin" "$root/gtbi-resource-profile.sh"
 
     set +e
     output="$(
-        ACFS_RESOURCE_PROFILE_HOME="$root" \
-        ACFS_CAPACITY_BIN_DIR="$fake_bin" \
+        GTBI_RESOURCE_PROFILE_HOME="$root" \
+        GTBI_CAPACITY_BIN_DIR="$fake_bin" \
         bash "$CAPACITY_SH" --json --resource-profile --apply-resource-profile 2>"$stderr_file"
     )"
     status=$?
@@ -362,7 +362,7 @@ test_resource_profile_partial_failure_reports_error() {
       (.remediation | length) >= 3 and
       (.actions[] | select(contains("failed")))
     ' <<<"$output" >/dev/null || return 1
-    [[ -x "$root/bin/acfs-scope" ]] || return 1
+    [[ -x "$root/bin/gtbi-scope" ]] || return 1
     jq -e '.mode != "applied" and .status != "pass"' "$root/profile.json" >/dev/null || return 1
 
     pass "resource_profile_partial_failure_reports_error"
@@ -375,9 +375,9 @@ test_resource_profile_no_systemd_writes_safe_fallback_wrappers() {
     log_file="$ARTIFACT_DIR/resource-no-systemd-systemd-run.log"
 
     output="$(
-        ACFS_RESOURCE_PROFILE_HOME="$root" \
-        ACFS_CAPACITY_SYSTEMD_RUN_AVAILABLE=false \
-        ACFS_CAPACITY_SYSTEMD_USER_AVAILABLE=false \
+        GTBI_RESOURCE_PROFILE_HOME="$root" \
+        GTBI_CAPACITY_SYSTEMD_RUN_AVAILABLE=false \
+        GTBI_CAPACITY_SYSTEMD_USER_AVAILABLE=false \
         bash "$CAPACITY_SH" --json --resource-profile --apply-resource-profile
     )"
     write_output_artifact "resource_profile_no_systemd" "json" "$output"
@@ -386,16 +386,16 @@ test_resource_profile_no_systemd_writes_safe_fallback_wrappers() {
       .mode == "applied" and
       .systemd.systemd_run_available == false and
       .systemd.user_manager_available == false and
-      .safety.limited_to_acfs_owned_files == true and
+      .safety.limited_to_gtbi_owned_files == true and
       ([.classes[].properties[] | select(startswith("MemoryMax="))] | length) == 0
     ' <<<"$output" >/dev/null || return 1
-    grep -Fq 'exec "$@"' "$root/bin/acfs-scope" || return 1
+    grep -Fq 'exec "$@"' "$root/bin/gtbi-scope" || return 1
     ! grep -R -E "pkill|killall|loginctl[[:space:]]+kill|systemctl[[:space:]]+--user[[:space:]]+stop" "$root/bin" >/dev/null 2>&1 || return 1
 
     wrapper_output="$(
-        ACFS_FAKE_SYSTEMD_RUN_LOG="$log_file" \
+        GTBI_FAKE_SYSTEMD_RUN_LOG="$log_file" \
         PATH="$fake_bin:$root/bin:/usr/bin:/bin" \
-        "$root/bin/acfs-scope" support -- printf 'fallback-ok'
+        "$root/bin/gtbi-scope" support -- printf 'fallback-ok'
     )"
     [[ "$wrapper_output" == "fallback-ok" ]] || return 1
     [[ ! -s "$log_file" ]] || return 1
@@ -408,21 +408,21 @@ test_resource_profile_disable_writes_marker_without_deleting_wrappers() {
     root="$ARTIFACT_DIR/resource-disable-home"
     fake_bin="$(make_resource_profile_fake_bin resource-disable)"
 
-    ACFS_RESOURCE_PROFILE_HOME="$root" \
-    ACFS_CAPACITY_BIN_DIR="$fake_bin" \
+    GTBI_RESOURCE_PROFILE_HOME="$root" \
+    GTBI_CAPACITY_BIN_DIR="$fake_bin" \
     bash "$CAPACITY_SH" --json --resource-profile --apply-resource-profile >/dev/null
 
     output="$(
-        ACFS_RESOURCE_PROFILE_HOME="$root" \
-        ACFS_CAPACITY_BIN_DIR="$fake_bin" \
+        GTBI_RESOURCE_PROFILE_HOME="$root" \
+        GTBI_CAPACITY_BIN_DIR="$fake_bin" \
         bash "$CAPACITY_SH" --json --resource-profile --disable-resource-profile
     )"
     write_output_artifact "resource_profile_disable" "json" "$output"
 
     jq -e '.mode == "disabled"' <<<"$output" >/dev/null || return 1
     jq -e '.mode == "disabled"' "$root/profile.json" >/dev/null || return 1
-    grep -Fq "resource profile disabled" "$root/acfs-resource-profile.sh" || return 1
-    [[ -x "$root/bin/acfs-scope" ]] || return 1
+    grep -Fq "resource profile disabled" "$root/gtbi-resource-profile.sh" || return 1
+    [[ -x "$root/bin/gtbi-scope" ]] || return 1
 
     pass "resource_profile_disable_writes_marker_without_deleting_wrappers"
 }

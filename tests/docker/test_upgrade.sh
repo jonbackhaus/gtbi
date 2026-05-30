@@ -9,7 +9,7 @@
 # Runs INSIDE a Docker container. Mount the repo at /repo:
 #
 #   docker run --rm \
-#     -e ACFS_CI=true \
+#     -e GTBI_CI=true \
 #     -v /path/to/gtbi:/repo:rw \
 #     ubuntu:25.10 bash /repo/tests/docker/test_upgrade.sh
 # ============================================================
@@ -55,7 +55,7 @@ log "Phase 1: Install previous release (${PREV_TAG})"
 git -C /repo show "${PREV_TAG}:install.sh" > /tmp/install_old.sh
 chmod +x /tmp/install_old.sh
 
-if ACFS_CI=true bash /tmp/install_old.sh \
+if GTBI_CI=true bash /tmp/install_old.sh \
         --yes --skip-preflight --skip-ubuntu-upgrade --mode vibe \
         > "${ARTIFACTS_DIR}/upgrade_old_install.log" 2>&1; then
     log "Previous release installed successfully"
@@ -67,7 +67,7 @@ fi
 
 # ── Assert state.json from old install ────────────────────────────────────────
 
-STATE_FILE="/home/ubuntu/.acfs/state.json"
+STATE_FILE="/home/ubuntu/.gtbi/state.json"
 if [[ ! -f "$STATE_FILE" ]]; then
     fail "state.json not found at $STATE_FILE after old install"
 fi
@@ -83,7 +83,7 @@ fi
 # ── Phase 2: Upgrade to current release ───────────────────────────────────────
 
 log "Phase 2: Upgrade to current release (${CURRENT_VERSION}) via --force-reinstall"
-if ACFS_CI=true bash /repo/install.sh \
+if GTBI_CI=true bash /repo/install.sh \
         --yes --skip-preflight --skip-ubuntu-upgrade --force-reinstall --mode vibe \
         > "${ARTIFACTS_DIR}/upgrade_new_install.log" 2>&1; then
     log "Current release installed successfully"
@@ -105,7 +105,7 @@ fi
 # ── Phase 3: Doctor verification ──────────────────────────────────────────────
 
 log "Phase 3: Doctor verification"
-if su - ubuntu -c "ACFS_DOCTOR_CI=true zsh -ic 'acfs doctor'" \
+if su - ubuntu -c "GTBI_DOCTOR_CI=true zsh -ic 'gtbi doctor'" \
         > "${ARTIFACTS_DIR}/upgrade_doctor.log" 2>&1; then
     log "Doctor passed"
 else

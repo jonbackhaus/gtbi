@@ -341,7 +341,7 @@ export default function GlossaryPage() {
             </span>
           </h1>
           <p className="mx-auto max-w-2xl text-lg text-white/50 leading-relaxed">
-            Every term used throughout ACFS, explained in plain English.
+            Every term used throughout GTBI, explained in plain English.
           </p>
         </motion.section>
 

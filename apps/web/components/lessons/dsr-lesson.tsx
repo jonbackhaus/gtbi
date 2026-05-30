@@ -231,7 +231,7 @@ const TOOL_SCENARIOS: ToolScenario[] = [
     icon: Globe,
     toolName: 'all',
     version: 'v2025.03',
-    description: 'Batch release of all tools in the ACFS suite',
+    description: 'Batch release of all tools in the GTBI suite',
     command: 'dsr release --batch --tag v2025.03',
     targets: PLATFORM_TARGETS,
     checksumPrefix: 'c1a9e6',
@@ -401,7 +401,7 @@ function InteractiveReleasePipeline() {
                               'success',
                             );
                             addTerminalLine(
-                              `[dsr] https://github.com/acfs/${scenario.toolName}/releases/tag/${scenario.version}`,
+                              `[dsr] https://github.com/gtbi/${scenario.toolName}/releases/tag/${scenario.version}`,
                               'info',
                             );
                             setShowConfetti(true);

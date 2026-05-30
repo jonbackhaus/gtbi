@@ -14,15 +14,15 @@ teardown() {
 
 @test "logging: color variables are exported" {
     # Color variables should be exported (but may be empty if NO_COLOR or no TTY)
-    # Test that the ACFS_COLORS_ENABLED flag is set correctly
-    [[ -v ACFS_RED ]]
-    [[ -v ACFS_GREEN ]]
-    [[ -v ACFS_NC ]]
-    [[ -v ACFS_COLORS_ENABLED ]]
+    # Test that the GTBI_COLORS_ENABLED flag is set correctly
+    [[ -v GTBI_RED ]]
+    [[ -v GTBI_GREEN ]]
+    [[ -v GTBI_NC ]]
+    [[ -v GTBI_COLORS_ENABLED ]]
 
     # Without a TTY (bats environment), colors should be disabled
     if [[ ! -t 2 ]]; then
-        [[ "$ACFS_COLORS_ENABLED" == "false" ]]
+        [[ "$GTBI_COLORS_ENABLED" == "false" ]]
     fi
 }
 
@@ -73,7 +73,7 @@ teardown() {
     tmp_log=$(create_temp_file)
     
     # Override logfile path logic for test
-    # logging.sh uses a fixed path /var/log/acfs... unless we override the function
+    # logging.sh uses a fixed path /var/log/gtbi... unless we override the function
     # or if we can pass it?
     # log_to_file "message" "logfile"
     
@@ -84,7 +84,7 @@ teardown() {
     assert_output --partial "[" # timestamp
 }
 
-@test "logging: acfs_log_close ignores caller-owned fd 3 when logging was not initialized" {
+@test "logging: gtbi_log_close ignores caller-owned fd 3 when logging was not initialized" {
     local probe="$BATS_TEST_TMPDIR/fd3-probe.txt"
     local err="$BATS_TEST_TMPDIR/close.err"
     local unwritable_log="$BATS_TEST_TMPDIR/unwritable-install.log"
@@ -96,9 +96,9 @@ teardown() {
     run bash -c '
         source "$1"
         exec 3>"$2"
-        ACFS_LOG_FILE="$3"
-        ACFS_LOG_INITIALIZED=false
-        acfs_log_close 2>"$4"
+        GTBI_LOG_FILE="$3"
+        GTBI_LOG_INITIALIZED=false
+        gtbi_log_close 2>"$4"
         printf "fd3-still-open\n" >&3
     ' _ "$script" "$probe" "$unwritable_log" "$err"
 
@@ -121,8 +121,8 @@ teardown() {
     run setsid bash -c '
         source "$1"
         exec 3>"$2"
-        ACFS_LOG_STDERR_CAPTURED=false
-        ACFS_LOG_ORIGINAL_STDERR_FD=""
+        GTBI_LOG_STDERR_CAPTURED=false
+        GTBI_LOG_ORIGINAL_STDERR_FD=""
         log_sensitive "Generated password for testuser: secret-value"
     ' _ "$script" "$probe"
 
@@ -141,8 +141,8 @@ teardown() {
     run bash -c '
         source "$1"
         exec {saved_fd}>"$2"
-        ACFS_LOG_STDERR_CAPTURED=true
-        ACFS_LOG_ORIGINAL_STDERR_FD="$saved_fd"
+        GTBI_LOG_STDERR_CAPTURED=true
+        GTBI_LOG_ORIGINAL_STDERR_FD="$saved_fd"
         log_sensitive "Generated password for testuser: secret-value" 2>"$3"
         exec {saved_fd}>&-
     ' _ "$script" "$sensitive_out" "$captured_err"

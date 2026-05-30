@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-# ACFS Installer - GitHub API Helpers with Rate Limit Backoff
+# GTBI Installer - GitHub API Helpers with Rate Limit Backoff
 # Provides exponential backoff for GitHub API rate limits
 #
 # Related: bd-1lug
@@ -9,13 +9,13 @@
 GITHUB_API_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Ensure we have logging functions available
-if [[ -z "${ACFS_BLUE:-}" ]]; then
+if [[ -z "${GTBI_BLUE:-}" ]]; then
     # shellcheck source=logging.sh
     source "$GITHUB_API_SCRIPT_DIR/logging.sh" 2>/dev/null || true
 fi
 
-# Source security.sh for acfs_curl if not already loaded
-if ! declare -f acfs_curl &>/dev/null; then
+# Source security.sh for gtbi_curl if not already loaded
+if ! declare -f gtbi_curl &>/dev/null; then
     # shellcheck source=security.sh
     source "$GITHUB_API_SCRIPT_DIR/security.sh" 2>/dev/null || true
 fi
@@ -125,7 +125,7 @@ _github_api_runtime_home() {
 
     explicit_home="$(_github_api_existing_abs_home "${TARGET_HOME:-}" 2>/dev/null || true)"
     current_home="$(_github_api_existing_abs_home "${HOME:-}" 2>/dev/null || true)"
-    initial_env_home="$(_github_api_existing_abs_home "${ACFS_INITIAL_ENV_HOME:-${_UPDATE_INITIAL_ENV_HOME:-}}" 2>/dev/null || true)"
+    initial_env_home="$(_github_api_existing_abs_home "${GTBI_INITIAL_ENV_HOME:-${_UPDATE_INITIAL_ENV_HOME:-}}" 2>/dev/null || true)"
 
     if [[ -n "$target_user" ]]; then
         [[ "$target_user" =~ ^[a-z_][a-z0-9._-]*$ ]] || return 1
@@ -285,7 +285,7 @@ _github_api_validate_bin_dir_for_home() {
 
     case "$bin_dir" in
         */.local/bin) hinted_home="${bin_dir%/.local/bin}" ;;
-        */.acfs/bin) hinted_home="${bin_dir%/.acfs/bin}" ;;
+        */.gtbi/bin) hinted_home="${bin_dir%/.gtbi/bin}" ;;
         */.bun/bin) hinted_home="${bin_dir%/.bun/bin}" ;;
         */.cargo/bin) hinted_home="${bin_dir%/.cargo/bin}" ;;
         */.atuin/bin) hinted_home="${bin_dir%/.atuin/bin}" ;;
@@ -327,13 +327,13 @@ _github_api_binary_path() {
 
     runtime_home="$(_github_api_runtime_home 2>/dev/null || true)"
     if [[ -n "$runtime_home" ]]; then
-        primary_bin_dir="${ACFS_BIN_DIR:-$runtime_home/.local/bin}"
+        primary_bin_dir="${GTBI_BIN_DIR:-$runtime_home/.local/bin}"
         primary_bin_dir="$(_github_api_validate_bin_dir_for_home "$primary_bin_dir" "$runtime_home" 2>/dev/null || true)"
         [[ -n "$primary_bin_dir" ]] || primary_bin_dir="$runtime_home/.local/bin"
         for candidate in \
             "$primary_bin_dir/$name" \
             "$runtime_home/.local/bin/$name" \
-            "$runtime_home/.acfs/bin/$name" \
+            "$runtime_home/.gtbi/bin/$name" \
             "$runtime_home/.bun/bin/$name" \
             "$runtime_home/.cargo/bin/$name" \
             "$runtime_home/.atuin/bin/$name" \
@@ -479,8 +479,8 @@ github_fetch_with_backoff() {
     # Build curl base args safely.
     # Avoid "${array[@]:-}" here because it expands to a blank argument when the
     # array is unset, which causes curl to fail before making a request.
-    if declare -p ACFS_CURL_BASE_ARGS &>/dev/null && (( ${#ACFS_CURL_BASE_ARGS[@]} > 0 )); then
-        curl_base_args=("${ACFS_CURL_BASE_ARGS[@]}")
+    if declare -p GTBI_CURL_BASE_ARGS &>/dev/null && (( ${#GTBI_CURL_BASE_ARGS[@]} > 0 )); then
+        curl_base_args=("${GTBI_CURL_BASE_ARGS[@]}")
     else
         curl_base_args=(--connect-timeout 30 --max-time 300 -sSL)
         if "$curl_bin" --help all 2>/dev/null | grep -q -- '--proto'; then
@@ -692,8 +692,8 @@ github_download_installer() {
         github_fetch_with_backoff "$url" "$output" "$name"
     else
         # Fall back to regular download for non-GitHub URLs
-        if declare -f acfs_download_to_file &>/dev/null; then
-            acfs_download_to_file "$url" "$output" "$name"
+        if declare -f gtbi_download_to_file &>/dev/null; then
+            gtbi_download_to_file "$url" "$output" "$name"
         else
             local curl_bin=""
             curl_bin="$(_github_api_curl_binary_path 2>/dev/null || true)"

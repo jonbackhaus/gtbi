@@ -1,13 +1,13 @@
 # Multi-Host Swarm Capacity Inventory Design
 
 This note records the `bd-cpgj0` design for a local-first inventory of hosts
-that can run or support ACFS agent swarms. It is a design contract for later
+that can run or support GTBI agent swarms. It is a design contract for later
 implementation Beads; it does not describe current installer behavior.
 
 ## Purpose
 
-ACFS can already size the local host with `acfs capacity`, inspect local swarm
-pressure with `acfs swarm status`, and route CPU-heavy Rust work through RCH.
+GTBI can already size the local host with `gtbi capacity`, inspect local swarm
+pressure with `gtbi swarm status`, and route CPU-heavy Rust work through RCH.
 Large operators may also have several 256 GiB+ VPS hosts, dedicated RCH worker
 machines, or staging boxes that should not all receive the same swarm size.
 
@@ -30,7 +30,7 @@ worker configuration by itself.
   and panes.
 - It is not a secrets store. SSH keys, tokens, provider credentials, and private
   hostnames must not be stored in the inventory.
-- It does not replace `acfs capacity`; local capacity output remains the source
+- It does not replace `gtbi capacity`; local capacity output remains the source
   for per-host recommended counts.
 
 ## Storage Model
@@ -38,11 +38,11 @@ worker configuration by itself.
 Use one manually editable JSON file as the canonical v1 shape:
 
 ```text
-~/.acfs/swarm/hosts.inventory.json
+~/.gtbi/swarm/hosts.inventory.json
 ```
 
 The command may later support YAML import/export for operators who prefer YAML,
-but the on-disk file should be JSON first because ACFS already depends on `jq`
+but the on-disk file should be JSON first because GTBI already depends on `jq`
 for diagnostics and tests.
 
 The file is local to the current operator account and is safe to edit by hand.
@@ -63,7 +63,7 @@ a known sensitive field name.
   "hosts": [
     {
       "id": "local",
-      "display_name": "Local ACFS host",
+      "display_name": "Local GTBI host",
       "role": "swarm-controller",
       "status": "active",
       "manual_tags": ["primary", "ntm"],
@@ -78,7 +78,7 @@ a known sensitive field name.
         "workload": "standard",
         "recommended_agents": 44,
         "safe_agents": 64,
-        "source": "acfs capacity --json --recommend-ntm"
+        "source": "gtbi capacity --json --recommend-ntm"
       },
       "rch": {
         "worker": false,
@@ -201,7 +201,7 @@ NTM remains the launcher. Inventory can suggest labels and per-host agent counts
 that feed an operator command such as:
 
 ```bash
-ntm spawn acfs-main --label swarm-25 --cc=10 --cod=10 --gmi=5 --assign --stagger-mode=smart
+ntm spawn gtbi-main --label swarm-25 --cc=10 --cod=10 --gmi=5 --assign --stagger-mode=smart
 ```
 
 The inventory command must not launch NTM sessions.
@@ -219,21 +219,21 @@ inventory, but they should still write a structured failure artifact when an
 output directory is supplied.
 
 ```bash
-acfs swarm inventory report
-acfs swarm inventory report --json
-acfs swarm inventory report --inventory ~/.acfs/swarm/hosts.inventory.json
-acfs swarm inventory export --format json --output inventory.redacted.json
-acfs swarm inventory import --input inventory.redacted.json
-acfs swarm inventory validate --json
+gtbi swarm inventory report
+gtbi swarm inventory report --json
+gtbi swarm inventory report --inventory ~/.gtbi/swarm/hosts.inventory.json
+gtbi swarm inventory export --format json --output inventory.redacted.json
+gtbi swarm inventory import --input inventory.redacted.json
+gtbi swarm inventory validate --json
 ```
 
 Optional future probe command:
 
 ```bash
-acfs swarm inventory probe-local --output ~/.acfs/swarm/hosts.inventory.json
+gtbi swarm inventory probe-local --output ~/.gtbi/swarm/hosts.inventory.json
 ```
 
-`probe-local` may read only the local host via existing ACFS collectors. It must
+`probe-local` may read only the local host via existing GTBI collectors. It must
 not SSH to other hosts.
 
 ## Report Output
@@ -241,7 +241,7 @@ not SSH to other hosts.
 Human output should fit in a terminal:
 
 ```text
-ACFS Swarm Host Inventory
+GTBI Swarm Host Inventory
 Status: warn
 Hosts: 2 active, 1 stale, 1 disabled
 
@@ -260,7 +260,7 @@ JSON output:
   "schema_version": 1,
   "generated_at": "2026-05-08T00:00:00Z",
   "status": "warn",
-  "inventory_file": "~/.acfs/swarm/hosts.inventory.json",
+  "inventory_file": "~/.gtbi/swarm/hosts.inventory.json",
   "summary": {
     "hosts_total": 2,
     "active": 2,
@@ -273,9 +273,9 @@ JSON output:
   "hosts": [],
   "warnings": [],
   "next_commands": [
-    "acfs capacity --json --recommend-ntm",
+    "gtbi capacity --json --recommend-ntm",
     "rch status --json",
-    "acfs swarm plan --agents 25"
+    "gtbi swarm plan --agents 25"
   ]
 }
 ```
@@ -349,7 +349,7 @@ Error JSON shape:
   "error_code": "forbidden_sensitive_field",
   "message": "Inventory contains forbidden sensitive fields",
   "redacted_field_paths": ["hosts[0].hostname"],
-  "next_commands": ["acfs swarm inventory validate --json"]
+  "next_commands": ["gtbi swarm inventory validate --json"]
 }
 ```
 
@@ -388,7 +388,7 @@ Create implementation work in separate slices:
 
 1. `Implement swarm inventory report/import/export command`
    - Add `scripts/lib/swarm_inventory.sh`.
-   - Wire `acfs swarm inventory ...` through `scripts/lib/doctor.sh`.
+   - Wire `gtbi swarm inventory ...` through `scripts/lib/doctor.sh`.
    - Add read-only JSON and human report output.
 2. `Add swarm inventory support-bundle redaction`
    - Capture sanitized `swarm_inventory.json`.
@@ -401,6 +401,6 @@ Create implementation work in separate slices:
 
 Implement the inventory as an advisory local JSON contract first. The first
 code slice should validate and report; import/export and support-bundle capture
-can follow once the schema is pinned. ACFS should keep RCH, RU, NTM, Beads, and
+can follow once the schema is pinned. GTBI should keep RCH, RU, NTM, Beads, and
 Agent Mail as separate tools and use the inventory only to help an operator make
 better launch decisions.

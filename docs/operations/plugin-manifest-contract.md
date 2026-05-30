@@ -1,7 +1,7 @@
-# ACFS Plugin Manifest Contract
+# GTBI Plugin Manifest Contract
 
 This document defines the v1 plugin package schema and trust policy for future
-ACFS plugin support. It is a design contract for maintainers and for the
+GTBI plugin support. It is a design contract for maintainers and for the
 validator implementation that follows it.
 
 Plugins are not a second installer language. A plugin can describe installable
@@ -18,14 +18,14 @@ the trust requirements that first-party modules already follow.
 - Keep module selection, offline packs, doctor checks, and web metadata derived
   from one validated plugin graph.
 - Refuse secrets, host-specific state, and unreviewed shell behavior before any
-  plugin module is merged into the ACFS manifest.
+  plugin module is merged into the GTBI manifest.
 
 ## Non-Goals
 
 - v1 does not support arbitrary Bash snippets from third-party packages.
 - v1 does not support compatibility shims for deprecated manifest fields.
 - v1 does not allow plugins to edit generated files directly.
-- v1 does not allow plugins to overwrite first-party ACFS module IDs.
+- v1 does not allow plugins to overwrite first-party GTBI module IDs.
 - v1 does not provide a credential vault or hosted plugin marketplace.
 
 ## Package Layout
@@ -33,7 +33,7 @@ the trust requirements that first-party modules already follow.
 Use one top-level directory before compression:
 
 ```text
-acfs-plugin-package/
+gtbi-plugin-package/
 +-- plugin.json
 +-- README.md
 +-- LICENSE
@@ -45,11 +45,11 @@ acfs-plugin-package/
     +-- <attestation-file>.json
 ```
 
-Compressed packages should use `tar.gz` first because ACFS installer and offline
+Compressed packages should use `tar.gz` first because GTBI installer and offline
 pack tooling already depend on GNU tar. Consumers must reject archives with
 absolute paths, `..` path traversal, duplicate paths, unsafe symlinks, files not
 declared in `plugin.json`, or any file outside the single
-`acfs-plugin-package/` root.
+`gtbi-plugin-package/` root.
 
 ## Manifest Schema
 
@@ -58,25 +58,25 @@ fixtures without YAML parser drift.
 
 ```json
 {
-  "schema": "acfs.plugin-package.v1",
+  "schema": "gtbi.plugin-package.v1",
   "schemaVersion": 1,
   "packageId": "example.tools",
   "displayName": "Example Tools",
   "version": "1.2.3",
-  "description": "Installable ACFS modules for Example Tools.",
+  "description": "Installable GTBI modules for Example Tools.",
   "publisher": {
     "name": "Example Maintainers",
     "contactUrl": "https://example.com/security",
-    "sourceUrl": "https://github.com/example/acfs-plugin-example"
+    "sourceUrl": "https://github.com/example/gtbi-plugin-example"
   },
   "license": "Apache-2.0",
-  "docsUrl": "https://example.com/acfs-plugin-example",
+  "docsUrl": "https://example.com/gtbi-plugin-example",
   "provenance": {
     "generatedAt": "2026-05-08T00:00:00Z",
     "sourceRef": "main",
     "sourceCommit": "0123456789abcdef0123456789abcdef01234567",
     "pluginSha256": "<sha256 of the compressed package>",
-    "acfsManifestVersion": 1
+    "gtbiManifestVersion": 1
   },
   "targets": [
     {
@@ -110,7 +110,7 @@ fixtures without YAML parser drift.
         "env": []
       },
       "verify": ["example --version"],
-      "docs_url": "https://example.com/acfs-plugin-example/cli",
+      "docs_url": "https://example.com/gtbi-plugin-example/cli",
       "web": {
         "display_name": "Example CLI",
         "short_name": "Example",
@@ -136,11 +136,11 @@ inside `modules`, `install`, `capabilities`, `targets`, `offline`, or
 
 Every v1 plugin package must include:
 
-- `schema: "acfs.plugin-package.v1"` and `schemaVersion: 1`
+- `schema: "gtbi.plugin-package.v1"` and `schemaVersion: 1`
 - `packageId`, `displayName`, `version`, `description`, `publisher`, `license`
 - `provenance.generatedAt`, `provenance.sourceRef`,
   `provenance.sourceCommit`, `provenance.pluginSha256`, and
-  `provenance.acfsManifestVersion`
+  `provenance.gtbiManifestVersion`
 - at least one `targets[]` entry with `os`, `versions`, `arch`, and `libc`
 - `capabilities.allowed`, `capabilities.reviewRequired`, and
   `capabilities.disallowed`
@@ -168,7 +168,7 @@ package validates. Merge is all-or-nothing.
 - `packageId` must normalize to the same `<package_slug>` used in every module
   ID. Normalization lowercases the package ID and replaces non-alphanumeric
   runs with a single underscore.
-- A plugin module must not reuse any first-party ACFS module ID.
+- A plugin module must not reuse any first-party GTBI module ID.
 - A plugin module must not reuse any module ID from another loaded plugin.
 - Dependencies may reference first-party IDs or IDs from the same plugin
   package. Cross-plugin dependencies are review-required in v1.
@@ -177,7 +177,7 @@ package validates. Merge is all-or-nothing.
   error.
 - A plugin cannot alter first-party module fields, default selection, phase,
   verification commands, or web metadata.
-- A plugin cannot replace or shadow `checksums.yaml`, `acfs.manifest.yaml`,
+- A plugin cannot replace or shadow `checksums.yaml`, `gtbi.manifest.yaml`,
   `scripts/generated/*`, or any first-party source file.
 
 ## Allowed Capabilities
@@ -189,7 +189,7 @@ capabilities it uses, and the validator must reject undeclared capability use.
 | --- | --- |
 | `verified_installer` | Run a HTTPS installer only when it has a matching `checksums.yaml` entry and an allowed runner. |
 | `release_artifact` | Download or consume an exact release artifact by URL and sha256, then place files through a declarative copy rule. |
-| `copy_asset` | Copy static package assets into ACFS-owned plugin locations. |
+| `copy_asset` | Copy static package assets into GTBI-owned plugin locations. |
 | `manual_step` | Show a documented manual action without executing host changes. |
 | `web_metadata` | Add wizard/doctor display metadata for validated modules. |
 | `doctor_check` | Add non-mutating verification commands that report status only. |
@@ -224,7 +224,7 @@ automatic enablement unless a maintainer review record is supplied:
 - provider account interaction, OAuth/device-login steps, or cloud resource
   creation
 - cross-plugin dependencies
-- writes outside ACFS-owned plugin directories
+- writes outside GTBI-owned plugin directories
 - modules that must be required by default for a profile
 
 Review records must name reviewer, reviewed package version, reviewed source
@@ -243,7 +243,7 @@ These must be refused with `plugin_disallowed_behavior` before merge:
 - deletion, recursive cleanup, destructive rollback, or overwrite semantics
   outside the explicitly declared plugin target files
 - modifying first-party source, generated files, `checksums.yaml`, or
-  `acfs.manifest.yaml`
+  `gtbi.manifest.yaml`
 - setuid/setgid, Linux capabilities, kernel modules, privileged containers, or
   host firewall rewrites
 - secrets, tokens, cookies, SSH private keys, API keys, passwords, Vault root
@@ -305,7 +305,7 @@ first-party modules.
 
 A plugin package is trusted only after all verification steps pass:
 
-1. The archive extracts to exactly one `acfs-plugin-package/` root without path
+1. The archive extracts to exactly one `gtbi-plugin-package/` root without path
    traversal, unsafe symlinks, duplicate paths, or undeclared files.
 2. `plugin.json` parses as v1 JSON and contains all required fields.
 3. `provenance.pluginSha256` matches the compressed package.
@@ -347,7 +347,7 @@ Forbidden value patterns include:
 - `secret://` values outside explicitly declared secret-slot references
 
 Plugins are not a credential vault. If a plugin needs credentials, it must use a
-documented `manual_step` or a first-party ACFS secret-slot flow in a later
+documented `manual_step` or a first-party GTBI secret-slot flow in a later
 schema version.
 
 ## Error Codes
@@ -394,7 +394,7 @@ The validator must:
 Review records are local-first JSON documents stored outside plugin packages.
 A valid review record must include:
 
-- `reviewSchema: "acfs.plugin-review.v1"`
+- `reviewSchema: "gtbi.plugin-review.v1"`
 - `packageId`, `version`, `pluginSha256`, and reviewed `sourceCommit`
 - reviewer name or handle
 - `approvedCapabilities[]`

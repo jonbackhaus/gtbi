@@ -82,12 +82,12 @@ teardown() {
     mkdir -p "$fake_bin"
     cat > "$fake_bin/bash" <<'EOF'
 #!/bin/sh
-printf poisoned > "$ACFS_POISON_MARKER"
+printf poisoned > "$GTBI_POISON_MARKER"
 exit 43
 EOF
     chmod +x "$fake_bin/bash"
 
-    run env -i ACFS_POISON_MARKER="$marker" PATH="$fake_bin:/usr/bin:/bin" /usr/bin/bash -c '
+    run env -i GTBI_POISON_MARKER="$marker" PATH="$fake_bin:/usr/bin:/bin" /usr/bin/bash -c '
         set -euo pipefail
         source "$1"
         try_step_eval "trusted bash probe" "true" >/dev/null 2>&1
@@ -131,7 +131,7 @@ EOF
     local report_log
     report_log="$BATS_TEST_TMPDIR/report.log"
 
-    run env -i PATH="/usr/bin:/bin" ACFS_LOG_FILE="$report_log" /usr/bin/bash -c '
+    run env -i PATH="/usr/bin:/bin" GTBI_LOG_FILE="$report_log" /usr/bin/bash -c '
         set -euo pipefail
         source "$1"
         source "$2"
@@ -160,7 +160,7 @@ EOF
     local report_log
     report_log="$BATS_TEST_TMPDIR/report.log"
 
-    run env -i PATH="/usr/bin:/bin" ACFS_LOG_FILE="$report_log" /usr/bin/bash -c '
+    run env -i PATH="/usr/bin:/bin" GTBI_LOG_FILE="$report_log" /usr/bin/bash -c '
         set -euo pipefail
         source "$1"
         generate_resume_hint() {
@@ -192,23 +192,23 @@ EOF
     chmod +x "$fake_sudo"
 
     run env -i PATH="/usr/bin:/bin" \
-        ACFS_LOG_FILE="/proc/acfs-report-test/install.log" \
+        GTBI_LOG_FILE="/proc/gtbi-report-test/install.log" \
         TEST_REPORT_FAKE_SUDO="$fake_sudo" \
         TEST_REPORT_SUDO_LOG="$sudo_log" \
         /usr/bin/bash -c '
             set -euo pipefail
             source "$1"
-            _acfs_report_sudo_binary_path() {
+            _gtbi_report_sudo_binary_path() {
                 printf "%s\n" "$TEST_REPORT_FAKE_SUDO"
             }
-            _acfs_append_log_entry "{\"type\":\"test\"}"
+            _gtbi_append_log_entry "{\"type\":\"test\"}"
         ' _ "$PROJECT_ROOT/scripts/lib/report.sh"
 
     assert_success
 
     run cat "$sudo_log"
     assert_success
-    assert_output --partial "-n mkdir -p /proc/acfs-report-test"
+    assert_output --partial "-n mkdir -p /proc/gtbi-report-test"
 }
 
 @test "report_failure fallback preserves pinned ref and install flags" {
@@ -218,16 +218,16 @@ EOF
     pinned_ref="2463b6a6e4338d74502c7bb34cb02ab8ca8e2ad4"
 
     run env -i PATH="/usr/bin:/bin" \
-        ACFS_LOG_FILE="$report_log" \
-        ACFS_COMMIT_SHA_FULL="$pinned_ref" \
-        ACFS_REF="$pinned_ref" \
-        ACFS_REF_INPUT="main" \
-        ACFS_RAW="https://raw.githubusercontent.com/Dicklesworthstone/agentic_coding_flywheel_setup/$pinned_ref" \
-        ACFS_CHECKSUMS_REF_EXPLICIT=true \
-        ACFS_CHECKSUMS_REF="release-checksums" \
+        GTBI_LOG_FILE="$report_log" \
+        GTBI_COMMIT_SHA_FULL="$pinned_ref" \
+        GTBI_REF="$pinned_ref" \
+        GTBI_REF_INPUT="main" \
+        GTBI_RAW="https://raw.githubusercontent.com/jonbackhaus/gtbi/$pinned_ref" \
+        GTBI_CHECKSUMS_REF_EXPLICIT=true \
+        GTBI_CHECKSUMS_REF="release-checksums" \
         MODE="safe" \
         YES_MODE=true \
-        ACFS_STRICT_MODE=true \
+        GTBI_STRICT_MODE=true \
         SKIP_CLOUD=true \
         /usr/bin/bash -c '
             set -euo pipefail
@@ -240,7 +240,7 @@ EOF
         ' _ "$PROJECT_ROOT/scripts/lib/report.sh"
 
     assert_success
-    assert_output --partial "raw.githubusercontent.com/Dicklesworthstone/agentic_coding_flywheel_setup/$pinned_ref/install.sh"
+    assert_output --partial "raw.githubusercontent.com/jonbackhaus/gtbi/$pinned_ref/install.sh"
     assert_output --partial "--resume"
     assert_output --partial "--mode safe"
     assert_output --partial "--yes"
@@ -265,7 +265,7 @@ EOF
 }
 EOF_STATE
 
-    run env -i PATH="/usr/bin:/bin" ACFS_STATE_FILE="$state_file" ACFS_LOG_FILE="$report_log" /usr/bin/bash -c '
+    run env -i PATH="/usr/bin:/bin" GTBI_STATE_FILE="$state_file" GTBI_LOG_FILE="$report_log" /usr/bin/bash -c '
         set -euo pipefail
         source "$1"
         source "$2"

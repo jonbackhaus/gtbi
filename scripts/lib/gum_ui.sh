@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-# ACFS Installer - Glamorous UI Library (using Charmbracelet Gum)
+# GTBI Installer - Glamorous UI Library (using Charmbracelet Gum)
 # Creates beautiful, colorful terminal output
 # Falls back to basic output if gum is not available
 # ============================================================
@@ -34,17 +34,17 @@ else
     GUM_FB_NC=''
 fi
 
-# ACFS Color scheme (Catppuccin Mocha inspired)
-ACFS_PRIMARY="#89b4fa"    # Blue
-ACFS_SUCCESS="#a6e3a1"    # Green
-ACFS_WARNING="#f9e2af"    # Yellow
-ACFS_ERROR="#f38ba8"      # Red
-ACFS_MUTED="#6c7086"      # Gray
-ACFS_ACCENT="#cba6f7"     # Purple
-ACFS_PINK="#f5c2e7"       # Pink
-export ACFS_TEAL="#94e2d5"       # Teal (used by external consumers)
+# GTBI Color scheme (Catppuccin Mocha inspired)
+GTBI_PRIMARY="#89b4fa"    # Blue
+GTBI_SUCCESS="#a6e3a1"    # Green
+GTBI_WARNING="#f9e2af"    # Yellow
+GTBI_ERROR="#f38ba8"      # Red
+GTBI_MUTED="#6c7086"      # Gray
+GTBI_ACCENT="#cba6f7"     # Purple
+GTBI_PINK="#f5c2e7"       # Pink
+export GTBI_TEAL="#94e2d5"       # Teal (used by external consumers)
 
-# ASCII Art Banner for ACFS
+# ASCII Art Banner for GTBI
 print_banner() {
     local banner='
     ╔═══════════════════════════════════════════════════════════════╗
@@ -57,14 +57,14 @@ print_banner() {
     ║    ╚═╝  ╚═╝ ╚═════╝╚═╝     ╚══════╝                          ║
     ║                                                               ║
     ║    Agentic Coding Flywheel Setup                             ║
-    ║    github.com/Dicklesworthstone/agentic_coding_flywheel_setup║
+    ║    github.com/jonbackhaus/gtbi║
     ║                                                               ║
     ╚═══════════════════════════════════════════════════════════════╝
 '
 
     if [[ "$HAS_GUM" == "true" ]]; then
         echo "$banner" | gum style \
-            --foreground "$ACFS_PRIMARY" \
+            --foreground "$GTBI_PRIMARY" \
             --bold
     else
         echo -e "${GUM_FB_BLUE}$banner${GUM_FB_NC}"
@@ -76,16 +76,16 @@ print_compact_banner() {
     if [[ "$HAS_GUM" == "true" ]]; then
         gum style \
             --border double \
-            --border-foreground "$ACFS_PRIMARY" \
+            --border-foreground "$GTBI_PRIMARY" \
             --padding "1 2" \
             --align center \
             --width 50 \
-            "$(gum style --foreground "$ACFS_ACCENT" --bold 'ACFS')
-$(gum style --foreground "$ACFS_MUTED" 'Agentic Coding Flywheel Setup')"
+            "$(gum style --foreground "$GTBI_ACCENT" --bold 'GTBI')
+$(gum style --foreground "$GTBI_MUTED" 'Agentic Coding Flywheel Setup')"
     else
         echo ""
         echo "╔════════════════════════════════════════════╗"
-        echo "║           ACFS v${ACFS_VERSION:-0.1.0}                       ║"
+        echo "║           GTBI v${GTBI_VERSION:-0.1.0}                       ║"
         echo "║   Agentic Coding Flywheel Setup            ║"
         echo "╚════════════════════════════════════════════╝"
         echo ""
@@ -100,7 +100,7 @@ gum_step() {
 
     if [[ "$HAS_GUM" == "true" ]]; then
         gum style \
-            --foreground "$ACFS_PRIMARY" \
+            --foreground "$GTBI_PRIMARY" \
             --bold \
             "[$step/$total]" | tr -d '\n'
         echo -n " "
@@ -116,7 +116,7 @@ gum_detail() {
 
     if [[ "$HAS_GUM" == "true" ]]; then
         gum style \
-            --foreground "$ACFS_MUTED" \
+            --foreground "$GTBI_MUTED" \
             --margin "0 0 0 4" \
             "→ $message"
     else
@@ -130,7 +130,7 @@ gum_success() {
 
     if [[ "$HAS_GUM" == "true" ]]; then
         gum style \
-            --foreground "$ACFS_SUCCESS" \
+            --foreground "$GTBI_SUCCESS" \
             --bold \
             "✓ $message"
     else
@@ -144,7 +144,7 @@ gum_warn() {
 
     if [[ "$HAS_GUM" == "true" ]]; then
         gum style \
-            --foreground "$ACFS_WARNING" \
+            --foreground "$GTBI_WARNING" \
             "⚠ $message"
     else
         echo -e "${GUM_FB_YELLOW}⚠ $message${GUM_FB_NC}"
@@ -157,7 +157,7 @@ gum_error() {
 
     if [[ "$HAS_GUM" == "true" ]]; then
         gum style \
-            --foreground "$ACFS_ERROR" \
+            --foreground "$GTBI_ERROR" \
             --bold \
             "✖ $message"
     else
@@ -179,8 +179,8 @@ gum_spin() {
 
     if [[ "$HAS_GUM" == "true" ]]; then
         gum spin \
-            --spinner.foreground "$ACFS_PRIMARY" \
-            --title.foreground "$ACFS_MUTED" \
+            --spinner.foreground "$GTBI_PRIMARY" \
+            --title.foreground "$GTBI_MUTED" \
             --spinner dot \
             --title "$message" \
             -- "$@"
@@ -199,13 +199,13 @@ gum_confirm() {
             gum confirm \
                 --affirmative "Yes" \
                 --negative "No" \
-                --prompt.foreground "$ACFS_PRIMARY" \
+                --prompt.foreground "$GTBI_PRIMARY" \
                 "$message" < /dev/tty > /dev/tty
         elif [[ -t 0 && -t 1 ]]; then
             gum confirm \
                 --affirmative "Yes" \
                 --negative "No" \
-                --prompt.foreground "$ACFS_PRIMARY" \
+                --prompt.foreground "$GTBI_PRIMARY" \
                 "$message"
         else
             echo "ERROR: --yes is required when no TTY is available" >&2
@@ -234,16 +234,16 @@ gum_choose() {
     if [[ "$HAS_GUM" == "true" ]]; then
         if [[ -r /dev/tty ]]; then
             gum choose \
-                --header.foreground "$ACFS_PRIMARY" \
-                --cursor.foreground "$ACFS_ACCENT" \
-                --selected.foreground "$ACFS_SUCCESS" \
+                --header.foreground "$GTBI_PRIMARY" \
+                --cursor.foreground "$GTBI_ACCENT" \
+                --selected.foreground "$GTBI_SUCCESS" \
                 --header "$prompt" \
                 "${options[@]}" < /dev/tty
         elif [[ -t 0 ]]; then
             gum choose \
-                --header.foreground "$ACFS_PRIMARY" \
-                --cursor.foreground "$ACFS_ACCENT" \
-                --selected.foreground "$ACFS_SUCCESS" \
+                --header.foreground "$GTBI_PRIMARY" \
+                --cursor.foreground "$GTBI_ACCENT" \
+                --selected.foreground "$GTBI_SUCCESS" \
                 --header "$prompt" \
                 "${options[@]}"
         else
@@ -286,10 +286,10 @@ gum_box() {
     if [[ "$HAS_GUM" == "true" ]]; then
         gum style \
             --border rounded \
-            --border-foreground "$ACFS_PRIMARY" \
+            --border-foreground "$GTBI_PRIMARY" \
             --padding "1 2" \
             --margin "1 0" \
-            "$(gum style --foreground "$ACFS_ACCENT" --bold "$title")
+            "$(gum style --foreground "$GTBI_ACCENT" --bold "$title")
 
 $content"
     else
@@ -311,9 +311,9 @@ gum_section() {
     if [[ "$HAS_GUM" == "true" ]]; then
         echo ""
         gum style \
-            --foreground "$ACFS_PINK" \
+            --foreground "$GTBI_PINK" \
             --bold \
-            --border-foreground "$ACFS_MUTED" \
+            --border-foreground "$GTBI_MUTED" \
             --border normal \
             --padding "0 2" \
             "$title"
@@ -366,11 +366,11 @@ gum_completion() {
     if [[ "$HAS_GUM" == "true" ]]; then
         gum style \
             --border double \
-            --border-foreground "$ACFS_SUCCESS" \
+            --border-foreground "$GTBI_SUCCESS" \
             --padding "1 3" \
             --margin "1 0" \
             --align center \
-            "$(gum style --foreground "$ACFS_SUCCESS" --bold "$title")
+            "$(gum style --foreground "$GTBI_SUCCESS" --bold "$title")
 
 $content"
     else

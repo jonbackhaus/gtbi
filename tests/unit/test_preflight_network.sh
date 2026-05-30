@@ -22,7 +22,7 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 source "$REPO_ROOT/tests/vm/lib/test_harness.sh"
 
 # Log file
-LOG_FILE="/tmp/acfs_preflight_test_$(date +%Y%m%d_%H%M%S).log"
+LOG_FILE="/tmp/gtbi_preflight_test_$(date +%Y%m%d_%H%M%S).log"
 
 # Redirect all output to log file as well
 exec > >(tee -a "$LOG_FILE") 2>&1
@@ -52,7 +52,7 @@ EOF
 
 # Remove mock commands
 cleanup_mocks() {
-    if [[ "${ACFS_TEST_KEEP_TEMP:-false}" == "true" ]]; then
+    if [[ "${GTBI_TEST_KEEP_TEMP:-false}" == "true" ]]; then
         return 0
     fi
     rm -rf "/tmp/preflight_test_mocks_"* 2>/dev/null || true
@@ -62,7 +62,7 @@ cleanup_temp_dir() {
     local temp_dir="${1:-}"
 
     [[ -n "$temp_dir" ]] || return 0
-    if [[ "${ACFS_TEST_KEEP_TEMP:-false}" == "true" ]]; then
+    if [[ "${GTBI_TEST_KEEP_TEMP:-false}" == "true" ]]; then
         harness_info "Keeping temp directory: $temp_dir"
         return 0
     fi
@@ -251,7 +251,7 @@ test_preflight_text_output_format() {
     stripped_output=$(echo "$output" | perl -pe 's/\e\[[0-9;]*m//g')
 
     # Check for expected header
-    if echo "$stripped_output" | grep -q "ACFS Pre-Flight Check"; then
+    if echo "$stripped_output" | grep -q "GTBI Pre-Flight Check"; then
         harness_pass "Text output has header"
     else
         harness_fail "Text output missing header"
@@ -304,8 +304,8 @@ test_preflight_root_resolves_target_home_for_disk_and_conflicts() {
     local root_home="$temp_root/root-home"
     local target_home="$temp_root/custom-home"
     local capture_file="$temp_root/df_args.txt"
-    mkdir -p "$mock_dir" "$root_home" "$target_home/.acfs"
-    cat > "$target_home/.acfs/state.json" <<'EOF'
+    mkdir -p "$mock_dir" "$root_home" "$target_home/.gtbi"
+    cat > "$target_home/.gtbi/state.json" <<'EOF'
 {"target_user":"customuser"}
 EOF
 
@@ -342,12 +342,12 @@ EOF
         harness_fail "Disk check uses explicit target home under root" "df args: $df_args"
     fi
 
-    local acfs_status=""
-    acfs_status=$(get_check_status "$output" "Existing ACFS installation")
-    if [[ "$acfs_status" == "warn" ]]; then
+    local gtbi_status=""
+    gtbi_status=$(get_check_status "$output" "Existing GTBI installation")
+    if [[ "$gtbi_status" == "warn" ]]; then
         harness_pass "Conflict checks inspect the explicit target home under root"
     else
-        harness_fail "Conflict checks inspect the explicit target home under root" "status: $acfs_status output: $output"
+        harness_fail "Conflict checks inspect the explicit target home under root" "status: $gtbi_status output: $output"
     fi
 
     if [[ "$exit_code" =~ ^[01]$ ]]; then
@@ -639,7 +639,7 @@ test_preflight_network_readiness_matrix() {
     create_mock_command curl 28 "000" >/dev/null
     output=""
     exit_code=0
-    harness_info "readiness category=network-timeout selected_recommendation=retry and collect acfs support-bundle artifact=$artifact_path"
+    harness_info "readiness category=network-timeout selected_recommendation=retry and collect gtbi support-bundle artifact=$artifact_path"
     output=$(run_preflight_with_mocks "$reachable_mock_dir" "--json") || exit_code=$?
 
     github_status=$(get_check_status "$output" "Network: Cannot reach github.com")

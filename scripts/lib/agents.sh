@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # shellcheck disable=SC1091
 # ============================================================
-# ACFS Installer - Coding Agents Library
+# GTBI Installer - Coding Agents Library
 # Installs Claude Code, Codex CLI, and Gemini CLI
 # ============================================================
 
 AGENTS_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Ensure we have logging functions available
-if [[ -z "${ACFS_BLUE:-}" ]]; then
+if [[ -z "${GTBI_BLUE:-}" ]]; then
     # shellcheck source=logging.sh
     source "$AGENTS_SCRIPT_DIR/logging.sh"
 fi
@@ -263,22 +263,22 @@ _agent_target_home() {
     local current_home=""
 
     explicit_home="$(_agent_existing_abs_home "${TARGET_HOME:-}" 2>/dev/null || true)"
-    explicit_bin_dir="$(_agent_existing_abs_home "${ACFS_BIN_DIR:-}" 2>/dev/null || true)"
+    explicit_bin_dir="$(_agent_existing_abs_home "${GTBI_BIN_DIR:-}" 2>/dev/null || true)"
     current_user="$(_agent_resolve_current_user 2>/dev/null || true)"
     if [[ "$target_user" == "root" ]]; then
         printf '/root\n'
         return 0
     fi
     if [[ -n "$explicit_home" ]] && [[ "$target_user" == "$current_user" ]] && {
-        [[ -f "$explicit_home/.acfs/state.json" ]] \
-            || [[ -f "$explicit_home/.acfs/VERSION" ]] \
-            || [[ -d "$explicit_home/.acfs/scripts/lib" ]]
+        [[ -f "$explicit_home/.gtbi/state.json" ]] \
+            || [[ -f "$explicit_home/.gtbi/VERSION" ]] \
+            || [[ -d "$explicit_home/.gtbi/scripts/lib" ]]
     }; then
         printf '%s\n' "$explicit_home"
         return 0
     fi
     if [[ -n "$explicit_home" ]] \
-        && [[ -n "${ACFS_BIN_DIR:-}" ]] \
+        && [[ -n "${GTBI_BIN_DIR:-}" ]] \
         && [[ -z "$(_agent_validate_bin_dir_for_home "$explicit_bin_dir" "$explicit_home" 2>/dev/null || true)" ]] \
         && [[ "$target_user" == "$current_user" ]]; then
         printf '%s\n' "$explicit_home"
@@ -342,7 +342,7 @@ _agent_validate_bin_dir_for_home() {
 
     case "$bin_dir" in
         */.local/bin) hinted_home="${bin_dir%/.local/bin}" ;;
-        */.acfs/bin) hinted_home="${bin_dir%/.acfs/bin}" ;;
+        */.gtbi/bin) hinted_home="${bin_dir%/.gtbi/bin}" ;;
         */.bun/bin) hinted_home="${bin_dir%/.bun/bin}" ;;
         */.cargo/bin) hinted_home="${bin_dir%/.cargo/bin}" ;;
         */.atuin/bin) hinted_home="${bin_dir%/.atuin/bin}" ;;
@@ -375,7 +375,7 @@ _agent_preferred_bin_dir() {
 
     [[ -n "$target_home" ]] || return 1
 
-    candidate="$(_agent_validate_bin_dir_for_home "${ACFS_BIN_DIR:-}" "$target_home" 2>/dev/null || true)"
+    candidate="$(_agent_validate_bin_dir_for_home "${GTBI_BIN_DIR:-}" "$target_home" 2>/dev/null || true)"
     if [[ -n "$candidate" ]]; then
         printf '%s\n' "$candidate"
         return 0
@@ -394,8 +394,8 @@ _agent_run_as_user() {
     local target_user_q=""
     local target_home_q=""
     local target_path_prefix_q=""
-    local acfs_home_q=""
-    local acfs_bin_dir_q=""
+    local gtbi_home_q=""
+    local gtbi_bin_dir_q=""
     local wrapped_cmd=""
     local bash_bin=""
     local sudo_bin=""
@@ -415,31 +415,31 @@ _agent_run_as_user() {
         return 1
     fi
 
-    if [[ -n "${ACFS_BIN_DIR:-}" ]] && { [[ "${ACFS_BIN_DIR}" == "/" ]] || [[ "${ACFS_BIN_DIR}" != /* ]]; }; then
-        log_error "ACFS_BIN_DIR must be an absolute path and cannot be '/' (got: ${ACFS_BIN_DIR:-<empty>})"
+    if [[ -n "${GTBI_BIN_DIR:-}" ]] && { [[ "${GTBI_BIN_DIR}" == "/" ]] || [[ "${GTBI_BIN_DIR}" != /* ]]; }; then
+        log_error "GTBI_BIN_DIR must be an absolute path and cannot be '/' (got: ${GTBI_BIN_DIR:-<empty>})"
         return 1
     fi
 
     preferred_bin_dir="$(_agent_preferred_bin_dir "$target_home" 2>/dev/null || true)"
     [[ -n "$preferred_bin_dir" ]] || preferred_bin_dir="$target_home/.local/bin"
-    target_path_prefix="$preferred_bin_dir:$target_home/.local/bin:$target_home/.acfs/bin:$target_home/.cargo/bin:$target_home/.bun/bin:$target_home/.atuin/bin:$target_home/go/bin"
+    target_path_prefix="$preferred_bin_dir:$target_home/.local/bin:$target_home/.gtbi/bin:$target_home/.cargo/bin:$target_home/.bun/bin:$target_home/.atuin/bin:$target_home/go/bin"
 
     printf -v target_user_q '%q' "$target_user"
     printf -v target_home_q '%q' "$target_home"
     printf -v target_path_prefix_q '%q' "$target_path_prefix"
-    if [[ -n "${ACFS_HOME:-}" ]]; then
-        printf -v acfs_home_q '%q' "$ACFS_HOME"
+    if [[ -n "${GTBI_HOME:-}" ]]; then
+        printf -v gtbi_home_q '%q' "$GTBI_HOME"
     fi
     if [[ -n "$preferred_bin_dir" ]]; then
-        printf -v acfs_bin_dir_q '%q' "$preferred_bin_dir"
+        printf -v gtbi_bin_dir_q '%q' "$preferred_bin_dir"
     fi
 
     wrapped_cmd="export TARGET_USER=$target_user_q TARGET_HOME=$target_home_q HOME=$target_home_q;"
-    if [[ -n "$acfs_home_q" ]]; then
-        wrapped_cmd+=" export ACFS_HOME=$acfs_home_q;"
+    if [[ -n "$gtbi_home_q" ]]; then
+        wrapped_cmd+=" export GTBI_HOME=$gtbi_home_q;"
     fi
-    if [[ -n "$acfs_bin_dir_q" ]]; then
-        wrapped_cmd+=" export ACFS_BIN_DIR=$acfs_bin_dir_q;"
+    if [[ -n "$gtbi_bin_dir_q" ]]; then
+        wrapped_cmd+=" export GTBI_BIN_DIR=$gtbi_bin_dir_q;"
     fi
     wrapped_cmd+=" export PATH=$target_path_prefix_q:\$PATH; set -o pipefail; cd \"\$HOME\" || exit 1; $cmd"
 
@@ -507,7 +507,7 @@ _agent_find_am_bin() {
         "$target_home/mcp_agent_mail/am" \
         "$primary_bin/am" \
         "$target_home/.local/bin/am" \
-        "$target_home/.acfs/bin/am" \
+        "$target_home/.gtbi/bin/am" \
         "$target_home/.cargo/bin/am" \
         "$target_home/.bun/bin/am" \
         "$target_home/.atuin/bin/am" \

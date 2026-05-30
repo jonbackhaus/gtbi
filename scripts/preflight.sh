@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-# ACFS Pre-Flight Check
+# GTBI Pre-Flight Check
 #
 # Validates system prerequisites before installation to fail fast
 # with clear, actionable error messages.
@@ -16,8 +16,8 @@
 #   1: Critical check failed (installation would fail)
 #
 # Related beads:
-#   - agentic_coding_flywheel_setup-0iq: Create scripts/preflight.sh
-#   - agentic_coding_flywheel_setup-0ok: EPIC: Pre-Flight Validation
+#   - gastown_batteries_included-0iq: Create scripts/preflight.sh
+#   - gastown_batteries_included-0ok: EPIC: Pre-Flight Validation
 # ============================================================
 
 set -euo pipefail
@@ -47,8 +47,8 @@ WARNINGS=0
 QUIET=false
 OUTPUT_FORMAT="text" # text|json|toon
 MACHINE_OUTPUT=false
-NETWORK_MODE="${ACFS_PREFLIGHT_NETWORK:-check}" # check|skip
-CHECKSUM_CANDIDATE_FILE="${ACFS_PREFLIGHT_CHECKSUM_CANDIDATE:-}"
+NETWORK_MODE="${GTBI_PREFLIGHT_NETWORK:-check}" # check|skip
+CHECKSUM_CANDIDATE_FILE="${GTBI_PREFLIGHT_CHECKSUM_CANDIDATE:-}"
 
 # Results for JSON output
 declare -a RESULTS=()
@@ -172,7 +172,7 @@ preflight_validate_bin_dir_for_home() {
 
     case "$bin_dir" in
         */.local/bin) hinted_home="${bin_dir%/.local/bin}" ;;
-        */.acfs/bin) hinted_home="${bin_dir%/.acfs/bin}" ;;
+        */.gtbi/bin) hinted_home="${bin_dir%/.gtbi/bin}" ;;
         */.bun/bin) hinted_home="${bin_dir%/.bun/bin}" ;;
         */.cargo/bin) hinted_home="${bin_dir%/.cargo/bin}" ;;
         */.atuin/bin) hinted_home="${bin_dir%/.atuin/bin}" ;;
@@ -336,12 +336,12 @@ preflight_binary_path() {
     base_home="$(resolve_install_target_home 2>/dev/null || true)"
 
     if [[ -n "$base_home" ]]; then
-        primary_bin_dir="$(preflight_validate_bin_dir_for_home "${ACFS_BIN_DIR:-}" "$base_home" 2>/dev/null || true)"
+        primary_bin_dir="$(preflight_validate_bin_dir_for_home "${GTBI_BIN_DIR:-}" "$base_home" 2>/dev/null || true)"
         [[ -n "$primary_bin_dir" ]] || primary_bin_dir="$base_home/.local/bin"
         for candidate in \
             "$primary_bin_dir/$name" \
             "$base_home/.local/bin/$name" \
-            "$base_home/.acfs/bin/$name" \
+            "$base_home/.gtbi/bin/$name" \
             "$base_home/.bun/bin/$name" \
             "$base_home/.cargo/bin/$name" \
             "$base_home/.atuin/bin/$name" \
@@ -385,12 +385,12 @@ preflight_find_checksums_file() {
     local script_dir=""
     local candidate=""
 
-    if [[ -n "${ACFS_PREFLIGHT_CHECKSUMS_FILE:-}" ]]; then
-        candidates+=("$ACFS_PREFLIGHT_CHECKSUMS_FILE")
+    if [[ -n "${GTBI_PREFLIGHT_CHECKSUMS_FILE:-}" ]]; then
+        candidates+=("$GTBI_PREFLIGHT_CHECKSUMS_FILE")
     fi
 
-    if [[ -n "${ACFS_CHECKSUMS_YAML:-}" ]]; then
-        candidates+=("$ACFS_CHECKSUMS_YAML")
+    if [[ -n "${GTBI_CHECKSUMS_YAML:-}" ]]; then
+        candidates+=("$GTBI_CHECKSUMS_YAML")
     fi
 
     script_dir="$(preflight_script_dir 2>/dev/null || true)"
@@ -402,7 +402,7 @@ preflight_find_checksums_file() {
     candidates+=("./checksums.yaml")
 
     if [[ -n "${HOME:-}" ]]; then
-        candidates+=("$HOME/.acfs/checksums.yaml")
+        candidates+=("$HOME/.gtbi/checksums.yaml")
     fi
 
     for candidate in "${candidates[@]}"; do
@@ -439,7 +439,7 @@ preflight_checksum_field() {
 }
 
 preflight_network_skip_detail() {
-    printf '%s\n' "offline mode requested; live reachability was not verified. Retry with --network=check when online. If install later fails, run: acfs support-bundle"
+    printf '%s\n' "offline mode requested; live reachability was not verified. Retry with --network=check when online. If install later fails, run: gtbi support-bundle"
 }
 
 preflight_describe_curl_result() {
@@ -640,7 +640,7 @@ emit_json_summary() {
 
 check_os() {
     if [[ ! -f /etc/os-release ]]; then
-        fail "Not a Linux system" "ACFS requires Ubuntu Linux"
+        fail "Not a Linux system" "GTBI requires Ubuntu Linux"
         return
     fi
 
@@ -650,7 +650,7 @@ check_os() {
     local pretty_name="${PRETTY_NAME:-${ID:-unknown}}"
 
     if [[ "${ID:-}" != "ubuntu" ]]; then
-        fail "Operating System: ${pretty_name}" "ACFS supports Ubuntu 22.04+ only"
+        fail "Operating System: ${pretty_name}" "GTBI supports Ubuntu 22.04+ only"
         return
     fi
 
@@ -661,7 +661,7 @@ check_os() {
     elif (( major >= 22 )); then
         pass "Operating System: Ubuntu ${VERSION_ID}" "22.04+ supported, 24.04+ recommended"
     else
-        fail "Operating System: Ubuntu ${VERSION_ID}" "ACFS supports Ubuntu 22.04+ only. Upgrade Ubuntu or provision a newer VPS image."
+        fail "Operating System: Ubuntu ${VERSION_ID}" "GTBI supports Ubuntu 22.04+ only. Upgrade Ubuntu or provision a newer VPS image."
     fi
 }
 
@@ -677,7 +677,7 @@ check_architecture() {
             pass "Architecture: ARM64"
             ;;
         *)
-            fail "Unsupported architecture: $arch" "ACFS requires x86_64 or ARM64"
+            fail "Unsupported architecture: $arch" "GTBI requires x86_64 or ARM64"
             ;;
     esac
 }
@@ -794,7 +794,7 @@ check_verified_installers_cache() {
 
     checksums_file="$(preflight_find_checksums_file 2>/dev/null || true)"
     if [[ -z "$checksums_file" ]]; then
-        warn "Offline/cache: checksums.yaml unavailable" "verified installers fail closed without checksums.yaml; use a complete ACFS checkout or rerun with network. If install fails, run: acfs support-bundle"
+        warn "Offline/cache: checksums.yaml unavailable" "verified installers fail closed without checksums.yaml; use a complete GTBI checkout or rerun with network. If install fails, run: gtbi support-bundle"
         return
     fi
 
@@ -811,7 +811,7 @@ check_verified_installers_cache() {
     if [[ ${#missing[@]} -eq 0 ]]; then
         pass "Offline/cache: verified installer checksums available" "cached checksums.yaml: $checksums_file; entries: ${present[*]}"
     else
-        warn "Offline/cache: verified installer checksums incomplete" "missing or invalid entries: ${missing[*]}; update ACFS/checksums.yaml before relying on verified installers"
+        warn "Offline/cache: verified installer checksums incomplete" "missing or invalid entries: ${missing[*]}; update GTBI/checksums.yaml before relying on verified installers"
     fi
 }
 
@@ -843,7 +843,7 @@ check_checksum_candidate_file() {
     if [[ "$current_body" == "$candidate_body" ]]; then
         pass "Verified installer checksum candidate header-only diff" "only the generated timestamp differs; leave checksums.yaml unchanged"
     else
-        warn "Verified installer checksum candidate differs" "review the diff before release or install support; ACFS will not bypass stored checksums. If unsure, run: acfs support-bundle"
+        warn "Verified installer checksum candidate differs" "review the diff before release or install support; GTBI will not bypass stored checksums. If unsure, run: gtbi support-bundle"
     fi
 }
 
@@ -918,7 +918,7 @@ check_network_basic() {
     if [[ "$curl_exit" -eq 0 && "$http_status" -ge 200 && "$http_status" -lt 400 ]]; then
         pass "Network: github.com reachable"
     else
-        fail "Network: Cannot reach github.com" "$(preflight_describe_curl_result "$curl_exit" "$http_status" "github.com"); check network/firewall settings, then retry with --network=check. If it persists, run: acfs support-bundle"
+        fail "Network: Cannot reach github.com" "$(preflight_describe_curl_result "$curl_exit" "$http_status" "github.com"); check network/firewall settings, then retry with --network=check. If it persists, run: gtbi support-bundle"
         return
     fi
 }
@@ -967,7 +967,7 @@ check_network_installers() {
         )
     fi
 
-    urls+=("https://raw.githubusercontent.com/Dicklesworthstone/agentic_coding_flywheel_setup/main/README.md:ACFS raw content")
+    urls+=("https://raw.githubusercontent.com/jonbackhaus/gtbi/main/README.md:GTBI raw content")
 
     local all_ok=true
     local failed_urls=()
@@ -1001,7 +1001,7 @@ check_network_installers() {
     else
         local i=0
         for name in "${failed_urls[@]}"; do
-            warn "Network: Cannot reach $name" "${failure_details[$i]}; retry later. ACFS will keep checksum verification enabled and will not use unverified fallbacks."
+            warn "Network: Cannot reach $name" "${failure_details[$i]}; retry later. GTBI will keep checksum verification enabled and will not use unverified fallbacks."
             ((i++)) || true
         done
     fi
@@ -1131,7 +1131,7 @@ check_apt_lock() {
 check_user() {
     if [[ "$EUID" -eq 0 ]]; then
         local target_user="${TARGET_USER:-ubuntu}"
-        warn "Running as root" "ACFS will create and install for '${target_user}' user"
+        warn "Running as root" "GTBI will create and install for '${target_user}' user"
     else
         local current_user="$(resolve_current_user 2>/dev/null || printf unknown)"
         pass "User: $current_user"
@@ -1214,20 +1214,20 @@ check_conflicts() {
     # Check for rbenv
     if [[ -d "$user_home/.rbenv" ]] || command -v rbenv &>/dev/null; then
         # Not a conflict, just FYI
-        pass "rbenv detected" "Will coexist with ACFS tools"
+        pass "rbenv detected" "Will coexist with GTBI tools"
     fi
 
-    # Check for existing ACFS installation
-    if [[ -d "$user_home/.acfs" ]]; then
-        if [[ -f "$user_home/.acfs/state.json" ]]; then
-            warn "Existing ACFS installation" "Previous install found; consider --resume or fresh start"
+    # Check for existing GTBI installation
+    if [[ -d "$user_home/.gtbi" ]]; then
+        if [[ -f "$user_home/.gtbi/state.json" ]]; then
+            warn "Existing GTBI installation" "Previous install found; consider --resume or fresh start"
         else
-            pass "ACFS directory exists" "Partial installation detected"
+            pass "GTBI directory exists" "Partial installation detected"
         fi
         conflicts_found=true
     fi
 
-    # Check for existing tools that ACFS will install
+    # Check for existing tools that GTBI will install
     local existing_tools=()
     preflight_binary_exists bun && existing_tools+=("bun")
     preflight_binary_exists uv && existing_tools+=("uv")
@@ -1249,7 +1249,7 @@ check_conflicts() {
 
 main() {
     if [[ "$QUIET" != "true" && "$MACHINE_OUTPUT" != "true" ]]; then
-        echo -e "${BOLD}ACFS Pre-Flight Check${NC}"
+        echo -e "${BOLD}GTBI Pre-Flight Check${NC}"
         echo "====================="
         echo ""
     fi
@@ -1310,7 +1310,7 @@ main() {
         else
             echo -e "${GREEN}${BOLD}Result: All checks passed!${NC}"
             echo ""
-            echo -e "${GREEN}System is ready for ACFS installation.${NC}"
+            echo -e "${GREEN}System is ready for GTBI installation.${NC}"
         fi
     fi
 

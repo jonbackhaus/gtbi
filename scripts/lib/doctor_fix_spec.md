@@ -1,11 +1,11 @@
-# ACFS Doctor --fix: Safe Fixer Specification
+# GTBI Doctor --fix: Safe Fixer Specification
 
 > **Bead**: bd-31ps.6.1
-> **Status**: Implementation spec for `acfs doctor --fix`
+> **Status**: Implementation spec for `gtbi doctor --fix`
 
 ## Overview
 
-This document defines the safe fixer whitelist and policy for `acfs doctor --fix`.
+This document defines the safe fixer whitelist and policy for `gtbi doctor --fix`.
 All fixers integrate with the autofix system (`scripts/lib/autofix.sh`) for:
 - Crash-safe I/O with explicit fsync
 - SHA256-verified backups before modifications
@@ -21,11 +21,11 @@ These fixers are deterministic, idempotent, and safe to run automatically.
 | Fixer ID | Check ID Pattern | Description | Undo Strategy |
 |----------|------------------|-------------|---------------|
 | `fix.path.ordering` | `path.*` | Prepend missing dirs to PATH in shell config | Restore backup |
-| `fix.config.copy` | `config.*` | Copy missing ~/.acfs config files | Remove copied file |
+| `fix.config.copy` | `config.*` | Copy missing ~/.gtbi config files | Remove copied file |
 | `fix.dcg.hook` | `hook.dcg.*` | Install DCG pre-tool-use hook | Run `dcg uninstall` |
 | `fix.symlink.create` | `symlink.*` | Create missing tool symlinks | Remove symlink |
 | `fix.plugin.clone` | `shell.plugins.*` | Clone missing zsh plugins | Remove cloned dir |
-| `fix.acfs.sourcing` | `shell.acfs_sourced` | Add ACFS sourcing to .zshrc | Remove added lines |
+| `fix.gtbi.sourcing` | `shell.gtbi_sourced` | Add GTBI sourcing to .zshrc | Remove added lines |
 
 ### Category 2: Prompt Required (requires confirmation even with `--yes`)
 
@@ -79,13 +79,13 @@ fix_path_ordering() {
     # Append to file if not already present
     if ! grep -qF "$export_line" "$target_file"; then
         echo "" >> "$target_file"
-        echo "# ACFS PATH ordering (added by doctor --fix)" >> "$target_file"
+        echo "# GTBI PATH ordering (added by doctor --fix)" >> "$target_file"
         echo "$export_line" >> "$target_file"
     fi
 
     # Record change with undo command
     record_change "path" "Added PATH ordering to $target_file" \
-        "sed -i '/# ACFS PATH ordering/,/^export PATH/d' '$target_file'" \
+        "sed -i '/# GTBI PATH ordering/,/^export PATH/d' '$target_file'" \
         false "info" "$(autofix_files_json "$target_file")" "$backup_json" "[]"
 }
 ```
@@ -96,14 +96,14 @@ fix_path_ordering() {
 
 ### 2. `fix.config.copy` - Missing Config File Copy
 
-**Check**: Required config files missing from ~/.acfs/
+**Check**: Required config files missing from ~/.gtbi/
 
 **Files to check**:
 | Source | Destination |
 |--------|-------------|
-| `acfs/zsh/acfs.zshrc` | `~/.acfs/zsh/acfs.zshrc` |
-| `acfs/tmux/tmux.conf` | `~/.acfs/tmux/tmux.conf` |
-| `VERSION` | `~/.acfs/VERSION` |
+| `gtbi/zsh/gtbi.zshrc` | `~/.gtbi/zsh/gtbi.zshrc` |
+| `gtbi/tmux/tmux.conf` | `~/.gtbi/tmux/tmux.conf` |
+| `VERSION` | `~/.gtbi/VERSION` |
 
 **Fix logic**:
 ```bash
@@ -233,38 +233,38 @@ fix_plugin_clone() {
 
 ---
 
-### 6. `fix.acfs.sourcing` - ACFS Config Sourcing
+### 6. `fix.gtbi.sourcing` - GTBI Config Sourcing
 
-**Check**: ~/.zshrc doesn't source ACFS config
+**Check**: ~/.zshrc doesn't source GTBI config
 
 **Expected line**:
 ```bash
-[[ -f ~/.acfs/zsh/acfs.zshrc ]] && source ~/.acfs/zsh/acfs.zshrc
+[[ -f ~/.gtbi/zsh/gtbi.zshrc ]] && source ~/.gtbi/zsh/gtbi.zshrc
 ```
 
 **Fix logic**:
 ```bash
-fix_acfs_sourcing() {
+fix_gtbi_sourcing() {
     local zshrc="$HOME/.zshrc"
-    local source_line='[[ -f ~/.acfs/zsh/acfs.zshrc ]] && source ~/.acfs/zsh/acfs.zshrc'
+    local source_line='[[ -f ~/.gtbi/zsh/gtbi.zshrc ]] && source ~/.gtbi/zsh/gtbi.zshrc'
 
     # Guard: Check if already sourced
-    if grep -qF "acfs.zshrc" "$zshrc" 2>/dev/null; then
+    if grep -qF "gtbi.zshrc" "$zshrc" 2>/dev/null; then
         return 0  # Already present
     fi
 
     # Create backup
     local backup_json
-    backup_json=$(create_backup "$zshrc" "acfs-sourcing")
+    backup_json=$(create_backup "$zshrc" "gtbi-sourcing")
 
     # Append sourcing line
     echo "" >> "$zshrc"
-    echo "# ACFS configuration (added by doctor --fix)" >> "$zshrc"
+    echo "# GTBI configuration (added by doctor --fix)" >> "$zshrc"
     echo "$source_line" >> "$zshrc"
 
     # Record change
-    record_change "config" "Added ACFS sourcing to .zshrc" \
-        "sed -i '/# ACFS configuration/,+1d' '$zshrc'" \
+    record_change "config" "Added GTBI sourcing to .zshrc" \
+        "sed -i '/# GTBI configuration/,+1d' '$zshrc'" \
         false "info" "$(autofix_files_json "$zshrc")" "$backup_json" "[]"
 }
 ```
@@ -278,7 +278,7 @@ fix_acfs_sourcing() {
 When `--dry-run` is specified, output actions without applying:
 
 ```
-DRY-RUN: acfs doctor --fix
+DRY-RUN: gtbi doctor --fix
 
 Would apply the following fixes:
 
@@ -286,13 +286,13 @@ Would apply the following fixes:
     Action: Prepend PATH directories to ~/.zshrc
     Files: ~/.zshrc
     Backup: Yes (SHA256 verified)
-    Undo: sed -i '/# ACFS PATH/,/^export PATH/d' ~/.zshrc
+    Undo: sed -i '/# GTBI PATH/,/^export PATH/d' ~/.zshrc
 
   [fix.config.copy]
-    Action: Copy acfs.zshrc to ~/.acfs/zsh/
-    Files: ~/.acfs/zsh/acfs.zshrc
+    Action: Copy gtbi.zshrc to ~/.gtbi/zsh/
+    Files: ~/.gtbi/zsh/gtbi.zshrc
     Backup: N/A (new file)
-    Undo: rm -f ~/.acfs/zsh/acfs.zshrc
+    Undo: rm -f ~/.gtbi/zsh/gtbi.zshrc
 
   [fix.dcg.hook]
     Action: Install DCG pre-tool-use hook
@@ -329,16 +329,16 @@ All fixers use the autofix system for rollback capability:
 
 ```bash
 # List all changes
-acfs undo --list
+gtbi undo --list
 
 # Undo specific change
-acfs undo chg_0001
+gtbi undo chg_0001
 
 # Undo all changes from a session
-acfs undo --all
+gtbi undo --all
 
 # Dry-run undo
-acfs undo --dry-run chg_0001
+gtbi undo --dry-run chg_0001
 ```
 
 ---
@@ -347,19 +347,19 @@ acfs undo --dry-run chg_0001
 
 ```bash
 # Run doctor with auto-fix
-acfs doctor --fix
+gtbi doctor --fix
 
 # Preview fixes without applying
-acfs doctor --fix --dry-run
+gtbi doctor --fix --dry-run
 
 # Auto-approve safe fixes
-acfs doctor --fix --yes
+gtbi doctor --fix --yes
 
 # JSON output for scripting
-acfs doctor --fix --json
+gtbi doctor --fix --json
 
 # Fix specific category only
-acfs doctor --fix --only path,config
+gtbi doctor --fix --only path,config
 ```
 
 ---
@@ -369,7 +369,7 @@ acfs doctor --fix --only path,config
 1. **Never delete user files** - Only create, modify, or symlink
 2. **Always backup before modify** - SHA256-verified backups
 3. **Idempotent** - Safe to run multiple times
-4. **Logged** - All changes recorded to `~/.local/share/acfs/doctor.log`
+4. **Logged** - All changes recorded to `~/.local/share/gtbi/doctor.log`
 5. **Reversible** - Every fix has an undo command
 6. **Non-destructive** - Package installs and sudo operations are suggestions only
 

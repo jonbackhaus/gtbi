@@ -27,7 +27,7 @@ skip() {
 
 create_beads_probe_workspace() {
     local probe_dir
-    probe_dir=$(mktemp -d "${TMPDIR:-/tmp}/acfs_beads_smoke.XXXXXX")
+    probe_dir=$(mktemp -d "${TMPDIR:-/tmp}/gtbi_beads_smoke.XXXXXX")
     if [[ -z "$probe_dir" || ! -d "$probe_dir" ]]; then
         return 1
     fi

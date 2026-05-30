@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-# ACFS Installer - ntfy.sh Notification Library
+# GTBI Installer - ntfy.sh Notification Library
 #
 # Provides lightweight push notifications via ntfy.sh for
 # installation events, agent completions, and system alerts.
@@ -9,31 +9,31 @@
 # Related: GitHub issue #131, bead bd-2igt6
 #
 # Configuration (env vars override config.yaml values):
-#   ACFS_NTFY_TOPIC    - required, the ntfy topic
-#   ACFS_NTFY_SERVER   - optional, defaults to https://ntfy.sh
-#   ACFS_NTFY_PRIORITY - optional, default priority (min/low/default/high/urgent)
-#   ACFS_NTFY_ENABLED  - optional, defaults to "true" if topic is set
+#   GTBI_NTFY_TOPIC    - required, the ntfy topic
+#   GTBI_NTFY_SERVER   - optional, defaults to https://ntfy.sh
+#   GTBI_NTFY_PRIORITY - optional, default priority (min/low/default/high/urgent)
+#   GTBI_NTFY_ENABLED  - optional, defaults to "true" if topic is set
 #
-# Config file: ~/.config/acfs/config.yaml
+# Config file: ~/.config/gtbi/config.yaml
 # Keys: ntfy_enabled, ntfy_topic, ntfy_server, ntfy_priority
 # ============================================================
 
 # Prevent multiple sourcing
-if [[ -n "${_ACFS_NOTIFY_SH_LOADED:-}" ]]; then
+if [[ -n "${_GTBI_NOTIFY_SH_LOADED:-}" ]]; then
     return 0
 fi
-_ACFS_NOTIFY_SH_LOADED=1
+_GTBI_NOTIFY_SH_LOADED=1
 
 # ============================================================
 # Configuration
 # ============================================================
 
 # Default ntfy server
-ACFS_NTFY_SERVER_DEFAULT="https://ntfy.sh"
+GTBI_NTFY_SERVER_DEFAULT="https://ntfy.sh"
 
 # Runtime-home helpers. When TARGET_USER is explicit, passwd/NSS owns the home
 # directory and stale TARGET_HOME/HOME values must not redirect config/state.
-_acfs_notify_sanitize_abs_nonroot_path() {
+_gtbi_notify_sanitize_abs_nonroot_path() {
     local path_value="${1:-}"
 
     [[ -n "$path_value" ]] || return 1
@@ -44,7 +44,7 @@ _acfs_notify_sanitize_abs_nonroot_path() {
     printf '%s\n' "$path_value"
 }
 
-_acfs_notify_system_binary_path() {
+_gtbi_notify_system_binary_path() {
     local name="${1:-}"
     local candidate=""
 
@@ -74,18 +74,18 @@ _acfs_notify_system_binary_path() {
     return 1
 }
 
-_acfs_notify_resolve_current_user() {
+_gtbi_notify_resolve_current_user() {
     local current_user=""
     local id_bin=""
     local whoami_bin=""
 
-    id_bin="$(_acfs_notify_system_binary_path id 2>/dev/null || true)"
+    id_bin="$(_gtbi_notify_system_binary_path id 2>/dev/null || true)"
     if [[ -n "$id_bin" ]]; then
         current_user="$("$id_bin" -un 2>/dev/null || true)"
     fi
 
     if [[ -z "$current_user" ]]; then
-        whoami_bin="$(_acfs_notify_system_binary_path whoami 2>/dev/null || true)"
+        whoami_bin="$(_gtbi_notify_system_binary_path whoami 2>/dev/null || true)"
         if [[ -n "$whoami_bin" ]]; then
             current_user="$("$whoami_bin" 2>/dev/null || true)"
         fi
@@ -95,14 +95,14 @@ _acfs_notify_resolve_current_user() {
     printf '%s\n' "$current_user"
 }
 
-_acfs_notify_getent_passwd_entry() {
+_gtbi_notify_getent_passwd_entry() {
     local user="${1-}"
     local getent_bin=""
     local passwd_entry=""
     local passwd_line=""
     local printed_any=false
 
-    getent_bin="$(_acfs_notify_system_binary_path getent 2>/dev/null || true)"
+    getent_bin="$(_gtbi_notify_system_binary_path getent 2>/dev/null || true)"
     if [[ -z "$user" ]]; then
         if [[ -n "$getent_bin" ]]; then
             while IFS= read -r passwd_line; do
@@ -137,34 +137,34 @@ _acfs_notify_getent_passwd_entry() {
     printf '%s\n' "$passwd_entry"
 }
 
-_acfs_notify_passwd_home_from_entry() {
+_gtbi_notify_passwd_home_from_entry() {
     local passwd_entry="${1:-}"
     local passwd_home=""
 
     [[ -n "$passwd_entry" ]] || return 1
     IFS=: read -r _ _ _ _ _ passwd_home _ <<< "$passwd_entry"
-    passwd_home="$(_acfs_notify_sanitize_abs_nonroot_path "$passwd_home" 2>/dev/null || true)"
+    passwd_home="$(_gtbi_notify_sanitize_abs_nonroot_path "$passwd_home" 2>/dev/null || true)"
     [[ -n "$passwd_home" ]] || return 1
     printf '%s\n' "$passwd_home"
 }
 
-_acfs_notify_resolve_current_home() {
+_gtbi_notify_resolve_current_home() {
     local current_user=""
     local home_candidate=""
     local passwd_entry=""
     local passwd_home=""
 
-    home_candidate="$(_acfs_notify_sanitize_abs_nonroot_path "${HOME:-}" 2>/dev/null || true)"
-    current_user="$(_acfs_notify_resolve_current_user 2>/dev/null || true)"
+    home_candidate="$(_gtbi_notify_sanitize_abs_nonroot_path "${HOME:-}" 2>/dev/null || true)"
+    current_user="$(_gtbi_notify_resolve_current_user 2>/dev/null || true)"
     if [[ "$current_user" == "root" ]]; then
         printf '/root\n'
         return 0
     fi
 
     if [[ -n "$current_user" ]]; then
-        passwd_entry="$(_acfs_notify_getent_passwd_entry "$current_user" 2>/dev/null || true)"
+        passwd_entry="$(_gtbi_notify_getent_passwd_entry "$current_user" 2>/dev/null || true)"
         if [[ -n "$passwd_entry" ]]; then
-            passwd_home="$(_acfs_notify_passwd_home_from_entry "$passwd_entry" 2>/dev/null || true)"
+            passwd_home="$(_gtbi_notify_passwd_home_from_entry "$passwd_entry" 2>/dev/null || true)"
             if [[ -n "$passwd_home" ]]; then
                 printf '%s\n' "$passwd_home"
                 return 0
@@ -176,14 +176,14 @@ _acfs_notify_resolve_current_home() {
     printf '%s\n' "$home_candidate"
 }
 
-_acfs_notify_runtime_home() {
+_gtbi_notify_runtime_home() {
     local current_user=""
     local explicit_target_home=""
     local passwd_entry=""
     local passwd_home=""
     local target_user="${TARGET_USER:-}"
 
-    explicit_target_home="$(_acfs_notify_sanitize_abs_nonroot_path "${TARGET_HOME:-}" 2>/dev/null || true)"
+    explicit_target_home="$(_gtbi_notify_sanitize_abs_nonroot_path "${TARGET_HOME:-}" 2>/dev/null || true)"
 
     if [[ -n "$target_user" ]]; then
         [[ "$target_user" =~ ^[a-z_][a-z0-9._-]*$ ]] || return 1
@@ -193,16 +193,16 @@ _acfs_notify_runtime_home() {
             return 0
         fi
 
-        passwd_entry="$(_acfs_notify_getent_passwd_entry "$target_user" 2>/dev/null || true)"
+        passwd_entry="$(_gtbi_notify_getent_passwd_entry "$target_user" 2>/dev/null || true)"
         if [[ -n "$passwd_entry" ]]; then
-            passwd_home="$(_acfs_notify_passwd_home_from_entry "$passwd_entry" 2>/dev/null || true)"
+            passwd_home="$(_gtbi_notify_passwd_home_from_entry "$passwd_entry" 2>/dev/null || true)"
             if [[ -n "$passwd_home" ]]; then
                 printf '%s\n' "$passwd_home"
                 return 0
             fi
         fi
 
-        current_user="$(_acfs_notify_resolve_current_user 2>/dev/null || true)"
+        current_user="$(_gtbi_notify_resolve_current_user 2>/dev/null || true)"
         if [[ -z "$current_user" ]] || [[ "$current_user" != "$target_user" ]]; then
             return 1
         fi
@@ -213,38 +213,38 @@ _acfs_notify_runtime_home() {
         return 0
     fi
 
-    _acfs_notify_resolve_current_home
+    _gtbi_notify_resolve_current_home
 }
 
-_ACFS_NOTIFY_RUNTIME_HOME="$(_acfs_notify_runtime_home 2>/dev/null || true)"
+_GTBI_NOTIFY_RUNTIME_HOME="$(_gtbi_notify_runtime_home 2>/dev/null || true)"
 
 # Rate-limit state directory (per-user)
-if [[ -n "$_ACFS_NOTIFY_RUNTIME_HOME" ]]; then
-    _ACFS_NOTIFY_STATE_DIR="${_ACFS_NOTIFY_RUNTIME_HOME}/.cache/acfs/notify"
+if [[ -n "$_GTBI_NOTIFY_RUNTIME_HOME" ]]; then
+    _GTBI_NOTIFY_STATE_DIR="${_GTBI_NOTIFY_RUNTIME_HOME}/.cache/gtbi/notify"
 else
-    _ACFS_NOTIFY_STATE_DIR=""
+    _GTBI_NOTIFY_STATE_DIR=""
 fi
 
 # Minimum seconds between notifications with the same debounce key.
-# Override with ACFS_NTFY_DEBOUNCE_SECONDS (default: 30).
-_ACFS_NOTIFY_DEBOUNCE_SECONDS="${ACFS_NTFY_DEBOUNCE_SECONDS:-30}"
+# Override with GTBI_NTFY_DEBOUNCE_SECONDS (default: 30).
+_GTBI_NOTIFY_DEBOUNCE_SECONDS="${GTBI_NTFY_DEBOUNCE_SECONDS:-30}"
 
 # ============================================================
 # Config Reader
 # ============================================================
 
-# Read a single key from ACFS config.yaml
-# Usage: _acfs_notify_config_read <key>
+# Read a single key from GTBI config.yaml
+# Usage: _gtbi_notify_config_read <key>
 # Returns: value on stdout, or empty string
-_acfs_notify_config_read() {
+_gtbi_notify_config_read() {
     local key="$1"
-    local config_home="${_ACFS_NOTIFY_RUNTIME_HOME:-}"
+    local config_home="${_GTBI_NOTIFY_RUNTIME_HOME:-}"
     local config_file=""
 
     if [[ -z "$config_home" ]]; then
         return 0
     fi
-    config_file="${config_home}/.config/acfs/config.yaml"
+    config_file="${config_home}/.config/gtbi/config.yaml"
 
     if [[ ! -f "$config_file" ]]; then
         return 0
@@ -259,7 +259,7 @@ _acfs_notify_config_read() {
     printf '%s' "$val"
 }
 
-_acfs_notify_header_value() {
+_gtbi_notify_header_value() {
     local value="${1:-}"
     local fallback="${2:-}"
 
@@ -274,7 +274,7 @@ _acfs_notify_header_value() {
     fi
 }
 
-_acfs_notify_priority_value() {
+_gtbi_notify_priority_value() {
     case "${1:-}" in
         min|low|default|high|urgent|1|2|3|4|5)
             printf '%s\n' "$1"
@@ -290,26 +290,26 @@ _acfs_notify_priority_value() {
 # ============================================================
 
 # Check whether a notification with the given debounce key was sent
-# recently (within _ACFS_NOTIFY_DEBOUNCE_SECONDS).  Returns 0 if
+# recently (within _GTBI_NOTIFY_DEBOUNCE_SECONDS).  Returns 0 if
 # sending is allowed, 1 if the notification should be suppressed.
 # When allowed, records the current timestamp.
 #
-# Usage: _acfs_notify_debounce_allowed <key>
-_acfs_notify_debounce_allowed() {
+# Usage: _gtbi_notify_debounce_allowed <key>
+_gtbi_notify_debounce_allowed() {
     local key="$1"
 
     # Debounce disabled (0 or negative)
-    if [[ "$_ACFS_NOTIFY_DEBOUNCE_SECONDS" -le 0 ]] 2>/dev/null; then
+    if [[ "$_GTBI_NOTIFY_DEBOUNCE_SECONDS" -le 0 ]] 2>/dev/null; then
         return 0
     fi
 
-    [[ -n "$_ACFS_NOTIFY_STATE_DIR" ]] || return 0
-    mkdir -p "$_ACFS_NOTIFY_STATE_DIR" 2>/dev/null || return 0
+    [[ -n "$_GTBI_NOTIFY_STATE_DIR" ]] || return 0
+    mkdir -p "$_GTBI_NOTIFY_STATE_DIR" 2>/dev/null || return 0
 
     # Sanitise the key so it is safe for a filename
     local safe_key
     safe_key=$(printf '%s' "$key" | tr -cd 'A-Za-z0-9_-')
-    local stamp_file="${_ACFS_NOTIFY_STATE_DIR}/${safe_key}.ts"
+    local stamp_file="${_GTBI_NOTIFY_STATE_DIR}/${safe_key}.ts"
 
     local now last_ts
     now=$(date +%s 2>/dev/null) || return 0
@@ -318,7 +318,7 @@ _acfs_notify_debounce_allowed() {
         last_ts=$(cat "$stamp_file" 2>/dev/null) || last_ts=0
         if [[ "$last_ts" =~ ^[0-9]+$ ]]; then
             local elapsed=$((now - last_ts))
-            if [[ $elapsed -lt $_ACFS_NOTIFY_DEBOUNCE_SECONDS ]]; then
+            if [[ $elapsed -lt $_GTBI_NOTIFY_DEBOUNCE_SECONDS ]]; then
                 # Too soon -- suppress
                 return 1
             fi
@@ -336,27 +336,27 @@ _acfs_notify_debounce_allowed() {
 
 # Send a notification via ntfy.sh (non-blocking, best-effort)
 #
-# Usage: acfs_notify <title> [body] [priority] [tags]
+# Usage: gtbi_notify <title> [body] [priority] [tags]
 #   title:    Short notification title (required)
 #   body:     Longer description (optional, default: "")
 #   priority: ntfy priority 1-5 or name (optional)
 #             1=min, 2=low, 3=default, 4=high, 5=urgent
-#             Falls back to ACFS_NTFY_PRIORITY env / config, then "default".
+#             Falls back to GTBI_NTFY_PRIORITY env / config, then "default".
 #   tags:     Comma-separated ntfy tags/emoji shortcodes (optional)
-#             Falls back to "computer,acfs".
+#             Falls back to "computer,gtbi".
 #
 # Environment overrides:
-#   ACFS_NTFY_ENABLED=true|false  Override config
-#   ACFS_NTFY_TOPIC=<topic>       Override config
-#   ACFS_NTFY_SERVER=<url>        Override config
-#   ACFS_NTFY_PRIORITY=<prio>     Override default priority
+#   GTBI_NTFY_ENABLED=true|false  Override config
+#   GTBI_NTFY_TOPIC=<topic>       Override config
+#   GTBI_NTFY_SERVER=<url>        Override config
+#   GTBI_NTFY_PRIORITY=<prio>     Override default priority
 #
 # Returns: 0 always (never fails, never blocks)
-acfs_notify() {
+gtbi_notify() {
     local title="${1:-}"
     local body="${2:-}"
     local priority="${3:-}"
-    local tags="${4:-computer,acfs}"
+    local tags="${4:-computer,gtbi}"
     local curl_bin=""
 
     # Must have a title
@@ -365,9 +365,9 @@ acfs_notify() {
     fi
 
     # Check if enabled (env override > config file)
-    local enabled="${ACFS_NTFY_ENABLED:-}"
+    local enabled="${GTBI_NTFY_ENABLED:-}"
     if [[ -z "$enabled" ]]; then
-        enabled=$(_acfs_notify_config_read "ntfy_enabled")
+        enabled=$(_gtbi_notify_config_read "ntfy_enabled")
     fi
 
     # Not enabled or explicitly disabled -> silent no-op
@@ -376,9 +376,9 @@ acfs_notify() {
     fi
 
     # Read topic (env override > config file)
-    local topic="${ACFS_NTFY_TOPIC:-}"
+    local topic="${GTBI_NTFY_TOPIC:-}"
     if [[ -z "$topic" ]]; then
-        topic=$(_acfs_notify_config_read "ntfy_topic")
+        topic=$(_gtbi_notify_config_read "ntfy_topic")
     fi
 
     # No topic configured -> silent no-op
@@ -387,33 +387,33 @@ acfs_notify() {
     fi
 
     # Read server (env override > config file > default)
-    local server="${ACFS_NTFY_SERVER:-}"
+    local server="${GTBI_NTFY_SERVER:-}"
     if [[ -z "$server" ]]; then
-        server=$(_acfs_notify_config_read "ntfy_server")
+        server=$(_gtbi_notify_config_read "ntfy_server")
     fi
     if [[ -z "$server" ]]; then
-        server="$ACFS_NTFY_SERVER_DEFAULT"
+        server="$GTBI_NTFY_SERVER_DEFAULT"
     fi
 
     # Resolve priority (arg > env > config > "default")
     if [[ -z "$priority" ]]; then
-        priority="${ACFS_NTFY_PRIORITY:-}"
+        priority="${GTBI_NTFY_PRIORITY:-}"
     fi
     if [[ -z "$priority" ]]; then
-        priority=$(_acfs_notify_config_read "ntfy_priority")
+        priority=$(_gtbi_notify_config_read "ntfy_priority")
     fi
     if [[ -z "$priority" ]]; then
         priority="default"
     fi
 
-    title="$(_acfs_notify_header_value "$title" "")"
+    title="$(_gtbi_notify_header_value "$title" "")"
     [[ -n "$title" ]] || return 0
-    priority="$(_acfs_notify_priority_value "$priority")"
-    tags="$(_acfs_notify_header_value "$tags" "computer,acfs")"
+    priority="$(_gtbi_notify_priority_value "$priority")"
+    tags="$(_gtbi_notify_header_value "$tags" "computer,gtbi")"
 
     # Require curl from a trusted system path. Notification hooks may run from
     # polluted interactive shells, so do not inherit a caller-provided curl.
-    curl_bin="$(_acfs_notify_system_binary_path curl 2>/dev/null || true)"
+    curl_bin="$(_gtbi_notify_system_binary_path curl 2>/dev/null || true)"
     if [[ -z "$curl_bin" ]]; then
         return 0
     fi
@@ -434,23 +434,23 @@ acfs_notify() {
 }
 
 # Send a notification with rate limiting (debounce).
-# Same arguments as acfs_notify, plus a leading debounce key.
+# Same arguments as gtbi_notify, plus a leading debounce key.
 #
-# Usage: acfs_notify_debounced <debounce_key> <title> [body] [priority] [tags]
+# Usage: gtbi_notify_debounced <debounce_key> <title> [body] [priority] [tags]
 #
 # If a notification with the same debounce_key was sent within the
-# last ACFS_NTFY_DEBOUNCE_SECONDS (default 30), the call is a no-op.
-acfs_notify_debounced() {
+# last GTBI_NTFY_DEBOUNCE_SECONDS (default 30), the call is a no-op.
+gtbi_notify_debounced() {
     local debounce_key="${1:-}"
     shift 1 2>/dev/null || true
 
     if [[ -z "$debounce_key" ]]; then
-        acfs_notify "$@"
+        gtbi_notify "$@"
         return 0
     fi
 
-    if _acfs_notify_debounce_allowed "$debounce_key"; then
-        acfs_notify "$@"
+    if _gtbi_notify_debounce_allowed "$debounce_key"; then
+        gtbi_notify "$@"
     fi
 
     return 0
@@ -461,8 +461,8 @@ acfs_notify_debounced() {
 # ============================================================
 
 # Notify install success
-# Usage: acfs_notify_install_success [duration_human]
-acfs_notify_install_success() {
+# Usage: gtbi_notify_install_success [duration_human]
+gtbi_notify_install_success() {
     local duration="${1:-}"
     local hostname
     hostname=$(hostname 2>/dev/null || echo "unknown")
@@ -470,16 +470,16 @@ acfs_notify_install_success() {
     if [[ -n "$duration" ]]; then
         body="${body} | Duration: ${duration}"
     fi
-    acfs_notify "ACFS Install Complete" "$body" "default" "white_check_mark,acfs"
+    gtbi_notify "GTBI Install Complete" "$body" "default" "white_check_mark,gtbi"
 }
 
 # Notify install failure
-# Usage: acfs_notify_install_failure [error_msg]
-acfs_notify_install_failure() {
+# Usage: gtbi_notify_install_failure [error_msg]
+gtbi_notify_install_failure() {
     local error="${1:-Unknown error}"
     local hostname
     hostname=$(hostname 2>/dev/null || echo "unknown")
-    acfs_notify "ACFS Install Failed" "Host: ${hostname} | Error: ${error}" "high" "x,acfs"
+    gtbi_notify "GTBI Install Failed" "Host: ${hostname} | Error: ${error}" "high" "x,gtbi"
 }
 
 # ============================================================
@@ -487,8 +487,8 @@ acfs_notify_install_failure() {
 # ============================================================
 
 # Notify that an agent task completed successfully.
-# Usage: acfs_notify_task_complete <task_description> [agent_name] [extra_detail]
-acfs_notify_task_complete() {
+# Usage: gtbi_notify_task_complete <task_description> [agent_name] [extra_detail]
+gtbi_notify_task_complete() {
     local task="${1:-Task}"
     local agent="${2:-}"
     local detail="${3:-}"
@@ -503,13 +503,13 @@ acfs_notify_task_complete() {
         body="${body} | ${detail}"
     fi
 
-    acfs_notify_debounced "task-complete-${task}" \
-        "Task Complete: ${task}" "$body" "default" "white_check_mark,robot,acfs"
+    gtbi_notify_debounced "task-complete-${task}" \
+        "Task Complete: ${task}" "$body" "default" "white_check_mark,robot,gtbi"
 }
 
 # Notify that an agent task failed.
-# Usage: acfs_notify_task_failed <task_description> [error_msg] [agent_name]
-acfs_notify_task_failed() {
+# Usage: gtbi_notify_task_failed <task_description> [error_msg] [agent_name]
+gtbi_notify_task_failed() {
     local task="${1:-Task}"
     local error="${2:-Unknown error}"
     local agent="${3:-}"
@@ -521,13 +521,13 @@ acfs_notify_task_failed() {
         body="${body} | Agent: ${agent}"
     fi
 
-    acfs_notify_debounced "task-failed-${task}" \
-        "Task Failed: ${task}" "$body" "high" "x,robot,acfs"
+    gtbi_notify_debounced "task-failed-${task}" \
+        "Task Failed: ${task}" "$body" "high" "x,robot,gtbi"
 }
 
 # Notify that human attention is needed (e.g., approval, decision, stuck state).
-# Usage: acfs_notify_human_needed <reason> [context] [agent_name]
-acfs_notify_human_needed() {
+# Usage: gtbi_notify_human_needed <reason> [context] [agent_name]
+gtbi_notify_human_needed() {
     local reason="${1:-Attention needed}"
     local context="${2:-}"
     local agent="${3:-}"
@@ -542,8 +542,8 @@ acfs_notify_human_needed() {
         body="${body} | ${context}"
     fi
 
-    acfs_notify_debounced "human-needed" \
-        "Human Needed: ${reason}" "$body" "urgent" "warning,sos,acfs"
+    gtbi_notify_debounced "human-needed" \
+        "Human Needed: ${reason}" "$body" "urgent" "warning,sos,gtbi"
 }
 
 # ============================================================
@@ -551,8 +551,8 @@ acfs_notify_human_needed() {
 # ============================================================
 
 # Notify nightly update success
-# Usage: acfs_notify_update_success [detail]
-acfs_notify_update_success() {
+# Usage: gtbi_notify_update_success [detail]
+gtbi_notify_update_success() {
     local detail="${1:-}"
     local hostname
     hostname=$(hostname 2>/dev/null || echo "unknown")
@@ -560,22 +560,22 @@ acfs_notify_update_success() {
     if [[ -n "$detail" ]]; then
         body="${body} | ${detail}"
     fi
-    acfs_notify "ACFS Update Complete" "$body" "low" "arrows_counterclockwise,acfs"
+    gtbi_notify "GTBI Update Complete" "$body" "low" "arrows_counterclockwise,gtbi"
 }
 
 # Notify nightly update failure
-# Usage: acfs_notify_update_failure [error_msg]
-acfs_notify_update_failure() {
+# Usage: gtbi_notify_update_failure [error_msg]
+gtbi_notify_update_failure() {
     local error="${1:-Unknown error}"
     local hostname
     hostname=$(hostname 2>/dev/null || echo "unknown")
-    acfs_notify "ACFS Update Failed" "Host: ${hostname} | Error: ${error}" "high" "warning,acfs"
+    gtbi_notify "GTBI Update Failed" "Host: ${hostname} | Error: ${error}" "high" "warning,gtbi"
 }
 
-# Notify a critical error during any ACFS operation.
-# Usage: acfs_notify_error <title> [detail]
-acfs_notify_error() {
-    local title="${1:-ACFS Error}"
+# Notify a critical error during any GTBI operation.
+# Usage: gtbi_notify_error <title> [detail]
+gtbi_notify_error() {
+    local title="${1:-GTBI Error}"
     local detail="${2:-}"
     local hostname
     hostname=$(hostname 2>/dev/null || echo "unknown")
@@ -583,6 +583,6 @@ acfs_notify_error() {
     if [[ -n "$detail" ]]; then
         body="${body} | ${detail}"
     fi
-    acfs_notify_debounced "error-${title}" \
-        "$title" "$body" "high" "rotating_light,acfs"
+    gtbi_notify_debounced "error-${title}" \
+        "$title" "$body" "high" "rotating_light,gtbi"
 }

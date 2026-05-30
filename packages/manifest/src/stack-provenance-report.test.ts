@@ -55,8 +55,8 @@ function stackModule(repo: string, tool: string, id = `stack.${tool}`): Module {
 function manifestFor(modules: Module[]): Manifest {
   return {
     version: 1,
-    name: 'Test ACFS',
-    id: 'test_acfs',
+    name: 'Test GTBI',
+    id: 'test_gtbi',
     defaults: {
       user: 'ubuntu',
       workspace_root: '/data/projects',

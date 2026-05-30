@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # shellcheck disable=SC1091
 # ============================================================
-# ACFS Installer - CLI Tools Library
-# Installs modern CLI replacements that acfs.zshrc depends on
+# GTBI Installer - CLI Tools Library
+# Installs modern CLI replacements that gtbi.zshrc depends on
 # ============================================================
 
 CLI_TOOLS_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Ensure we have logging functions available
-if [[ -z "${ACFS_BLUE:-}" ]]; then
+if [[ -z "${GTBI_BLUE:-}" ]]; then
     # shellcheck source=logging.sh
     source "$CLI_TOOLS_SCRIPT_DIR/logging.sh"
 fi
@@ -105,7 +105,7 @@ _cli_target_has_command() {
     for candidate in \
         "$primary_bin/$cmd" \
         "$target_home/.local/bin/$cmd" \
-        "$target_home/.acfs/bin/$cmd" \
+        "$target_home/.gtbi/bin/$cmd" \
         "$target_home/.cargo/bin/$cmd" \
         "$target_home/.bun/bin/$cmd" \
         "$target_home/.atuin/bin/$cmd" \
@@ -254,22 +254,22 @@ _cli_target_home() {
     local current_home=""
 
     explicit_home="$(_cli_existing_abs_home "${TARGET_HOME:-}" 2>/dev/null || true)"
-    explicit_bin_dir="$(_cli_existing_abs_home "${ACFS_BIN_DIR:-}" 2>/dev/null || true)"
+    explicit_bin_dir="$(_cli_existing_abs_home "${GTBI_BIN_DIR:-}" 2>/dev/null || true)"
     current_user="$(_cli_resolve_current_user 2>/dev/null || true)"
     if [[ "$target_user" == "root" ]]; then
         printf '/root\n'
         return 0
     fi
     if [[ -n "$explicit_home" ]] && [[ "$target_user" == "$current_user" ]] && {
-        [[ -f "$explicit_home/.acfs/state.json" ]] \
-            || [[ -f "$explicit_home/.acfs/VERSION" ]] \
-            || [[ -d "$explicit_home/.acfs/scripts/lib" ]]
+        [[ -f "$explicit_home/.gtbi/state.json" ]] \
+            || [[ -f "$explicit_home/.gtbi/VERSION" ]] \
+            || [[ -d "$explicit_home/.gtbi/scripts/lib" ]]
     }; then
         printf '%s\n' "$explicit_home"
         return 0
     fi
     if [[ -n "$explicit_home" ]] \
-        && [[ -n "${ACFS_BIN_DIR:-}" ]] \
+        && [[ -n "${GTBI_BIN_DIR:-}" ]] \
         && [[ -z "$(_cli_validate_bin_dir_for_home "$explicit_bin_dir" "$explicit_home" 2>/dev/null || true)" ]] \
         && [[ "$target_user" == "$current_user" ]]; then
         printf '%s\n' "$explicit_home"
@@ -333,7 +333,7 @@ _cli_validate_bin_dir_for_home() {
 
     case "$bin_dir" in
         */.local/bin) hinted_home="${bin_dir%/.local/bin}" ;;
-        */.acfs/bin) hinted_home="${bin_dir%/.acfs/bin}" ;;
+        */.gtbi/bin) hinted_home="${bin_dir%/.gtbi/bin}" ;;
         */.bun/bin) hinted_home="${bin_dir%/.bun/bin}" ;;
         */.cargo/bin) hinted_home="${bin_dir%/.cargo/bin}" ;;
         */.atuin/bin) hinted_home="${bin_dir%/.atuin/bin}" ;;
@@ -366,7 +366,7 @@ _cli_preferred_bin_dir() {
 
     [[ -n "$target_home" ]] || return 1
 
-    candidate="$(_cli_validate_bin_dir_for_home "${ACFS_BIN_DIR:-}" "$target_home" 2>/dev/null || true)"
+    candidate="$(_cli_validate_bin_dir_for_home "${GTBI_BIN_DIR:-}" "$target_home" 2>/dev/null || true)"
     if [[ -n "$candidate" ]]; then
         printf '%s\n' "$candidate"
         return 0
@@ -380,7 +380,7 @@ _cli_normalize_atuin_shims() {
     local target_home=""
     target_home="$(_cli_target_home "$target_user")"
     local preferred_src="$target_home/.atuin/bin/atuin"
-    local primary_dir="${ACFS_BIN_DIR:-$target_home/.local/bin}"
+    local primary_dir="${GTBI_BIN_DIR:-$target_home/.local/bin}"
     local fallback_dir="$target_home/.local/bin"
 
     primary_dir="$(_cli_validate_bin_dir_for_home "$primary_dir" "$target_home" 2>/dev/null || true)"
@@ -459,8 +459,8 @@ _cli_run_as_user() {
     local target_user_q=""
     local target_home_q=""
     local target_path_prefix_q=""
-    local acfs_home_q=""
-    local acfs_bin_dir_q=""
+    local gtbi_home_q=""
+    local gtbi_bin_dir_q=""
     local wrapped_cmd=""
     local bash_bin=""
     local sudo_bin=""
@@ -480,31 +480,31 @@ _cli_run_as_user() {
         return 1
     fi
 
-    if [[ -n "${ACFS_BIN_DIR:-}" ]] && { [[ "${ACFS_BIN_DIR}" == "/" ]] || [[ "${ACFS_BIN_DIR}" != /* ]]; }; then
-        log_error "ACFS_BIN_DIR must be an absolute path and cannot be '/' (got: ${ACFS_BIN_DIR:-<empty>})"
+    if [[ -n "${GTBI_BIN_DIR:-}" ]] && { [[ "${GTBI_BIN_DIR}" == "/" ]] || [[ "${GTBI_BIN_DIR}" != /* ]]; }; then
+        log_error "GTBI_BIN_DIR must be an absolute path and cannot be '/' (got: ${GTBI_BIN_DIR:-<empty>})"
         return 1
     fi
 
     preferred_bin_dir="$(_cli_preferred_bin_dir "$target_home" 2>/dev/null || true)"
     [[ -n "$preferred_bin_dir" ]] || preferred_bin_dir="$target_home/.local/bin"
-    target_path_prefix="$preferred_bin_dir:$target_home/.local/bin:$target_home/.acfs/bin:$target_home/.cargo/bin:$target_home/.bun/bin:$target_home/.atuin/bin:$target_home/go/bin"
+    target_path_prefix="$preferred_bin_dir:$target_home/.local/bin:$target_home/.gtbi/bin:$target_home/.cargo/bin:$target_home/.bun/bin:$target_home/.atuin/bin:$target_home/go/bin"
 
     printf -v target_user_q '%q' "$target_user"
     printf -v target_home_q '%q' "$target_home"
     printf -v target_path_prefix_q '%q' "$target_path_prefix"
-    if [[ -n "${ACFS_HOME:-}" ]]; then
-        printf -v acfs_home_q '%q' "$ACFS_HOME"
+    if [[ -n "${GTBI_HOME:-}" ]]; then
+        printf -v gtbi_home_q '%q' "$GTBI_HOME"
     fi
     if [[ -n "$preferred_bin_dir" ]]; then
-        printf -v acfs_bin_dir_q '%q' "$preferred_bin_dir"
+        printf -v gtbi_bin_dir_q '%q' "$preferred_bin_dir"
     fi
 
     wrapped_cmd="export TARGET_USER=$target_user_q TARGET_HOME=$target_home_q HOME=$target_home_q;"
-    if [[ -n "$acfs_home_q" ]]; then
-        wrapped_cmd+=" export ACFS_HOME=$acfs_home_q;"
+    if [[ -n "$gtbi_home_q" ]]; then
+        wrapped_cmd+=" export GTBI_HOME=$gtbi_home_q;"
     fi
-    if [[ -n "$acfs_bin_dir_q" ]]; then
-        wrapped_cmd+=" export ACFS_BIN_DIR=$acfs_bin_dir_q;"
+    if [[ -n "$gtbi_bin_dir_q" ]]; then
+        wrapped_cmd+=" export GTBI_BIN_DIR=$gtbi_bin_dir_q;"
     fi
     wrapped_cmd+=" export PATH=$target_path_prefix_q:\$PATH; set -o pipefail; cd \"\$HOME\" || exit 1; $cmd"
 
@@ -743,7 +743,7 @@ install_lazygit() {
     version=$(_fetch_github_version "jesseduffield/lazygit" true) || version="0.44.1"
 
     local tmpdir
-    tmpdir="$(mktemp -d "${TMPDIR:-/tmp}/acfs_lazygit.XXXXXX" 2>/dev/null)" || tmpdir=""
+    tmpdir="$(mktemp -d "${TMPDIR:-/tmp}/gtbi_lazygit.XXXXXX" 2>/dev/null)" || tmpdir=""
     if [[ -z "$tmpdir" ]] || [[ ! -d "$tmpdir" ]]; then
         log_warn "mktemp failed; cannot install lazygit"
         return 1
@@ -796,7 +796,7 @@ install_lazydocker() {
     version=$(_fetch_github_version "jesseduffield/lazydocker" true) || version="0.23.3"
 
     local tmpdir
-    tmpdir="$(mktemp -d "${TMPDIR:-/tmp}/acfs_lazydocker.XXXXXX" 2>/dev/null)" || tmpdir=""
+    tmpdir="$(mktemp -d "${TMPDIR:-/tmp}/gtbi_lazydocker.XXXXXX" 2>/dev/null)" || tmpdir=""
     if [[ -z "$tmpdir" ]] || [[ ! -d "$tmpdir" ]]; then
         log_warn "mktemp failed; cannot install lazydocker"
         return 1
@@ -849,7 +849,7 @@ install_yq() {
     version=$(_fetch_github_version "mikefarah/yq" false) || version="v4.44.1"
 
     local tmpdir
-    tmpdir="$(mktemp -d "${TMPDIR:-/tmp}/acfs_yq.XXXXXX" 2>/dev/null)" || tmpdir=""
+    tmpdir="$(mktemp -d "${TMPDIR:-/tmp}/gtbi_yq.XXXXXX" 2>/dev/null)" || tmpdir=""
     if [[ -z "$tmpdir" ]] || [[ ! -d "$tmpdir" ]]; then
         log_warn "mktemp failed; cannot install yq"
         return 1

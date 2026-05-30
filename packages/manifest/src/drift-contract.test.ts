@@ -20,14 +20,14 @@ function writeFixtureFile(root: string, relPath: string, content: string): void 
 }
 
 function cleanFixture(): string {
-  const root = mkdtempSync(join(tmpdir(), 'acfs-manifest-drift-contract-'));
+  const root = mkdtempSync(join(tmpdir(), 'gtbi-manifest-drift-contract-'));
 
   writeFixtureFile(
     root,
-    'acfs.manifest.yaml',
+    'gtbi.manifest.yaml',
     `version: 1
-name: Test ACFS
-id: test_acfs
+name: Test GTBI
+id: test_gtbi
 defaults:
   user: ubuntu
   workspace_root: /data/projects
@@ -100,7 +100,7 @@ modules:
   writeFixtureFile(
     root,
     'scripts/generated/manifest_index.sh',
-    `ACFS_MODULES_IN_ORDER=(
+    `GTBI_MODULES_IN_ORDER=(
     "stack.example"
     "stack.hidden"
     "base.local"
@@ -139,7 +139,7 @@ modules:
     'apps/web/lib/generated/manifest-lessons-index.ts',
     'export const manifestLessonLinks = [{ moduleId: "stack.example", lessonSlug: "example" }];\n'
   );
-  writeFixtureFile(root, 'acfs/onboard/lessons/01_example.md', '# Example\n');
+  writeFixtureFile(root, 'gtbi/onboard/lessons/01_example.md', '# Example\n');
   writeFixtureFile(
     root,
     'README.md',
@@ -148,7 +148,7 @@ modules:
       'bun run generate:diff',
       'scripts/generated/doctor_checks.sh',
       'apps/web/lib/generated',
-      'acfs/onboard/lessons',
+      'gtbi/onboard/lessons',
       'checksums.yaml',
     ].join('\n')
   );
@@ -176,7 +176,7 @@ describe('manifest drift contract', () => {
     writeFixtureFile(
       root,
       'scripts/generated/manifest_index.sh',
-      `ACFS_MODULES_IN_ORDER=(
+      `GTBI_MODULES_IN_ORDER=(
     "stack.hidden"
     "base.local"
 )
@@ -238,10 +238,10 @@ describe('manifest drift contract', () => {
     const root = cleanFixture();
     writeFixtureFile(
       root,
-      'acfs.manifest.yaml',
+      'gtbi.manifest.yaml',
       `version: 1
-name: Test ACFS
-id: test_acfs
+name: Test GTBI
+id: test_gtbi
 defaults:
   user: ubuntu
   workspace_root: /data/projects

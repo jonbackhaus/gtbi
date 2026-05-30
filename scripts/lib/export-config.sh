@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # shellcheck disable=SC1091
 # ============================================================
-# ACFS Export Config - Export current configuration
+# GTBI Export Config - Export current configuration
 # Exports tool versions, settings, and module list for backup/migration
 # ============================================================
 
@@ -188,7 +188,7 @@ export_initial_current_home() {
     local cached_home=""
     local resolved_home=""
 
-    if [[ "${_EXPORT_WAS_SOURCED:-false}" == "true" ]] && [[ -z "${TARGET_HOME:-}${TARGET_USER:-}${ACFS_HOME:-}${ACFS_STATE_FILE:-}${ACFS_SYSTEM_STATE_FILE:-}" ]]; then
+    if [[ "${_EXPORT_WAS_SOURCED:-false}" == "true" ]] && [[ -z "${TARGET_HOME:-}${TARGET_USER:-}${GTBI_HOME:-}${GTBI_STATE_FILE:-}${GTBI_SYSTEM_STATE_FILE:-}" ]]; then
         cached_home="$(export_sanitize_abs_nonroot_path "${_EXPORT_ORIGINAL_HOME:-${HOME:-}}" 2>/dev/null || true)"
         if [[ -n "$cached_home" ]]; then
             printf '%s\n' "$cached_home"
@@ -220,20 +220,20 @@ fi
 
 # Script directory
 _EXPORT_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-_EXPORT_EXPLICIT_ACFS_HOME="$(export_sanitize_abs_nonroot_path "${ACFS_HOME:-}" 2>/dev/null || true)"
-_EXPORT_DEFAULT_ACFS_HOME=""
-[[ -n "$_EXPORT_CURRENT_HOME" ]] && _EXPORT_DEFAULT_ACFS_HOME="${_EXPORT_CURRENT_HOME}/.acfs"
-_EXPORT_ACFS_HOME="${_EXPORT_EXPLICIT_ACFS_HOME:-$_EXPORT_DEFAULT_ACFS_HOME}"
+_EXPORT_EXPLICIT_GTBI_HOME="$(export_sanitize_abs_nonroot_path "${GTBI_HOME:-}" 2>/dev/null || true)"
+_EXPORT_DEFAULT_GTBI_HOME=""
+[[ -n "$_EXPORT_CURRENT_HOME" ]] && _EXPORT_DEFAULT_GTBI_HOME="${_EXPORT_CURRENT_HOME}/.gtbi"
+_EXPORT_GTBI_HOME="${_EXPORT_EXPLICIT_GTBI_HOME:-$_EXPORT_DEFAULT_GTBI_HOME}"
 _EXPORT_SYSTEM_STATE_WAS_EXPLICIT=false
-[[ -n "${ACFS_SYSTEM_STATE_FILE:-}" ]] && [[ "${ACFS_SYSTEM_STATE_FILE%/}" != "/var/lib/acfs/state.json" ]] && _EXPORT_SYSTEM_STATE_WAS_EXPLICIT=true
-_EXPORT_SYSTEM_STATE_FILE="$(export_sanitize_abs_nonroot_path "${ACFS_SYSTEM_STATE_FILE:-/var/lib/acfs/state.json}" 2>/dev/null || true)"
+[[ -n "${GTBI_SYSTEM_STATE_FILE:-}" ]] && [[ "${GTBI_SYSTEM_STATE_FILE%/}" != "/var/lib/gtbi/state.json" ]] && _EXPORT_SYSTEM_STATE_WAS_EXPLICIT=true
+_EXPORT_SYSTEM_STATE_FILE="$(export_sanitize_abs_nonroot_path "${GTBI_SYSTEM_STATE_FILE:-/var/lib/gtbi/state.json}" 2>/dev/null || true)"
 if [[ -z "$_EXPORT_SYSTEM_STATE_FILE" ]]; then
-    _EXPORT_SYSTEM_STATE_FILE="/var/lib/acfs/state.json"
+    _EXPORT_SYSTEM_STATE_FILE="/var/lib/gtbi/state.json"
 fi
 _EXPORT_EXPLICIT_TARGET_HOME_RAW="${TARGET_HOME:-}"
 _EXPORT_EXPLICIT_TARGET_USER_RAW="${TARGET_USER:-}"
 _EXPORT_EXPLICIT_TARGET_HOME="$(export_existing_abs_home "${TARGET_HOME:-}" 2>/dev/null || true)"
-_EXPORT_RESOLVED_ACFS_HOME=""
+_EXPORT_RESOLVED_GTBI_HOME=""
 
 # Source logging if available
 if [[ -f "$_EXPORT_SCRIPT_DIR/logging.sh" ]]; then
@@ -249,18 +249,18 @@ fi
 _EXPORT_OUTPUT_FORMAT="yaml"  # yaml, json, or minimal
 _EXPORT_STATE_FILE=""
 _EXPORT_VERSION_FILE=""
-_EXPORT_INSTALL_HELPERS_FILE="${ACFS_INSTALL_HELPERS_SH:-$_EXPORT_SCRIPT_DIR/install_helpers.sh}"
-_EXPORT_MANIFEST_INDEX_FILE="${ACFS_MANIFEST_INDEX_SH:-$_EXPORT_SCRIPT_DIR/../generated/manifest_index.sh}"
+_EXPORT_INSTALL_HELPERS_FILE="${GTBI_INSTALL_HELPERS_SH:-$_EXPORT_SCRIPT_DIR/install_helpers.sh}"
+_EXPORT_MANIFEST_INDEX_FILE="${GTBI_MANIFEST_INDEX_SH:-$_EXPORT_SCRIPT_DIR/../generated/manifest_index.sh}"
 
 # ============================================================
 # Parse Arguments
 # ============================================================
 show_help() {
     cat << 'EOF'
-ACFS Export Config - Export current configuration
+GTBI Export Config - Export current configuration
 
 USAGE:
-  acfs export-config [OPTIONS]
+  gtbi export-config [OPTIONS]
 
 OPTIONS:
   --json          Output in JSON format (default: YAML)
@@ -269,10 +269,10 @@ OPTIONS:
   -h, --help      Show this help message
 
 EXAMPLES:
-  acfs export-config                    # Print YAML to stdout
-  acfs export-config > backup.yaml      # Save to file
-  acfs export-config --json             # JSON output
-  acfs export-config --minimal          # Just module list
+  gtbi export-config                    # Print YAML to stdout
+  gtbi export-config > backup.yaml      # Save to file
+  gtbi export-config --json             # JSON output
+  gtbi export-config --minimal          # Just module list
 
 SENSITIVE DATA:
   This command NEVER exports:
@@ -437,7 +437,7 @@ resolve_target_home() {
             printf '%s\n' "$state_home"
             return 0
         fi
-        if [[ -n "$_EXPORT_EXPLICIT_ACFS_HOME" ]] && [[ "$state_file" == "$_EXPORT_EXPLICIT_ACFS_HOME/state.json" ]]; then
+        if [[ -n "$_EXPORT_EXPLICIT_GTBI_HOME" ]] && [[ "$state_file" == "$_EXPORT_EXPLICIT_GTBI_HOME/state.json" ]]; then
             printf '%s\n' "$state_home"
             return 0
         fi
@@ -456,15 +456,15 @@ resolve_target_home() {
     return 1
 }
 
-script_acfs_home() {
+script_gtbi_home() {
     local candidate=""
     candidate=$(cd "$_EXPORT_SCRIPT_DIR/../.." 2>/dev/null && pwd) || return 1
-    [[ "$(basename "$candidate")" == ".acfs" ]] || return 1
+    [[ "$(basename "$candidate")" == ".gtbi" ]] || return 1
     printf '%s\n' "$candidate"
 }
 
-export_current_home_acfs_candidate() {
-    local candidate="$_EXPORT_DEFAULT_ACFS_HOME"
+export_current_home_gtbi_candidate() {
+    local candidate="$_EXPORT_DEFAULT_GTBI_HOME"
     local current_home="$_EXPORT_CURRENT_HOME"
     local current_user=""
     local original_home=""
@@ -498,9 +498,9 @@ export_current_home_acfs_candidate() {
     printf '%s\n' "$candidate"
 }
 
-resolve_acfs_home() {
-    if [[ -n "$_EXPORT_RESOLVED_ACFS_HOME" ]]; then
-        printf '%s\n' "$_EXPORT_RESOLVED_ACFS_HOME"
+resolve_gtbi_home() {
+    if [[ -n "$_EXPORT_RESOLVED_GTBI_HOME" ]]; then
+        printf '%s\n' "$_EXPORT_RESOLVED_GTBI_HOME"
         return 0
     fi
 
@@ -509,43 +509,43 @@ resolve_acfs_home() {
     local detected_user=""
     local explicit_target_home=""
 
-    candidate=$(script_acfs_home 2>/dev/null || true)
+    candidate=$(script_gtbi_home 2>/dev/null || true)
     if [[ -n "$candidate" ]] && [[ -f "$candidate/state.json" || -f "$candidate/VERSION" || -d "$candidate/onboard" ]]; then
-        _EXPORT_RESOLVED_ACFS_HOME="$candidate"
-        printf '%s\n' "$_EXPORT_RESOLVED_ACFS_HOME"
+        _EXPORT_RESOLVED_GTBI_HOME="$candidate"
+        printf '%s\n' "$_EXPORT_RESOLVED_GTBI_HOME"
         return 0
     fi
 
     explicit_target_home="$(resolve_explicit_target_home 2>/dev/null || true)"
     if [[ -n "$explicit_target_home" ]]; then
-        candidate="${explicit_target_home}/.acfs"
+        candidate="${explicit_target_home}/.gtbi"
         if [[ -f "$candidate/state.json" || -f "$candidate/VERSION" || -d "$candidate/onboard" ]]; then
-            _EXPORT_RESOLVED_ACFS_HOME="$candidate"
-            printf '%s\n' "$_EXPORT_RESOLVED_ACFS_HOME"
+            _EXPORT_RESOLVED_GTBI_HOME="$candidate"
+            printf '%s\n' "$_EXPORT_RESOLVED_GTBI_HOME"
             return 0
         fi
     fi
 
-    if [[ ! -f "$_EXPORT_SYSTEM_STATE_FILE" ]] && [[ -n "$_EXPORT_EXPLICIT_ACFS_HOME" ]] && [[ -f "$_EXPORT_EXPLICIT_ACFS_HOME/state.json" || -f "$_EXPORT_EXPLICIT_ACFS_HOME/VERSION" || -d "$_EXPORT_EXPLICIT_ACFS_HOME/onboard" ]]; then
-        _EXPORT_RESOLVED_ACFS_HOME="$_EXPORT_EXPLICIT_ACFS_HOME"
-        printf '%s\n' "$_EXPORT_RESOLVED_ACFS_HOME"
+    if [[ ! -f "$_EXPORT_SYSTEM_STATE_FILE" ]] && [[ -n "$_EXPORT_EXPLICIT_GTBI_HOME" ]] && [[ -f "$_EXPORT_EXPLICIT_GTBI_HOME/state.json" || -f "$_EXPORT_EXPLICIT_GTBI_HOME/VERSION" || -d "$_EXPORT_EXPLICIT_GTBI_HOME/onboard" ]]; then
+        _EXPORT_RESOLVED_GTBI_HOME="$_EXPORT_EXPLICIT_GTBI_HOME"
+        printf '%s\n' "$_EXPORT_RESOLVED_GTBI_HOME"
         return 0
     fi
 
-    candidate="$(export_current_home_acfs_candidate 2>/dev/null || true)"
+    candidate="$(export_current_home_gtbi_candidate 2>/dev/null || true)"
     if [[ -n "$candidate" ]]; then
-        _EXPORT_RESOLVED_ACFS_HOME="$candidate"
-        printf '%s\n' "$_EXPORT_RESOLVED_ACFS_HOME"
+        _EXPORT_RESOLVED_GTBI_HOME="$candidate"
+        printf '%s\n' "$_EXPORT_RESOLVED_GTBI_HOME"
         return 0
     fi
 
     if [[ "$_EXPORT_SYSTEM_STATE_WAS_EXPLICIT" == true ]]; then
         detected_home=$(read_target_home_from_state "$_EXPORT_SYSTEM_STATE_FILE" 2>/dev/null || true)
         if [[ -n "$detected_home" ]]; then
-            candidate="${detected_home}/.acfs"
+            candidate="${detected_home}/.gtbi"
             if [[ -f "$candidate/state.json" || -f "$candidate/VERSION" || -d "$candidate/onboard" ]]; then
-                _EXPORT_RESOLVED_ACFS_HOME="$candidate"
-                printf '%s\n' "$_EXPORT_RESOLVED_ACFS_HOME"
+                _EXPORT_RESOLVED_GTBI_HOME="$candidate"
+                printf '%s\n' "$_EXPORT_RESOLVED_GTBI_HOME"
                 return 0
             fi
         fi
@@ -553,43 +553,43 @@ resolve_acfs_home() {
         detected_user=$(read_target_user_from_state "$_EXPORT_SYSTEM_STATE_FILE" 2>/dev/null || true)
         if [[ -n "$detected_user" ]]; then
             detected_home=$(home_for_user "$detected_user" 2>/dev/null || true)
-            candidate="${detected_home}/.acfs"
+            candidate="${detected_home}/.gtbi"
             if [[ -n "$detected_home" ]] && [[ -f "$candidate/state.json" || -f "$candidate/VERSION" || -d "$candidate/onboard" ]]; then
-                _EXPORT_RESOLVED_ACFS_HOME="$candidate"
-                printf '%s\n' "$_EXPORT_RESOLVED_ACFS_HOME"
+                _EXPORT_RESOLVED_GTBI_HOME="$candidate"
+                printf '%s\n' "$_EXPORT_RESOLVED_GTBI_HOME"
                 return 0
             fi
         fi
     fi
 
-    if [[ -n "$_EXPORT_EXPLICIT_ACFS_HOME" ]] && [[ -f "$_EXPORT_EXPLICIT_ACFS_HOME/state.json" || -f "$_EXPORT_EXPLICIT_ACFS_HOME/VERSION" || -d "$_EXPORT_EXPLICIT_ACFS_HOME/onboard" ]]; then
-        _EXPORT_RESOLVED_ACFS_HOME="$_EXPORT_EXPLICIT_ACFS_HOME"
-        printf '%s\n' "$_EXPORT_RESOLVED_ACFS_HOME"
+    if [[ -n "$_EXPORT_EXPLICIT_GTBI_HOME" ]] && [[ -f "$_EXPORT_EXPLICIT_GTBI_HOME/state.json" || -f "$_EXPORT_EXPLICIT_GTBI_HOME/VERSION" || -d "$_EXPORT_EXPLICIT_GTBI_HOME/onboard" ]]; then
+        _EXPORT_RESOLVED_GTBI_HOME="$_EXPORT_EXPLICIT_GTBI_HOME"
+        printf '%s\n' "$_EXPORT_RESOLVED_GTBI_HOME"
         return 0
     fi
 
     if [[ -n "$_EXPORT_EXPLICIT_TARGET_HOME_RAW" ]] || [[ -n "$_EXPORT_EXPLICIT_TARGET_USER_RAW" ]]; then
-        _EXPORT_RESOLVED_ACFS_HOME=""
-        printf '%s\n' "$_EXPORT_RESOLVED_ACFS_HOME"
+        _EXPORT_RESOLVED_GTBI_HOME=""
+        printf '%s\n' "$_EXPORT_RESOLVED_GTBI_HOME"
         return 0
     fi
 
     if [[ -n "${SUDO_USER:-}" ]]; then
         detected_home=$(home_for_user "$SUDO_USER" 2>/dev/null || true)
-        candidate="${detected_home}/.acfs"
+        candidate="${detected_home}/.gtbi"
         if [[ -n "$detected_home" ]] && [[ -f "$candidate/state.json" || -f "$candidate/VERSION" || -d "$candidate/onboard" ]]; then
-            _EXPORT_RESOLVED_ACFS_HOME="$candidate"
-            printf '%s\n' "$_EXPORT_RESOLVED_ACFS_HOME"
+            _EXPORT_RESOLVED_GTBI_HOME="$candidate"
+            printf '%s\n' "$_EXPORT_RESOLVED_GTBI_HOME"
             return 0
         fi
     fi
 
     detected_home=$(read_target_home_from_state "$_EXPORT_SYSTEM_STATE_FILE" 2>/dev/null || true)
     if [[ -n "$detected_home" ]]; then
-        candidate="${detected_home}/.acfs"
+        candidate="${detected_home}/.gtbi"
         if [[ -f "$candidate/state.json" || -f "$candidate/VERSION" || -d "$candidate/onboard" ]]; then
-            _EXPORT_RESOLVED_ACFS_HOME="$candidate"
-            printf '%s\n' "$_EXPORT_RESOLVED_ACFS_HOME"
+            _EXPORT_RESOLVED_GTBI_HOME="$candidate"
+            printf '%s\n' "$_EXPORT_RESOLVED_GTBI_HOME"
             return 0
         fi
     fi
@@ -597,35 +597,35 @@ resolve_acfs_home() {
     detected_user=$(read_target_user_from_state "$_EXPORT_SYSTEM_STATE_FILE" 2>/dev/null || true)
     if [[ -n "$detected_user" ]]; then
         detected_home=$(home_for_user "$detected_user" 2>/dev/null || true)
-        candidate="${detected_home}/.acfs"
+        candidate="${detected_home}/.gtbi"
         if [[ -n "$detected_home" ]] && [[ -f "$candidate/state.json" || -f "$candidate/VERSION" || -d "$candidate/onboard" ]]; then
-            _EXPORT_RESOLVED_ACFS_HOME="$candidate"
-            printf '%s\n' "$_EXPORT_RESOLVED_ACFS_HOME"
+            _EXPORT_RESOLVED_GTBI_HOME="$candidate"
+            printf '%s\n' "$_EXPORT_RESOLVED_GTBI_HOME"
             return 0
         fi
     fi
 
-    if [[ -n "$_EXPORT_EXPLICIT_ACFS_HOME" ]] && [[ -f "$_EXPORT_EXPLICIT_ACFS_HOME/state.json" || -f "$_EXPORT_EXPLICIT_ACFS_HOME/VERSION" || -d "$_EXPORT_EXPLICIT_ACFS_HOME/onboard" ]]; then
-        _EXPORT_RESOLVED_ACFS_HOME="$_EXPORT_EXPLICIT_ACFS_HOME"
-        printf '%s\n' "$_EXPORT_RESOLVED_ACFS_HOME"
+    if [[ -n "$_EXPORT_EXPLICIT_GTBI_HOME" ]] && [[ -f "$_EXPORT_EXPLICIT_GTBI_HOME/state.json" || -f "$_EXPORT_EXPLICIT_GTBI_HOME/VERSION" || -d "$_EXPORT_EXPLICIT_GTBI_HOME/onboard" ]]; then
+        _EXPORT_RESOLVED_GTBI_HOME="$_EXPORT_EXPLICIT_GTBI_HOME"
+        printf '%s\n' "$_EXPORT_RESOLVED_GTBI_HOME"
         return 0
     fi
 
-    if [[ -n "$_EXPORT_DEFAULT_ACFS_HOME" ]] && [[ -f "$_EXPORT_DEFAULT_ACFS_HOME/state.json" || -f "$_EXPORT_DEFAULT_ACFS_HOME/VERSION" || -d "$_EXPORT_DEFAULT_ACFS_HOME/onboard" ]]; then
-        _EXPORT_RESOLVED_ACFS_HOME="$_EXPORT_DEFAULT_ACFS_HOME"
-        printf '%s\n' "$_EXPORT_RESOLVED_ACFS_HOME"
+    if [[ -n "$_EXPORT_DEFAULT_GTBI_HOME" ]] && [[ -f "$_EXPORT_DEFAULT_GTBI_HOME/state.json" || -f "$_EXPORT_DEFAULT_GTBI_HOME/VERSION" || -d "$_EXPORT_DEFAULT_GTBI_HOME/onboard" ]]; then
+        _EXPORT_RESOLVED_GTBI_HOME="$_EXPORT_DEFAULT_GTBI_HOME"
+        printf '%s\n' "$_EXPORT_RESOLVED_GTBI_HOME"
         return 0
     fi
 
-    _EXPORT_RESOLVED_ACFS_HOME="$_EXPORT_DEFAULT_ACFS_HOME"
-    printf '%s\n' "$_EXPORT_RESOLVED_ACFS_HOME"
+    _EXPORT_RESOLVED_GTBI_HOME="$_EXPORT_DEFAULT_GTBI_HOME"
+    printf '%s\n' "$_EXPORT_RESOLVED_GTBI_HOME"
 }
 
 resolve_state_file() {
     local candidate=""
 
-    if [[ -n "$_EXPORT_ACFS_HOME" ]]; then
-        candidate="${_EXPORT_ACFS_HOME}/state.json"
+    if [[ -n "$_EXPORT_GTBI_HOME" ]]; then
+        candidate="${_EXPORT_GTBI_HOME}/state.json"
     fi
 
     if [[ -n "$candidate" ]] && [[ -f "$candidate" ]]; then
@@ -641,10 +641,10 @@ resolve_state_file() {
     printf '%s\n' "$candidate"
 }
 
-refresh_acfs_paths() {
-    _EXPORT_ACFS_HOME="$(resolve_acfs_home)"
+refresh_gtbi_paths() {
+    _EXPORT_GTBI_HOME="$(resolve_gtbi_home)"
     _EXPORT_STATE_FILE="$(resolve_state_file)"
-    _EXPORT_VERSION_FILE="${_EXPORT_ACFS_HOME:+$_EXPORT_ACFS_HOME/VERSION}"
+    _EXPORT_VERSION_FILE="${_EXPORT_GTBI_HOME:+$_EXPORT_GTBI_HOME/VERSION}"
 }
 
 get_target_user() {
@@ -707,7 +707,7 @@ resolve_explicit_target_home() {
         fi
         target_home="$_EXPORT_EXPLICIT_TARGET_HOME"
         if [[ -n "$target_home" ]] && [[ "$target_home" != "${_EXPORT_CURRENT_HOME:-}" ]] && {
-            [[ -f "$target_home/.acfs/state.json" ]] || [[ -f "$target_home/.acfs/VERSION" ]] || [[ -d "$target_home/.acfs/onboard" ]]
+            [[ -f "$target_home/.gtbi/state.json" ]] || [[ -f "$target_home/.gtbi/VERSION" ]] || [[ -d "$target_home/.gtbi/onboard" ]]
         }; then
             printf '%s\n' "${target_home%/}"
             return 0
@@ -759,7 +759,7 @@ read_user_for_home() {
         return 0
     fi
 
-    state_file="$user_home/.acfs/state.json"
+    state_file="$user_home/.gtbi/state.json"
     candidate_user="$(read_target_user_from_state "$state_file" 2>/dev/null || true)"
     if [[ -n "$candidate_user" ]]; then
         current_home="$(home_for_user "$candidate_user" 2>/dev/null || true)"
@@ -772,24 +772,24 @@ read_user_for_home() {
     return 1
 }
 
-infer_target_home_from_acfs_home() {
-    local acfs_home_candidate=""
+infer_target_home_from_gtbi_home() {
+    local gtbi_home_candidate=""
     local inferred_home=""
 
-    acfs_home_candidate="$(export_sanitize_abs_nonroot_path "${_EXPORT_ACFS_HOME:-}" 2>/dev/null || true)"
-    [[ -n "$acfs_home_candidate" ]] || return 1
-    [[ "$(basename "$acfs_home_candidate")" == ".acfs" ]] || return 1
-    [[ -f "$acfs_home_candidate/state.json" || -f "$acfs_home_candidate/VERSION" || -d "$acfs_home_candidate/onboard" ]] || return 1
+    gtbi_home_candidate="$(export_sanitize_abs_nonroot_path "${_EXPORT_GTBI_HOME:-}" 2>/dev/null || true)"
+    [[ -n "$gtbi_home_candidate" ]] || return 1
+    [[ "$(basename "$gtbi_home_candidate")" == ".gtbi" ]] || return 1
+    [[ -f "$gtbi_home_candidate/state.json" || -f "$gtbi_home_candidate/VERSION" || -d "$gtbi_home_candidate/onboard" ]] || return 1
 
-    if [[ -n "$_EXPORT_EXPLICIT_ACFS_HOME" ]] && [[ "$acfs_home_candidate" == "$_EXPORT_EXPLICIT_ACFS_HOME" ]]; then
+    if [[ -n "$_EXPORT_EXPLICIT_GTBI_HOME" ]] && [[ "$gtbi_home_candidate" == "$_EXPORT_EXPLICIT_GTBI_HOME" ]]; then
         :
-    elif [[ -n "$_EXPORT_DEFAULT_ACFS_HOME" ]] && [[ "$acfs_home_candidate" == "$_EXPORT_DEFAULT_ACFS_HOME" ]]; then
+    elif [[ -n "$_EXPORT_DEFAULT_GTBI_HOME" ]] && [[ "$gtbi_home_candidate" == "$_EXPORT_DEFAULT_GTBI_HOME" ]]; then
         :
     else
         return 1
     fi
 
-    inferred_home="${acfs_home_candidate%/.acfs}"
+    inferred_home="${gtbi_home_candidate%/.gtbi}"
     inferred_home="$(export_sanitize_abs_nonroot_path "$inferred_home" 2>/dev/null || true)"
     [[ -n "$inferred_home" ]] || return 1
 
@@ -803,8 +803,8 @@ prepare_target_context() {
     local state_user_home=""
     local resolved_target_home=""
 
-    refresh_acfs_paths
-    path_home="$(infer_target_home_from_acfs_home 2>/dev/null || true)"
+    refresh_gtbi_paths
+    path_home="$(infer_target_home_from_gtbi_home 2>/dev/null || true)"
 
     if [[ -z "${TARGET_HOME:-}" ]] && [[ -n "$path_home" ]]; then
         export TARGET_HOME="$path_home"
@@ -816,8 +816,8 @@ prepare_target_context() {
         && [[ -n "${TARGET_HOME:-}" ]] \
         && [[ "$TARGET_HOME" == "$path_home" ]] \
         && [[ -n "$state_user" ]] \
-        && [[ -n "$_EXPORT_EXPLICIT_ACFS_HOME" ]] \
-        && [[ "$_EXPORT_STATE_FILE" == "$_EXPORT_EXPLICIT_ACFS_HOME/state.json" ]]; then
+        && [[ -n "$_EXPORT_EXPLICIT_GTBI_HOME" ]] \
+        && [[ "$_EXPORT_STATE_FILE" == "$_EXPORT_EXPLICIT_GTBI_HOME/state.json" ]]; then
         state_user_home="$(home_for_user "$state_user" 2>/dev/null || true)"
         if [[ -z "$state_user_home" || "$state_user_home" == "$path_home" ]]; then
             export TARGET_USER="$state_user"
@@ -889,7 +889,7 @@ export_validate_bin_dir_for_home() {
 
     case "$bin_dir" in
         */.local/bin) hinted_home="${bin_dir%/.local/bin}" ;;
-        */.acfs/bin) hinted_home="${bin_dir%/.acfs/bin}" ;;
+        */.gtbi/bin) hinted_home="${bin_dir%/.gtbi/bin}" ;;
         */.bun/bin) hinted_home="${bin_dir%/.bun/bin}" ;;
         */.cargo/bin) hinted_home="${bin_dir%/.cargo/bin}" ;;
         */.atuin/bin) hinted_home="${bin_dir%/.atuin/bin}" ;;
@@ -916,7 +916,7 @@ export_validate_bin_dir_for_home() {
 augment_path_for_target_user() {
     local dir=""
     local target_home="${TARGET_HOME:-}"
-    local primary_bin_dir="${ACFS_BIN_DIR:-$target_home/.local/bin}"
+    local primary_bin_dir="${GTBI_BIN_DIR:-$target_home/.local/bin}"
     local current_path="${PATH:-}"
     if declare -f export_validate_bin_dir_for_home >/dev/null 2>&1; then
         primary_bin_dir="$(export_validate_bin_dir_for_home "$primary_bin_dir" "$target_home" 2>/dev/null || true)"
@@ -930,7 +930,7 @@ augment_path_for_target_user() {
     for dir in \
         "$primary_bin_dir" \
         "$target_home/.local/bin" \
-        "$target_home/.acfs/bin" \
+        "$target_home/.gtbi/bin" \
         "$target_home/.bun/bin" \
         "$target_home/.cargo/bin" \
         "$target_home/go/bin" \
@@ -954,7 +954,7 @@ augment_path_for_target_user() {
 }
 
 load_module_detection_support() {
-    if [[ "${_ACFS_EXPORT_MODULE_SUPPORT_LOADED:-false}" == "true" ]]; then
+    if [[ "${_GTBI_EXPORT_MODULE_SUPPORT_LOADED:-false}" == "true" ]]; then
         return 0
     fi
 
@@ -969,11 +969,11 @@ load_module_detection_support() {
     source "$_EXPORT_INSTALL_HELPERS_FILE"
     # shellcheck source=/dev/null
     source "$_EXPORT_MANIFEST_INDEX_FILE"
-    _ACFS_EXPORT_MODULE_SUPPORT_LOADED=true
+    _GTBI_EXPORT_MODULE_SUPPORT_LOADED=true
 }
 
-# Get ACFS version
-get_acfs_version() {
+# Get GTBI version
+get_gtbi_version() {
     if [[ -f "$_EXPORT_VERSION_FILE" ]]; then
         cat "$_EXPORT_VERSION_FILE"
     else
@@ -1172,8 +1172,8 @@ get_modules() {
     local module=""
 
     if load_module_detection_support; then
-        for module in "${ACFS_MODULES_IN_ORDER[@]}"; do
-            if acfs_module_is_installed "$module"; then
+        for module in "${GTBI_MODULES_IN_ORDER[@]}"; do
+            if gtbi_module_is_installed "$module"; then
                 printf '%s\n' "$module"
             fi
         done
@@ -1197,16 +1197,16 @@ generate_yaml() {
     hostname=$(hostname 2>/dev/null || echo "unknown")
     local timestamp
     timestamp=$(date -Iseconds 2>/dev/null || date)
-    local acfs_version
-    acfs_version=$(get_acfs_version)
+    local gtbi_version
+    gtbi_version=$(get_gtbi_version)
     local mode
     mode=$(get_mode)
 
     cat << EOF
-# ACFS Configuration Export
+# GTBI Configuration Export
 # Generated: $timestamp
 # Hostname: $hostname
-# ACFS Version: $acfs_version
+# GTBI Version: $gtbi_version
 
 settings:
   mode: '$(yaml_escape "$mode")'
@@ -1275,8 +1275,8 @@ generate_json() {
     hostname=$(hostname 2>/dev/null || echo "unknown")
     local timestamp
     timestamp=$(date -Iseconds 2>/dev/null || date)
-    local acfs_version
-    acfs_version=$(get_acfs_version)
+    local gtbi_version
+    gtbi_version=$(get_gtbi_version)
     local mode
     mode=$(get_mode)
 
@@ -1286,7 +1286,7 @@ generate_json() {
   "metadata": {
     "generated_at": "$(json_escape "$timestamp")",
     "hostname": "$(json_escape "$hostname")",
-    "acfs_version": "$(json_escape "$acfs_version")"
+    "gtbi_version": "$(json_escape "$gtbi_version")"
   },
   "settings": {
     "mode": "$(json_escape "$mode")",

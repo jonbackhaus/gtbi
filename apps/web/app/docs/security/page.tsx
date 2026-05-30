@@ -15,7 +15,7 @@ type ChecklistItem = {
   href?: string;
 };
 
-const CHECKLIST_STORAGE_KEY = "acfs-security-checklist-v1";
+const CHECKLIST_STORAGE_KEY = "gtbi-security-checklist-v1";
 
 const CHECKLIST_ITEMS: ChecklistItem[] = [
   {
@@ -107,7 +107,7 @@ export default function SecurityDocsPage() {
               Security best practices (Google SSO strategy)
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              ACFS is built for velocity. This page covers account security so your “one login everywhere” setup stays safe.
+              GTBI is built for velocity. This page covers account security so your “one login everywhere” setup stays safe.
             </p>
           </div>
         </div>

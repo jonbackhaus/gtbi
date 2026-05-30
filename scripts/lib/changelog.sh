@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
 # ============================================================
-# ACFS Changelog - Show Recent Changes
+# GTBI Changelog - Show Recent Changes
 #
 # Displays changelog entries filtered by date, formatted for terminal.
 # Parses CHANGELOG.md in Keep a Changelog format.
 #
 # Usage:
-#   acfs changelog              # Since last update
-#   acfs changelog --all        # Full history
-#   acfs changelog --since 7d   # Last 7 days
-#   acfs changelog --since 2w   # Last 2 weeks
-#   acfs changelog --json       # JSON output for scripting
+#   gtbi changelog              # Since last update
+#   gtbi changelog --all        # Full history
+#   gtbi changelog --since 7d   # Last 7 days
+#   gtbi changelog --since 2w   # Last 2 weeks
+#   gtbi changelog --json       # JSON output for scripting
 #
 # Design Philosophy:
 #   - Speed: Parse CHANGELOG.md quickly using shell builtins
@@ -19,17 +19,17 @@
 #   - Scriptable: JSON output for automation
 #
 # Related beads:
-#   - bd-2p56: acfs changelog: Show recent changes command
+#   - bd-2p56: gtbi changelog: Show recent changes command
 # ============================================================
 
 # Prevent multiple sourcing
-if [[ -n "${_ACFS_CHANGELOG_SH_LOADED:-}" ]]; then
+if [[ -n "${_GTBI_CHANGELOG_SH_LOADED:-}" ]]; then
     if [[ "${BASH_SOURCE[0]}" != "${0}" ]]; then
         return 0
     fi
     exit 0
 fi
-_ACFS_CHANGELOG_SH_LOADED=1
+_GTBI_CHANGELOG_SH_LOADED=1
 
 _CHANGELOG_WAS_SOURCED=false
 _CHANGELOG_ORIGINAL_HOME=""
@@ -217,7 +217,7 @@ changelog_initial_current_home() {
     local cached_home=""
     local resolved_home=""
 
-    if [[ "${_CHANGELOG_WAS_SOURCED:-false}" == "true" ]] && [[ -z "${TARGET_HOME:-}${TARGET_USER:-}${ACFS_HOME:-}${ACFS_STATE_FILE:-}${ACFS_SYSTEM_STATE_FILE:-}" ]]; then
+    if [[ "${_CHANGELOG_WAS_SOURCED:-false}" == "true" ]] && [[ -z "${TARGET_HOME:-}${TARGET_USER:-}${GTBI_HOME:-}${GTBI_STATE_FILE:-}${GTBI_SYSTEM_STATE_FILE:-}" ]]; then
         cached_home="$(changelog_sanitize_abs_nonroot_path "${_CHANGELOG_ORIGINAL_HOME:-${HOME:-}}" 2>/dev/null || true)"
         if [[ -n "$cached_home" ]]; then
             printf '%s\n' "$cached_home"
@@ -251,23 +251,23 @@ fi
 # Configuration
 # ============================================================
 _CHANGELOG_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-_CHANGELOG_EXPLICIT_ACFS_HOME="$(changelog_sanitize_abs_nonroot_path "${ACFS_HOME:-}" 2>/dev/null || true)"
-_CHANGELOG_DEFAULT_ACFS_HOME=""
-[[ -n "$_CHANGELOG_CURRENT_HOME" ]] && _CHANGELOG_DEFAULT_ACFS_HOME="${_CHANGELOG_CURRENT_HOME}/.acfs"
-_CHANGELOG_ACFS_HOME="${_CHANGELOG_EXPLICIT_ACFS_HOME:-$_CHANGELOG_DEFAULT_ACFS_HOME}"
-_CHANGELOG_EXPLICIT_ACFS_REPO="$(changelog_sanitize_abs_nonroot_path "${ACFS_REPO:-}" 2>/dev/null || true)"
-_CHANGELOG_ACFS_REPO="${_CHANGELOG_EXPLICIT_ACFS_REPO:-$_CHANGELOG_ACFS_HOME}"
+_CHANGELOG_EXPLICIT_GTBI_HOME="$(changelog_sanitize_abs_nonroot_path "${GTBI_HOME:-}" 2>/dev/null || true)"
+_CHANGELOG_DEFAULT_GTBI_HOME=""
+[[ -n "$_CHANGELOG_CURRENT_HOME" ]] && _CHANGELOG_DEFAULT_GTBI_HOME="${_CHANGELOG_CURRENT_HOME}/.gtbi"
+_CHANGELOG_GTBI_HOME="${_CHANGELOG_EXPLICIT_GTBI_HOME:-$_CHANGELOG_DEFAULT_GTBI_HOME}"
+_CHANGELOG_EXPLICIT_GTBI_REPO="$(changelog_sanitize_abs_nonroot_path "${GTBI_REPO:-}" 2>/dev/null || true)"
+_CHANGELOG_GTBI_REPO="${_CHANGELOG_EXPLICIT_GTBI_REPO:-$_CHANGELOG_GTBI_HOME}"
 _CHANGELOG_SYSTEM_STATE_WAS_EXPLICIT=false
-[[ -n "${ACFS_SYSTEM_STATE_FILE:-}" ]] && [[ "${ACFS_SYSTEM_STATE_FILE%/}" != "/var/lib/acfs/state.json" ]] && _CHANGELOG_SYSTEM_STATE_WAS_EXPLICIT=true
-_CHANGELOG_SYSTEM_STATE_FILE="$(changelog_sanitize_abs_nonroot_path "${ACFS_SYSTEM_STATE_FILE:-/var/lib/acfs/state.json}" 2>/dev/null || true)"
+[[ -n "${GTBI_SYSTEM_STATE_FILE:-}" ]] && [[ "${GTBI_SYSTEM_STATE_FILE%/}" != "/var/lib/gtbi/state.json" ]] && _CHANGELOG_SYSTEM_STATE_WAS_EXPLICIT=true
+_CHANGELOG_SYSTEM_STATE_FILE="$(changelog_sanitize_abs_nonroot_path "${GTBI_SYSTEM_STATE_FILE:-/var/lib/gtbi/state.json}" 2>/dev/null || true)"
 if [[ -z "$_CHANGELOG_SYSTEM_STATE_FILE" ]]; then
-    _CHANGELOG_SYSTEM_STATE_FILE="/var/lib/acfs/state.json"
+    _CHANGELOG_SYSTEM_STATE_FILE="/var/lib/gtbi/state.json"
 fi
 _CHANGELOG_EXPLICIT_TARGET_HOME_RAW="${TARGET_HOME:-}"
 _CHANGELOG_EXPLICIT_TARGET_USER_RAW="${TARGET_USER:-}"
 _CHANGELOG_EXPLICIT_TARGET_HOME="$(changelog_existing_abs_home "${TARGET_HOME:-}" 2>/dev/null || true)"
-_CHANGELOG_RESOLVED_ACFS_HOME=""
-_CHANGELOG_FILE="${_CHANGELOG_ACFS_REPO:+${_CHANGELOG_ACFS_REPO}/CHANGELOG.md}"
+_CHANGELOG_RESOLVED_GTBI_HOME=""
+_CHANGELOG_FILE="${_CHANGELOG_GTBI_REPO:+${_CHANGELOG_GTBI_REPO}/CHANGELOG.md}"
 
 # Find CHANGELOG.md - check multiple locations
 find_changelog() {
@@ -279,12 +279,12 @@ find_changelog() {
     fi
 
     [[ -n "$_CHANGELOG_FILE" ]] && locations+=("$_CHANGELOG_FILE")
-    if [[ -n "$_CHANGELOG_ACFS_HOME" ]] && [[ "${_CHANGELOG_ACFS_HOME}/CHANGELOG.md" != "$_CHANGELOG_FILE" ]]; then
-        locations+=("${_CHANGELOG_ACFS_HOME}/CHANGELOG.md")
+    if [[ -n "$_CHANGELOG_GTBI_HOME" ]] && [[ "${_CHANGELOG_GTBI_HOME}/CHANGELOG.md" != "$_CHANGELOG_FILE" ]]; then
+        locations+=("${_CHANGELOG_GTBI_HOME}/CHANGELOG.md")
     fi
     if [[ "$explicit_target_requested" != "true" ]]; then
-        locations+=("/data/projects/agentic_coding_flywheel_setup/CHANGELOG.md")
-        [[ -n "$_CHANGELOG_CURRENT_HOME" ]] && locations+=("${_CHANGELOG_CURRENT_HOME}/.acfs/CHANGELOG.md")
+        locations+=("/data/projects/gastown_batteries_included/CHANGELOG.md")
+        [[ -n "$_CHANGELOG_CURRENT_HOME" ]] && locations+=("${_CHANGELOG_CURRENT_HOME}/.gtbi/CHANGELOG.md")
     fi
 
     for loc in "${locations[@]}"; do
@@ -395,7 +395,7 @@ changelog_resolve_explicit_target_home() {
         fi
         target_home="$_CHANGELOG_EXPLICIT_TARGET_HOME"
         if [[ -n "$target_home" ]] && [[ "$target_home" != "${_CHANGELOG_CURRENT_HOME:-}" ]] && {
-            [[ -f "$target_home/.acfs/state.json" ]] || [[ -f "$target_home/.acfs/VERSION" ]] || [[ -f "$target_home/.acfs/CHANGELOG.md" ]] || [[ -d "$target_home/.acfs/onboard" ]]
+            [[ -f "$target_home/.gtbi/state.json" ]] || [[ -f "$target_home/.gtbi/VERSION" ]] || [[ -f "$target_home/.gtbi/CHANGELOG.md" ]] || [[ -d "$target_home/.gtbi/onboard" ]]
         }; then
             printf '%s\n' "${target_home%/}"
             return 0
@@ -445,15 +445,15 @@ changelog_read_target_home_from_state() {
     printf '%s\n' "${target_home%/}"
 }
 
-changelog_script_acfs_home() {
+changelog_script_gtbi_home() {
     local candidate=""
     candidate=$(cd "$_CHANGELOG_SCRIPT_DIR/../.." 2>/dev/null && pwd) || return 1
-    [[ "$(basename "$candidate")" == ".acfs" ]] || return 1
+    [[ "$(basename "$candidate")" == ".gtbi" ]] || return 1
     printf '%s\n' "$candidate"
 }
 
-changelog_current_home_acfs_candidate() {
-    local candidate="$_CHANGELOG_DEFAULT_ACFS_HOME"
+changelog_current_home_gtbi_candidate() {
+    local candidate="$_CHANGELOG_DEFAULT_GTBI_HOME"
     local current_home="$_CHANGELOG_CURRENT_HOME"
     local current_user=""
     local original_home=""
@@ -487,9 +487,9 @@ changelog_current_home_acfs_candidate() {
     printf '%s\n' "$candidate"
 }
 
-resolve_changelog_acfs_home() {
-    if [[ -n "$_CHANGELOG_RESOLVED_ACFS_HOME" ]]; then
-        printf '%s\n' "$_CHANGELOG_RESOLVED_ACFS_HOME"
+resolve_changelog_gtbi_home() {
+    if [[ -n "$_CHANGELOG_RESOLVED_GTBI_HOME" ]]; then
+        printf '%s\n' "$_CHANGELOG_RESOLVED_GTBI_HOME"
         return 0
     fi
 
@@ -498,43 +498,43 @@ resolve_changelog_acfs_home() {
     local target_user=""
     local explicit_target_home=""
 
-    candidate=$(changelog_script_acfs_home 2>/dev/null || true)
+    candidate=$(changelog_script_gtbi_home 2>/dev/null || true)
     if [[ -n "$candidate" ]] && [[ -f "$candidate/state.json" || -f "$candidate/VERSION" || -f "$candidate/CHANGELOG.md" ]]; then
-        _CHANGELOG_RESOLVED_ACFS_HOME="$candidate"
-        printf '%s\n' "$_CHANGELOG_RESOLVED_ACFS_HOME"
+        _CHANGELOG_RESOLVED_GTBI_HOME="$candidate"
+        printf '%s\n' "$_CHANGELOG_RESOLVED_GTBI_HOME"
         return 0
     fi
 
     explicit_target_home="$(changelog_resolve_explicit_target_home 2>/dev/null || true)"
     if [[ -n "$explicit_target_home" ]]; then
-        candidate="${explicit_target_home}/.acfs"
+        candidate="${explicit_target_home}/.gtbi"
         if [[ -f "$candidate/state.json" || -f "$candidate/VERSION" || -f "$candidate/CHANGELOG.md" ]]; then
-            _CHANGELOG_RESOLVED_ACFS_HOME="$candidate"
-            printf '%s\n' "$_CHANGELOG_RESOLVED_ACFS_HOME"
+            _CHANGELOG_RESOLVED_GTBI_HOME="$candidate"
+            printf '%s\n' "$_CHANGELOG_RESOLVED_GTBI_HOME"
             return 0
         fi
     fi
 
-    if [[ ! -f "$_CHANGELOG_SYSTEM_STATE_FILE" ]] && [[ -n "$_CHANGELOG_EXPLICIT_ACFS_HOME" ]] && [[ -f "$_CHANGELOG_EXPLICIT_ACFS_HOME/state.json" || -f "$_CHANGELOG_EXPLICIT_ACFS_HOME/VERSION" || -f "$_CHANGELOG_EXPLICIT_ACFS_HOME/CHANGELOG.md" ]]; then
-        _CHANGELOG_RESOLVED_ACFS_HOME="$_CHANGELOG_EXPLICIT_ACFS_HOME"
-        printf '%s\n' "$_CHANGELOG_RESOLVED_ACFS_HOME"
+    if [[ ! -f "$_CHANGELOG_SYSTEM_STATE_FILE" ]] && [[ -n "$_CHANGELOG_EXPLICIT_GTBI_HOME" ]] && [[ -f "$_CHANGELOG_EXPLICIT_GTBI_HOME/state.json" || -f "$_CHANGELOG_EXPLICIT_GTBI_HOME/VERSION" || -f "$_CHANGELOG_EXPLICIT_GTBI_HOME/CHANGELOG.md" ]]; then
+        _CHANGELOG_RESOLVED_GTBI_HOME="$_CHANGELOG_EXPLICIT_GTBI_HOME"
+        printf '%s\n' "$_CHANGELOG_RESOLVED_GTBI_HOME"
         return 0
     fi
 
-    candidate="$(changelog_current_home_acfs_candidate 2>/dev/null || true)"
+    candidate="$(changelog_current_home_gtbi_candidate 2>/dev/null || true)"
     if [[ -n "$candidate" ]]; then
-        _CHANGELOG_RESOLVED_ACFS_HOME="$candidate"
-        printf '%s\n' "$_CHANGELOG_RESOLVED_ACFS_HOME"
+        _CHANGELOG_RESOLVED_GTBI_HOME="$candidate"
+        printf '%s\n' "$_CHANGELOG_RESOLVED_GTBI_HOME"
         return 0
     fi
 
     if [[ "$_CHANGELOG_SYSTEM_STATE_WAS_EXPLICIT" == true ]]; then
         target_home=$(changelog_read_target_home_from_state "$_CHANGELOG_SYSTEM_STATE_FILE" 2>/dev/null || true)
         if [[ -n "$target_home" ]]; then
-            candidate="${target_home}/.acfs"
+            candidate="${target_home}/.gtbi"
             if [[ -f "$candidate/state.json" || -f "$candidate/VERSION" || -f "$candidate/CHANGELOG.md" ]]; then
-                _CHANGELOG_RESOLVED_ACFS_HOME="$candidate"
-                printf '%s\n' "$_CHANGELOG_RESOLVED_ACFS_HOME"
+                _CHANGELOG_RESOLVED_GTBI_HOME="$candidate"
+                printf '%s\n' "$_CHANGELOG_RESOLVED_GTBI_HOME"
                 return 0
             fi
         fi
@@ -542,43 +542,43 @@ resolve_changelog_acfs_home() {
         target_user=$(changelog_read_target_user_from_state "$_CHANGELOG_SYSTEM_STATE_FILE" 2>/dev/null || true)
         if [[ -n "$target_user" ]]; then
             target_home=$(changelog_home_for_user "$target_user" 2>/dev/null || true)
-            candidate="${target_home}/.acfs"
+            candidate="${target_home}/.gtbi"
             if [[ -n "$target_home" ]] && [[ -f "$candidate/state.json" || -f "$candidate/VERSION" || -f "$candidate/CHANGELOG.md" ]]; then
-                _CHANGELOG_RESOLVED_ACFS_HOME="$candidate"
-                printf '%s\n' "$_CHANGELOG_RESOLVED_ACFS_HOME"
+                _CHANGELOG_RESOLVED_GTBI_HOME="$candidate"
+                printf '%s\n' "$_CHANGELOG_RESOLVED_GTBI_HOME"
                 return 0
             fi
         fi
     fi
 
-    if [[ -n "$_CHANGELOG_EXPLICIT_ACFS_HOME" ]] && [[ -f "$_CHANGELOG_EXPLICIT_ACFS_HOME/state.json" || -f "$_CHANGELOG_EXPLICIT_ACFS_HOME/VERSION" || -f "$_CHANGELOG_EXPLICIT_ACFS_HOME/CHANGELOG.md" ]]; then
-        _CHANGELOG_RESOLVED_ACFS_HOME="$_CHANGELOG_EXPLICIT_ACFS_HOME"
-        printf '%s\n' "$_CHANGELOG_RESOLVED_ACFS_HOME"
+    if [[ -n "$_CHANGELOG_EXPLICIT_GTBI_HOME" ]] && [[ -f "$_CHANGELOG_EXPLICIT_GTBI_HOME/state.json" || -f "$_CHANGELOG_EXPLICIT_GTBI_HOME/VERSION" || -f "$_CHANGELOG_EXPLICIT_GTBI_HOME/CHANGELOG.md" ]]; then
+        _CHANGELOG_RESOLVED_GTBI_HOME="$_CHANGELOG_EXPLICIT_GTBI_HOME"
+        printf '%s\n' "$_CHANGELOG_RESOLVED_GTBI_HOME"
         return 0
     fi
 
     if [[ -n "$_CHANGELOG_EXPLICIT_TARGET_HOME_RAW" ]] || [[ -n "$_CHANGELOG_EXPLICIT_TARGET_USER_RAW" ]]; then
-        _CHANGELOG_RESOLVED_ACFS_HOME=""
-        printf '%s\n' "$_CHANGELOG_RESOLVED_ACFS_HOME"
+        _CHANGELOG_RESOLVED_GTBI_HOME=""
+        printf '%s\n' "$_CHANGELOG_RESOLVED_GTBI_HOME"
         return 0
     fi
 
     if [[ -n "${SUDO_USER:-}" ]]; then
         target_home=$(changelog_home_for_user "$SUDO_USER" 2>/dev/null || true)
-        candidate="${target_home}/.acfs"
+        candidate="${target_home}/.gtbi"
         if [[ -n "$target_home" ]] && [[ -f "$candidate/state.json" || -f "$candidate/VERSION" || -f "$candidate/CHANGELOG.md" ]]; then
-            _CHANGELOG_RESOLVED_ACFS_HOME="$candidate"
-            printf '%s\n' "$_CHANGELOG_RESOLVED_ACFS_HOME"
+            _CHANGELOG_RESOLVED_GTBI_HOME="$candidate"
+            printf '%s\n' "$_CHANGELOG_RESOLVED_GTBI_HOME"
             return 0
         fi
     fi
 
     target_home=$(changelog_read_target_home_from_state "$_CHANGELOG_SYSTEM_STATE_FILE" 2>/dev/null || true)
     if [[ -n "$target_home" ]]; then
-        candidate="${target_home}/.acfs"
+        candidate="${target_home}/.gtbi"
         if [[ -f "$candidate/state.json" || -f "$candidate/VERSION" || -f "$candidate/CHANGELOG.md" ]]; then
-            _CHANGELOG_RESOLVED_ACFS_HOME="$candidate"
-            printf '%s\n' "$_CHANGELOG_RESOLVED_ACFS_HOME"
+            _CHANGELOG_RESOLVED_GTBI_HOME="$candidate"
+            printf '%s\n' "$_CHANGELOG_RESOLVED_GTBI_HOME"
             return 0
         fi
     fi
@@ -586,29 +586,29 @@ resolve_changelog_acfs_home() {
     target_user=$(changelog_read_target_user_from_state "$_CHANGELOG_SYSTEM_STATE_FILE" 2>/dev/null || true)
     if [[ -n "$target_user" ]]; then
         target_home=$(changelog_home_for_user "$target_user" 2>/dev/null || true)
-        candidate="${target_home}/.acfs"
+        candidate="${target_home}/.gtbi"
         if [[ -n "$target_home" ]] && [[ -f "$candidate/state.json" || -f "$candidate/VERSION" || -f "$candidate/CHANGELOG.md" ]]; then
-            _CHANGELOG_RESOLVED_ACFS_HOME="$candidate"
-            printf '%s\n' "$_CHANGELOG_RESOLVED_ACFS_HOME"
+            _CHANGELOG_RESOLVED_GTBI_HOME="$candidate"
+            printf '%s\n' "$_CHANGELOG_RESOLVED_GTBI_HOME"
             return 0
         fi
     fi
 
-    if [[ -n "$_CHANGELOG_ACFS_HOME" ]] && [[ -f "$_CHANGELOG_ACFS_HOME/state.json" || -f "$_CHANGELOG_ACFS_HOME/VERSION" || -f "$_CHANGELOG_ACFS_HOME/CHANGELOG.md" ]]; then
-        _CHANGELOG_RESOLVED_ACFS_HOME="$_CHANGELOG_ACFS_HOME"
-        printf '%s\n' "$_CHANGELOG_RESOLVED_ACFS_HOME"
+    if [[ -n "$_CHANGELOG_GTBI_HOME" ]] && [[ -f "$_CHANGELOG_GTBI_HOME/state.json" || -f "$_CHANGELOG_GTBI_HOME/VERSION" || -f "$_CHANGELOG_GTBI_HOME/CHANGELOG.md" ]]; then
+        _CHANGELOG_RESOLVED_GTBI_HOME="$_CHANGELOG_GTBI_HOME"
+        printf '%s\n' "$_CHANGELOG_RESOLVED_GTBI_HOME"
         return 0
     fi
 
-    _CHANGELOG_RESOLVED_ACFS_HOME="$_CHANGELOG_ACFS_HOME"
-    printf '%s\n' "$_CHANGELOG_RESOLVED_ACFS_HOME"
+    _CHANGELOG_RESOLVED_GTBI_HOME="$_CHANGELOG_GTBI_HOME"
+    printf '%s\n' "$_CHANGELOG_RESOLVED_GTBI_HOME"
 }
 
 resolve_changelog_state_file() {
     local candidate=""
 
-    if [[ -n "$_CHANGELOG_ACFS_HOME" ]]; then
-        candidate="${_CHANGELOG_ACFS_HOME}/state.json"
+    if [[ -n "$_CHANGELOG_GTBI_HOME" ]]; then
+        candidate="${_CHANGELOG_GTBI_HOME}/state.json"
     fi
 
     if [[ -n "$candidate" ]] && [[ -f "$candidate" ]]; then
@@ -625,13 +625,13 @@ resolve_changelog_state_file() {
 }
 
 refresh_changelog_paths() {
-    _CHANGELOG_ACFS_HOME="$(resolve_changelog_acfs_home)"
-    if [[ -n "$_CHANGELOG_EXPLICIT_ACFS_REPO" ]]; then
-        _CHANGELOG_ACFS_REPO="$_CHANGELOG_EXPLICIT_ACFS_REPO"
+    _CHANGELOG_GTBI_HOME="$(resolve_changelog_gtbi_home)"
+    if [[ -n "$_CHANGELOG_EXPLICIT_GTBI_REPO" ]]; then
+        _CHANGELOG_GTBI_REPO="$_CHANGELOG_EXPLICIT_GTBI_REPO"
     else
-        _CHANGELOG_ACFS_REPO="$_CHANGELOG_ACFS_HOME"
+        _CHANGELOG_GTBI_REPO="$_CHANGELOG_GTBI_HOME"
     fi
-    _CHANGELOG_FILE="${_CHANGELOG_ACFS_REPO:+${_CHANGELOG_ACFS_REPO}/CHANGELOG.md}"
+    _CHANGELOG_FILE="${_CHANGELOG_GTBI_REPO:+${_CHANGELOG_GTBI_REPO}/CHANGELOG.md}"
 }
 
 read_state_timestamp() {
@@ -734,9 +734,9 @@ format_change_type() {
     esac
 }
 
-# Get ACFS version from VERSION file
-get_acfs_version() {
-    local version_file="${_CHANGELOG_ACFS_HOME}/VERSION"
+# Get GTBI version from VERSION file
+get_gtbi_version() {
+    local version_file="${_CHANGELOG_GTBI_HOME}/VERSION"
     if [[ -f "$version_file" ]]; then
         cat "$version_file"
     else
@@ -909,7 +909,7 @@ format_json() {
 
     echo ""
     echo "  ],"
-    printf '  "acfs_version": "%s",\n' "$(json_escape "$(get_acfs_version)")"
+    printf '  "gtbi_version": "%s",\n' "$(json_escape "$(get_gtbi_version)")"
     printf '  "generated_at": "%s"\n' "$(json_escape "$(date -Iseconds)")"
     echo "}"
 }
@@ -920,9 +920,9 @@ format_json() {
 
 show_usage() {
     cat << 'EOF'
-ACFS Changelog - Show recent project changes
+GTBI Changelog - Show recent project changes
 
-Usage: acfs changelog [OPTIONS]
+Usage: gtbi changelog [OPTIONS]
 
 Options:
   --all              Show full changelog history
@@ -931,11 +931,11 @@ Options:
   --help, -h         Show this help message
 
 Examples:
-  acfs changelog              # Since last update
-  acfs changelog --all        # Full history
-  acfs changelog --since 7d   # Last 7 days
-  acfs changelog --since 2w   # Last 2 weeks
-  acfs changelog --json       # JSON output
+  gtbi changelog              # Since last update
+  gtbi changelog --all        # Full history
+  gtbi changelog --since 7d   # Last 7 days
+  gtbi changelog --since 2w   # Last 2 weeks
+  gtbi changelog --json       # JSON output
 
 Legend:
   + Added      New features
@@ -989,7 +989,7 @@ main() {
         echo "Error: CHANGELOG.md not found" >&2
         echo "Looked in:" >&2
         echo "  - ${_CHANGELOG_FILE}" >&2
-        echo "  - ${_CHANGELOG_ACFS_HOME}/CHANGELOG.md" >&2
+        echo "  - ${_CHANGELOG_GTBI_HOME}/CHANGELOG.md" >&2
         exit 1
     fi
 
@@ -1010,7 +1010,7 @@ main() {
 
     # Header for terminal output
     if [[ "$json_output" != "true" ]]; then
-        printf "%b\n" "${_CHANGELOG_C_BOLD}ACFS Changelog${_CHANGELOG_C_RESET}"
+        printf "%b\n" "${_CHANGELOG_C_BOLD}GTBI Changelog${_CHANGELOG_C_RESET}"
         if [[ "$show_all" == "true" ]]; then
             printf "%b\n" "${_CHANGELOG_C_DIM}Showing all changes${_CHANGELOG_C_RESET}"
         else

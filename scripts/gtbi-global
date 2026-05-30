@@ -1,0 +1,1215 @@
+#!/usr/bin/env bash
+# ============================================================
+# GTBI Global Wrapper
+# Installed to /usr/local/bin/gtbi for system-wide access
+#
+# This wrapper ensures the gtbi command works regardless of
+# which user invokes it (root or target user).
+# ============================================================
+
+set -euo pipefail
+
+# Optional override for state file location.
+# If unset, we auto-detect from common install locations.
+GTBI_STATE_FILE="${GTBI_STATE_FILE:-}"
+GTBI_SYSTEM_STATE_FILE="${GTBI_SYSTEM_STATE_FILE:-/var/lib/gtbi/state.json}"
+
+sanitize_abs_nonroot_path() {
+    local path_value="${1:-}"
+
+    [[ -n "$path_value" ]] || return 1
+    path_value="${path_value%/}"
+    [[ -n "$path_value" ]] || return 1
+    [[ "$path_value" == /* ]] || return 1
+    [[ "$path_value" != "/" ]] || return 1
+    printf '%s\n' "$path_value"
+}
+
+system_binary_path() {
+    local name="${1:-}"
+    local candidate=""
+
+    [[ -n "$name" ]] || return 1
+    case "$name" in
+        .|..)
+            return 1
+            ;;
+        *[!A-Za-z0-9._+-]*)
+            return 1
+            ;;
+    esac
+
+    for candidate in \
+        "/usr/bin/$name" \
+        "/bin/$name" \
+        "/usr/local/bin/$name" \
+        "/usr/local/sbin/$name" \
+        "/usr/sbin/$name" \
+        "/sbin/$name"
+    do
+        [[ -x "$candidate" ]] || continue
+        printf '%s\n' "$candidate"
+        return 0
+    done
+
+    return 1
+}
+
+resolve_current_user() {
+    local current_user=""
+    local id_bin=""
+    local whoami_bin=""
+
+    id_bin="$(system_binary_path id 2>/dev/null || true)"
+    if [[ -n "$id_bin" ]]; then
+        current_user="$("$id_bin" -un 2>/dev/null || true)"
+    fi
+
+    if [[ -z "$current_user" ]]; then
+        whoami_bin="$(system_binary_path whoami 2>/dev/null || true)"
+        if [[ -n "$whoami_bin" ]]; then
+            current_user="$("$whoami_bin" 2>/dev/null || true)"
+        fi
+    fi
+
+    [[ -n "$current_user" ]] || return 1
+    printf '%s\n' "$current_user"
+}
+
+getent_passwd_entry() {
+    local user="${1-}"
+    local getent_bin=""
+    local passwd_entry=""
+    local passwd_line=""
+    local printed_any=false
+
+    getent_bin="$(system_binary_path getent 2>/dev/null || true)"
+    if [[ -z "$user" ]]; then
+        if [[ -n "$getent_bin" ]]; then
+            while IFS= read -r passwd_line; do
+                printf '%s\n' "$passwd_line"
+                printed_any=true
+            done < <("$getent_bin" passwd 2>/dev/null || true)
+            if [[ "$printed_any" == true ]]; then
+                return 0
+            fi
+        fi
+
+        [[ -r /etc/passwd ]] || return 1
+        while IFS= read -r passwd_line; do
+            printf '%s\n' "$passwd_line"
+        done < /etc/passwd
+        return 0
+    fi
+
+    if [[ -n "$getent_bin" ]]; then
+        passwd_entry="$("$getent_bin" passwd "$user" 2>/dev/null || true)"
+    fi
+
+    if [[ -z "$passwd_entry" ]] && [[ -r /etc/passwd ]]; then
+        while IFS= read -r passwd_line; do
+            [[ "${passwd_line%%:*}" == "$user" ]] || continue
+            passwd_entry="$passwd_line"
+            break
+        done < /etc/passwd
+    fi
+
+    [[ -n "$passwd_entry" ]] || return 1
+    printf '%s\n' "$passwd_entry"
+}
+
+passwd_home_from_entry() {
+    local passwd_entry="${1:-}"
+    local passwd_home=""
+
+    [[ -n "$passwd_entry" ]] || return 1
+    IFS=: read -r _ _ _ _ _ passwd_home _ <<< "$passwd_entry"
+    passwd_home="$(sanitize_abs_nonroot_path "$passwd_home" 2>/dev/null || true)"
+    [[ -n "$passwd_home" ]] || return 1
+    printf '%s\n' "$passwd_home"
+}
+
+read_state_string() {
+    local state_file="$1"
+    local key="$2"
+    local value=""
+    local jq_bin=""
+    local sed_bin=""
+
+    [[ -f "$state_file" ]] || return 1
+
+    jq_bin="$(system_binary_path jq 2>/dev/null || true)"
+    if [[ -n "$jq_bin" ]]; then
+        value="$("$jq_bin" -r --arg key "$key" '.[$key] // empty' "$state_file" 2>/dev/null || true)"
+        value="${value%%$'\n'*}"
+    else
+        sed_bin="$(system_binary_path sed 2>/dev/null || true)"
+        if [[ -n "$sed_bin" ]]; then
+            while IFS= read -r value; do
+                break
+            done < <("$sed_bin" -n "s/.*\"${key}\"[[:space:]]*:[[:space:]]*\"\\([^\"]*\\)\".*/\\1/p" "$state_file" 2>/dev/null || true)
+        fi
+    fi
+
+    [[ -n "$value" ]] && [[ "$value" != "null" ]] || return 1
+    printf '%s\n' "$value"
+}
+
+is_valid_username() {
+    local username="${1:-}"
+    [[ "$username" =~ ^[a-z_][a-z0-9._-]*$ ]]
+}
+
+validate_target_user_or_die() {
+    local user="${1:-}"
+    local display="${user:-<empty>}"
+    if is_valid_username "$user"; then
+        return 0
+    fi
+    echo "Error: invalid TARGET_USER '$display' (expected: lowercase user name like 'ubuntu')" >&2
+    exit 1
+}
+
+resolve_home_for_user() {
+    local user="$1"
+    local user_home=""
+    local passwd_entry=""
+
+    if [[ "$user" == "root" ]]; then
+        printf '/root\n'
+        return 0
+    fi
+
+    passwd_entry="$(getent_passwd_entry "$user" 2>/dev/null || true)"
+    if [[ -n "$passwd_entry" ]]; then
+        user_home="$(passwd_home_from_entry "$passwd_entry" 2>/dev/null || true)"
+        if [[ -n "$user_home" ]]; then
+            printf '%s\n' "$user_home"
+            return 0
+        fi
+    fi
+
+    return 1
+}
+
+current_home_matches_gtbi_install() {
+    local candidate_home="$1"
+    local current_user=""
+    local state_user=""
+
+    candidate_home="$(sanitize_abs_nonroot_path "$candidate_home" 2>/dev/null || true)"
+    [[ -n "$candidate_home" ]] || return 1
+    [[ -f "$candidate_home/.gtbi/state.json" ]] || return 1
+    find_gtbi_bin_for_home "$candidate_home" >/dev/null 2>&1 || return 1
+
+    current_user="$(resolve_current_user 2>/dev/null || true)"
+    [[ -n "$current_user" ]] || return 1
+    state_user="$(read_target_user_from_state_hint "$candidate_home/.gtbi/state.json" 2>/dev/null || true)"
+    [[ -n "$state_user" ]] || return 1
+    [[ "$state_user" == "$current_user" ]]
+}
+
+resolve_current_home() {
+    local current_user=""
+    local home_candidate=""
+    local passwd_home=""
+
+    home_candidate="$(sanitize_abs_nonroot_path "${HOME:-}" 2>/dev/null || true)"
+    current_user="$(resolve_current_user 2>/dev/null || true)"
+    if [[ -n "$home_candidate" ]] && current_home_matches_gtbi_install "$home_candidate"; then
+        printf '%s\n' "$home_candidate"
+        return 0
+    fi
+
+    if [[ -n "$current_user" ]]; then
+        passwd_home="$(resolve_home_for_user "$current_user" 2>/dev/null || true)"
+        if [[ -n "$passwd_home" ]]; then
+            printf '%s\n' "$passwd_home"
+            return 0
+        fi
+    fi
+
+    if [[ -n "$home_candidate" ]]; then
+        if [[ -e "$home_candidate/.gtbi/state.json" ]] || [[ -e "$home_candidate/.gtbi/bin/gtbi" ]] || [[ -e "$home_candidate/.local/bin/gtbi" ]]; then
+            return 1
+        fi
+
+        printf '%s\n' "$home_candidate"
+        return 0
+    fi
+
+    return 1
+}
+
+read_target_user_from_state_file() {
+    local state_file="$1"
+    local target_user=""
+
+    [[ -f "$state_file" ]] || return 1
+
+    target_user="$(read_state_string "$state_file" "target_user" 2>/dev/null || true)"
+    if [[ -n "$target_user" ]] && is_valid_username "$target_user"; then
+        printf '%s\n' "$target_user"
+        return 0
+    fi
+
+    return 1
+}
+
+read_target_home_from_state_file() {
+    local state_file="$1"
+    local target_home=""
+
+    [[ -f "$state_file" ]] || return 1
+
+    target_home="$(read_state_string "$state_file" "target_home" 2>/dev/null || true)"
+    if [[ -n "$target_home" ]] && [[ "$target_home" == /* ]] && [[ "$target_home" != "/" ]]; then
+        printf '%s\n' "${target_home%/}"
+        return 0
+    fi
+
+    return 1
+}
+
+read_bin_dir_from_state_file() {
+    local state_file="$1"
+    local bin_dir=""
+
+    [[ -f "$state_file" ]] || return 1
+
+    bin_dir="$(read_state_string "$state_file" "bin_dir" 2>/dev/null || true)"
+    if [[ -n "$bin_dir" ]] && [[ "$bin_dir" == /* ]] && [[ "$bin_dir" != "/" ]]; then
+        printf '%s\n' "${bin_dir%/}"
+        return 0
+    fi
+
+    return 1
+}
+
+validate_bin_dir_for_home() {
+    local bin_dir="${1:-}"
+    local base_home="${2:-}"
+    local passwd_line=""
+    local passwd_home=""
+    local hinted_home=""
+
+    bin_dir="$(sanitize_abs_nonroot_path "$bin_dir" 2>/dev/null || true)"
+    [[ -n "$bin_dir" ]] || return 1
+    base_home="$(sanitize_abs_nonroot_path "$base_home" 2>/dev/null || true)"
+
+    if [[ -n "$base_home" ]] && [[ "$bin_dir" == "$base_home" || "$bin_dir" == "$base_home/"* ]]; then
+        printf '%s\n' "$bin_dir"
+        return 0
+    fi
+
+    case "$bin_dir" in
+        */.local/bin) hinted_home="${bin_dir%/.local/bin}" ;;
+        */.gtbi/bin) hinted_home="${bin_dir%/.gtbi/bin}" ;;
+        */.bun/bin) hinted_home="${bin_dir%/.bun/bin}" ;;
+        */.cargo/bin) hinted_home="${bin_dir%/.cargo/bin}" ;;
+        */.atuin/bin) hinted_home="${bin_dir%/.atuin/bin}" ;;
+        */go/bin) hinted_home="${bin_dir%/go/bin}" ;;
+        */google-cloud-sdk/bin) hinted_home="${bin_dir%/google-cloud-sdk/bin}" ;;
+    esac
+    hinted_home="$(sanitize_abs_nonroot_path "$hinted_home" 2>/dev/null || true)"
+    if [[ -n "$hinted_home" ]] && [[ -n "$base_home" ]] && [[ "$hinted_home" != "$base_home" ]]; then
+        return 1
+    fi
+
+    while IFS= read -r passwd_line; do
+        passwd_home="$(passwd_home_from_entry "$passwd_line" 2>/dev/null || true)"
+        [[ -n "$passwd_home" ]] || continue
+        [[ -n "$base_home" && "$passwd_home" == "$base_home" ]] && continue
+        if [[ "$bin_dir" == "$passwd_home" || "$bin_dir" == "$passwd_home/"* ]]; then
+            return 1
+        fi
+    done < <(getent_passwd_entry 2>/dev/null || true)
+
+    printf '%s\n' "$bin_dir"
+}
+
+state_file_path_user_home() {
+    local state_file="$1"
+    local state_home=""
+    local candidate_user=""
+    local resolved_home=""
+
+    [[ "$state_file" == */.gtbi/state.json ]] || return 1
+    state_home="${state_file%/.gtbi/state.json}"
+    state_home="$(sanitize_abs_nonroot_path "$state_home" 2>/dev/null || true)"
+    [[ -n "$state_home" ]] || return 1
+
+    candidate_user="$(read_user_for_home "$state_home" 2>/dev/null || true)"
+    [[ -n "$candidate_user" ]] || return 1
+    resolved_home="$(resolve_home_for_user "$candidate_user" 2>/dev/null || true)"
+    [[ -n "$resolved_home" ]] || return 1
+    [[ "$resolved_home" == "$state_home" ]] || return 1
+
+    printf '%s\n' "$state_home"
+}
+
+state_file_matches_target_home() {
+    local state_file="$1"
+    local expected_home="$2"
+    local state_home=""
+
+    [[ -n "$state_file" ]] || return 1
+    expected_home="$(sanitize_abs_nonroot_path "$expected_home" 2>/dev/null || true)"
+    [[ -n "$expected_home" ]] || return 1
+
+    state_home="$(state_file_path_user_home "$state_file" 2>/dev/null || true)"
+    if [[ -z "$state_home" ]]; then
+        state_home="$(read_target_home_from_state_file "$state_file" 2>/dev/null || true)"
+    fi
+
+    [[ -n "$state_home" ]] || return 1
+    [[ "$state_home" == "$expected_home" ]]
+}
+
+find_gtbi_bin_from_state_file() {
+    local state_file="$1"
+    local state_home=""
+    local target_home=""
+    local candidate_bin=""
+
+    [[ -f "$state_file" ]] || return 1
+
+    if [[ "$state_file" == */.gtbi/state.json ]]; then
+        state_home="${state_file%/.gtbi/state.json}"
+        state_home="${state_home%/}"
+        if [[ -n "$state_home" ]] && [[ "$state_home" == /* ]] && [[ "$state_home" != "/" ]]; then
+            candidate_bin="$(find_gtbi_bin_for_home "$state_home" 2>/dev/null || true)"
+            if [[ -n "$candidate_bin" ]]; then
+                printf '%s\n' "$candidate_bin"
+                return 0
+            fi
+
+            # For home-adjacent state files, the path is a stronger signal than
+            # any embedded target_user copied from another install.
+            return 1
+        fi
+    fi
+
+    target_home="$(read_target_home_from_state_file "$state_file" 2>/dev/null || true)"
+    if [[ -n "$target_home" ]]; then
+        candidate_bin="$(find_gtbi_bin_for_home "$target_home" 2>/dev/null || true)"
+        if [[ -n "$candidate_bin" ]]; then
+            printf '%s\n' "$candidate_bin"
+            return 0
+        fi
+    fi
+
+    return 1
+}
+
+find_gtbi_bin_for_home() {
+    local user_home="$1"
+
+    user_home="$(sanitize_abs_nonroot_path "$user_home" 2>/dev/null || true)"
+    [[ -n "$user_home" ]] || return 1
+
+    if [[ -x "$user_home/.local/bin/gtbi" ]]; then
+        printf '%s\n' "$user_home/.local/bin/gtbi"
+        return 0
+    fi
+
+    if [[ -x "$user_home/.gtbi/bin/gtbi" ]]; then
+        printf '%s\n' "$user_home/.gtbi/bin/gtbi"
+        return 0
+    fi
+
+    return 1
+}
+
+gtbi_home_from_gtbi_bin() {
+    local gtbi_bin="$1"
+    local gtbi_home=""
+    local user_home=""
+
+    [[ -n "$gtbi_bin" ]] || return 1
+
+    case "$gtbi_bin" in
+        */.local/bin/gtbi)
+            user_home="${gtbi_bin%/.local/bin/gtbi}"
+            gtbi_home="$user_home/.gtbi"
+            ;;
+        */.gtbi/bin/gtbi)
+            gtbi_home="${gtbi_bin%/bin/gtbi}"
+            ;;
+        *)
+            return 1
+            ;;
+    esac
+
+    gtbi_home="$(sanitize_abs_nonroot_path "$gtbi_home" 2>/dev/null || true)"
+    [[ -n "$gtbi_home" ]] || return 1
+    printf '%s\n' "$gtbi_home"
+}
+
+validated_target_user_for_dispatch() {
+    local candidate_user="$1"
+    local expected_home="${2:-}"
+    local current_user=""
+    local current_home=""
+    local resolved_home=""
+
+    [[ -n "$candidate_user" ]] || return 1
+    is_valid_username "$candidate_user" || return 1
+
+    expected_home="$(sanitize_abs_nonroot_path "$expected_home" 2>/dev/null || true)"
+    resolved_home="$(resolve_home_for_user "$candidate_user" 2>/dev/null || true)"
+    if [[ -n "$resolved_home" ]]; then
+        if [[ -n "$expected_home" ]] && [[ "$resolved_home" != "$expected_home" ]]; then
+            return 1
+        fi
+    else
+        [[ -n "$expected_home" ]] || return 1
+        current_user="$(resolve_current_user 2>/dev/null || true)"
+        current_home="$(sanitize_abs_nonroot_path "${HOME:-}" 2>/dev/null || true)"
+        if [[ "$current_user" != "$candidate_user" || -z "$current_home" || "$current_home" != "$expected_home" ]]; then
+            return 1
+        fi
+    fi
+
+    printf '%s\n' "$candidate_user"
+}
+
+gtbi_home_path_target_home() {
+    local gtbi_home="$1"
+    local candidate_home=""
+
+    [[ "$gtbi_home" == */.gtbi ]] || return 1
+    candidate_home="${gtbi_home%/.gtbi}"
+    candidate_home="$(sanitize_abs_nonroot_path "$candidate_home" 2>/dev/null || true)"
+    [[ -n "$candidate_home" ]] || return 1
+
+    printf '%s\n' "$candidate_home"
+}
+
+existing_abs_nonroot_dir() {
+    local path_value=""
+
+    path_value="$(sanitize_abs_nonroot_path "${1:-}" 2>/dev/null || true)"
+    [[ -n "$path_value" ]] || return 1
+    [[ -d "$path_value" ]] || return 1
+    printf '%s\n' "$path_value"
+}
+
+resolve_target_home_from_state_hint() {
+    local state_file="$1"
+    local candidate_home=""
+    local state_home=""
+
+    state_file="$(sanitize_abs_nonroot_path "$state_file" 2>/dev/null || true)"
+    [[ -n "$state_file" && -f "$state_file" ]] || return 1
+
+    candidate_home="$(state_file_path_user_home "$state_file" 2>/dev/null || true)"
+    if [[ -n "$candidate_home" ]]; then
+        printf '%s\n' "$candidate_home"
+        return 0
+    fi
+
+    if [[ "$state_file" == */.gtbi/state.json ]]; then
+        state_home="${state_file%/.gtbi/state.json}"
+        state_home="$(existing_abs_nonroot_dir "$state_home" 2>/dev/null || true)"
+        candidate_home="$(read_target_home_from_state_file "$state_file" 2>/dev/null || true)"
+        candidate_home="$(existing_abs_nonroot_dir "$candidate_home" 2>/dev/null || true)"
+        if [[ -n "$state_home" ]] && [[ -z "$candidate_home" || "$candidate_home" == "$state_home" ]] && find_gtbi_bin_for_home "$state_home" >/dev/null 2>&1; then
+            printf '%s\n' "$state_home"
+            return 0
+        fi
+    fi
+
+    candidate_home="$(read_target_home_from_state_file "$state_file" 2>/dev/null || true)"
+    candidate_home="$(existing_abs_nonroot_dir "$candidate_home" 2>/dev/null || true)"
+    if [[ -n "$candidate_home" ]]; then
+      printf '%s\n' "$candidate_home"
+      return 0
+    fi
+
+    return 1
+}
+
+read_validated_bin_dir_from_state_file() {
+    local state_file="$1"
+    local target_home="${2:-}"
+    local candidate_bin=""
+
+    [[ -f "$state_file" ]] || return 1
+
+    target_home="$(existing_abs_nonroot_dir "$target_home" 2>/dev/null || true)"
+    if [[ -z "$target_home" ]]; then
+        target_home="$(resolve_target_home_from_state_hint "$state_file" 2>/dev/null || true)"
+    fi
+
+    candidate_bin="$(read_bin_dir_from_state_file "$state_file" 2>/dev/null || true)"
+    candidate_bin="$(validate_bin_dir_for_home "$candidate_bin" "$target_home" 2>/dev/null || true)"
+    [[ -n "$candidate_bin" ]] || return 1
+    printf '%s\n' "$candidate_bin"
+}
+
+resolve_direct_exec_target_home() {
+    local preferred_gtbi_home="${1:-}"
+    local candidate_home=""
+    local state_candidate=""
+
+    preferred_gtbi_home="$(sanitize_abs_nonroot_path "$preferred_gtbi_home" 2>/dev/null || true)"
+    if [[ -n "$preferred_gtbi_home" ]]; then
+      candidate_home="$(resolve_target_home_from_state_hint "$preferred_gtbi_home/state.json" 2>/dev/null || true)"
+      if [[ -n "$candidate_home" ]]; then
+        printf '%s\n' "$candidate_home"
+        return 0
+      fi
+    fi
+
+    candidate_home="$(existing_abs_nonroot_dir "${TARGET_HOME:-}" 2>/dev/null || true)"
+    if [[ -n "$candidate_home" ]]; then
+      printf '%s\n' "$candidate_home"
+      return 0
+    fi
+
+    for state_candidate in "${GTBI_STATE_FILE:-}" "${GTBI_SYSTEM_STATE_FILE:-}"; do
+      candidate_home="$(resolve_target_home_from_state_hint "$state_candidate" 2>/dev/null || true)"
+      [[ -n "$candidate_home" ]] || continue
+      printf '%s\n' "$candidate_home"
+      return 0
+    done
+
+    candidate_home="$(resolve_target_home_from_state_hint "${GTBI_HOME:-}/state.json" 2>/dev/null || true)"
+    if [[ -n "$candidate_home" ]]; then
+      printf '%s\n' "$candidate_home"
+      return 0
+    fi
+
+    return 1
+}
+
+resolve_direct_exec_gtbi_home() {
+    local target_home="$1"
+    local preferred_gtbi_home="${2:-}"
+    local candidate_gtbi_home=""
+    local candidate_home=""
+
+    target_home="$(existing_abs_nonroot_dir "$target_home" 2>/dev/null || true)"
+    [[ -n "$target_home" ]] || return 1
+
+    preferred_gtbi_home="$(sanitize_abs_nonroot_path "$preferred_gtbi_home" 2>/dev/null || true)"
+    if [[ -n "$preferred_gtbi_home" ]] && [[ "$preferred_gtbi_home" == */.gtbi ]] && [[ -d "$preferred_gtbi_home" ]]; then
+      candidate_home="$(resolve_target_home_from_state_hint "$preferred_gtbi_home/state.json" 2>/dev/null || true)"
+      if [[ "$candidate_home" == "$target_home" ]]; then
+        printf '%s\n' "$preferred_gtbi_home"
+        return 0
+      fi
+    fi
+
+    candidate_gtbi_home="$(existing_abs_nonroot_dir "$target_home/.gtbi" 2>/dev/null || true)"
+    if [[ -n "$candidate_gtbi_home" ]]; then
+      printf '%s\n' "$candidate_gtbi_home"
+      return 0
+    fi
+
+    candidate_gtbi_home="$(sanitize_abs_nonroot_path "${GTBI_HOME:-}" 2>/dev/null || true)"
+    if [[ -n "$candidate_gtbi_home" ]] && [[ "$candidate_gtbi_home" == */.gtbi ]] && [[ -d "$candidate_gtbi_home" ]]; then
+      candidate_home="$(resolve_target_home_from_state_hint "$candidate_gtbi_home/state.json" 2>/dev/null || true)"
+      if [[ "$candidate_home" == "$target_home" ]]; then
+        printf '%s\n' "$candidate_gtbi_home"
+        return 0
+      fi
+    fi
+
+    return 1
+}
+
+resolve_live_system_state_home() {
+    local candidate_home=""
+
+    candidate_home="$(resolve_target_home_from_state_hint "${GTBI_SYSTEM_STATE_FILE:-}" 2>/dev/null || true)"
+    [[ -n "$candidate_home" ]] || return 1
+    find_gtbi_bin_for_home "$candidate_home" >/dev/null 2>&1 || return 1
+
+    printf '%s\n' "$candidate_home"
+}
+
+prepare_runtime_context_from_gtbi_home() {
+    local gtbi_home="$1"
+    local state_file=""
+    local state_bin_dir=""
+    local runtime_target_home=""
+    local runtime_target_user=""
+    local validated_target_user=""
+
+    GTBI_RUNTIME_TARGET_USER=""
+
+    gtbi_home="$(sanitize_abs_nonroot_path "$gtbi_home" 2>/dev/null || true)"
+    [[ -n "$gtbi_home" ]] || return 1
+    state_file="$gtbi_home/state.json"
+
+    runtime_target_home="$(resolve_target_home_from_state_hint "$state_file" 2>/dev/null || true)"
+    runtime_target_user="$(read_target_user_from_state_file "$state_file" 2>/dev/null || true)"
+
+    if [[ -z "$runtime_target_user" ]] && [[ -n "$runtime_target_home" ]]; then
+        runtime_target_user="$(read_user_for_home "$runtime_target_home" 2>/dev/null || true)"
+    fi
+
+    validated_target_user="$(validated_target_user_for_dispatch "$runtime_target_user" "$runtime_target_home" 2>/dev/null || true)"
+
+    [[ -n "$runtime_target_home" ]] && TARGET_HOME="$runtime_target_home"
+    GTBI_HOME="$gtbi_home"
+    GTBI_STATE_FILE="$state_file"
+    state_bin_dir="$(read_validated_bin_dir_from_state_file "$GTBI_STATE_FILE" "$runtime_target_home" 2>/dev/null || true)"
+    GTBI_BIN_DIR="${state_bin_dir:-}"
+    GTBI_RUNTIME_TARGET_USER="${validated_target_user:-}"
+
+    export TARGET_HOME GTBI_HOME GTBI_STATE_FILE GTBI_BIN_DIR
+}
+
+read_user_for_home() {
+    local user_home="$1"
+    local candidate_user=""
+    local state_file=""
+    local state_home=""
+    local stat_bin=""
+
+    user_home="$(sanitize_abs_nonroot_path "$user_home" 2>/dev/null || true)"
+    [[ -n "$user_home" ]] || return 1
+    state_file="$user_home/.gtbi/state.json"
+
+    while IFS=: read -r candidate_user _ _ _ _ state_home _; do
+        [[ -n "$candidate_user" ]] || continue
+        [[ -n "$state_home" ]] || continue
+        state_home="$(sanitize_abs_nonroot_path "$state_home" 2>/dev/null || true)"
+        if [[ -n "$state_home" ]] && [[ "$state_home" == "$user_home" ]] && is_valid_username "$candidate_user"; then
+            printf '%s\n' "$candidate_user"
+            return 0
+        fi
+    done < <(getent_passwd_entry 2>/dev/null || true)
+
+    stat_bin="$(system_binary_path stat 2>/dev/null || true)"
+    if [[ -n "$stat_bin" ]]; then
+        candidate_user="$("$stat_bin" -c '%U' "$user_home" 2>/dev/null || true)"
+        if [[ -n "$candidate_user" ]] && [[ "$candidate_user" != "UNKNOWN" ]] && is_valid_username "$candidate_user"; then
+            printf '%s\n' "$candidate_user"
+            return 0
+        fi
+    fi
+
+    candidate_user="$(read_target_user_from_state_file "$state_file" 2>/dev/null || true)"
+    [[ -n "$candidate_user" ]] || return 1
+
+    state_home="$(read_target_home_from_state_file "$state_file" 2>/dev/null || true)"
+    if [[ -z "$state_home" ]]; then
+        state_home="$(resolve_home_for_user "$candidate_user" 2>/dev/null || true)"
+    fi
+
+    if [[ -n "$state_home" ]] && [[ "$state_home" == "$user_home" ]]; then
+        printf '%s\n' "$candidate_user"
+        return 0
+    fi
+
+    return 1
+}
+
+read_target_user_from_state_hint() {
+    local state_file="$1"
+    local candidate_user=""
+    local state_home=""
+
+    [[ -f "$state_file" ]] || return 1
+
+    state_home="$(state_file_path_user_home "$state_file" 2>/dev/null || true)"
+    if [[ -n "$state_home" ]] && find_gtbi_bin_for_home "$state_home" >/dev/null 2>&1; then
+        candidate_user="$(read_user_for_home "$state_home" 2>/dev/null || true)"
+        if [[ -n "$candidate_user" ]]; then
+            printf '%s\n' "$candidate_user"
+            return 0
+        fi
+
+        # For genuine home-adjacent state files, refuse to trust mismatched
+        # target_user values from stale copies. The path itself is the stronger
+        # signal once it has been validated as a real user home.
+        return 1
+    fi
+
+    state_home="$(read_target_home_from_state_file "$state_file" 2>/dev/null || true)"
+    if [[ -n "$state_home" ]] && [[ "$state_home" == /* ]] && [[ "$state_home" != "/" ]]; then
+        candidate_user="$(read_user_for_home "$state_home" 2>/dev/null || true)"
+        if [[ -z "$candidate_user" ]]; then
+            candidate_user="$(read_target_user_from_state_file "$state_file" 2>/dev/null || true)"
+        fi
+        if [[ -n "$candidate_user" ]] && find_gtbi_bin_for_home "$state_home" >/dev/null 2>&1; then
+            printf '%s\n' "$candidate_user"
+            return 0
+        fi
+    fi
+
+    return 1
+}
+
+# Find gtbi installation for a user
+find_gtbi_bin() {
+    local user="${1:-}"
+    local user_home=""
+    local current_user=""
+    local target_home=""
+
+    is_valid_username "$user" || return 1
+
+    target_home="$(sanitize_abs_nonroot_path "${TARGET_HOME:-}" 2>/dev/null || true)"
+    if [[ -n "$target_home" ]] \
+        && [[ "$(validated_target_user_for_dispatch "$user" "$target_home" 2>/dev/null || true)" == "$user" ]] \
+        && find_gtbi_bin_for_home "$target_home" >/dev/null 2>&1; then
+        find_gtbi_bin_for_home "$target_home"
+        return 0
+    fi
+
+    current_user="$(resolve_current_user 2>/dev/null || true)"
+    if [[ "$current_user" == "$user" ]]; then
+        user_home="$(sanitize_abs_nonroot_path "${HOME:-}" 2>/dev/null || true)"
+        if [[ -n "$user_home" ]] && current_home_matches_gtbi_install "$user_home"; then
+            find_gtbi_bin_for_home "$user_home"
+            return 0
+        fi
+    fi
+
+    user_home="$(resolve_home_for_user "$user" 2>/dev/null || true)"
+    if [[ -n "$user_home" ]] && find_gtbi_bin_for_home "$user_home" >/dev/null 2>&1; then
+        find_gtbi_bin_for_home "$user_home"
+        return 0
+    fi
+
+    return 1
+}
+
+find_installed_gtbi_owner() {
+    local current_user=""
+    local candidate_user=""
+    local candidate_home=""
+
+    current_user="$(resolve_current_user 2>/dev/null || true)"
+    if [[ -n "$current_user" ]] && find_gtbi_bin "$current_user" >/dev/null 2>&1; then
+        printf '%s\n' "$current_user"
+        return 0
+    fi
+
+    while IFS=: read -r candidate_user _ _ _ _ candidate_home _; do
+        [[ -n "$candidate_user" ]] || continue
+        [[ -n "$candidate_home" ]] || continue
+        candidate_home="$(sanitize_abs_nonroot_path "$candidate_home" 2>/dev/null || true)"
+        [[ -n "$candidate_home" ]] || continue
+        if find_gtbi_bin_for_home "$candidate_home" >/dev/null 2>&1; then
+            printf '%s\n' "$candidate_user"
+            return 0
+        fi
+    done < <(getent_passwd_entry 2>/dev/null || true)
+
+    return 1
+}
+
+# Detect target user from state file(s) or installed homes.
+detect_target_user() {
+    local state_candidate=""
+    local candidate_user=""
+    local candidate_home=""
+    local gtbi_home="${GTBI_HOME:-}"
+    local current_home=""
+    local explicit_target_home=""
+
+    current_home="$(resolve_current_home 2>/dev/null || true)"
+
+    explicit_target_home="$(existing_abs_nonroot_dir "${TARGET_HOME:-}" 2>/dev/null || true)"
+    if [[ -n "$explicit_target_home" ]]; then
+        candidate_user="$(read_user_for_home "$explicit_target_home" 2>/dev/null || true)"
+        if [[ -n "$candidate_user" ]]; then
+            printf '%s\n' "$candidate_user"
+            return 0
+        fi
+    fi
+
+    if [[ -n "${GTBI_STATE_FILE:-}" ]]; then
+        candidate_user="$(read_target_user_from_state_hint "$GTBI_STATE_FILE" 2>/dev/null || true)"
+        if [[ -n "$candidate_user" ]]; then
+            printf '%s\n' "$candidate_user"
+            return 0
+        fi
+        [[ -f "$GTBI_STATE_FILE" ]] && return 1
+    fi
+
+    if [[ -n "$current_home" ]]; then
+        candidate_user="$(read_target_user_from_state_hint "$current_home/.gtbi/state.json" 2>/dev/null || true)"
+        if [[ -n "$candidate_user" ]]; then
+            printf '%s\n' "$candidate_user"
+            return 0
+        fi
+    fi
+
+    candidate_user="$(read_target_user_from_state_hint "$GTBI_SYSTEM_STATE_FILE" 2>/dev/null || true)"
+    if [[ -n "$candidate_user" ]]; then
+        printf '%s\n' "$candidate_user"
+        return 0
+    fi
+    [[ -f "$GTBI_SYSTEM_STATE_FILE" ]] && return 1
+
+    if [[ -n "$gtbi_home" ]]; then
+        gtbi_home="${gtbi_home%/}"
+        if [[ "$gtbi_home" == */.gtbi ]]; then
+            candidate_home="${gtbi_home%/.gtbi}"
+            candidate_user="$(read_user_for_home "$candidate_home" 2>/dev/null || true)"
+            if [[ -n "$candidate_user" ]] && find_gtbi_bin_for_home "$candidate_home" >/dev/null 2>&1; then
+                printf '%s\n' "$candidate_user"
+                return 0
+            fi
+        fi
+        candidate_user="$(read_target_user_from_state_hint "$gtbi_home/state.json" 2>/dev/null || true)"
+        if [[ -n "$candidate_user" ]]; then
+            printf '%s\n' "$candidate_user"
+            return 0
+        fi
+        [[ -f "$gtbi_home/state.json" ]] && return 1
+    fi
+
+    while IFS=: read -r _ _ _ _ _ candidate_home _; do
+        [[ -n "$candidate_home" ]] || continue
+        [[ "$candidate_home" == /* ]] || continue
+        state_candidate="$candidate_home/.gtbi/state.json"
+        candidate_user="$(read_target_user_from_state_hint "$state_candidate" 2>/dev/null || true)"
+        if [[ -n "$candidate_user" ]]; then
+            printf '%s\n' "$candidate_user"
+            return 0
+        fi
+    done < <(getent_passwd_entry 2>/dev/null || true)
+
+    candidate_user="$(find_installed_gtbi_owner 2>/dev/null || true)"
+    if [[ -n "$candidate_user" ]]; then
+        printf '%s\n' "$candidate_user"
+        return 0
+    fi
+
+    return 1
+}
+
+main() {
+    local target_user
+    local gtbi_bin=""
+    local bash_bin=""
+    local current_user
+    local runtime_gtbi_home=""
+    local runtime_user=""
+    local candidate_bin=""
+    local direct_gtbi_home=""
+    local direct_target_home=""
+    local current_home=""
+    local original_home="${HOME:-}"
+    local original_home_candidate=""
+    local current_home_from_valid_env=false
+    local system_state_target_unresolved=false
+    local -a state_candidates=()
+    local env_bin=""
+    local system_state_home=""
+
+    original_home_candidate="$(sanitize_abs_nonroot_path "$original_home" 2>/dev/null || true)"
+    if [[ -n "$original_home_candidate" ]] && current_home_matches_gtbi_install "$original_home_candidate"; then
+        current_home_from_valid_env=true
+    fi
+
+    current_home="$(resolve_current_home 2>/dev/null || true)"
+    if [[ -n "$current_home" ]]; then
+        HOME="$current_home"
+        export HOME
+    fi
+
+    GTBI_STATE_FILE="$(sanitize_abs_nonroot_path "${GTBI_STATE_FILE:-}" 2>/dev/null || true)"
+    GTBI_SYSTEM_STATE_FILE="$(sanitize_abs_nonroot_path "${GTBI_SYSTEM_STATE_FILE:-}" 2>/dev/null || true)"
+    GTBI_HOME="$(sanitize_abs_nonroot_path "${GTBI_HOME:-}" 2>/dev/null || true)"
+    TARGET_HOME="$(sanitize_abs_nonroot_path "${TARGET_HOME:-}" 2>/dev/null || true)"
+    GTBI_BIN_DIR="$(sanitize_abs_nonroot_path "${GTBI_BIN_DIR:-}" 2>/dev/null || true)"
+    export GTBI_STATE_FILE GTBI_SYSTEM_STATE_FILE GTBI_HOME TARGET_HOME GTBI_BIN_DIR
+
+    system_state_home="$(resolve_live_system_state_home 2>/dev/null || true)"
+    if [[ -n "$system_state_home" && "$current_home_from_valid_env" != true ]]; then
+        if [[ -z "${TARGET_HOME:-}" ]] || { [[ "$TARGET_HOME" != "$system_state_home" ]] && ! find_gtbi_bin_for_home "$TARGET_HOME" >/dev/null 2>&1; }; then
+            TARGET_HOME="$system_state_home"
+            GTBI_HOME="$system_state_home/.gtbi"
+            if [[ -f "$GTBI_HOME/state.json" ]]; then
+                GTBI_STATE_FILE="$GTBI_HOME/state.json"
+            fi
+            export TARGET_HOME GTBI_HOME GTBI_STATE_FILE
+        fi
+    fi
+    if [[ -z "$system_state_home" && -f "${GTBI_SYSTEM_STATE_FILE:-}" && "$current_home_from_valid_env" != true ]]; then
+        system_state_target_unresolved=true
+        current_home=""
+        if [[ -n "$original_home_candidate" ]]; then
+            HOME="$original_home_candidate"
+            export HOME
+        fi
+    fi
+
+    bash_bin="$(sanitize_abs_nonroot_path "${BASH:-}" 2>/dev/null || true)"
+    if [[ -z "$bash_bin" ]]; then
+        bash_bin="$(system_binary_path bash 2>/dev/null || true)"
+    fi
+    env_bin="$(system_binary_path env 2>/dev/null || true)"
+    if [[ -z "$bash_bin" ]]; then
+        echo "Error: unable to locate bash interpreter for gtbi" >&2
+        exit 1
+    fi
+
+    if [[ "$system_state_target_unresolved" != true ]]; then
+        target_user="$(detect_target_user || true)"
+    else
+        target_user=""
+    fi
+    current_user="$(resolve_current_user 2>/dev/null || true)"
+
+    # Find the gtbi binary
+    if [[ -z "$gtbi_bin" ]] && [[ -n "${TARGET_HOME:-}" ]]; then
+        candidate_bin="$(find_gtbi_bin_for_home "${TARGET_HOME}" 2>/dev/null || true)"
+        [[ -n "$candidate_bin" ]] && gtbi_bin="$candidate_bin"
+    fi
+
+    if [[ -z "$gtbi_bin" ]] && [[ -n "${GTBI_STATE_FILE:-}" ]]; then
+        if [[ -z "${TARGET_HOME:-}" ]] || state_file_matches_target_home "$GTBI_STATE_FILE" "${TARGET_HOME}"; then
+            candidate_bin="$(find_gtbi_bin_from_state_file "$GTBI_STATE_FILE" 2>/dev/null || true)"
+            [[ -n "$candidate_bin" ]] && gtbi_bin="$candidate_bin"
+        fi
+    fi
+
+    if [[ -z "$gtbi_bin" && "$current_home_from_valid_env" != true ]] && [[ -n "${GTBI_SYSTEM_STATE_FILE:-}" ]]; then
+        if [[ -z "${TARGET_HOME:-}" ]] || state_file_matches_target_home "$GTBI_SYSTEM_STATE_FILE" "${TARGET_HOME}"; then
+            candidate_bin="$(find_gtbi_bin_from_state_file "$GTBI_SYSTEM_STATE_FILE" 2>/dev/null || true)"
+            [[ -n "$candidate_bin" ]] && gtbi_bin="$candidate_bin"
+        fi
+    fi
+
+    if [[ -z "$gtbi_bin" ]] && [[ -n "${GTBI_HOME:-}" ]] && [[ "${GTBI_HOME}" == */.gtbi ]]; then
+        if [[ -z "${TARGET_HOME:-}" ]] || state_file_matches_target_home "${GTBI_HOME}/state.json" "${TARGET_HOME}"; then
+            candidate_bin="$(find_gtbi_bin_for_home "${GTBI_HOME%/.gtbi}" 2>/dev/null || true)"
+            [[ -n "$candidate_bin" ]] && gtbi_bin="$candidate_bin"
+        fi
+    fi
+
+    if [[ -z "$gtbi_bin" && "$system_state_target_unresolved" != true ]] && [[ -n "$current_home" ]]; then
+        if [[ -z "${TARGET_HOME:-}" ]] || state_file_matches_target_home "$current_home/.gtbi/state.json" "${TARGET_HOME}"; then
+            candidate_bin="$(find_gtbi_bin_from_state_file "$current_home/.gtbi/state.json" 2>/dev/null || true)"
+            [[ -n "$candidate_bin" ]] && gtbi_bin="$candidate_bin"
+        fi
+    fi
+
+    if [[ -z "$gtbi_bin" && "$system_state_target_unresolved" != true ]]; then
+        gtbi_bin="$(find_gtbi_bin "$target_user" || true)"
+    fi
+
+    if [[ -z "$gtbi_bin" ]]; then
+        local target_home=""
+        target_home="$(existing_abs_nonroot_dir "${TARGET_HOME:-}" 2>/dev/null || true)"
+        if [[ -z "$target_home" ]] && [[ -n "${GTBI_STATE_FILE:-}" ]]; then
+            target_home="$(resolve_target_home_from_state_hint "$GTBI_STATE_FILE" 2>/dev/null || true)"
+        fi
+        if [[ -z "$target_home" ]] && [[ -n "${GTBI_SYSTEM_STATE_FILE:-}" ]]; then
+            target_home="$(resolve_target_home_from_state_hint "$GTBI_SYSTEM_STATE_FILE" 2>/dev/null || true)"
+        fi
+        if [[ -z "$target_home" ]] && [[ -n "${GTBI_HOME:-}" ]] && [[ -f "${GTBI_HOME}/state.json" ]]; then
+            target_home="$(resolve_target_home_from_state_hint "${GTBI_HOME}/state.json" 2>/dev/null || true)"
+        fi
+
+        if [[ -n "$target_user" && -n "$target_home" ]]; then
+            echo "Error: GTBI not found for user '$target_user'" >&2
+            echo "Expected at: $target_home/.local/bin/gtbi (or $target_home/.gtbi/bin/gtbi)" >&2
+        else
+            echo "Error: GTBI not found." >&2
+            echo "Unable to determine the GTBI owner automatically." >&2
+            echo "Provide GTBI_STATE_FILE/GTBI_SYSTEM_STATE_FILE with target_home, or re-run from the installed GTBI tree." >&2
+        fi
+
+        local candidate_home=""
+        local candidate_user=""
+        local candidate_bin=""
+        local found_candidates=0
+
+        while IFS=: read -r candidate_user _ _ _ _ candidate_home _; do
+            [[ -n "$candidate_user" ]] || continue
+            [[ -n "$candidate_home" ]] || continue
+            [[ "$candidate_home" == /* ]] || continue
+            candidate_bin="$(find_gtbi_bin_for_home "$candidate_home" 2>/dev/null || true)"
+            [[ -n "$candidate_bin" ]] || continue
+            if (( found_candidates == 0 )); then
+                echo "" >&2
+                echo "Detected other GTBI installs:" >&2
+            fi
+            found_candidates=1
+            echo "  - $candidate_user: $candidate_bin" >&2
+            echo "    Try: sudo -n -u \"$candidate_user\" -H -- \"$0\" [args...]" >&2
+        done < <(getent_passwd_entry 2>/dev/null || true)
+
+        echo "" >&2
+        echo "If GTBI was installed for a different user, run this wrapper as that user, e.g.:" >&2
+        echo "  sudo -n -u <user> -H -- \"$0\" [args...]" >&2
+        echo "" >&2
+        echo "You can also override state discovery:" >&2
+        echo "  GTBI_STATE_FILE=/path/to/state.json \"$0\" [args...]" >&2
+        exit 1
+    fi
+
+    GTBI_RUNTIME_TARGET_USER=""
+    runtime_gtbi_home="$(gtbi_home_from_gtbi_bin "$gtbi_bin" 2>/dev/null || true)"
+    if [[ -n "$runtime_gtbi_home" ]]; then
+        if prepare_runtime_context_from_gtbi_home "$runtime_gtbi_home" >/dev/null 2>&1; then
+            runtime_user="${GTBI_RUNTIME_TARGET_USER:-}"
+            if [[ -z "$target_user" ]] && [[ -n "$runtime_user" ]]; then
+                target_user="$runtime_user"
+            fi
+        fi
+    fi
+
+    if [[ -n "$target_user" ]]; then
+        validate_target_user_or_die "$target_user"
+    fi
+
+    GTBI_BIN_DIR="$(validate_bin_dir_for_home "${GTBI_BIN_DIR:-}" "${TARGET_HOME:-}" 2>/dev/null || true)"
+    export GTBI_BIN_DIR
+
+    if [[ -z "${GTBI_BIN_DIR:-}" ]]; then
+        local state_candidate=""
+        local expected_home=""
+        state_candidates=(
+            "${GTBI_STATE_FILE:-}"
+            "${GTBI_SYSTEM_STATE_FILE:-}"
+        )
+        if [[ -n "$current_home" ]] && [[ -z "${TARGET_HOME:-}" || "$current_home" == "${TARGET_HOME:-}" ]]; then
+            state_candidates+=("$current_home/.gtbi/state.json")
+        fi
+        expected_home="$(sanitize_abs_nonroot_path "${TARGET_HOME:-}" 2>/dev/null || true)"
+        for state_candidate in "${state_candidates[@]}"; do
+            [[ -n "$state_candidate" && -f "$state_candidate" ]] || continue
+            if [[ -n "$expected_home" ]] && ! state_file_matches_target_home "$state_candidate" "$expected_home"; then
+                continue
+            fi
+            GTBI_BIN_DIR="$(read_validated_bin_dir_from_state_file "$state_candidate" "$expected_home" 2>/dev/null || true)"
+            [[ -n "$GTBI_BIN_DIR" ]] && break
+        done
+        export GTBI_BIN_DIR
+    fi
+
+    exec_as_target_user() {
+        local user="$1"
+        shift
+        local -a env_args=()
+        local sanitized_state_file=""
+        local sanitized_system_state_file=""
+        local sanitized_target_home=""
+        local sanitized_gtbi_home=""
+        local sanitized_bin_dir=""
+        local -a cmd_with_env=()
+        local env_bin=""
+        local runuser_bin=""
+        local sudo_bin=""
+        local true_bin=""
+
+        sanitized_state_file="$(sanitize_abs_nonroot_path "${GTBI_STATE_FILE:-}" 2>/dev/null || true)"
+        sanitized_system_state_file="$(sanitize_abs_nonroot_path "${GTBI_SYSTEM_STATE_FILE:-}" 2>/dev/null || true)"
+        sanitized_target_home="$(sanitize_abs_nonroot_path "${TARGET_HOME:-}" 2>/dev/null || true)"
+        sanitized_gtbi_home="$(sanitize_abs_nonroot_path "${GTBI_HOME:-}" 2>/dev/null || true)"
+        sanitized_bin_dir="$(sanitize_abs_nonroot_path "${GTBI_BIN_DIR:-}" 2>/dev/null || true)"
+
+        validate_target_user_or_die "$user"
+
+        if [[ -n "$sanitized_target_home" ]]; then
+            if [[ -n "$sanitized_state_file" ]] && ! state_file_matches_target_home "$sanitized_state_file" "$sanitized_target_home"; then
+                sanitized_state_file=""
+            fi
+            if [[ -n "$sanitized_system_state_file" ]] && ! state_file_matches_target_home "$sanitized_system_state_file" "$sanitized_target_home"; then
+                sanitized_system_state_file=""
+            fi
+            if [[ -z "$sanitized_state_file" && -f "$sanitized_target_home/.gtbi/state.json" ]]; then
+                sanitized_state_file="$sanitized_target_home/.gtbi/state.json"
+            fi
+            case "$sanitized_gtbi_home" in
+                "$sanitized_target_home/.gtbi") ;;
+                "$sanitized_target_home/.gtbi"/*|*/.gtbi)
+                    sanitized_gtbi_home="$sanitized_target_home/.gtbi"
+                    ;;
+            esac
+        fi
+
+        [[ -n "$sanitized_state_file" ]] && env_args+=("GTBI_STATE_FILE=$sanitized_state_file")
+        [[ -n "$sanitized_system_state_file" ]] && env_args+=("GTBI_SYSTEM_STATE_FILE=$sanitized_system_state_file")
+        [[ -n "$sanitized_target_home" ]] && env_args+=("HOME=$sanitized_target_home" "TARGET_HOME=$sanitized_target_home")
+        [[ -n "$sanitized_gtbi_home" ]] && env_args+=("GTBI_HOME=$sanitized_gtbi_home")
+        [[ -n "$sanitized_bin_dir" ]] && env_args+=("GTBI_BIN_DIR=$sanitized_bin_dir")
+        [[ -n "${GTBI_REF:-}" ]] && env_args+=("GTBI_REF=$GTBI_REF")
+        [[ -n "${GTBI_RAW:-}" ]] && env_args+=("GTBI_RAW=$GTBI_RAW")
+
+        env_bin="$(system_binary_path env 2>/dev/null || true)"
+        if [[ -n "$env_bin" && ${#env_args[@]} -gt 0 ]]; then
+            cmd_with_env=("$env_bin" "${env_args[@]}" "$@")
+        elif [[ ${#env_args[@]} -gt 0 ]]; then
+            echo "Error: unable to locate env for gtbi re-exec" >&2
+            exit 1
+        else
+            cmd_with_env=("$@")
+        fi
+
+        if [[ "$EUID" -eq 0 ]]; then
+            runuser_bin="$(system_binary_path runuser 2>/dev/null || true)"
+            if [[ -n "$runuser_bin" ]]; then
+                exec "$runuser_bin" -u "$user" -- "${cmd_with_env[@]}"
+            fi
+
+            sudo_bin="$(system_binary_path sudo 2>/dev/null || true)"
+            if [[ -n "$sudo_bin" ]]; then
+                exec "$sudo_bin" -n -u "$user" -H "${cmd_with_env[@]}"
+            fi
+
+            echo "Error: need runuser or sudo to run gtbi as '$user'" >&2
+            exit 1
+        fi
+
+        sudo_bin="$(system_binary_path sudo 2>/dev/null || true)"
+        if [[ -z "$sudo_bin" ]]; then
+            echo "Error: need sudo to run gtbi as '$user'" >&2
+            exit 1
+        fi
+
+        true_bin="$(system_binary_path true 2>/dev/null || true)"
+        true_bin="${true_bin:-true}"
+        if ! "$sudo_bin" -n -u "$user" -H "$true_bin" 2>/dev/null; then
+            echo "Error: passwordless sudo is required to run gtbi as '$user' from this account." >&2
+            echo "Log in as '$user' and rerun gtbi, or run it from root/noninteractive sudo." >&2
+            exit 1
+        fi
+
+        echo "Note: Running gtbi as '$user' (GTBI owner)" >&2
+        exec "$sudo_bin" -n -u "$user" -H "${cmd_with_env[@]}"
+    }
+
+    # If owner detection failed or we're already the target user, run directly
+    if [[ -z "$target_user" || "$current_user" == "$target_user" ]]; then
+        direct_target_home="$(resolve_direct_exec_target_home "$runtime_gtbi_home" 2>/dev/null || true)"
+        if [[ -n "$direct_target_home" ]]; then
+            direct_gtbi_home="$(resolve_direct_exec_gtbi_home "$direct_target_home" "$runtime_gtbi_home" 2>/dev/null || true)"
+            if [[ -n "$env_bin" ]]; then
+                exec "$env_bin" \
+                    HOME="$direct_target_home" \
+                    TARGET_HOME="$direct_target_home" \
+                    GTBI_HOME="${direct_gtbi_home:-}" \
+                    GTBI_BIN_DIR="${GTBI_BIN_DIR:-}" \
+                    "$bash_bin" "$gtbi_bin" "$@"
+            fi
+            HOME="$direct_target_home"
+            TARGET_HOME="$direct_target_home"
+            GTBI_HOME="${direct_gtbi_home:-}"
+            GTBI_BIN_DIR="${GTBI_BIN_DIR:-}"
+            export HOME TARGET_HOME GTBI_HOME GTBI_BIN_DIR
+            exec "$bash_bin" "$gtbi_bin" "$@"
+        fi
+        exec "$bash_bin" "$gtbi_bin" "$@"
+    fi
+
+    # IMPORTANT: Avoid `sudo -i` which sources shell profile files.
+    # Third-party installers sometimes modify those files in ways that can
+    # break non-interactive runs. We set HOME with `-H` but preserve CWD.
+    exec_as_target_user "$target_user" "$bash_bin" "$gtbi_bin" "$@"
+
+}
+
+main "$@"

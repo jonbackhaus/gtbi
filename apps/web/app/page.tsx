@@ -941,7 +941,7 @@ export default function HomePage() {
         <div className="flex items-center gap-2 sm:gap-4">
           {/* Mobile: icon-only buttons with 44px touch targets (Apple HIG) */}
           <a
-            href="https://github.com/Dicklesworthstone/agentic_coding_flywheel_setup"
+            href="https://github.com/jonbackhaus/gtbi"
             target="_blank"
             rel="noopener noreferrer"
             className="flex h-11 w-11 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:h-auto sm:w-auto sm:rounded-none sm:bg-transparent sm:hover:bg-transparent"
@@ -1038,7 +1038,7 @@ export default function HomePage() {
                 </Button>
                 <Button asChild size="lg" variant="outline" className="border-border/50 hover:bg-muted/50">
                   <a
-                    href="https://github.com/Dicklesworthstone/agentic_coding_flywheel_setup"
+                    href="https://github.com/jonbackhaus/gtbi"
                     target="_blank"
                     rel="noopener noreferrer"
                   >
@@ -1311,7 +1311,7 @@ export default function HomePage() {
 
               <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-muted-foreground">
                 <a
-                  href="https://github.com/Dicklesworthstone/agentic_coding_flywheel_setup"
+                  href="https://github.com/jonbackhaus/gtbi"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="rounded-sm underline-offset-4 transition-colors hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"

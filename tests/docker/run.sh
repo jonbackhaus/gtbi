@@ -34,7 +34,7 @@ tests/docker/run.sh - GTBI Docker integration test runner
 Subcommands:
   install    Sunny-day fresh install, tool verification, and idempotency
   upgrade    Old GTBI release -> current installer -> doctor
-  repair     Install -> corrupt -> acfs doctor --fix -> doctor
+  repair     Install -> corrupt -> gtbi doctor --fix -> doctor
   all        Run upgrade and repair
 
 Options:
@@ -157,7 +157,7 @@ run_one() {
 
     docker run --rm \
         -e DEBIAN_FRONTEND=noninteractive \
-        -e ACFS_CI=true \
+        -e GTBI_CI=true \
         -e GTBI_TEST_MODE="${MODE}" \
         -v "${REPO_ROOT}:/repo:rw" \
         "$image" bash "/repo/tests/docker/${scenario}.sh"

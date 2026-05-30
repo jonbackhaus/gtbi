@@ -10,7 +10,7 @@ PROVISIONING_PACKET_SH="$REPO_ROOT/scripts/lib/provisioning_packet.sh"
 
 TESTS_PASSED=0
 TESTS_FAILED=0
-ARTIFACT_DIR="${ACFS_PROVISIONING_PACKET_TEST_ARTIFACTS_DIR:-${TMPDIR:-/tmp}/acfs-provisioning-packet-test-artifacts-$(date +%Y%m%d-%H%M%S)-$$}"
+ARTIFACT_DIR="${GTBI_PROVISIONING_PACKET_TEST_ARTIFACTS_DIR:-${TMPDIR:-/tmp}/gtbi-provisioning-packet-test-artifacts-$(date +%Y%m%d-%H%M%S)-$$}"
 
 mkdir -p "$ARTIFACT_DIR"
 
@@ -35,7 +35,7 @@ write_fixture() {
 valid_packet_fixture() {
     write_fixture valid-packet.json <<'JSON'
 {
-  "schema": "acfs.provider-provisioning-packet.v1",
+  "schema": "gtbi.provider-provisioning-packet.v1",
   "schemaVersion": 1,
   "stage": "ready_for_manual_provider_checkout",
   "privacy": {
@@ -52,7 +52,7 @@ valid_packet_fixture() {
     "forbiddenFieldNames": ["provider_api_key", "sshPrivateKey", "token", "password", "ip", "hostname"]
   },
   "provenance": {
-    "generatedBy": "acfs-web-wizard",
+    "generatedBy": "gtbi-web-wizard",
     "generatedAt": "2026-05-08T20:00:00.000Z",
     "sourceRef": "main",
     "wizardStep": "run-installer",
@@ -67,7 +67,7 @@ valid_packet_fixture() {
     "automationLevel": "manual",
     "manualCheckoutRequired": true,
     "manualStepsRemaining": [
-      "Log in to the provider console and choose the ACFS-recommended VPS product.",
+      "Log in to the provider console and choose the GTBI-recommended VPS product.",
       "Select the desired region and Ubuntu image from the provider UI.",
       "Use the provider password flow, keep root as the initial login user, and save the temporary VPS root password.",
       "Complete checkout and payment manually."
@@ -97,7 +97,7 @@ valid_packet_fixture() {
   "access": {
     "username": "ubuntu",
     "rootLoginExpected": true,
-    "sshPublicKeyLabel": "acfs_ed25519.pub",
+    "sshPublicKeyLabel": "gtbi_ed25519.pub",
     "sshPrivateKeyIncluded": false,
     "sshPrivateKeyPathIncluded": false
   },
@@ -109,7 +109,7 @@ valid_packet_fixture() {
   "install": {
     "mode": "vibe",
     "sourceRef": "main",
-    "command": "curl -fsSL \"https://raw.githubusercontent.com/Dicklesworthstone/agentic_coding_flywheel_setup/main/install.sh?$(date +%s)\" | bash -s -- --yes --mode vibe",
+    "command": "curl -fsSL \"https://raw.githubusercontent.com/jonbackhaus/gtbi/main/install.sh?$(date +%s)\" | bash -s -- --yes --mode vibe",
     "commandRunLocation": "vps-root-shell"
   },
   "compatibility": {
@@ -121,17 +121,17 @@ valid_packet_fixture() {
     "selectedPlanRecommendedAgents": 13,
     "readinessStatus": "supported",
     "readinessChecks": [
-      {"id": "provider", "label": "Provider", "status": "supported", "message": "Contabo is in the ACFS guidance table."},
-      {"id": "os", "label": "Ubuntu image", "status": "supported", "message": "Ubuntu 25.10 is a preferred ACFS image."}
+      {"id": "provider", "label": "Provider", "status": "supported", "message": "Contabo is in the GTBI guidance table."},
+      {"id": "os", "label": "Ubuntu image", "status": "supported", "message": "Ubuntu 25.10 is a preferred GTBI image."}
     ]
   },
   "verificationCommands": [
     {"id": "ssh-root", "label": "Root SSH reaches the new VPS", "command": "ssh root@<target-host>", "runLocation": "local", "expectedStatus": "pass", "supportBundleSafe": false},
-    {"id": "installer", "label": "ACFS installer exits successfully", "command": "curl -fsSL \"https://raw.githubusercontent.com/Dicklesworthstone/agentic_coding_flywheel_setup/main/install.sh?$(date +%s)\" | bash -s -- --yes --mode vibe", "runLocation": "vps", "expectedStatus": "pass", "supportBundleSafe": true},
-    {"id": "doctor", "label": "ACFS doctor passes or reports only documented warnings", "command": "acfs doctor", "runLocation": "vps", "expectedStatus": "pass", "supportBundleSafe": true}
+    {"id": "installer", "label": "GTBI installer exits successfully", "command": "curl -fsSL \"https://raw.githubusercontent.com/jonbackhaus/gtbi/main/install.sh?$(date +%s)\" | bash -s -- --yes --mode vibe", "runLocation": "vps", "expectedStatus": "pass", "supportBundleSafe": true},
+    {"id": "doctor", "label": "GTBI doctor passes or reports only documented warnings", "command": "gtbi doctor", "runLocation": "vps", "expectedStatus": "pass", "supportBundleSafe": true}
   ],
   "expectedArtifacts": [
-    {"id": "installer-log", "pathPattern": "~/.acfs/logs/install-*.log", "producedBy": "installer", "supportBundleSafe": true, "redactionRequired": true}
+    {"id": "installer-log", "pathPattern": "~/.gtbi/logs/install-*.log", "producedBy": "installer", "supportBundleSafe": true, "redactionRequired": true}
   ]
 }
 JSON
@@ -151,7 +151,7 @@ unknown_provider_packet_fixture() {
       .compatibility.selectedPlanStatus = "unknown" |
       .compatibility.readinessStatus = "unknown" |
       .compatibility.readinessChecks = [
-        {"id": "provider", "label": "Provider", "status": "unknown", "message": "Provider is not in the ACFS table."}
+        {"id": "provider", "label": "Provider", "status": "unknown", "message": "Provider is not in the GTBI table."}
       ]
     ' "$source_path" > "$target_path"
     printf '%s\n' "$target_path"
@@ -166,7 +166,7 @@ unsupported_os_packet_fixture() {
       .osImage.readinessStatus = "unsupported" |
       .compatibility.readinessStatus = "unsupported" |
       .compatibility.readinessChecks += [
-        {"id": "os", "label": "Ubuntu image", "status": "unsupported", "message": "Ubuntu 20.04 is below the ACFS minimum."}
+        {"id": "os", "label": "Ubuntu image", "status": "unsupported", "message": "Ubuntu 20.04 is below the GTBI minimum."}
       ]
     ' "$source_path" > "$target_path"
     printf '%s\n' "$target_path"
@@ -203,7 +203,7 @@ test_valid_packet_json_output_is_stable() {
 
     [[ "$status" -eq 0 ]] || return 1
     jq -e '
-      .schema == "acfs.provider-provisioning-packet-check.v1" and
+      .schema == "gtbi.provider-provisioning-packet-check.v1" and
       .status == "pass" and
       .packet.provider.name == "Contabo" and
       .packet.compatibility.targetAgents == 10 and
@@ -229,7 +229,7 @@ test_valid_packet_markdown_renders_steps() {
     [[ "$output" == *"Provider: Contabo (manual)"* ]] || return 1
     [[ "$output" == *"Manual provider steps:"* ]] || return 1
     [[ "$output" == *"temporary VPS root password"* ]] || return 1
-    [[ "$output" == *"[installer] ACFS installer exits successfully"* ]] || return 1
+    [[ "$output" == *"[installer] GTBI installer exits successfully"* ]] || return 1
 
     pass "valid_packet_markdown_renders_steps"
 }

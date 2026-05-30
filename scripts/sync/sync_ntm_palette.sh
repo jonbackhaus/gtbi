@@ -8,7 +8,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
 SOURCE_URL="https://raw.githubusercontent.com/Dicklesworthstone/ntm/main/command_palette.md"
-DEST_FILE="$PROJECT_ROOT/acfs/onboard/docs/ntm/command_palette.md"
+DEST_FILE="$PROJECT_ROOT/gtbi/onboard/docs/ntm/command_palette.md"
 
 # Security library (HTTPS-only curl enforcement + hashing helpers)
 SECURITY_LIB="$PROJECT_ROOT/scripts/lib/security.sh"
@@ -42,7 +42,7 @@ Options:
 
 Description:
   Downloads the latest command_palette.md from the NTM repository
-  and saves it to acfs/onboard/docs/ntm/command_palette.md
+  and saves it to gtbi/onboard/docs/ntm/command_palette.md
 EOF
 }
 
@@ -77,7 +77,7 @@ if [[ "$check_mode" == "true" ]]; then
     fi
 
     local_hash="$(calculate_sha256 < "$DEST_FILE")"
-    remote_hash="$(acfs_curl "$SOURCE_URL" | calculate_sha256)"
+    remote_hash="$(gtbi_curl "$SOURCE_URL" | calculate_sha256)"
 
     if [[ "$local_hash" == "$remote_hash" ]]; then
         echo -e "${GREEN}Up to date${NC}"
@@ -91,7 +91,7 @@ fi
 # Download
 echo "Syncing command_palette.md from NTM..."
 
-if acfs_curl "$SOURCE_URL" -o "$DEST_FILE"; then
+if gtbi_curl "$SOURCE_URL" -o "$DEST_FILE"; then
     lines=$(wc -l < "$DEST_FILE" | tr -d ' ')
     echo -e "${GREEN}Synced command_palette.md ($lines lines)${NC}"
     echo "Saved to: $DEST_FILE"

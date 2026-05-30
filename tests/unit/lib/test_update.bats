@@ -5,7 +5,7 @@ load '../test_helper'
 setup() {
     common_setup
     
-    unset TARGET_USER TARGET_HOME ACFS_BIN_DIR ACFS_STATE_FILE ACFS_HOME
+    unset TARGET_USER TARGET_HOME GTBI_BIN_DIR GTBI_STATE_FILE GTBI_HOME
 
     # update.sh logic relies on being sourced or executed
     # We source it.
@@ -15,7 +15,7 @@ setup() {
     # Mock environment for update.sh
     export HOME=$(create_temp_dir)
     export TARGET_HOME="$HOME"
-    export UPDATE_LOG_DIR="$HOME/.acfs/logs/updates"
+    export UPDATE_LOG_DIR="$HOME/.gtbi/logs/updates"
     
     source_lib "update"
     
@@ -167,9 +167,9 @@ EOF
     export HOME="$current_home"
     export TARGET_HOME="$target_home"
     unset TARGET_USER
-    unset ACFS_BIN_DIR
-    unset ACFS_STATE_FILE
-    unset ACFS_HOME
+    unset GTBI_BIN_DIR
+    unset GTBI_STATE_FILE
+    unset GTBI_HOME
 
     mkdir -p "$current_home/.bun/bin" "$current_home/.cargo/bin" "$current_home/.local/bin"
     mkdir -p "$target_home/.bun/bin" "$target_home/.cargo/bin" "$target_home/.local/bin"
@@ -398,7 +398,7 @@ EOF
     run env -i PATH="/usr/bin:/bin" bash -c 'set -euo pipefail; source "$1"; printf "home=%s\nlog=%s\n" "${HOME:-}" "$UPDATE_LOG_DIR"' _ "$update"
     assert_success
     refute_output --partial "unbound variable"
-    assert_output --partial ".acfs/logs/updates"
+    assert_output --partial ".gtbi/logs/updates"
 
     run grep -F 'if [[ -n "${HOME:-}" ]]; then' "$update"
     assert_success
@@ -430,20 +430,20 @@ EOF
     assert_failure
     assert_output --partial "--checksums-ref has invalid git ref syntax"
 
-    run env -i PATH="/usr/bin:/bin" ACFS_REF="bad ref" bash "$PROJECT_ROOT/install.sh" --print-plan
+    run env -i PATH="/usr/bin:/bin" GTBI_REF="bad ref" bash "$PROJECT_ROOT/install.sh" --print-plan
     assert_failure
-    assert_output --partial "ACFS_REF contains unsafe ref characters"
+    assert_output --partial "GTBI_REF contains unsafe ref characters"
 }
 
 @test "install.sh: Ubuntu upgrade state override does not use RETURN trap" {
     local installer="$PROJECT_ROOT/install.sh"
 
-    run bash -c 'sed -n "/^run_ubuntu_upgrade_phase()/,/^restore_previous_acfs_state_file()/p" "$1" | grep -F "trap "' _ "$installer"
+    run bash -c 'sed -n "/^run_ubuntu_upgrade_phase()/,/^restore_previous_gtbi_state_file()/p" "$1" | grep -F "trap "' _ "$installer"
     assert_failure
 
-    run bash -c 'sed -n "/^run_ubuntu_upgrade_phase()/,/^restore_previous_acfs_state_file()/p" "$1" | grep -F "restore_previous_acfs_state_file \"\$had_state_file\" \"\$previous_state_file\"" | wc -l' _ "$installer"
+    run bash -c 'sed -n "/^run_ubuntu_upgrade_phase()/,/^restore_previous_gtbi_state_file()/p" "$1" | grep -F "restore_previous_gtbi_state_file \"\$had_state_file\" \"\$previous_state_file\"" | wc -l' _ "$installer"
     assert_success
-    [[ "$output" -ge 10 ]] || fail "expected explicit ACFS_STATE_FILE restores in Ubuntu upgrade exits"
+    [[ "$output" -ge 10 ]] || fail "expected explicit GTBI_STATE_FILE restores in Ubuntu upgrade exits"
 }
 
 @test "install.sh: Supabase release installer does not use RETURN trap cleanup" {
@@ -502,16 +502,16 @@ EOF
     export HOME="$current_home"
     export TARGET_HOME="$target_home"
     unset TARGET_USER
-    unset ACFS_BIN_DIR
-    unset ACFS_STATE_FILE
-    unset ACFS_HOME
+    unset GTBI_BIN_DIR
+    unset GTBI_STATE_FILE
+    unset GTBI_HOME
 
     run update_preferred_user_bin_dir
     assert_success
     assert_output "$target_home/.local/bin"
 }
 
-@test "update_preferred_user_bin_dir: ignores relative ACFS_BIN_DIR and falls back to target home" {
+@test "update_preferred_user_bin_dir: ignores relative GTBI_BIN_DIR and falls back to target home" {
     local current_home
     local target_home
     local cwd
@@ -524,9 +524,9 @@ EOF
     export HOME="$current_home"
     export TARGET_HOME="$target_home"
     unset TARGET_USER
-    export ACFS_BIN_DIR="relative/bin"
-    unset ACFS_STATE_FILE
-    unset ACFS_HOME
+    export GTBI_BIN_DIR="relative/bin"
+    unset GTBI_STATE_FILE
+    unset GTBI_HOME
 
     pushd "$cwd" >/dev/null
     run update_preferred_user_bin_dir
@@ -561,11 +561,11 @@ EOF
     }
 
     export HOME="$current_home"
-    export TARGET_USER="acfstestuser"
+    export TARGET_USER="gtbitestuser"
     export TARGET_HOME="$target_home"
-    export ACFS_STATE_FILE="$state_file"
-    unset ACFS_BIN_DIR
-    unset ACFS_HOME
+    export GTBI_STATE_FILE="$state_file"
+    unset GTBI_BIN_DIR
+    unset GTBI_HOME
 
     run update_preferred_user_bin_dir
     assert_success
@@ -597,11 +597,11 @@ EOF
 
     export HOME="$current_home"
     export PATH="$fake_path:/usr/bin:/bin"
-    export TARGET_USER="acfstestuser"
+    export TARGET_USER="gtbitestuser"
     export TARGET_HOME="$target_home"
-    export ACFS_STATE_FILE="$state_file"
-    unset ACFS_BIN_DIR
-    unset ACFS_HOME
+    export GTBI_STATE_FILE="$state_file"
+    unset GTBI_BIN_DIR
+    unset GTBI_HOME
 
     run update_preferred_user_bin_dir
     PATH="${original_path:-/usr/bin:/bin}"
@@ -631,11 +631,11 @@ EOF
 EOF
 
     export HOME="$current_home"
-    export TARGET_USER="acfstestuser"
+    export TARGET_USER="gtbitestuser"
     export TARGET_HOME="$target_home"
-    export ACFS_STATE_FILE="$state_file"
-    unset ACFS_BIN_DIR
-    unset ACFS_HOME
+    export GTBI_STATE_FILE="$state_file"
+    unset GTBI_BIN_DIR
+    unset GTBI_HOME
 
     run update_preferred_user_bin_dir
     assert_success
@@ -649,9 +649,9 @@ EOF
     export HOME="$current_home"
     export TARGET_USER="missinguser"
     export TARGET_HOME="/"
-    unset ACFS_BIN_DIR
-    unset ACFS_STATE_FILE
-    unset ACFS_HOME
+    unset GTBI_BIN_DIR
+    unset GTBI_STATE_FILE
+    unset GTBI_HOME
 
     getent() {
         return 2
@@ -682,16 +682,16 @@ EOF
 
     local current_home
     local target_home
-    local tool_name="acfs-test-update-tool"
+    local tool_name="gtbi-test-update-tool"
     current_home="$(create_temp_dir)"
     target_home="$(create_temp_dir)"
 
     export HOME="$current_home"
     export TARGET_HOME="$target_home"
     unset TARGET_USER
-    unset ACFS_BIN_DIR
-    unset ACFS_STATE_FILE
-    unset ACFS_HOME
+    unset GTBI_BIN_DIR
+    unset GTBI_STATE_FILE
+    unset GTBI_HOME
     mkdir -p "$target_home/.local/bin"
 
     cat > "$STUB_DIR/$tool_name" <<'EOF'
@@ -771,14 +771,14 @@ EOF
     local checksums_file
     runtime_home="$(create_temp_dir)"
     calls_file="$BATS_TEST_TMPDIR/refresh-poisoned-coreutils-calls.log"
-    checksums_file="$runtime_home/.acfs/checksums.yaml"
+    checksums_file="$runtime_home/.gtbi/checksums.yaml"
 
-    mkdir -p "$runtime_home/.acfs"
+    mkdir -p "$runtime_home/.gtbi"
     export HOME="$runtime_home"
     export TARGET_HOME="$runtime_home"
     unset TARGET_USER
-    export ACFS_HOME="$runtime_home/.acfs"
-    export ACFS_CHECKSUMS_REF="main"
+    export GTBI_HOME="$runtime_home/.gtbi"
+    export GTBI_CHECKSUMS_REF="main"
 
     update_curl() {
         local output_file=""
@@ -820,7 +820,7 @@ EOF
 
     assert_success
 
-    run grep -F 'api.github.com/repos/Dicklesworthstone/agentic_coding_flywheel_setup/contents/checksums.yaml?ref=main' "$calls_file"
+    run grep -F 'api.github.com/repos/Dicklesworthstone/gastown_batteries_included/contents/checksums.yaml?ref=main' "$calls_file"
     assert_success
 
     run grep -F '4444444444444444444444444444444444444444444444444444444444444444' "$checksums_file"
@@ -833,14 +833,14 @@ EOF
     local checksums_file
     runtime_home="$(create_temp_dir)"
     calls_file="$BATS_TEST_TMPDIR/refresh-api-calls.log"
-    checksums_file="$runtime_home/.acfs/checksums.yaml"
+    checksums_file="$runtime_home/.gtbi/checksums.yaml"
 
-    mkdir -p "$runtime_home/.acfs"
+    mkdir -p "$runtime_home/.gtbi"
     export HOME="$runtime_home"
     export TARGET_HOME="$runtime_home"
     unset TARGET_USER
-    export ACFS_HOME="$runtime_home/.acfs"
-    export ACFS_CHECKSUMS_REF="main"
+    export GTBI_HOME="$runtime_home/.gtbi"
+    export GTBI_CHECKSUMS_REF="main"
 
     update_curl() {
         local output_file=""
@@ -874,7 +874,7 @@ EOF
     run refresh_checksums true
     assert_success
 
-    run grep -F 'api.github.com/repos/Dicklesworthstone/agentic_coding_flywheel_setup/contents/checksums.yaml?ref=main' "$calls_file"
+    run grep -F 'api.github.com/repos/Dicklesworthstone/gastown_batteries_included/contents/checksums.yaml?ref=main' "$calls_file"
     assert_success
 
     run grep -F 'raw.githubusercontent.com' "$calls_file"
@@ -890,14 +890,14 @@ EOF
     local checksums_file
     runtime_home="$(create_temp_dir)"
     calls_file="$BATS_TEST_TMPDIR/refresh-raw-calls.log"
-    checksums_file="$runtime_home/.acfs/checksums.yaml"
+    checksums_file="$runtime_home/.gtbi/checksums.yaml"
 
-    mkdir -p "$runtime_home/.acfs"
+    mkdir -p "$runtime_home/.gtbi"
     export HOME="$runtime_home"
     export TARGET_HOME="$runtime_home"
     unset TARGET_USER
-    export ACFS_HOME="$runtime_home/.acfs"
-    export ACFS_CHECKSUMS_REF="feature/ref"
+    export GTBI_HOME="$runtime_home/.gtbi"
+    export GTBI_CHECKSUMS_REF="feature/ref"
 
     update_curl() {
         local output_file=""
@@ -918,7 +918,7 @@ EOF
             https://api.github.com/*)
                 return 22
                 ;;
-            https://raw.githubusercontent.com/Dicklesworthstone/agentic_coding_flywheel_setup/feature/ref/checksums.yaml?cb=*)
+            https://raw.githubusercontent.com/jonbackhaus/gtbi/feature/ref/checksums.yaml?cb=*)
                 write_update_refresh_checksums_fixture "$output_file" "3333333333333333333333333333333333333333333333333333333333333333"
                 return 0
                 ;;
@@ -931,7 +931,7 @@ EOF
     run refresh_checksums true
     assert_success
 
-    run grep -F 'api.github.com/repos/Dicklesworthstone/agentic_coding_flywheel_setup/contents/checksums.yaml?ref=feature/ref' "$calls_file"
+    run grep -F 'api.github.com/repos/Dicklesworthstone/gastown_batteries_included/contents/checksums.yaml?ref=feature/ref' "$calls_file"
     assert_success
 
     run grep -E 'raw.githubusercontent.com/.*/feature/ref/checksums.yaml\?cb=[0-9]+' "$calls_file"
@@ -947,14 +947,14 @@ EOF
     local checksums_file
     runtime_home="$(create_temp_dir)"
     calls_file="$BATS_TEST_TMPDIR/refresh-invalid-api-calls.log"
-    checksums_file="$runtime_home/.acfs/checksums.yaml"
+    checksums_file="$runtime_home/.gtbi/checksums.yaml"
 
-    mkdir -p "$runtime_home/.acfs"
+    mkdir -p "$runtime_home/.gtbi"
     export HOME="$runtime_home"
     export TARGET_HOME="$runtime_home"
     unset TARGET_USER
-    export ACFS_HOME="$runtime_home/.acfs"
-    export ACFS_CHECKSUMS_REF="main"
+    export GTBI_HOME="$runtime_home/.gtbi"
+    export GTBI_CHECKSUMS_REF="main"
 
     update_curl() {
         local output_file=""
@@ -976,7 +976,7 @@ EOF
                 printf '%s\n' '{"message":"not raw yaml"}' > "$output_file"
                 return 0
                 ;;
-            https://raw.githubusercontent.com/Dicklesworthstone/agentic_coding_flywheel_setup/main/checksums.yaml?cb=*)
+            https://raw.githubusercontent.com/jonbackhaus/gtbi/main/checksums.yaml?cb=*)
                 write_update_refresh_checksums_fixture "$output_file" "5555555555555555555555555555555555555555555555555555555555555555"
                 return 0
                 ;;
@@ -989,7 +989,7 @@ EOF
     run refresh_checksums true
     assert_success
 
-    run grep -F 'api.github.com/repos/Dicklesworthstone/agentic_coding_flywheel_setup/contents/checksums.yaml?ref=main' "$calls_file"
+    run grep -F 'api.github.com/repos/Dicklesworthstone/gastown_batteries_included/contents/checksums.yaml?ref=main' "$calls_file"
     assert_success
 
     run grep -E 'raw.githubusercontent.com/.*/main/checksums.yaml\?cb=[0-9]+' "$calls_file"
@@ -1005,15 +1005,15 @@ EOF
     local checksums_file
     runtime_home="$(create_temp_dir)"
     calls_file="$BATS_TEST_TMPDIR/refresh-malformed-calls.log"
-    checksums_file="$runtime_home/.acfs/checksums.yaml"
+    checksums_file="$runtime_home/.gtbi/checksums.yaml"
 
-    mkdir -p "$runtime_home/.acfs"
+    mkdir -p "$runtime_home/.gtbi"
     printf '%s\n' "cached-good-checksums" > "$checksums_file"
     export HOME="$runtime_home"
     export TARGET_HOME="$runtime_home"
     unset TARGET_USER
-    export ACFS_HOME="$runtime_home/.acfs"
-    export ACFS_CHECKSUMS_REF="main"
+    export GTBI_HOME="$runtime_home/.gtbi"
+    export GTBI_CHECKSUMS_REF="main"
 
     update_curl() {
         local output_file=""
@@ -1040,7 +1040,7 @@ installers:
 EOF
                 return 0
                 ;;
-            https://raw.githubusercontent.com/Dicklesworthstone/agentic_coding_flywheel_setup/main/checksums.yaml?cb=*)
+            https://raw.githubusercontent.com/jonbackhaus/gtbi/main/checksums.yaml?cb=*)
                 cat > "$output_file" <<'EOF'
 installers:
   mcp_agent_mail:
@@ -1058,7 +1058,7 @@ EOF
     run refresh_checksums true
     assert_failure
 
-    run grep -F 'api.github.com/repos/Dicklesworthstone/agentic_coding_flywheel_setup/contents/checksums.yaml?ref=main' "$calls_file"
+    run grep -F 'api.github.com/repos/Dicklesworthstone/gastown_batteries_included/contents/checksums.yaml?ref=main' "$calls_file"
     assert_success
 
     run grep -E 'raw.githubusercontent.com/.*/main/checksums.yaml\?cb=[0-9]+' "$calls_file"
@@ -1092,7 +1092,7 @@ EOF
     assert_failure
 }
 
-@test "update_binary_path: ignores relative ACFS_BIN_DIR shim when target bin exists" {
+@test "update_binary_path: ignores relative GTBI_BIN_DIR shim when target bin exists" {
     local current_home
     local target_home
     local cwd
@@ -1105,9 +1105,9 @@ EOF
     export HOME="$current_home"
     export TARGET_HOME="$target_home"
     unset TARGET_USER
-    export ACFS_BIN_DIR="relative/bin"
-    unset ACFS_STATE_FILE
-    unset ACFS_HOME
+    export GTBI_BIN_DIR="relative/bin"
+    unset GTBI_STATE_FILE
+    unset GTBI_HOME
     export PATH="/usr/bin:/bin"
 
     cat > "$cwd/relative/bin/gh" <<'EOF'
@@ -1141,9 +1141,9 @@ EOF
     export HOME="$current_home"
     export TARGET_HOME="$target_home"
     unset TARGET_USER
-    unset ACFS_BIN_DIR
-    unset ACFS_STATE_FILE
-    unset ACFS_HOME
+    unset GTBI_BIN_DIR
+    unset GTBI_STATE_FILE
+    unset GTBI_HOME
     mkdir -p "$target_home/google-cloud-sdk/bin"
 
     cat > "$STUB_DIR/gcloud" <<'EOF'
@@ -1171,9 +1171,9 @@ EOF
     export HOME="$current_home"
     export TARGET_USER="missinguser"
     export TARGET_HOME="/"
-    unset ACFS_BIN_DIR
-    unset ACFS_STATE_FILE
-    unset ACFS_HOME
+    unset GTBI_BIN_DIR
+    unset GTBI_STATE_FILE
+    unset GTBI_HOME
     mkdir -p "$current_home/.local/bin"
 
     getent() {
@@ -1199,9 +1199,9 @@ EOF
     export HOME="$current_home"
     export TARGET_HOME="$target_home"
     unset TARGET_USER
-    unset ACFS_BIN_DIR
-    unset ACFS_STATE_FILE
-    unset ACFS_HOME
+    unset GTBI_BIN_DIR
+    unset GTBI_STATE_FILE
+    unset GTBI_HOME
     mkdir -p "$current_home/.atuin/bin" "$target_home/.atuin/bin"
 
     cat > "$current_home/.atuin/bin/atuin" <<'EOF'
@@ -1228,9 +1228,9 @@ EOF
     export HOME="$current_home"
     export TARGET_USER="missinguser"
     export TARGET_HOME="/"
-    unset ACFS_BIN_DIR
-    unset ACFS_STATE_FILE
-    unset ACFS_HOME
+    unset GTBI_BIN_DIR
+    unset GTBI_STATE_FILE
+    unset GTBI_HOME
     mkdir -p "$current_home/.atuin/bin"
 
     getent() {
@@ -1372,10 +1372,10 @@ EOF
     run grep -F 'run_cmd "CASS Memory" update_run_verified_installer cm --easy-mode --verify' "$update"
     assert_failure
 
-    run grep -F 'run_cmd "Supabase CLI" update_run_in_target_context "ACFS_PRIMARY_BIN_DIR=$supabase_primary_bin" bash -c "$(supabase_release_update_script)"' "$update"
+    run grep -F 'run_cmd "Supabase CLI" update_run_in_target_context "GTBI_PRIMARY_BIN_DIR=$supabase_primary_bin" bash -c "$(supabase_release_update_script)"' "$update"
     assert_success
 
-    run grep -F 'run_cmd "Supabase CLI" env "ACFS_PRIMARY_BIN_DIR=$supabase_primary_bin" bash -c "$(supabase_release_update_script)"' "$update"
+    run grep -F 'run_cmd "Supabase CLI" env "GTBI_PRIMARY_BIN_DIR=$supabase_primary_bin" bash -c "$(supabase_release_update_script)"' "$update"
     assert_failure
 
     run grep -F 'run_cmd "AADC" update_run_cargo_git_source_install https://github.com/Dicklesworthstone/aadc.git aadc' "$update"
@@ -1430,7 +1430,7 @@ EOF
     DRY_RUN=false
     UPDATE_STACK=true
     ABORT_ON_FAILURE=false
-    ACFS_UPDATE_RETRY_MAX_ATTEMPTS=1
+    GTBI_UPDATE_RETRY_MAX_ATTEMPTS=1
     UPDATE_LOG_FILE="$HOME/update.log"
     SUCCESS_COUNT=0
     FAIL_COUNT=0
@@ -1482,7 +1482,7 @@ EOF
     DRY_RUN=false
     UPDATE_STACK=true
     ABORT_ON_FAILURE=false
-    ACFS_UPDATE_RETRY_MAX_ATTEMPTS=1
+    GTBI_UPDATE_RETRY_MAX_ATTEMPTS=1
     UPDATE_LOG_FILE="$HOME/update.log"
     SUCCESS_COUNT=0
     FAIL_COUNT=0
@@ -1534,7 +1534,7 @@ EOF
     DRY_RUN=false
     UPDATE_STACK=true
     ABORT_ON_FAILURE=false
-    ACFS_UPDATE_RETRY_MAX_ATTEMPTS=1
+    GTBI_UPDATE_RETRY_MAX_ATTEMPTS=1
     UPDATE_LOG_FILE="$HOME/update.log"
     SUCCESS_COUNT=0
     FAIL_COUNT=0
@@ -1581,7 +1581,7 @@ EOF
     DRY_RUN=false
     UPDATE_STACK=true
     ABORT_ON_FAILURE=false
-    ACFS_UPDATE_RETRY_MAX_ATTEMPTS=1
+    GTBI_UPDATE_RETRY_MAX_ATTEMPTS=1
     UPDATE_LOG_FILE="$HOME/update.log"
     SUCCESS_COUNT=0
     FAIL_COUNT=0
@@ -1642,7 +1642,7 @@ EOF
     DRY_RUN=false
     UPDATE_STACK=true
     ABORT_ON_FAILURE=true
-    ACFS_UPDATE_RETRY_MAX_ATTEMPTS=1
+    GTBI_UPDATE_RETRY_MAX_ATTEMPTS=1
     UPDATE_LOG_FILE="$HOME/update.log"
     SUCCESS_COUNT=0
     FAIL_COUNT=0
@@ -1693,7 +1693,7 @@ EOF
     DRY_RUN=false
     UPDATE_STACK=true
     ABORT_ON_FAILURE=true
-    ACFS_UPDATE_RETRY_MAX_ATTEMPTS=1
+    GTBI_UPDATE_RETRY_MAX_ATTEMPTS=1
     UPDATE_LOG_FILE="$HOME/update.log"
     SUCCESS_COUNT=0
     FAIL_COUNT=0
@@ -1757,7 +1757,7 @@ EOF
     mkdir -p "$seed_repo/scripts/lib"
     git -C "$seed_repo" init -b main >/dev/null
     git -C "$seed_repo" config user.email test@example.invalid
-    git -C "$seed_repo" config user.name "ACFS Test"
+    git -C "$seed_repo" config user.name "GTBI Test"
     printf "base-update\n" > "$seed_repo/scripts/lib/update.sh"
     git -C "$seed_repo" add scripts/lib/update.sh
     git -C "$seed_repo" commit -m base >/dev/null
@@ -1781,21 +1781,21 @@ EOF
     git -C "$work_repo" fetch origin release/test >/dev/null 2>&1
     git -C "$work_repo" show "$intermediate_commit:scripts/lib/update.sh" > "$work_repo/scripts/lib/update.sh"
 
-    ACFS_REPO_ROOT="$work_repo"
-    ACFS_HOME="$work_repo"
+    GTBI_REPO_ROOT="$work_repo"
+    GTBI_HOME="$work_repo"
     UPDATE_LOG_FILE="/dev/null"
     NO_COLOR=1
     RED="" GREEN="" YELLOW="" CYAN="" BOLD="" DIM="" NC=""
 
     log_item() { printf "%s|%s|%s\n" "$1" "$2" "${3:-}"; }
-    update_runtime_acfs_home() { printf "%s\n" "$work_repo"; }
+    update_runtime_gtbi_home() { printf "%s\n" "$work_repo"; }
 
     local_head="$(git -C "$work_repo" rev-parse HEAD)"
     remote_head="$(git -C "$work_repo" rev-parse origin/release/test)"
 
-    run _acfs_try_upstream_derived_dirty_fast_forward "main" "$local_head" "$remote_head" "release/test"
+    run _gtbi_try_upstream_derived_dirty_fast_forward "main" "$local_head" "$remote_head" "release/test"
     assert_success
-    assert_output --partial "fix|ACFS self-update|tracked changes match upstream history; completing fast-forward"
+    assert_output --partial "fix|GTBI self-update|tracked changes match upstream history; completing fast-forward"
 
     [[ "$(git -C "$work_repo" rev-parse HEAD)" == "$remote_head" ]]
     [[ -z "$(git -C "$work_repo" status --porcelain --untracked-files=no)" ]]
@@ -2087,9 +2087,9 @@ load_checksums() {
 EOF
     chmod +x "$repo_root/scripts/lib/security.sh"
 
-    export ACFS_BIN_DIR="$repo_root/missing-bin"
-    export ACFS_HOME="$repo_root/missing-home"
-    export ACFS_REPO_ROOT="$repo_root"
+    export GTBI_BIN_DIR="$repo_root/missing-bin"
+    export GTBI_HOME="$repo_root/missing-home"
+    export GTBI_REPO_ROOT="$repo_root"
     export CHECKSUMS_LOCAL="$repo_root/checksums.yaml"
     UPDATE_SECURITY_READY=false
 
@@ -2112,7 +2112,7 @@ EOF
     python_url="https://raw.githubusercontent.com/Dicklesworthstone/mcp_agent_mail/main/install.sh"
     expected_sha="2222222222222222222222222222222222222222222222222222222222222222"
 
-    mkdir -p "$runtime_home/.local/bin" "$runtime_home/.acfs"
+    mkdir -p "$runtime_home/.local/bin" "$runtime_home/.gtbi"
 
     cat > "$runtime_home/.local/bin/security.sh" <<EOF
 #!/usr/bin/env bash
@@ -2144,7 +2144,7 @@ get_checksum() {
 EOF
     chmod +x "$runtime_home/.local/bin/security.sh"
 
-    cat > "$runtime_home/.acfs/checksums.yaml" <<EOF
+    cat > "$runtime_home/.gtbi/checksums.yaml" <<EOF
 installers:
   mcp_agent_mail:
     url: "$rust_url"
@@ -2152,13 +2152,13 @@ installers:
 EOF
 
     export HOME="$runtime_home"
-    export TARGET_USER="acfstestuser"
+    export TARGET_USER="gtbitestuser"
     export TARGET_HOME="$runtime_home"
     export TEST_UPDATE_TARGET_HOME="$runtime_home"
-    export ACFS_BIN_DIR="$runtime_home/.local/bin"
-    export ACFS_HOME="$runtime_home/.acfs"
+    export GTBI_BIN_DIR="$runtime_home/.local/bin"
+    export GTBI_HOME="$runtime_home/.gtbi"
     export UPDATE_LOG_FILE="$runtime_home/update.log"
-    unset ACFS_REPO_ROOT
+    unset GTBI_REPO_ROOT
     UPDATE_SECURITY_READY=false
 
     refresh_checksums() {
@@ -2166,8 +2166,8 @@ EOF
     }
 
     update_getent_passwd_entry() {
-        if [[ "${1:-}" == "acfstestuser" ]]; then
-            printf 'acfstestuser:x:1000:1000::%s:/bin/bash\n' "$TEST_UPDATE_TARGET_HOME"
+        if [[ "${1:-}" == "gtbitestuser" ]]; then
+            printf 'gtbitestuser:x:1000:1000::%s:/bin/bash\n' "$TEST_UPDATE_TARGET_HOME"
             return 0
         fi
         return 1
@@ -2236,12 +2236,12 @@ EOF
     local upper_sha="ABCDEFABCDEFABCDEFABCDEFABCDEFABCDEFABCDEFABCDEFABCDEFABCDEFABCD"
     local lower_sha="abcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcd"
 
-    eval "$(sed -n '/^acfs_parse_checksums_content()/,/^}$/p' "$installer")"
+    eval "$(sed -n '/^gtbi_parse_checksums_content()/,/^}$/p' "$installer")"
 
-    declare -gA ACFS_UPSTREAM_URLS=()
-    declare -gA ACFS_UPSTREAM_SHA256=()
+    declare -gA GTBI_UPSTREAM_URLS=()
+    declare -gA GTBI_UPSTREAM_SHA256=()
 
-    acfs_parse_checksums_content "$(cat <<EOF
+    gtbi_parse_checksums_content "$(cat <<EOF
 installers:
   example:
     url: https://example.com/install.sh
@@ -2249,20 +2249,20 @@ installers:
 EOF
 )"
 
-    assert_equal "${ACFS_UPSTREAM_URLS[example]}" "https://example.com/install.sh"
-    assert_equal "${ACFS_UPSTREAM_SHA256[example]}" "$lower_sha"
+    assert_equal "${GTBI_UPSTREAM_URLS[example]}" "https://example.com/install.sh"
+    assert_equal "${GTBI_UPSTREAM_SHA256[example]}" "$lower_sha"
 }
 
 @test "install.sh checksum parser preserves state on malformed reload" {
     local installer="$PROJECT_ROOT/install.sh"
     local original_sha="2222222222222222222222222222222222222222222222222222222222222222"
 
-    eval "$(sed -n '/^acfs_parse_checksums_content()/,/^}$/p' "$installer")"
+    eval "$(sed -n '/^gtbi_parse_checksums_content()/,/^}$/p' "$installer")"
 
-    declare -gA ACFS_UPSTREAM_URLS=()
-    declare -gA ACFS_UPSTREAM_SHA256=()
+    declare -gA GTBI_UPSTREAM_URLS=()
+    declare -gA GTBI_UPSTREAM_SHA256=()
 
-    acfs_parse_checksums_content "$(cat <<EOF
+    gtbi_parse_checksums_content "$(cat <<EOF
 installers:
   example:
     url: https://example.com/install.sh
@@ -2270,10 +2270,10 @@ installers:
 EOF
 )"
 
-    assert_equal "${ACFS_UPSTREAM_URLS[example]}" "https://example.com/install.sh"
-    assert_equal "${ACFS_UPSTREAM_SHA256[example]}" "$original_sha"
+    assert_equal "${GTBI_UPSTREAM_URLS[example]}" "https://example.com/install.sh"
+    assert_equal "${GTBI_UPSTREAM_SHA256[example]}" "$original_sha"
 
-    run acfs_parse_checksums_content "$(cat <<'EOF'
+    run gtbi_parse_checksums_content "$(cat <<'EOF'
 # Looks superficially like checksums.yaml but has no valid hashes.
 installers:
   example:
@@ -2283,25 +2283,25 @@ EOF
 )"
     assert_failure
 
-    assert_equal "${ACFS_UPSTREAM_URLS[example]}" "https://example.com/install.sh"
-    assert_equal "${ACFS_UPSTREAM_SHA256[example]}" "$original_sha"
+    assert_equal "${GTBI_UPSTREAM_URLS[example]}" "https://example.com/install.sh"
+    assert_equal "${GTBI_UPSTREAM_SHA256[example]}" "$original_sha"
 }
 
 @test "install.sh verifier stops when checksum metadata fails to load" {
     local installer="$PROJECT_ROOT/install.sh"
 
-    eval "$(sed -n '/^acfs_run_verified_upstream_script_as_target_with_env()/,/^}$/p' "$installer")"
+    eval "$(sed -n '/^gtbi_run_verified_upstream_script_as_target_with_env()/,/^}$/p' "$installer")"
 
-    declare -gA ACFS_UPSTREAM_URLS=()
-    declare -gA ACFS_UPSTREAM_SHA256=()
+    declare -gA GTBI_UPSTREAM_URLS=()
+    declare -gA GTBI_UPSTREAM_SHA256=()
 
-    acfs_load_upstream_checksums() {
+    gtbi_load_upstream_checksums() {
         return 42
     }
 
     log_error() { :; }
 
-    run acfs_run_verified_upstream_script_as_target_with_env example bash ""
+    run gtbi_run_verified_upstream_script_as_target_with_env example bash ""
     assert_equal "$status" "42"
     assert_output ""
 }
@@ -2311,17 +2311,17 @@ EOF
     local dest="$BATS_TEST_TMPDIR/checksums.yaml"
 
     eval "$(sed -n '/^install_checksums_yaml()/,/^}$/p' "$installer")"
-    eval "$(sed -n '/^acfs_parse_checksums_content()/,/^}$/p' "$installer")"
-    eval "$(sed -n '/^acfs_required_upstream_tools()/,/^}$/p' "$installer")"
-    eval "$(sed -n '/^acfs_validate_upstream_checksums()/,/^}$/p' "$installer")"
+    eval "$(sed -n '/^gtbi_parse_checksums_content()/,/^}$/p' "$installer")"
+    eval "$(sed -n '/^gtbi_required_upstream_tools()/,/^}$/p' "$installer")"
+    eval "$(sed -n '/^gtbi_validate_upstream_checksums()/,/^}$/p' "$installer")"
 
-    export ACFS_CHECKSUMS_REF="main"
-    export ACFS_REF_INPUT="older-install-ref"
-    export ACFS_CHECKSUMS_RAW="https://raw.githubusercontent.com/example/acfs/main"
-    declare -gA ACFS_UPSTREAM_URLS=()
-    declare -gA ACFS_UPSTREAM_SHA256=()
+    export GTBI_CHECKSUMS_REF="main"
+    export GTBI_REF_INPUT="older-install-ref"
+    export GTBI_CHECKSUMS_RAW="https://raw.githubusercontent.com/example/gtbi/main"
+    declare -gA GTBI_UPSTREAM_URLS=()
+    declare -gA GTBI_UPSTREAM_SHA256=()
 
-    acfs_fetch_fresh_checksums_via_api() {
+    gtbi_fetch_fresh_checksums_via_api() {
         cat <<'EOF'
 # Superficially plausible, but not valid installer checksum metadata.
 installers:
@@ -2330,7 +2330,7 @@ installers:
     sha256: "not-a-sha"
 EOF
     }
-    acfs_fetch_url_content() { return 1; }
+    gtbi_fetch_url_content() { return 1; }
     log_error() { printf '%s\n' "$*" >&2; }
 
     run install_checksums_yaml "$dest"
@@ -2344,17 +2344,17 @@ EOF
     local dest="$BATS_TEST_TMPDIR/checksums.yaml"
 
     eval "$(sed -n '/^install_checksums_yaml()/,/^}$/p' "$installer")"
-    eval "$(sed -n '/^acfs_parse_checksums_content()/,/^}$/p' "$installer")"
-    eval "$(sed -n '/^acfs_required_upstream_tools()/,/^}$/p' "$installer")"
-    eval "$(sed -n '/^acfs_validate_upstream_checksums()/,/^}$/p' "$installer")"
+    eval "$(sed -n '/^gtbi_parse_checksums_content()/,/^}$/p' "$installer")"
+    eval "$(sed -n '/^gtbi_required_upstream_tools()/,/^}$/p' "$installer")"
+    eval "$(sed -n '/^gtbi_validate_upstream_checksums()/,/^}$/p' "$installer")"
 
-    export ACFS_CHECKSUMS_REF="main"
-    export ACFS_REF_INPUT="older-install-ref"
-    export ACFS_CHECKSUMS_RAW="https://raw.githubusercontent.com/example/acfs/main"
-    declare -gA ACFS_UPSTREAM_URLS=()
-    declare -gA ACFS_UPSTREAM_SHA256=()
+    export GTBI_CHECKSUMS_REF="main"
+    export GTBI_REF_INPUT="older-install-ref"
+    export GTBI_CHECKSUMS_RAW="https://raw.githubusercontent.com/example/gtbi/main"
+    declare -gA GTBI_UPSTREAM_URLS=()
+    declare -gA GTBI_UPSTREAM_SHA256=()
 
-    acfs_fetch_fresh_checksums_via_api() {
+    gtbi_fetch_fresh_checksums_via_api() {
         local tool
         local index=1
         printf 'installers:\n'
@@ -2363,11 +2363,11 @@ EOF
             printf '    url: "https://example.com/%s/install.sh"\n' "$tool"
             printf '    sha256: "%064d"\n' "$index"
             index=$((index + 1))
-        done < <(acfs_required_upstream_tools)
+        done < <(gtbi_required_upstream_tools)
     }
-    acfs_fetch_url_content() { return 1; }
-    acfs_early_sudo_binary_path() { return 1; }
-    acfs_early_system_binary_path() {
+    gtbi_fetch_url_content() { return 1; }
+    gtbi_early_sudo_binary_path() { return 1; }
+    gtbi_early_system_binary_path() {
         case "${1:-}" in
             mkdir) command -v mkdir ;;
             tee) command -v tee ;;
@@ -2396,16 +2396,16 @@ EOF
 
     fresh_sha="$(printf '%s' "$rust_installer_body" | sha256sum | awk '{print $1}')"
 
-    eval "$(sed -n '/^acfs_run_verified_upstream_script_as_target_with_env()/,/^}$/p' "$installer")"
+    eval "$(sed -n '/^gtbi_run_verified_upstream_script_as_target_with_env()/,/^}$/p' "$installer")"
 
-    declare -gA ACFS_UPSTREAM_URLS=([mcp_agent_mail]="$old_url")
-    declare -gA ACFS_UPSTREAM_SHA256=([mcp_agent_mail]="$stale_sha")
+    declare -gA GTBI_UPSTREAM_URLS=([mcp_agent_mail]="$old_url")
+    declare -gA GTBI_UPSTREAM_SHA256=([mcp_agent_mail]="$stale_sha")
 
-    acfs_load_upstream_checksums() {
+    gtbi_load_upstream_checksums() {
         return 0
     }
 
-    acfs_fetch_url_content() {
+    gtbi_fetch_url_content() {
         case "${1:-}" in
             "$old_url") printf '%s' "$old_content" ;;
             "$fresh_url") printf '%s' "$rust_installer_body" ;;
@@ -2413,11 +2413,11 @@ EOF
         esac
     }
 
-    acfs_calculate_sha256() {
+    gtbi_calculate_sha256() {
         sha256sum | awk '{print $1}'
     }
 
-    acfs_fetch_fresh_checksums_via_api() {
+    gtbi_fetch_fresh_checksums_via_api() {
         cat <<EOF
 installers:
   mcp_agent_mail:
@@ -2426,9 +2426,9 @@ installers:
 EOF
     }
 
-    acfs_parse_checksums_content() {
-        ACFS_UPSTREAM_URLS[mcp_agent_mail]="$fresh_url"
-        ACFS_UPSTREAM_SHA256[mcp_agent_mail]="$fresh_sha"
+    gtbi_parse_checksums_content() {
+        GTBI_UPSTREAM_URLS[mcp_agent_mail]="$fresh_url"
+        GTBI_UPSTREAM_SHA256[mcp_agent_mail]="$fresh_sha"
     }
 
     log_detail() { :; }
@@ -2441,17 +2441,17 @@ EOF
         cat > "$ran_content"
     }
 
-    run acfs_run_verified_upstream_script_as_target_with_env mcp_agent_mail bash "" --dest "$HOME/mcp_agent_mail" --yes
+    run gtbi_run_verified_upstream_script_as_target_with_env mcp_agent_mail bash "" --dest "$HOME/mcp_agent_mail" --yes
     assert_success
     assert_output ""
     [[ "$(cat "$ran_content")" == "$rust_installer_body" ]]
     [[ "$(cat "$ran_args")" == "bash -s -- --dest $HOME/mcp_agent_mail --yes" ]]
 }
 
-@test "update_require_security: does not probe bogus repo path when ACFS_REPO_ROOT is unset" {
-    export ACFS_BIN_DIR="$HOME/missing-bin"
-    export ACFS_HOME="$HOME/missing-home"
-    unset ACFS_REPO_ROOT
+@test "update_require_security: does not probe bogus repo path when GTBI_REPO_ROOT is unset" {
+    export GTBI_BIN_DIR="$HOME/missing-bin"
+    export GTBI_HOME="$HOME/missing-home"
+    unset GTBI_REPO_ROOT
     export CHECKSUMS_LOCAL="$HOME/checksums.yaml"
     UPDATE_SECURITY_READY=false
 
@@ -2461,9 +2461,9 @@ EOF
 
     run update_require_security
     assert_failure
-    assert_output --partial "$ACFS_BIN_DIR/security.sh"
-    assert_output --partial "$HOME/.acfs/scripts/lib/security.sh"
-    refute_output --partial "$ACFS_HOME/scripts/lib/security.sh"
+    assert_output --partial "$GTBI_BIN_DIR/security.sh"
+    assert_output --partial "$HOME/.gtbi/scripts/lib/security.sh"
+    refute_output --partial "$GTBI_HOME/scripts/lib/security.sh"
     refute_output --partial "    - /scripts/lib/security.sh"
 }
 
@@ -2512,8 +2512,8 @@ EOF
 @test "update_atuin: falls back to reinstall after failed self-update" {
     init_stub_dir
     export PATH="$STUB_DIR:$PATH"
-    export ACFS_UPDATE_RETRY_MAX_ATTEMPTS=1
-    export ACFS_UPDATE_RETRY_SLEEP_SECONDS=0
+    export GTBI_UPDATE_RETRY_MAX_ATTEMPTS=1
+    export GTBI_UPDATE_RETRY_SLEEP_SECONDS=0
     QUIET=true
     VERBOSE=false
     DRY_RUN=false
@@ -2569,7 +2569,7 @@ EOF
     export HOME="$current_home"
     export TARGET_HOME="$target_home"
     unset TARGET_USER
-    export ACFS_BIN_DIR="$target_home/custom-bin"
+    export GTBI_BIN_DIR="$target_home/custom-bin"
     mkdir -p "$current_home/.atuin/bin" "$target_home/.atuin/bin"
 
     cat > "$current_home/.atuin/bin/atuin" <<'EOF'
@@ -2591,10 +2591,10 @@ EOF
     run update_repair_atuin_install
     assert_success
 
-    [[ -L "$ACFS_BIN_DIR/atuin" ]]
+    [[ -L "$GTBI_BIN_DIR/atuin" ]]
     [[ -L "$target_home/.local/bin/atuin" ]]
 
-    run readlink "$ACFS_BIN_DIR/atuin"
+    run readlink "$GTBI_BIN_DIR/atuin"
     assert_output "$target_home/.atuin/bin/atuin"
 
     run readlink "$target_home/.local/bin/atuin"
@@ -2602,7 +2602,7 @@ EOF
 }
 
 @test "update_repair_atuin_install: normalizes custom and local shims" {
-    export ACFS_BIN_DIR="$HOME/custom-bin"
+    export GTBI_BIN_DIR="$HOME/custom-bin"
     mkdir -p "$HOME/.atuin/bin"
 
     cat > "$HOME/.atuin/bin/atuin" <<'EOF'
@@ -2618,10 +2618,10 @@ EOF
     run update_repair_atuin_install
     assert_success
 
-    [[ -L "$ACFS_BIN_DIR/atuin" ]]
+    [[ -L "$GTBI_BIN_DIR/atuin" ]]
     [[ -L "$HOME/.local/bin/atuin" ]]
 
-    run readlink "$ACFS_BIN_DIR/atuin"
+    run readlink "$GTBI_BIN_DIR/atuin"
     assert_output "$HOME/.atuin/bin/atuin"
 
     run readlink "$HOME/.local/bin/atuin"
@@ -2635,8 +2635,8 @@ EOF
     export HOME="$current_home"
     export TARGET_USER="missinguser"
     export TARGET_HOME="/"
-    export ACFS_BIN_DIR="$current_home/custom-bin"
-    mkdir -p "$current_home/.atuin/bin" "$ACFS_BIN_DIR"
+    export GTBI_BIN_DIR="$current_home/custom-bin"
+    mkdir -p "$current_home/.atuin/bin" "$GTBI_BIN_DIR"
 
     getent() {
         return 2
@@ -2654,12 +2654,12 @@ EOF
 
     run update_repair_atuin_install
     assert_failure
-    [[ ! -e "$ACFS_BIN_DIR/atuin" ]]
+    [[ ! -e "$GTBI_BIN_DIR/atuin" ]]
 }
 
 @test "update_repair_zoxide_install: normalizes custom shim to target local bin" {
-    export ACFS_BIN_DIR="$HOME/custom-bin"
-    mkdir -p "$HOME/.local/bin" "$ACFS_BIN_DIR"
+    export GTBI_BIN_DIR="$HOME/custom-bin"
+    mkdir -p "$HOME/.local/bin" "$GTBI_BIN_DIR"
 
     cat > "$HOME/.local/bin/zoxide" <<'EOF'
 #!/usr/bin/env bash
@@ -2671,7 +2671,7 @@ fi
 EOF
     chmod +x "$HOME/.local/bin/zoxide"
 
-    cat > "$ACFS_BIN_DIR/zoxide" <<'EOF'
+    cat > "$GTBI_BIN_DIR/zoxide" <<'EOF'
 #!/usr/bin/env bash
 if [[ "${1:-}" == "--version" ]]; then
   echo "zoxide 0.9.8"
@@ -2679,20 +2679,20 @@ else
   echo "stale-custom-copy"
 fi
 EOF
-    chmod +x "$ACFS_BIN_DIR/zoxide"
+    chmod +x "$GTBI_BIN_DIR/zoxide"
 
     run update_repair_zoxide_install
     assert_success
 
-    [[ -L "$ACFS_BIN_DIR/zoxide" ]]
+    [[ -L "$GTBI_BIN_DIR/zoxide" ]]
 
-    run readlink "$ACFS_BIN_DIR/zoxide"
+    run readlink "$GTBI_BIN_DIR/zoxide"
     assert_output "$HOME/.local/bin/zoxide"
 }
 
 @test "update_repair_uv_install: normalizes custom shim to target local bin" {
-    export ACFS_BIN_DIR="$HOME/custom-bin"
-    mkdir -p "$HOME/.local/bin" "$ACFS_BIN_DIR"
+    export GTBI_BIN_DIR="$HOME/custom-bin"
+    mkdir -p "$HOME/.local/bin" "$GTBI_BIN_DIR"
 
     cat > "$HOME/.local/bin/uv" <<'EOF'
 #!/usr/bin/env bash
@@ -2706,22 +2706,22 @@ echo "uvx 0.8.0"
 EOF
     chmod +x "$HOME/.local/bin/uvx"
 
-    cat > "$ACFS_BIN_DIR/uv" <<'EOF'
+    cat > "$GTBI_BIN_DIR/uv" <<'EOF'
 #!/usr/bin/env bash
 echo "uv 0.7.0"
 EOF
-    chmod +x "$ACFS_BIN_DIR/uv"
+    chmod +x "$GTBI_BIN_DIR/uv"
 
     run update_repair_uv_install
     assert_success
 
-    [[ -L "$ACFS_BIN_DIR/uv" ]]
-    [[ -L "$ACFS_BIN_DIR/uvx" ]]
+    [[ -L "$GTBI_BIN_DIR/uv" ]]
+    [[ -L "$GTBI_BIN_DIR/uvx" ]]
 
-    run readlink "$ACFS_BIN_DIR/uv"
+    run readlink "$GTBI_BIN_DIR/uv"
     assert_output "$HOME/.local/bin/uv"
 
-    run readlink "$ACFS_BIN_DIR/uvx"
+    run readlink "$GTBI_BIN_DIR/uvx"
     assert_output "$HOME/.local/bin/uvx"
 }
 
@@ -2732,7 +2732,7 @@ EOF
     export PATH="$STUB_DIR:$PATH"
     export TARGET_USER="tester"
     export TARGET_HOME="$HOME/target-home"
-    export ACFS_BIN_DIR="$TARGET_HOME/.local/bin"
+    export GTBI_BIN_DIR="$TARGET_HOME/.local/bin"
     mkdir -p "$TARGET_HOME/.local/bin" "$TARGET_HOME/.atuin"
 
     cat > "$STUB_DIR/atuin" <<'EOF'
@@ -2784,7 +2784,7 @@ EOF
     export PATH="$STUB_DIR:$PATH"
     export TARGET_USER="tester"
     export TARGET_HOME="$HOME/target-home"
-    export ACFS_BIN_DIR="$TARGET_HOME/.local/bin"
+    export GTBI_BIN_DIR="$TARGET_HOME/.local/bin"
     mkdir -p "$TARGET_HOME/.local/bin"
 
     cat > "$STUB_DIR/current-shell-only-tool" <<'EOF'
@@ -2801,70 +2801,70 @@ EOF
     assert_failure
 }
 
-@test "acfs.zshrc: loads atuin env before atuin init" {
-    local zshrc="$PROJECT_ROOT/acfs/zsh/acfs.zshrc"
+@test "gtbi.zshrc: loads atuin env before atuin init" {
+    local zshrc="$PROJECT_ROOT/gtbi/zsh/gtbi.zshrc"
     local env_line=""
     local init_line=""
 
     env_line="$(grep -nF 'source "$HOME/.atuin/bin/env"' "$zshrc" | cut -d: -f1)"
-    init_line="$(grep -nF 'eval "$("$_ACFS_ATUIN_BIN" init zsh)"' "$zshrc" | cut -d: -f1)"
+    init_line="$(grep -nF 'eval "$("$_GTBI_ATUIN_BIN" init zsh)"' "$zshrc" | cut -d: -f1)"
 
     [[ -n "$env_line" ]]
     [[ -n "$init_line" ]]
     (( env_line < init_line ))
 }
 
-@test "acfs.zshrc: resolves atuin binary once for init and bindings" {
-    local zshrc="$PROJECT_ROOT/acfs/zsh/acfs.zshrc"
+@test "gtbi.zshrc: resolves atuin binary once for init and bindings" {
+    local zshrc="$PROJECT_ROOT/gtbi/zsh/gtbi.zshrc"
 
-    run grep -F '_ACFS_ATUIN_BIN=""' "$zshrc"
+    run grep -F '_GTBI_ATUIN_BIN=""' "$zshrc"
     assert_success
 
-    run grep -F 'eval "$("$_ACFS_ATUIN_BIN" init zsh)"' "$zshrc"
+    run grep -F 'eval "$("$_GTBI_ATUIN_BIN" init zsh)"' "$zshrc"
     assert_success
 
-    run grep -F 'if [[ -n "$_ACFS_ATUIN_BIN" ]]; then' "$zshrc"
+    run grep -F 'if [[ -n "$_GTBI_ATUIN_BIN" ]]; then' "$zshrc"
     assert_success
 }
 
-@test "sync_acfs_zsh_loader: removes duplicate local override sourcing" {
+@test "sync_gtbi_zsh_loader: removes duplicate local override sourcing" {
     cat > "$HOME/.zshrc" <<'EOF'
-# ACFS loader
-source "$HOME/.acfs/zsh/acfs.zshrc"
+# GTBI loader
+source "$HOME/.gtbi/zsh/gtbi.zshrc"
 
 # User overrides live here forever
   [ -f "$HOME/.zshrc.local" ] && source "$HOME/.zshrc.local"
 EOF
 
-    run sync_acfs_zsh_loader
+    run sync_gtbi_zsh_loader
     assert_success
 
     run cat "$HOME/.zshrc"
     refute_output --partial '[ -f "$HOME/.zshrc.local" ] && source "$HOME/.zshrc.local"'
-    assert_output --partial 'source "$HOME/.acfs/zsh/acfs.zshrc"'
+    assert_output --partial 'source "$HOME/.gtbi/zsh/gtbi.zshrc"'
 }
 
-@test "sync_acfs_zsh_loader: leaves non-ACFS zshrc untouched" {
+@test "sync_gtbi_zsh_loader: leaves non-GTBI zshrc untouched" {
     cat > "$HOME/.zshrc" <<'EOF'
 # custom zshrc
 [ -f "$HOME/.zshrc.local" ] && source "$HOME/.zshrc.local"
 EOF
 
-    run sync_acfs_zsh_loader
+    run sync_gtbi_zsh_loader
     assert_success
 
     run cat "$HOME/.zshrc"
     assert_output --partial '[ -f "$HOME/.zshrc.local" ] && source "$HOME/.zshrc.local"'
-    refute_output --partial 'source "$HOME/.acfs/zsh/acfs.zshrc"'
+    refute_output --partial 'source "$HOME/.gtbi/zsh/gtbi.zshrc"'
 }
 
-@test "sync_acfs_zsh_loader: ignores commented ACFS loader references" {
+@test "sync_gtbi_zsh_loader: ignores commented GTBI loader references" {
     cat > "$HOME/.zshrc" <<'EOF'
-# source "$HOME/.acfs/zsh/acfs.zshrc"
+# source "$HOME/.gtbi/zsh/gtbi.zshrc"
 [ -f "$HOME/.zshrc.local" ] && source "$HOME/.zshrc.local"
 EOF
 
-    run sync_acfs_zsh_loader
+    run sync_gtbi_zsh_loader
     assert_success
 
     run cat "$HOME/.zshrc"
@@ -2882,7 +2882,7 @@ EOF
     assert_output "replaced"
 }
 
-@test "sync_acfs_profile_paths: upgrades legacy ACFS login PATH line" {
+@test "sync_gtbi_profile_paths: upgrades legacy GTBI login PATH line" {
     cat > "$HOME/.profile" <<'EOF'
 # ~/.profile: executed by bash for login shells
 
@@ -2890,7 +2890,7 @@ EOF
 export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$HOME/.bun/bin:$PATH"
 EOF
 
-    run sync_acfs_profile_paths
+    run sync_gtbi_profile_paths
     assert_success
 
     run cat "$HOME/.profile"
@@ -2898,7 +2898,7 @@ EOF
     refute_output --partial 'export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$HOME/.bun/bin:$PATH"'
 }
 
-@test "sync_acfs_zprofile_paths: upgrades legacy ACFS zsh login PATH line" {
+@test "sync_gtbi_zprofile_paths: upgrades legacy GTBI zsh login PATH line" {
     cat > "$HOME/.zprofile" <<'EOF'
 # ~/.zprofile: executed by zsh for login shells
 
@@ -2906,7 +2906,7 @@ EOF
 export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$HOME/.bun/bin:$PATH"
 EOF
 
-    run sync_acfs_zprofile_paths
+    run sync_gtbi_zprofile_paths
     assert_success
 
     run cat "$HOME/.zprofile"
@@ -2914,10 +2914,10 @@ EOF
     refute_output --partial 'export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$HOME/.bun/bin:$PATH"'
 }
 
-@test "sync_acfs_profile_paths: creates missing profile with Atuin login PATH" {
+@test "sync_gtbi_profile_paths: creates missing profile with Atuin login PATH" {
     [[ ! -e "$HOME/.profile" ]]
 
-    run sync_acfs_profile_paths
+    run sync_gtbi_profile_paths
     assert_success
 
     run cat "$HOME/.profile"
@@ -2926,10 +2926,10 @@ EOF
     assert_output --partial 'export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$HOME/.bun/bin:$HOME/.atuin/bin:$PATH"'
 }
 
-@test "sync_acfs_zprofile_paths: creates missing zprofile with Atuin login PATH" {
+@test "sync_gtbi_zprofile_paths: creates missing zprofile with Atuin login PATH" {
     [[ ! -e "$HOME/.zprofile" ]]
 
-    run sync_acfs_zprofile_paths
+    run sync_gtbi_zprofile_paths
     assert_success
 
     run cat "$HOME/.zprofile"
@@ -2938,73 +2938,73 @@ EOF
     assert_output --partial 'export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$HOME/.bun/bin:$HOME/.atuin/bin:$PATH"'
 }
 
-@test "sync_acfs_profile_paths: adds Atuin login PATH when custom profile lacks it" {
+@test "sync_gtbi_profile_paths: adds Atuin login PATH when custom profile lacks it" {
     cat > "$HOME/.profile" <<'EOF'
 # custom login profile
 export PATH="$HOME/.local/bin:/opt/custom/bin:$PATH"
 EOF
 
-    run sync_acfs_profile_paths
+    run sync_gtbi_profile_paths
     assert_success
 
     run cat "$HOME/.profile"
     assert_output --partial '# custom login profile'
     assert_output --partial 'export PATH="$HOME/.local/bin:/opt/custom/bin:$PATH"'
-    assert_output --partial '# Added by ACFS - user binary paths'
+    assert_output --partial '# Added by GTBI - user binary paths'
     assert_output --partial 'export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$HOME/.bun/bin:$HOME/.atuin/bin:$PATH"'
 }
 
-@test "sync_acfs_profile_paths: ignores commented Atuin mention when repairing login PATH" {
+@test "sync_gtbi_profile_paths: ignores commented Atuin mention when repairing login PATH" {
     cat > "$HOME/.profile" <<'EOF'
 # .atuin/bin appears in this comment but not in the active PATH
 # export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$HOME/.bun/bin:$PATH"
 export PATH="$HOME/.local/bin:/opt/custom/bin:$PATH"
 EOF
 
-    run sync_acfs_profile_paths
+    run sync_gtbi_profile_paths
     assert_success
 
     run cat "$HOME/.profile"
     assert_output --partial '# .atuin/bin appears in this comment but not in the active PATH'
     assert_output --partial '# export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$HOME/.bun/bin:$PATH"'
-    assert_output --partial '# Added by ACFS - user binary paths'
+    assert_output --partial '# Added by GTBI - user binary paths'
     assert_output --partial 'export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$HOME/.bun/bin:$HOME/.atuin/bin:$PATH"'
 }
 
-@test "sync_acfs_zprofile_paths: adds Atuin login PATH when custom zprofile lacks it" {
+@test "sync_gtbi_zprofile_paths: adds Atuin login PATH when custom zprofile lacks it" {
     cat > "$HOME/.zprofile" <<'EOF'
 # custom zsh login profile
 export PATH="$HOME/.local/bin:/opt/custom/bin:$PATH"
 EOF
 
-    run sync_acfs_zprofile_paths
+    run sync_gtbi_zprofile_paths
     assert_success
 
     run cat "$HOME/.zprofile"
     assert_output --partial '# custom zsh login profile'
     assert_output --partial 'export PATH="$HOME/.local/bin:/opt/custom/bin:$PATH"'
-    assert_output --partial '# Added by ACFS - user binary paths'
+    assert_output --partial '# Added by GTBI - user binary paths'
     assert_output --partial 'export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$HOME/.bun/bin:$HOME/.atuin/bin:$PATH"'
 }
 
-@test "sync_acfs_zprofile_paths: ignores commented Atuin mention when repairing login PATH" {
+@test "sync_gtbi_zprofile_paths: ignores commented Atuin mention when repairing login PATH" {
     cat > "$HOME/.zprofile" <<'EOF'
 # .atuin/bin appears in this comment but not in the active PATH
 # export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$HOME/.bun/bin:$PATH"
 export PATH="$HOME/.local/bin:/opt/custom/bin:$PATH"
 EOF
 
-    run sync_acfs_zprofile_paths
+    run sync_gtbi_zprofile_paths
     assert_success
 
     run cat "$HOME/.zprofile"
     assert_output --partial '# .atuin/bin appears in this comment but not in the active PATH'
     assert_output --partial '# export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$HOME/.bun/bin:$PATH"'
-    assert_output --partial '# Added by ACFS - user binary paths'
+    assert_output --partial '# Added by GTBI - user binary paths'
     assert_output --partial 'export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$HOME/.bun/bin:$HOME/.atuin/bin:$PATH"'
 }
 
-@test "sync_acfs_profile_paths: respects TARGET_HOME when HOME differs" {
+@test "sync_gtbi_profile_paths: respects TARGET_HOME when HOME differs" {
     local current_home
     local target_home
     current_home="$(create_temp_dir)"
@@ -3024,7 +3024,7 @@ EOF
 export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$HOME/.bun/bin:$PATH"
 EOF
 
-    run sync_acfs_profile_paths
+    run sync_gtbi_profile_paths
     assert_success
 
     run cat "$target_home/.profile"
@@ -3034,7 +3034,7 @@ EOF
     refute_output --partial '.atuin/bin'
 }
 
-@test "sync_acfs_profile_paths: does not touch current HOME for unresolved explicit target" {
+@test "sync_gtbi_profile_paths: does not touch current HOME for unresolved explicit target" {
     local current_home
     current_home="$(create_temp_dir)"
 
@@ -3051,14 +3051,14 @@ EOF
         return 2
     }
 
-    run sync_acfs_profile_paths
+    run sync_gtbi_profile_paths
     assert_success
 
     run cat "$current_home/.profile"
     refute_output --partial '.atuin/bin'
 }
 
-@test "sync_acfs_zprofile_paths: respects TARGET_HOME when HOME differs" {
+@test "sync_gtbi_zprofile_paths: respects TARGET_HOME when HOME differs" {
     local current_home
     local target_home
     current_home="$(create_temp_dir)"
@@ -3078,7 +3078,7 @@ EOF
 export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$HOME/.bun/bin:$PATH"
 EOF
 
-    run sync_acfs_zprofile_paths
+    run sync_gtbi_zprofile_paths
     assert_success
 
     run cat "$target_home/.zprofile"
@@ -3088,7 +3088,7 @@ EOF
     refute_output --partial '.atuin/bin'
 }
 
-@test "sync_acfs_zsh_loader: respects TARGET_HOME when HOME differs" {
+@test "sync_gtbi_zsh_loader: respects TARGET_HOME when HOME differs" {
     local current_home
     local target_home
     current_home="$(create_temp_dir)"
@@ -3100,17 +3100,17 @@ EOF
 
     cat > "$current_home/.zshrc" <<'EOF'
 # current zshrc
-source "$HOME/.acfs/zsh/acfs.zshrc"
+source "$HOME/.gtbi/zsh/gtbi.zshrc"
 [ -f "$HOME/.zshrc.local" ] && source "$HOME/.zshrc.local"
 EOF
 
     cat > "$target_home/.zshrc" <<'EOF'
 # target zshrc
-source "$HOME/.acfs/zsh/acfs.zshrc"
+source "$HOME/.gtbi/zsh/gtbi.zshrc"
 [ -f "$HOME/.zshrc.local" ] && source "$HOME/.zshrc.local"
 EOF
 
-    run sync_acfs_zsh_loader
+    run sync_gtbi_zsh_loader
     assert_success
 
     run cat "$target_home/.zshrc"
@@ -3325,44 +3325,44 @@ EOF
     export TARGET_HOME="$target_home"
     unset TARGET_USER
 
-    mkdir -p "$current_home/.acfs/zsh" "$target_home/.acfs/zsh"
-    cat > "$current_home/.acfs/zsh/acfs.zshrc" <<'EOF'
+    mkdir -p "$current_home/.gtbi/zsh" "$target_home/.gtbi/zsh"
+    cat > "$current_home/.gtbi/zsh/gtbi.zshrc" <<'EOF'
 alias br='bun run dev'
 EOF
 
-    cat > "$target_home/.acfs/zsh/acfs.zshrc" <<'EOF'
+    cat > "$target_home/.gtbi/zsh/gtbi.zshrc" <<'EOF'
 alias br='bun run dev'
 EOF
 
     run cleanup_legacy_br_alias
     assert_success
 
-    run cat "$current_home/.acfs/zsh/acfs.zshrc"
+    run cat "$current_home/.gtbi/zsh/gtbi.zshrc"
     assert_output --partial "alias br='bun run dev'"
 
-    run grep -n "^alias br='bun run dev'$" "$target_home/.acfs/zsh/acfs.zshrc"
+    run grep -n "^alias br='bun run dev'$" "$target_home/.gtbi/zsh/gtbi.zshrc"
     assert_failure
 
-    run cat "$target_home/.acfs/zsh/acfs.zshrc"
+    run cat "$target_home/.gtbi/zsh/gtbi.zshrc"
     assert_output --partial "# alias br='bun run dev'"
 }
 
 @test "generated install_shell: uses minimal loader and Atuin-aware login paths" {
     local generated="$PROJECT_ROOT/scripts/generated/install_shell.sh"
 
-    run grep -F 'echo '\''source "$HOME/.acfs/zsh/acfs.zshrc"'\'' >> ~/.zshrc' "$generated"
+    run grep -F 'echo '\''source "$HOME/.gtbi/zsh/gtbi.zshrc"'\'' >> ~/.zshrc' "$generated"
     assert_success
 
-    run grep -F 'acfs_zshrc_is_managed_loader() {' "$generated"
+    run grep -F 'gtbi_zshrc_is_managed_loader() {' "$generated"
     assert_success
 
-    run grep -F 'acfs_external_shell_handoff_configured() {' "$generated"
+    run grep -F 'gtbi_external_shell_handoff_configured() {' "$generated"
     assert_success
 
-    run grep -F "grep -q 'ACFS externally-managed shell handoff' ~/.bashrc" "$generated"
+    run grep -F "grep -q 'GTBI externally-managed shell handoff' ~/.bashrc" "$generated"
     assert_failure
 
-    run grep -F 'grep -q "ACFS loader" ~/.zshrc' "$generated"
+    run grep -F 'grep -q "GTBI loader" ~/.zshrc' "$generated"
     assert_failure
 
     run grep -F 'echo '\''[ -f "$HOME/.zshrc.local" ] && source "$HOME/.zshrc.local"'\'' >> ~/.zshrc' "$generated"
@@ -3384,15 +3384,15 @@ EOF
     run grep -F 'exec "$HOME/.bun/bin/bun" x wrangler@latest "$@"' "$generated"
     assert_success
 
-    run grep -F 'acfs_install_executable_into_primary_bin "$wrapper_tmp" "wrangler"' "$generated"
+    run grep -F 'gtbi_install_executable_into_primary_bin "$wrapper_tmp" "wrangler"' "$generated"
     assert_success
 }
 
-@test "generated installers: reject invalid TARGET_HOME and ACFS_BIN_DIR" {
+@test "generated installers: reject invalid TARGET_HOME and GTBI_BIN_DIR" {
     local generated="$PROJECT_ROOT/scripts/generated/install_all.sh"
     local doctor_checks="$PROJECT_ROOT/scripts/generated/doctor_checks.sh"
 
-    run grep -F '_acfs_validate_target_user "${TARGET_USER}" "TARGET_USER" || exit 1' "$generated"
+    run grep -F '_gtbi_validate_target_user "${TARGET_USER}" "TARGET_USER" || exit 1' "$generated"
     assert_success
 
     run grep -F '[[ "${TARGET_HOME}" == "/" ]]' "$generated"
@@ -3401,43 +3401,43 @@ EOF
     run grep -F "Invalid TARGET_HOME for '\${TARGET_USER}': \${TARGET_HOME:-<empty>} (must be an absolute path and cannot be '/')" "$generated"
     assert_success
 
-    run grep -F '[[ "$_acfs_current_home" != "/" ]]' "$generated"
+    run grep -F '[[ "$_gtbi_current_home" != "/" ]]' "$generated"
     assert_success
 
-    run grep -F '_ACFS_EXPLICIT_TARGET_HOME="${TARGET_HOME:-}"' "$generated"
+    run grep -F '_GTBI_EXPLICIT_TARGET_HOME="${TARGET_HOME:-}"' "$generated"
     assert_success
 
-    run grep -F '_ACFS_RESOLVED_TARGET_HOME="$(_acfs_resolve_target_home "${TARGET_USER}" "$_ACFS_EXPLICIT_TARGET_HOME" || true)"' "$generated"
+    run grep -F '_GTBI_RESOLVED_TARGET_HOME="$(_gtbi_resolve_target_home "${TARGET_USER}" "$_GTBI_EXPLICIT_TARGET_HOME" || true)"' "$generated"
     assert_success
 
-    run grep -F 'acfs_generated_target_user_exists() {' "$generated"
+    run grep -F 'gtbi_generated_target_user_exists() {' "$generated"
     assert_success
 
-    run grep -F 'acfs_generated_default_home_for_new_user() {' "$generated"
+    run grep -F 'gtbi_generated_default_home_for_new_user() {' "$generated"
     assert_success
 
-    run grep -F 'if [[ -z "$_ACFS_RESOLVED_TARGET_HOME" ]] && [[ $EUID -eq 0 ]] && ! acfs_generated_target_user_exists "${TARGET_USER}"; then' "$generated"
+    run grep -F 'if [[ -z "$_GTBI_RESOLVED_TARGET_HOME" ]] && [[ $EUID -eq 0 ]] && ! gtbi_generated_target_user_exists "${TARGET_USER}"; then' "$generated"
     assert_success
 
-    run grep -F '_ACFS_RESOLVED_TARGET_HOME="$(acfs_generated_default_home_for_new_user "${TARGET_USER}" 2>/dev/null || true)"' "$generated"
+    run grep -F '_GTBI_RESOLVED_TARGET_HOME="$(gtbi_generated_default_home_for_new_user "${TARGET_USER}" 2>/dev/null || true)"' "$generated"
     assert_success
 
-    run grep -F 'if [[ -n "$_ACFS_EXPLICIT_TARGET_HOME" ]] && [[ "$_ACFS_EXPLICIT_TARGET_HOME" == /* ]] && [[ "$_ACFS_EXPLICIT_TARGET_HOME" != "/" ]]; then' "$generated"
+    run grep -F 'if [[ -n "$_GTBI_EXPLICIT_TARGET_HOME" ]] && [[ "$_GTBI_EXPLICIT_TARGET_HOME" == /* ]] && [[ "$_GTBI_EXPLICIT_TARGET_HOME" != "/" ]]; then' "$generated"
     assert_success
 
-    run grep -F '_ACFS_RESOLVED_TARGET_HOME="$_ACFS_EXPLICIT_TARGET_HOME"' "$generated"
+    run grep -F '_GTBI_RESOLVED_TARGET_HOME="$_GTBI_EXPLICIT_TARGET_HOME"' "$generated"
     assert_success
 
-    run grep -F '_ACFS_RESOLVED_TARGET_HOME="$_acfs_current_home"' "$generated"
+    run grep -F '_GTBI_RESOLVED_TARGET_HOME="$_gtbi_current_home"' "$generated"
     assert_success
 
     run grep -F 'TARGET_HOME="${HOME%/}"' "$generated"
     assert_failure
 
-    run grep -F '{ [[ -z "$_ACFS_EXPLICIT_TARGET_HOME" ]] || [[ "$_acfs_current_home" == "$_ACFS_EXPLICIT_TARGET_HOME" ]]; }' "$generated"
+    run grep -F '{ [[ -z "$_GTBI_EXPLICIT_TARGET_HOME" ]] || [[ "$_gtbi_current_home" == "$_GTBI_EXPLICIT_TARGET_HOME" ]]; }' "$generated"
     assert_success
 
-    run grep -F "ACFS_BIN_DIR must be an absolute path and cannot be '/' (got: \${ACFS_BIN_DIR:-<empty>})" "$generated"
+    run grep -F "GTBI_BIN_DIR must be an absolute path and cannot be '/' (got: \${GTBI_BIN_DIR:-<empty>})" "$generated"
     assert_success
 
     run grep -F "Invalid TARGET_HOME for '\$target_user': \${target_home:-<empty>} (must be an absolute path and cannot be '/')" "$doctor_checks"
@@ -3458,10 +3458,10 @@ EOF
     run grep -F '{ [[ -z "$explicit_target_home" ]] || [[ "$current_home" == "$explicit_target_home" ]]; }' "$doctor_checks"
     assert_success
 
-    run grep -F '_acfs_validate_target_user "$target_user" "TARGET_USER" || return 1' "$doctor_checks"
+    run grep -F '_gtbi_validate_target_user "$target_user" "TARGET_USER" || return 1' "$doctor_checks"
     assert_success
 
-    run grep -F "ACFS_BIN_DIR must be an absolute path and cannot be '/' (got: \${target_bin:-<empty>})" "$doctor_checks"
+    run grep -F "GTBI_BIN_DIR must be an absolute path and cannot be '/' (got: \${target_bin:-<empty>})" "$doctor_checks"
     assert_success
 }
 
@@ -3477,10 +3477,10 @@ EOF
     run grep -F 'zsh_external_shell_handoff_configured() {' "$zsh_lib"
     assert_success
 
-    run grep -F "grep -q 'ACFS externally-managed shell handoff' \"\$bashrc\"" "$zsh_lib"
+    run grep -F "grep -q 'GTBI externally-managed shell handoff' \"\$bashrc\"" "$zsh_lib"
     assert_failure
 
-    run grep -F 'grep -q "ACFS loader" "$user_zshrc"' "$zsh_lib"
+    run grep -F 'grep -q "GTBI loader" "$user_zshrc"' "$zsh_lib"
     assert_failure
 
     run grep -F 'export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$HOME/.bun/bin:$HOME/.atuin/bin:$PATH"' "$zsh_lib"
@@ -3489,7 +3489,7 @@ EOF
     run grep -F 'grep -Fxq "$legacy_profile_path_line"' "$zsh_lib"
     assert_success
 
-    run grep -F '# ACFS loader — user overrides go in ~/.zshrc.local (sourced by acfs.zshrc)' "$zsh_lib"
+    run grep -F '# GTBI loader — user overrides go in ~/.zshrc.local (sourced by gtbi.zshrc)' "$zsh_lib"
     assert_success
 }
 
@@ -3565,8 +3565,8 @@ EOF
 
 @test "services-setup and wrappers parse passwd homes via helpers" {
     local services_setup="$PROJECT_ROOT/scripts/services-setup.sh"
-    local update_wrapper="$PROJECT_ROOT/scripts/acfs-update"
-    local global_wrapper="$PROJECT_ROOT/scripts/acfs-global"
+    local update_wrapper="$PROJECT_ROOT/scripts/gtbi-update"
+    local global_wrapper="$PROJECT_ROOT/scripts/gtbi-global"
 
     run grep -F 'services_setup_passwd_home_from_entry() {' "$services_setup"
     assert_success
@@ -3671,10 +3671,10 @@ EOF
     run grep -F 'notifications_passwd_home_from_entry "$passwd_entry" 2>/dev/null || true' "$notifications_lib"
     assert_success
 
-    run grep -F '_acfs_notify_passwd_home_from_entry() {' "$notify_lib"
+    run grep -F '_gtbi_notify_passwd_home_from_entry() {' "$notify_lib"
     assert_success
 
-    run grep -F '_acfs_notify_passwd_home_from_entry "$passwd_entry" 2>/dev/null || true' "$notify_lib"
+    run grep -F '_gtbi_notify_passwd_home_from_entry "$passwd_entry" 2>/dev/null || true' "$notify_lib"
     assert_success
 
     run grep -F 'webhook_passwd_home_from_entry() {' "$webhook_lib"
@@ -3713,10 +3713,10 @@ EOF
     run grep -F '_stack_passwd_home_from_entry "$passwd_entry" 2>/dev/null || true' "$stack_lib"
     assert_success
 
-    run grep -F '_acfs_doctor_passwd_home_from_entry() {' "$doctor_lib"
+    run grep -F '_gtbi_doctor_passwd_home_from_entry() {' "$doctor_lib"
     assert_success
 
-    run grep -F '_acfs_doctor_passwd_home_from_entry "$passwd_entry" 2>/dev/null || true' "$doctor_lib"
+    run grep -F '_gtbi_doctor_passwd_home_from_entry "$passwd_entry" 2>/dev/null || true' "$doctor_lib"
     assert_success
 
     run grep -F 'doctor_fix_passwd_home_from_entry() {' "$doctor_fix_lib"
@@ -3738,7 +3738,7 @@ EOF
     assert_failure
 }
 
-@test "services-setup: probes custom and ACFS bin dirs for target-user commands" {
+@test "services-setup: probes custom and GTBI bin dirs for target-user commands" {
     local services_setup="$PROJECT_ROOT/scripts/services-setup.sh"
     local preflight="$PROJECT_ROOT/scripts/preflight.sh"
 
@@ -3748,13 +3748,13 @@ EOF
     run grep -F 'services_setup_validate_target_user "$TARGET_USER" || return 1' "$services_setup"
     assert_success
 
-    run grep -F 'local target_path_prefix="$primary_bin_dir:$TARGET_HOME/.local/bin:$TARGET_HOME/.acfs/bin:$TARGET_HOME/.cargo/bin:$TARGET_HOME/.bun/bin:$TARGET_HOME/.atuin/bin:$TARGET_HOME/go/bin"' "$services_setup"
+    run grep -F 'local target_path_prefix="$primary_bin_dir:$TARGET_HOME/.local/bin:$TARGET_HOME/.gtbi/bin:$TARGET_HOME/.cargo/bin:$TARGET_HOME/.bun/bin:$TARGET_HOME/.atuin/bin:$TARGET_HOME/go/bin"' "$services_setup"
     assert_success
 
-    run grep -F 'run_as_user env ACFS_TARGET_PATH_PREFIX="$target_path_prefix" bash -c' "$services_setup"
+    run grep -F 'run_as_user env GTBI_TARGET_PATH_PREFIX="$target_path_prefix" bash -c' "$services_setup"
     assert_success
 
-    run grep -F '"$TARGET_HOME/.acfs/bin/$name"' "$services_setup"
+    run grep -F '"$TARGET_HOME/.gtbi/bin/$name"' "$services_setup"
     assert_success
 
     run grep -F "printf '/home/%s\n' \"\$current_user\"" "$services_setup"
@@ -3812,7 +3812,7 @@ EOF
     export TARGET_USER="$current_user"
     export TARGET_HOME="$current_home"
     export HOME="$current_home"
-    export ACFS_BIN_DIR="$current_home/.local/bin"
+    export GTBI_BIN_DIR="$current_home/.local/bin"
 
     whoami() {
         printf 'poisoned-user\n'
@@ -3897,19 +3897,19 @@ EOF
         return 99
     }
 
-    export TARGET_USER="acfsuser"
+    export TARGET_USER="gtbiuser"
     export TARGET_HOME="$stub_dir/home"
-    export ACFS_BIN_DIR="$TARGET_HOME/.local/bin"
-    mkdir -p "$ACFS_BIN_DIR"
+    export GTBI_BIN_DIR="$TARGET_HOME/.local/bin"
+    mkdir -p "$GTBI_BIN_DIR"
 
     run run_as_user printf ok
     assert_success
-    assert_output --partial "safe-sudo:-n -u acfsuser -H"
+    assert_output --partial "safe-sudo:-n -u gtbiuser -H"
     [[ ! -e "$marker" ]] || fail "function-poisoned command executed: $(<"$marker")"
 
     run run_as_user_shell 'printf ok'
     assert_success
-    assert_output --partial "safe-sudo:-n -u acfsuser -H"
+    assert_output --partial "safe-sudo:-n -u gtbiuser -H"
     [[ ! -e "$marker" ]] || fail "function-poisoned command executed: $(<"$marker")"
 }
 
@@ -3962,7 +3962,7 @@ EOF
     }
 
     services_setup_resolve_current_user() {
-        printf 'acfsuser\n'
+        printf 'gtbiuser\n'
     }
 
     services_setup_system_binary_path() {
@@ -3988,9 +3988,9 @@ EOF
         return 99
     }
 
-    export TARGET_USER="acfsuser"
+    export TARGET_USER="gtbiuser"
     export TARGET_HOME="$target_home"
-    export ACFS_BIN_DIR="$target_home/.local/bin"
+    export GTBI_BIN_DIR="$target_home/.local/bin"
     export PATH="$target_home/.local/bin:$PATH"
 
     run run_as_user env TEST_SERVICES_FLAG=ok bash -c 'printf "%s" "$TEST_SERVICES_FLAG"'
@@ -4013,7 +4013,7 @@ EOF
     test_stale_home="$(create_temp_dir)"
     stale_bun="$test_stale_home/.local/bin/bun"
     trusted_bun="$test_trusted_home/.local/bin/bun"
-    mkdir -p "$test_trusted_home/.local/bin" "$test_trusted_home/.acfs" "$test_stale_home/.local/bin" "$test_stale_home/.acfs"
+    mkdir -p "$test_trusted_home/.local/bin" "$test_trusted_home/.gtbi" "$test_stale_home/.local/bin" "$test_stale_home/.gtbi"
     touch "$stale_bun" "$trusted_bun"
     chmod +x "$stale_bun" "$trusted_bun"
 
@@ -4052,8 +4052,8 @@ EOF
     export TARGET_USER="$test_current_user"
     export TARGET_HOME="$test_stale_home"
     export HOME="$test_stale_home"
-    export ACFS_BIN_DIR="$test_stale_home/.local/bin"
-    export ACFS_HOME="$test_stale_home/.acfs"
+    export GTBI_BIN_DIR="$test_stale_home/.local/bin"
+    export GTBI_HOME="$test_stale_home/.gtbi"
     export BUN_BIN="$stale_bun"
     _SERVICES_SETUP_ENV_HOME="$test_stale_home"
 
@@ -4063,12 +4063,12 @@ EOF
         printf 'TARGET_HOME was not repaired: %s\n' "$TARGET_HOME" >&2
         return 1
     }
-    [[ "$ACFS_BIN_DIR" != "$test_stale_home/.local/bin" ]] || {
-        printf 'ACFS_BIN_DIR still points at stale home\n' >&2
+    [[ "$GTBI_BIN_DIR" != "$test_stale_home/.local/bin" ]] || {
+        printf 'GTBI_BIN_DIR still points at stale home\n' >&2
         return 1
     }
-    [[ "$ACFS_HOME" == "$test_trusted_home/.acfs" ]] || {
-        printf 'ACFS_HOME was not repaired: %s\n' "$ACFS_HOME" >&2
+    [[ "$GTBI_HOME" == "$test_trusted_home/.gtbi" ]] || {
+        printf 'GTBI_HOME was not repaired: %s\n' "$GTBI_HOME" >&2
         return 1
     }
     [[ "$BUN_BIN" == "$trusted_bun" ]] || {
@@ -4096,7 +4096,7 @@ EOF
     stale_bun="$stale_home/.local/bin/bun"
     target_bun="$target_home/.local/bin/bun"
 
-    mkdir -p "$target_home/.local/bin" "$target_home/.acfs" "$stale_home/.local/bin" "$stale_home/.acfs"
+    mkdir -p "$target_home/.local/bin" "$target_home/.gtbi" "$stale_home/.local/bin" "$stale_home/.gtbi"
     touch "$stale_bun" "$target_bun"
     chmod +x "$stale_bun" "$target_bun"
 
@@ -4115,22 +4115,22 @@ EOF
 
     services_setup_getent_passwd_entry() {
         if [[ -z "${1:-}" ]]; then
-            printf 'acfstestuser:x:1000:1000::%s:/bin/bash\n' "$target_home"
+            printf 'gtbitestuser:x:1000:1000::%s:/bin/bash\n' "$target_home"
             printf 'stale-user:x:1001:1001::%s:/bin/bash\n' "$stale_home"
             return 0
         fi
-        if [[ "${1:-}" == "acfstestuser" ]]; then
-            printf 'acfstestuser:x:1000:1000::%s:/bin/bash\n' "$target_home"
+        if [[ "${1:-}" == "gtbitestuser" ]]; then
+            printf 'gtbitestuser:x:1000:1000::%s:/bin/bash\n' "$target_home"
             return 0
         fi
         return 1
     }
 
-    export TARGET_USER="acfstestuser"
+    export TARGET_USER="gtbitestuser"
     export TARGET_HOME="$stale_home"
     export HOME="$caller_home"
-    export ACFS_BIN_DIR="$stale_home/.local/bin"
-    export ACFS_HOME="$stale_home/.acfs"
+    export GTBI_BIN_DIR="$stale_home/.local/bin"
+    export GTBI_HOME="$stale_home/.gtbi"
     export BUN_BIN="$stale_bun"
     _SERVICES_SETUP_ENV_HOME="$caller_home"
 
@@ -4140,12 +4140,12 @@ EOF
         printf 'TARGET_HOME was not repaired: %s\n' "$TARGET_HOME" >&2
         return 1
     }
-    [[ "$ACFS_BIN_DIR" != "$stale_home/.local/bin" ]] || {
-        printf 'ACFS_BIN_DIR still points at stale home\n' >&2
+    [[ "$GTBI_BIN_DIR" != "$stale_home/.local/bin" ]] || {
+        printf 'GTBI_BIN_DIR still points at stale home\n' >&2
         return 1
     }
-    [[ "$ACFS_HOME" == "$target_home/.acfs" ]] || {
-        printf 'ACFS_HOME was not repaired: %s\n' "$ACFS_HOME" >&2
+    [[ "$GTBI_HOME" == "$target_home/.gtbi" ]] || {
+        printf 'GTBI_HOME was not repaired: %s\n' "$GTBI_HOME" >&2
         return 1
     }
     [[ "$BUN_BIN" == "$target_bun" ]] || {
@@ -4159,7 +4159,7 @@ EOF
     local stale_home
 
     stale_home="$(create_temp_dir)"
-    mkdir -p "$stale_home/.local/bin" "$stale_home/.acfs"
+    mkdir -p "$stale_home/.local/bin" "$stale_home/.gtbi"
 
     eval "$(sed -n '/^services_setup_sanitize_abs_nonroot_path()/,/^}$/p' "$services_setup")"
     eval "$(sed -n '/^services_setup_valid_target_user()/,/^}$/p' "$services_setup")"
@@ -4185,8 +4185,8 @@ EOF
     export TARGET_USER="missinguser"
     export TARGET_HOME="$stale_home"
     export HOME="$stale_home"
-    export ACFS_BIN_DIR="$stale_home/.local/bin"
-    export ACFS_HOME="$stale_home/.acfs"
+    export GTBI_BIN_DIR="$stale_home/.local/bin"
+    export GTBI_HOME="$stale_home/.gtbi"
 
     run init_target_context
     assert_failure
@@ -4200,7 +4200,7 @@ EOF
 
     caller_home="$(create_temp_dir)"
     stale_home="$(create_temp_dir)"
-    mkdir -p "$caller_home/.local/bin" "$stale_home/.local/bin" "$stale_home/.acfs"
+    mkdir -p "$caller_home/.local/bin" "$stale_home/.local/bin" "$stale_home/.gtbi"
 
     eval "$(sed -n '/^services_setup_sanitize_abs_nonroot_path()/,/^}$/p' "$services_setup")"
     eval "$(sed -n '/^services_setup_valid_target_user()/,/^}$/p' "$services_setup")"
@@ -4226,8 +4226,8 @@ EOF
     export TARGET_USER="calleruser"
     export TARGET_HOME="$stale_home"
     export HOME="$caller_home"
-    export ACFS_BIN_DIR="$stale_home/.local/bin"
-    export ACFS_HOME="$stale_home/.acfs"
+    export GTBI_BIN_DIR="$stale_home/.local/bin"
+    export GTBI_HOME="$stale_home/.gtbi"
 
     init_target_context
     [[ "$TARGET_HOME" == "$stale_home" ]] || {
@@ -4236,7 +4236,7 @@ EOF
     }
 }
 
-@test "diagnostic helpers: prepend primary ACFS bin dir and ~/.acfs/bin" {
+@test "diagnostic helpers: prepend primary GTBI bin dir and ~/.gtbi/bin" {
     local doctor="$PROJECT_ROOT/scripts/lib/doctor.sh"
     local info="$PROJECT_ROOT/scripts/lib/info.sh"
     local status_lib="$PROJECT_ROOT/scripts/lib/status.sh"
@@ -4252,13 +4252,13 @@ EOF
     assert_success
     run grep -F 'seen_path="${seen_path}${dir}:"' "$doctor"
     assert_success
-    run grep -F 'local primary_bin_dir="${ACFS_BIN_DIR:-$primary_home/.local/bin}"' "$doctor"
+    run grep -F 'local primary_bin_dir="${GTBI_BIN_DIR:-$primary_home/.local/bin}"' "$doctor"
     assert_success
     run grep -F 'target_path="$target_path_prefix${PATH:+:$PATH}"' "$doctor"
     assert_success
     run grep -F 'local -a target_path_entries=()' "$doctor"
     assert_success
-    run grep -F '"$_acfs_doctor_current_home/google-cloud-sdk/bin"' "$doctor"
+    run grep -F '"$_gtbi_doctor_current_home/google-cloud-sdk/bin"' "$doctor"
     assert_success
     run grep -F "Invalid TARGET_USER '\${target_user:-<empty>}' (expected: lowercase user name like 'ubuntu')" "$doctor"
     assert_success
@@ -4277,7 +4277,7 @@ EOF
     assert_success
     run grep -F 'local seen_path=":$current_path:"' "$update"
     assert_success
-    run grep -F 'sanitized_primary_bin="$(update_validate_bin_dir_for_home "${ACFS_BIN_DIR:-}" "${HOME:-}" 2>/dev/null || true)"' "$update"
+    run grep -F 'sanitized_primary_bin="$(update_validate_bin_dir_for_home "${GTBI_BIN_DIR:-}" "${HOME:-}" 2>/dev/null || true)"' "$update"
     assert_success
     run grep -F '$HOME/google-cloud-sdk/bin' "$update"
     assert_success
@@ -4287,7 +4287,7 @@ EOF
     assert_success
     run grep -F 'local current_state_file=""' "$update"
     assert_success
-    run grep -F 'local acfs_home_state_file=""' "$update"
+    run grep -F 'local gtbi_home_state_file=""' "$update"
     assert_success
     run grep -F 'local target_state_file=""' "$update"
     assert_success
@@ -4295,21 +4295,21 @@ EOF
     assert_success
     run grep -F 'local explicit_state_file=""' "$update"
     assert_success
-    run grep -F 'local sanitized_acfs_home=""' "$update"
+    run grep -F 'local sanitized_gtbi_home=""' "$update"
     assert_success
     run grep -F '$current_state_file' "$update"
     assert_success
-    run grep -F 'explicit_bin_dir="$(update_validate_bin_dir_for_home "${ACFS_BIN_DIR:-}" "$target_home" 2>/dev/null || true)"' "$update"
+    run grep -F 'explicit_bin_dir="$(update_validate_bin_dir_for_home "${GTBI_BIN_DIR:-}" "$target_home" 2>/dev/null || true)"' "$update"
     assert_success
-    run grep -F 'explicit_state_file="$(update_sanitize_abs_nonroot_path "${ACFS_STATE_FILE:-}" 2>/dev/null || true)"' "$update"
+    run grep -F 'explicit_state_file="$(update_sanitize_abs_nonroot_path "${GTBI_STATE_FILE:-}" 2>/dev/null || true)"' "$update"
     assert_success
-    run grep -F 'sanitized_acfs_home="$(update_sanitize_abs_nonroot_path "${ACFS_HOME:-}" 2>/dev/null || true)"' "$update"
+    run grep -F 'sanitized_gtbi_home="$(update_sanitize_abs_nonroot_path "${GTBI_HOME:-}" 2>/dev/null || true)"' "$update"
     assert_success
     run grep -F 'user_bin="$(update_default_user_bin_dir 2>/dev/null || true)"' "$update"
     assert_success
     run grep -F 'local -a candidates=()' "$update"
     assert_success
-    run grep -F 'configured_bin="$(update_validate_bin_dir_for_home "${ACFS_BIN_DIR:-}" "$target_home" 2>/dev/null || true)"' "$update"
+    run grep -F 'configured_bin="$(update_validate_bin_dir_for_home "${GTBI_BIN_DIR:-}" "$target_home" 2>/dev/null || true)"' "$update"
     assert_success
     run grep -F '[[ -n "$target_home" ]] && preferred_src="$target_home/.atuin/bin/atuin"' "$update"
     assert_success
@@ -4319,9 +4319,9 @@ EOF
     assert_failure
     run grep -F "printf '%s\n' \"\$HOME/.local/bin\"" "$update"
     assert_failure
-    run grep -F '"${ACFS_HOME:-}/state.json"' "$update"
+    run grep -F '"${GTBI_HOME:-}/state.json"' "$update"
     assert_failure
-    run grep -F 'target_state_file="$target_home/.acfs/state.json"' "$update"
+    run grep -F 'target_state_file="$target_home/.gtbi/state.json"' "$update"
     assert_success
     run grep -F 'export PATH="$prefix${current_path:+:$current_path}"' "$update"
     assert_success
@@ -4332,19 +4332,19 @@ EOF
     assert_success
     run grep -F '[[ -n "$primary_bin_dir" ]] || primary_bin_dir="$base_home/.local/bin"' "$info"
     assert_success
-    run grep -F '"$base_home/.acfs/bin"' "$info"
+    run grep -F '"$base_home/.gtbi/bin"' "$info"
     assert_success
 
     run grep -F 'primary_bin_dir="$(_status_preferred_bin_dir "$base_home" 2>/dev/null || true)"' "$status_lib"
     assert_success
     run grep -F '[[ -n "$primary_bin_dir" ]] || primary_bin_dir="$base_home/.local/bin"' "$status_lib"
     assert_success
-    run grep -F '"$base_home/.acfs/bin"' "$status_lib"
+    run grep -F '"$base_home/.gtbi/bin"' "$status_lib"
     assert_success
 
-    run grep -F 'local primary_bin_dir="${ACFS_BIN_DIR:-$target_home/.local/bin}"' "$export_config"
+    run grep -F 'local primary_bin_dir="${GTBI_BIN_DIR:-$target_home/.local/bin}"' "$export_config"
     assert_success
-    run grep -F '"$target_home/.acfs/bin"' "$export_config"
+    run grep -F '"$target_home/.gtbi/bin"' "$export_config"
     assert_success
 
     run grep -F '_smoke_prepend_user_paths "$_SMOKE_TARGET_HOME"' "$smoke"
@@ -4354,45 +4354,45 @@ EOF
     run grep -F '[[ -n "$primary_bin_dir" ]] || primary_bin_dir="$base_home/.local/bin"' "$smoke"
     assert_success
 
-    run grep -F '"$HOME/.acfs/bin"' "$update"
+    run grep -F '"$HOME/.gtbi/bin"' "$update"
     assert_success
 }
 
 @test "wrappers and nightly update sanitize invalid path env" {
     local nightly="$PROJECT_ROOT/scripts/lib/nightly_update.sh"
-    local global_wrapper="$PROJECT_ROOT/scripts/acfs-global"
-    local update_wrapper="$PROJECT_ROOT/scripts/acfs-update"
+    local global_wrapper="$PROJECT_ROOT/scripts/gtbi-global"
+    local update_wrapper="$PROJECT_ROOT/scripts/gtbi-update"
 
     run grep -F 'sanitize_abs_nonroot_path()' "$nightly"
     assert_success
     run grep -F 'HOME="$(resolve_current_home)" || {' "$nightly"
     assert_success
-    run grep -F 'ACFS_STATE_FILE="$(sanitize_abs_nonroot_path "${ACFS_STATE_FILE:-}" 2>/dev/null || true)"' "$nightly"
+    run grep -F 'GTBI_STATE_FILE="$(sanitize_abs_nonroot_path "${GTBI_STATE_FILE:-}" 2>/dev/null || true)"' "$nightly"
     assert_success
-    run grep -F 'ACFS_SYSTEM_STATE_FILE="$(sanitize_abs_nonroot_path "${ACFS_SYSTEM_STATE_FILE:-/var/lib/acfs/state.json}" 2>/dev/null || true)"' "$nightly"
+    run grep -F 'GTBI_SYSTEM_STATE_FILE="$(sanitize_abs_nonroot_path "${GTBI_SYSTEM_STATE_FILE:-/var/lib/gtbi/state.json}" 2>/dev/null || true)"' "$nightly"
     assert_success
-    run grep -F 'ACFS_BIN_DIR="$(sanitize_abs_nonroot_path "${ACFS_BIN_DIR:-}" 2>/dev/null || true)"' "$nightly"
+    run grep -F 'GTBI_BIN_DIR="$(sanitize_abs_nonroot_path "${GTBI_BIN_DIR:-}" 2>/dev/null || true)"' "$nightly"
     assert_success
 
     run grep -F 'sanitize_abs_nonroot_path()' "$global_wrapper"
     assert_success
     run grep -F 'resolve_current_home()' "$global_wrapper"
     assert_success
-    run grep -F 'ACFS_STATE_FILE="$(sanitize_abs_nonroot_path "${ACFS_STATE_FILE:-}" 2>/dev/null || true)"' "$global_wrapper"
+    run grep -F 'GTBI_STATE_FILE="$(sanitize_abs_nonroot_path "${GTBI_STATE_FILE:-}" 2>/dev/null || true)"' "$global_wrapper"
     assert_success
-    run grep -F 'ACFS_SYSTEM_STATE_FILE="$(sanitize_abs_nonroot_path "${ACFS_SYSTEM_STATE_FILE:-}" 2>/dev/null || true)"' "$global_wrapper"
+    run grep -F 'GTBI_SYSTEM_STATE_FILE="$(sanitize_abs_nonroot_path "${GTBI_SYSTEM_STATE_FILE:-}" 2>/dev/null || true)"' "$global_wrapper"
     assert_success
-    run grep -F 'ACFS_BIN_DIR="$(sanitize_abs_nonroot_path "${ACFS_BIN_DIR:-}" 2>/dev/null || true)"' "$global_wrapper"
+    run grep -F 'GTBI_BIN_DIR="$(sanitize_abs_nonroot_path "${GTBI_BIN_DIR:-}" 2>/dev/null || true)"' "$global_wrapper"
     assert_success
-    run grep -F 'state_bin_dir="$(read_validated_bin_dir_from_state_file "$ACFS_STATE_FILE" "$runtime_target_home" 2>/dev/null || true)"' "$global_wrapper"
+    run grep -F 'state_bin_dir="$(read_validated_bin_dir_from_state_file "$GTBI_STATE_FILE" "$runtime_target_home" 2>/dev/null || true)"' "$global_wrapper"
     assert_success
-    run grep -F 'ACFS_BIN_DIR="${state_bin_dir:-}"' "$global_wrapper"
+    run grep -F 'GTBI_BIN_DIR="${state_bin_dir:-}"' "$global_wrapper"
     assert_success
     run grep -F 'current_home="$(resolve_current_home 2>/dev/null || true)"' "$global_wrapper"
     assert_success
-    run grep -F '[[ -n "$sanitized_state_file" ]] && env_args+=("ACFS_STATE_FILE=$sanitized_state_file")' "$global_wrapper"
+    run grep -F '[[ -n "$sanitized_state_file" ]] && env_args+=("GTBI_STATE_FILE=$sanitized_state_file")' "$global_wrapper"
     assert_success
-    run grep -F '[[ -n "$sanitized_system_state_file" ]] && env_args+=("ACFS_SYSTEM_STATE_FILE=$sanitized_system_state_file")' "$global_wrapper"
+    run grep -F '[[ -n "$sanitized_system_state_file" ]] && env_args+=("GTBI_SYSTEM_STATE_FILE=$sanitized_system_state_file")' "$global_wrapper"
     assert_success
     run grep -F '[[ -n "$sanitized_target_home" ]] && env_args+=("HOME=$sanitized_target_home" "TARGET_HOME=$sanitized_target_home")' "$global_wrapper"
     assert_success
@@ -4401,21 +4401,21 @@ EOF
     assert_success
     run grep -F 'resolve_current_home()' "$update_wrapper"
     assert_success
-    run grep -F 'ACFS_STATE_FILE="$(sanitize_abs_nonroot_path "${ACFS_STATE_FILE:-}" 2>/dev/null || true)"' "$update_wrapper"
+    run grep -F 'GTBI_STATE_FILE="$(sanitize_abs_nonroot_path "${GTBI_STATE_FILE:-}" 2>/dev/null || true)"' "$update_wrapper"
     assert_success
-    run grep -F 'ACFS_SYSTEM_STATE_FILE="$(sanitize_abs_nonroot_path "${ACFS_SYSTEM_STATE_FILE:-}" 2>/dev/null || true)"' "$update_wrapper"
+    run grep -F 'GTBI_SYSTEM_STATE_FILE="$(sanitize_abs_nonroot_path "${GTBI_SYSTEM_STATE_FILE:-}" 2>/dev/null || true)"' "$update_wrapper"
     assert_success
-    run grep -F 'ACFS_BIN_DIR="$(sanitize_abs_nonroot_path "${ACFS_BIN_DIR:-}" 2>/dev/null || true)"' "$update_wrapper"
+    run grep -F 'GTBI_BIN_DIR="$(sanitize_abs_nonroot_path "${GTBI_BIN_DIR:-}" 2>/dev/null || true)"' "$update_wrapper"
     assert_success
-    run grep -F 'state_bin_dir="$(read_validated_bin_dir_from_state_file "$ACFS_STATE_FILE" "$runtime_target_home" 2>/dev/null || true)"' "$update_wrapper"
+    run grep -F 'state_bin_dir="$(read_validated_bin_dir_from_state_file "$GTBI_STATE_FILE" "$runtime_target_home" 2>/dev/null || true)"' "$update_wrapper"
     assert_success
-    run grep -F 'ACFS_BIN_DIR="${state_bin_dir:-}"' "$update_wrapper"
+    run grep -F 'GTBI_BIN_DIR="${state_bin_dir:-}"' "$update_wrapper"
     assert_success
     run grep -F 'current_home="$(resolve_current_home 2>/dev/null || true)"' "$update_wrapper"
     assert_success
-    run grep -F '[[ -n "$sanitized_state_file" ]] && env_args+=("ACFS_STATE_FILE=$sanitized_state_file")' "$update_wrapper"
+    run grep -F '[[ -n "$sanitized_state_file" ]] && env_args+=("GTBI_STATE_FILE=$sanitized_state_file")' "$update_wrapper"
     assert_success
-    run grep -F '[[ -n "$sanitized_system_state_file" ]] && env_args+=("ACFS_SYSTEM_STATE_FILE=$sanitized_system_state_file")' "$update_wrapper"
+    run grep -F '[[ -n "$sanitized_system_state_file" ]] && env_args+=("GTBI_SYSTEM_STATE_FILE=$sanitized_system_state_file")' "$update_wrapper"
     assert_success
     run grep -F '[[ -n "$sanitized_target_home" ]] && env_args+=("HOME=$sanitized_target_home" "TARGET_HOME=$sanitized_target_home")' "$update_wrapper"
     assert_success
@@ -4473,12 +4473,12 @@ EOF
     system_state="$root_home/system-state.json"
 
     mkdir -p \
-        "$root_home/.acfs/scripts/lib" \
-        "$target_home/.acfs/scripts/lib" \
-        "$target_home/.acfs/logs/updates" \
+        "$root_home/.gtbi/scripts/lib" \
+        "$target_home/.gtbi/scripts/lib" \
+        "$target_home/.gtbi/logs/updates" \
         "$target_home/.local/bin" \
-        "$poison_home/.acfs/scripts/lib" \
-        "$poison_home/.acfs/logs/updates" \
+        "$poison_home/.gtbi/scripts/lib" \
+        "$poison_home/.gtbi/logs/updates" \
         "$poison_home/.local/bin"
 
     cat > "$system_state" <<EOF
@@ -4496,22 +4496,22 @@ case "\$*" in
     *) printf '%s\n' "$poison_home" ;;
 esac
 EOF
-    cat > "$target_home/.local/bin/acfs-update" <<'EOF'
+    cat > "$target_home/.local/bin/gtbi-update" <<'EOF'
 #!/usr/bin/env bash
-printf 'REAL_NIGHTLY HOME=%s TARGET_HOME=%s ACFS_HOME=%s\n' "$HOME" "${TARGET_HOME:-}" "${ACFS_HOME:-}"
+printf 'REAL_NIGHTLY HOME=%s TARGET_HOME=%s GTBI_HOME=%s\n' "$HOME" "${TARGET_HOME:-}" "${GTBI_HOME:-}"
 EOF
-    cat > "$poison_home/.local/bin/acfs-update" <<'EOF'
+    cat > "$poison_home/.local/bin/gtbi-update" <<'EOF'
 #!/usr/bin/env bash
-printf 'POISON_NIGHTLY HOME=%s TARGET_HOME=%s ACFS_HOME=%s\n' "$HOME" "${TARGET_HOME:-}" "${ACFS_HOME:-}"
+printf 'POISON_NIGHTLY HOME=%s TARGET_HOME=%s GTBI_HOME=%s\n' "$HOME" "${TARGET_HOME:-}" "${GTBI_HOME:-}"
 EOF
-    chmod +x "$fake_bin/jq" "$target_home/.local/bin/acfs-update" "$poison_home/.local/bin/acfs-update"
+    chmod +x "$fake_bin/jq" "$target_home/.local/bin/gtbi-update" "$poison_home/.local/bin/gtbi-update"
 
     nightly_path="$(setup_nightly_update_identity_stubs)"
-    run env -i PATH="$fake_bin:$nightly_path" HOME="$root_home" ACFS_SYSTEM_STATE_FILE="$system_state" bash "$nightly"
+    run env -i PATH="$fake_bin:$nightly_path" HOME="$root_home" GTBI_SYSTEM_STATE_FILE="$system_state" bash "$nightly"
 
     assert_success
-    assert_output --partial "Running: $target_home/.local/bin/acfs-update --yes --quiet --no-self-update"
-    assert_output --partial "REAL_NIGHTLY HOME=$target_home TARGET_HOME=$target_home ACFS_HOME=$target_home/.acfs"
+    assert_output --partial "Running: $target_home/.local/bin/gtbi-update --yes --quiet --no-self-update"
+    assert_output --partial "REAL_NIGHTLY HOME=$target_home TARGET_HOME=$target_home GTBI_HOME=$target_home/.gtbi"
     refute_output --partial "POISON_NIGHTLY"
     [[ ! -e "$marker" ]]
 }
@@ -4565,18 +4565,18 @@ EOF_NIGHTLY_MULTILINE_STATE
     system_state="$root_home/system-state.json"
 
     mkdir -p \
-        "$root_home/.acfs/scripts/lib" \
-        "$target_home/.acfs/scripts/lib" \
-        "$target_home/.acfs/logs/updates" \
+        "$root_home/.gtbi/scripts/lib" \
+        "$target_home/.gtbi/scripts/lib" \
+        "$target_home/.gtbi/logs/updates" \
         "$target_home/.local/bin"
 
-    cat > "$root_home/.acfs/scripts/lib/notify.sh" <<'EOF'
-acfs_notify_update_success() { :; }
-acfs_notify_update_failure() { :; }
+    cat > "$root_home/.gtbi/scripts/lib/notify.sh" <<'EOF'
+gtbi_notify_update_success() { :; }
+gtbi_notify_update_failure() { :; }
 EOF
-    cat > "$target_home/.acfs/scripts/lib/notify.sh" <<'EOF'
-acfs_notify_update_success() { :; }
-acfs_notify_update_failure() { :; }
+    cat > "$target_home/.gtbi/scripts/lib/notify.sh" <<'EOF'
+gtbi_notify_update_success() { :; }
+gtbi_notify_update_failure() { :; }
 EOF
     cat > "$system_state" <<EOF
 {
@@ -4584,19 +4584,19 @@ EOF
   "bin_dir": "$target_home/.local/bin"
 }
 EOF
-    cat > "$target_home/.local/bin/acfs-update" <<'EOF'
+    cat > "$target_home/.local/bin/gtbi-update" <<'EOF'
 #!/usr/bin/env bash
-printf 'CHILD_HOME=%s TARGET_HOME=%s ACFS_HOME=%s\n' "$HOME" "${TARGET_HOME:-}" "${ACFS_HOME:-}"
+printf 'CHILD_HOME=%s TARGET_HOME=%s GTBI_HOME=%s\n' "$HOME" "${TARGET_HOME:-}" "${GTBI_HOME:-}"
 EOF
-    chmod +x "$target_home/.local/bin/acfs-update"
+    chmod +x "$target_home/.local/bin/gtbi-update"
 
     nightly_path="$(setup_nightly_update_identity_stubs)"
-    run env -i PATH="$nightly_path" HOME="$root_home" ACFS_SYSTEM_STATE_FILE="$system_state" bash "$nightly"
+    run env -i PATH="$nightly_path" HOME="$root_home" GTBI_SYSTEM_STATE_FILE="$system_state" bash "$nightly"
 
     assert_success
-    assert_output --partial "Running: $target_home/.local/bin/acfs-update --yes --quiet --no-self-update"
-    assert_output --partial "CHILD_HOME=$target_home TARGET_HOME=$target_home ACFS_HOME=$target_home/.acfs"
-    [[ -f "$target_home/.acfs/logs/updates/nightly-2025-01-01.log" ]]
+    assert_output --partial "Running: $target_home/.local/bin/gtbi-update --yes --quiet --no-self-update"
+    assert_output --partial "CHILD_HOME=$target_home TARGET_HOME=$target_home GTBI_HOME=$target_home/.gtbi"
+    [[ -f "$target_home/.gtbi/logs/updates/nightly-2025-01-01.log" ]]
 }
 
 @test "nightly update prefers live target-home updater over stale persisted bin dir" {
@@ -4612,15 +4612,15 @@ EOF
     stale_home="$(create_temp_dir)"
     system_state="$root_home/system-state.json"
 
-    mkdir -p         "$root_home/.acfs/scripts/lib"         "$target_home/.acfs/bin"         "$target_home/.acfs/scripts/lib"         "$target_home/.acfs/logs/updates"         "$stale_home/.local/bin"
+    mkdir -p         "$root_home/.gtbi/scripts/lib"         "$target_home/.gtbi/bin"         "$target_home/.gtbi/scripts/lib"         "$target_home/.gtbi/logs/updates"         "$stale_home/.local/bin"
 
-    cat > "$root_home/.acfs/scripts/lib/notify.sh" <<'EOF'
-acfs_notify_update_success() { :; }
-acfs_notify_update_failure() { :; }
+    cat > "$root_home/.gtbi/scripts/lib/notify.sh" <<'EOF'
+gtbi_notify_update_success() { :; }
+gtbi_notify_update_failure() { :; }
 EOF
-    cat > "$target_home/.acfs/scripts/lib/notify.sh" <<'EOF'
-acfs_notify_update_success() { :; }
-acfs_notify_update_failure() { :; }
+    cat > "$target_home/.gtbi/scripts/lib/notify.sh" <<'EOF'
+gtbi_notify_update_success() { :; }
+gtbi_notify_update_failure() { :; }
 EOF
     cat > "$system_state" <<EOF
 {
@@ -4628,24 +4628,24 @@ EOF
   "bin_dir": "$stale_home/.local/bin"
 }
 EOF
-    cat > "$target_home/.acfs/bin/acfs-update" <<'EOF'
+    cat > "$target_home/.gtbi/bin/gtbi-update" <<'EOF'
 #!/usr/bin/env bash
-printf 'LIVE_HOME=%s TARGET_HOME=%s ACFS_HOME=%s\n' "$HOME" "${TARGET_HOME:-}" "${ACFS_HOME:-}"
+printf 'LIVE_HOME=%s TARGET_HOME=%s GTBI_HOME=%s\n' "$HOME" "${TARGET_HOME:-}" "${GTBI_HOME:-}"
 EOF
-    cat > "$stale_home/.local/bin/acfs-update" <<'EOF'
+    cat > "$stale_home/.local/bin/gtbi-update" <<'EOF'
 #!/usr/bin/env bash
-printf 'STALE_HOME=%s TARGET_HOME=%s ACFS_HOME=%s\n' "$HOME" "${TARGET_HOME:-}" "${ACFS_HOME:-}"
+printf 'STALE_HOME=%s TARGET_HOME=%s GTBI_HOME=%s\n' "$HOME" "${TARGET_HOME:-}" "${GTBI_HOME:-}"
 EOF
-    chmod +x "$target_home/.acfs/bin/acfs-update" "$stale_home/.local/bin/acfs-update"
+    chmod +x "$target_home/.gtbi/bin/gtbi-update" "$stale_home/.local/bin/gtbi-update"
 
     nightly_path="$(setup_nightly_update_identity_stubs)"
-    run env -i PATH="$nightly_path" HOME="$root_home" ACFS_SYSTEM_STATE_FILE="$system_state" bash "$nightly"
+    run env -i PATH="$nightly_path" HOME="$root_home" GTBI_SYSTEM_STATE_FILE="$system_state" bash "$nightly"
 
     assert_success
-    assert_output --partial "Running: $target_home/.acfs/bin/acfs-update --yes --quiet --no-self-update"
+    assert_output --partial "Running: $target_home/.gtbi/bin/gtbi-update --yes --quiet --no-self-update"
     refute_output --partial "STALE_HOME="
-    assert_output --partial "LIVE_HOME=$target_home TARGET_HOME=$target_home ACFS_HOME=$target_home/.acfs"
-    [[ -f "$target_home/.acfs/logs/updates/nightly-2025-01-01.log" ]]
+    assert_output --partial "LIVE_HOME=$target_home TARGET_HOME=$target_home GTBI_HOME=$target_home/.gtbi"
+    [[ -f "$target_home/.gtbi/logs/updates/nightly-2025-01-01.log" ]]
 }
 
 @test "nightly update falls back to target home binaries when system state omits bin dir" {
@@ -4660,37 +4660,37 @@ EOF
     system_state="$root_home/system-state.json"
 
     mkdir -p \
-        "$root_home/.acfs/scripts/lib" \
-        "$target_home/.acfs/bin" \
-        "$target_home/.acfs/scripts/lib" \
-        "$target_home/.acfs/logs/updates"
+        "$root_home/.gtbi/scripts/lib" \
+        "$target_home/.gtbi/bin" \
+        "$target_home/.gtbi/scripts/lib" \
+        "$target_home/.gtbi/logs/updates"
 
-    cat > "$root_home/.acfs/scripts/lib/notify.sh" <<'EOF'
-acfs_notify_update_success() { :; }
-acfs_notify_update_failure() { :; }
+    cat > "$root_home/.gtbi/scripts/lib/notify.sh" <<'EOF'
+gtbi_notify_update_success() { :; }
+gtbi_notify_update_failure() { :; }
 EOF
-    cat > "$target_home/.acfs/scripts/lib/notify.sh" <<'EOF'
-acfs_notify_update_success() { :; }
-acfs_notify_update_failure() { :; }
+    cat > "$target_home/.gtbi/scripts/lib/notify.sh" <<'EOF'
+gtbi_notify_update_success() { :; }
+gtbi_notify_update_failure() { :; }
 EOF
     cat > "$system_state" <<EOF
 {
   "target_home": "$target_home"
 }
 EOF
-    cat > "$target_home/.acfs/bin/acfs-update" <<'EOF'
+    cat > "$target_home/.gtbi/bin/gtbi-update" <<'EOF'
 #!/usr/bin/env bash
-printf 'CHILD_HOME=%s TARGET_HOME=%s ACFS_HOME=%s\n' "$HOME" "${TARGET_HOME:-}" "${ACFS_HOME:-}"
+printf 'CHILD_HOME=%s TARGET_HOME=%s GTBI_HOME=%s\n' "$HOME" "${TARGET_HOME:-}" "${GTBI_HOME:-}"
 EOF
-    chmod +x "$target_home/.acfs/bin/acfs-update"
+    chmod +x "$target_home/.gtbi/bin/gtbi-update"
 
     nightly_path="$(setup_nightly_update_identity_stubs)"
-    run env -i PATH="$nightly_path" HOME="$root_home" ACFS_SYSTEM_STATE_FILE="$system_state" bash "$nightly"
+    run env -i PATH="$nightly_path" HOME="$root_home" GTBI_SYSTEM_STATE_FILE="$system_state" bash "$nightly"
 
     assert_success
-    assert_output --partial "Running: $target_home/.acfs/bin/acfs-update --yes --quiet --no-self-update"
-    assert_output --partial "CHILD_HOME=$target_home TARGET_HOME=$target_home ACFS_HOME=$target_home/.acfs"
-    [[ -f "$target_home/.acfs/logs/updates/nightly-2025-01-01.log" ]]
+    assert_output --partial "Running: $target_home/.gtbi/bin/gtbi-update --yes --quiet --no-self-update"
+    assert_output --partial "CHILD_HOME=$target_home TARGET_HOME=$target_home GTBI_HOME=$target_home/.gtbi"
+    [[ -f "$target_home/.gtbi/logs/updates/nightly-2025-01-01.log" ]]
 }
 
 @test "nightly update honors explicit TARGET_HOME over stale system state" {
@@ -4706,19 +4706,19 @@ EOF
     stale_home="$(create_temp_dir)"
     system_state="$root_home/system-state.json"
 
-    mkdir -p         "$root_home/.acfs/scripts/lib"         "$target_home/.acfs/scripts/lib"         "$target_home/.acfs/logs/updates"         "$target_home/.local/bin"         "$stale_home/.acfs/scripts/lib"         "$stale_home/.acfs/logs/updates"         "$stale_home/.local/bin"
+    mkdir -p         "$root_home/.gtbi/scripts/lib"         "$target_home/.gtbi/scripts/lib"         "$target_home/.gtbi/logs/updates"         "$target_home/.local/bin"         "$stale_home/.gtbi/scripts/lib"         "$stale_home/.gtbi/logs/updates"         "$stale_home/.local/bin"
 
-    cat > "$root_home/.acfs/scripts/lib/notify.sh" <<'EOF'
-acfs_notify_update_success() { :; }
-acfs_notify_update_failure() { :; }
+    cat > "$root_home/.gtbi/scripts/lib/notify.sh" <<'EOF'
+gtbi_notify_update_success() { :; }
+gtbi_notify_update_failure() { :; }
 EOF
-    cat > "$target_home/.acfs/scripts/lib/notify.sh" <<'EOF'
-acfs_notify_update_success() { :; }
-acfs_notify_update_failure() { :; }
+    cat > "$target_home/.gtbi/scripts/lib/notify.sh" <<'EOF'
+gtbi_notify_update_success() { :; }
+gtbi_notify_update_failure() { :; }
 EOF
-    cat > "$stale_home/.acfs/scripts/lib/notify.sh" <<'EOF'
-acfs_notify_update_success() { :; }
-acfs_notify_update_failure() { :; }
+    cat > "$stale_home/.gtbi/scripts/lib/notify.sh" <<'EOF'
+gtbi_notify_update_success() { :; }
+gtbi_notify_update_failure() { :; }
 EOF
     cat > "$system_state" <<EOF
 {
@@ -4726,28 +4726,28 @@ EOF
   "bin_dir": "$stale_home/.local/bin"
 }
 EOF
-    cat > "$target_home/.local/bin/acfs-update" <<'EOF'
+    cat > "$target_home/.local/bin/gtbi-update" <<'EOF'
 #!/usr/bin/env bash
-printf 'LIVE_NIGHTLY HOME=%s TARGET_HOME=%s ACFS_HOME=%s\n' "$HOME" "${TARGET_HOME:-}" "${ACFS_HOME:-}"
+printf 'LIVE_NIGHTLY HOME=%s TARGET_HOME=%s GTBI_HOME=%s\n' "$HOME" "${TARGET_HOME:-}" "${GTBI_HOME:-}"
 EOF
-    cat > "$stale_home/.local/bin/acfs-update" <<'EOF'
+    cat > "$stale_home/.local/bin/gtbi-update" <<'EOF'
 #!/usr/bin/env bash
-printf 'STALE_NIGHTLY HOME=%s TARGET_HOME=%s ACFS_HOME=%s\n' "$HOME" "${TARGET_HOME:-}" "${ACFS_HOME:-}"
+printf 'STALE_NIGHTLY HOME=%s TARGET_HOME=%s GTBI_HOME=%s\n' "$HOME" "${TARGET_HOME:-}" "${GTBI_HOME:-}"
 EOF
-    chmod +x "$target_home/.local/bin/acfs-update" "$stale_home/.local/bin/acfs-update"
+    chmod +x "$target_home/.local/bin/gtbi-update" "$stale_home/.local/bin/gtbi-update"
 
     nightly_path="$(setup_nightly_update_identity_stubs)"
-    run env -i PATH="$nightly_path" HOME="$root_home" TARGET_HOME="$target_home" ACFS_SYSTEM_STATE_FILE="$system_state" bash "$nightly"
+    run env -i PATH="$nightly_path" HOME="$root_home" TARGET_HOME="$target_home" GTBI_SYSTEM_STATE_FILE="$system_state" bash "$nightly"
 
     assert_success
-    assert_output --partial "Running: $target_home/.local/bin/acfs-update --yes --quiet --no-self-update"
+    assert_output --partial "Running: $target_home/.local/bin/gtbi-update --yes --quiet --no-self-update"
     refute_output --partial "STALE_NIGHTLY"
-    assert_output --partial "LIVE_NIGHTLY HOME=$target_home TARGET_HOME=$target_home ACFS_HOME=$target_home/.acfs"
-    [[ -f "$target_home/.acfs/logs/updates/nightly-2025-01-01.log" ]]
+    assert_output --partial "LIVE_NIGHTLY HOME=$target_home TARGET_HOME=$target_home GTBI_HOME=$target_home/.gtbi"
+    [[ -f "$target_home/.gtbi/logs/updates/nightly-2025-01-01.log" ]]
 }
 
-@test "acfs-update wrapper honors explicit TARGET_HOME over stale system state" {
-    local update_wrapper="$PROJECT_ROOT/scripts/acfs-update"
+@test "gtbi-update wrapper honors explicit TARGET_HOME over stale system state" {
+    local update_wrapper="$PROJECT_ROOT/scripts/gtbi-update"
     local wrapper_dir
     local root_home
     local target_home
@@ -4762,19 +4762,19 @@ EOF
     system_state="$BATS_TEST_TMPDIR/update-wrapper-system-state.json"
     current_user="$(id -un 2>/dev/null || whoami 2>/dev/null || true)"
 
-    mkdir -p "$target_home/.acfs/scripts/lib" "$stale_home/.acfs/scripts/lib"
-    cp "$update_wrapper" "$wrapper_dir/acfs-update"
-    chmod +x "$wrapper_dir/acfs-update"
+    mkdir -p "$target_home/.gtbi/scripts/lib" "$stale_home/.gtbi/scripts/lib"
+    cp "$update_wrapper" "$wrapper_dir/gtbi-update"
+    chmod +x "$wrapper_dir/gtbi-update"
 
-    cat > "$target_home/.acfs/scripts/lib/update.sh" <<'EOF'
+    cat > "$target_home/.gtbi/scripts/lib/update.sh" <<'EOF'
 #!/usr/bin/env bash
-printf 'LIVE_SCRIPT HOME=%s TARGET_HOME=%s ACFS_HOME=%s\n' "$HOME" "${TARGET_HOME:-}" "${ACFS_HOME:-}"
+printf 'LIVE_SCRIPT HOME=%s TARGET_HOME=%s GTBI_HOME=%s\n' "$HOME" "${TARGET_HOME:-}" "${GTBI_HOME:-}"
 EOF
-    cat > "$stale_home/.acfs/scripts/lib/update.sh" <<'EOF'
+    cat > "$stale_home/.gtbi/scripts/lib/update.sh" <<'EOF'
 #!/usr/bin/env bash
-printf 'STALE_SCRIPT HOME=%s TARGET_HOME=%s ACFS_HOME=%s\n' "$HOME" "${TARGET_HOME:-}" "${ACFS_HOME:-}"
+printf 'STALE_SCRIPT HOME=%s TARGET_HOME=%s GTBI_HOME=%s\n' "$HOME" "${TARGET_HOME:-}" "${GTBI_HOME:-}"
 EOF
-    chmod +x "$target_home/.acfs/scripts/lib/update.sh" "$stale_home/.acfs/scripts/lib/update.sh"
+    chmod +x "$target_home/.gtbi/scripts/lib/update.sh" "$stale_home/.gtbi/scripts/lib/update.sh"
 
     cat > "$system_state" <<EOF
 {
@@ -4783,15 +4783,15 @@ EOF
 }
 EOF
 
-    run env HOME="$root_home" TARGET_HOME="$target_home" ACFS_SYSTEM_STATE_FILE="$system_state" bash "$wrapper_dir/acfs-update"
+    run env HOME="$root_home" TARGET_HOME="$target_home" GTBI_SYSTEM_STATE_FILE="$system_state" bash "$wrapper_dir/gtbi-update"
 
     assert_success
     refute_output --partial "STALE_SCRIPT"
-    assert_output --partial "LIVE_SCRIPT HOME=$target_home TARGET_HOME=$target_home ACFS_HOME=$target_home/.acfs"
+    assert_output --partial "LIVE_SCRIPT HOME=$target_home TARGET_HOME=$target_home GTBI_HOME=$target_home/.gtbi"
 }
 
-@test "acfs-update dispatch validation rejects current user with mismatched target home" {
-    local update_wrapper="$PROJECT_ROOT/scripts/acfs-update"
+@test "gtbi-update dispatch validation rejects current user with mismatched target home" {
+    local update_wrapper="$PROJECT_ROOT/scripts/gtbi-update"
     local current_user
     local target_home
     local stale_home
@@ -4828,8 +4828,8 @@ EOF
     assert_output "$TEST_CURRENT_USER"
 }
 
-@test "acfs-global dispatch validation rejects current user with mismatched target home" {
-    local global_wrapper="$PROJECT_ROOT/scripts/acfs-global"
+@test "gtbi-global dispatch validation rejects current user with mismatched target home" {
+    local global_wrapper="$PROJECT_ROOT/scripts/gtbi-global"
     local current_user
     local target_home
     local stale_home
@@ -4866,14 +4866,14 @@ EOF
     assert_output "$TEST_CURRENT_USER"
 }
 
-@test "acfs-update wrapper resolves non-current owner home after owner discovery" {
-    local update_wrapper="$PROJECT_ROOT/scripts/acfs-update"
+@test "gtbi-update wrapper resolves non-current owner home after owner discovery" {
+    local update_wrapper="$PROJECT_ROOT/scripts/gtbi-update"
     local target_home
     target_home="$(create_temp_dir)"
     export TEST_UPDATE_WRAPPER_TARGET_HOME="$target_home"
 
-    mkdir -p "$target_home/.acfs/scripts/lib"
-    touch "$target_home/.acfs/scripts/lib/update.sh"
+    mkdir -p "$target_home/.gtbi/scripts/lib"
+    touch "$target_home/.gtbi/scripts/lib/update.sh"
 
     eval "$(sed -n '/^sanitize_abs_nonroot_path()/,/^}$/p' "$update_wrapper")"
     eval "$(sed -n '/^is_valid_username()/,/^}$/p' "$update_wrapper")"
@@ -4893,7 +4893,7 @@ EOF
     }
 
     resolve_home_for_user() {
-        if [[ "${1:-}" == "acfsuser" ]]; then
+        if [[ "${1:-}" == "gtbiuser" ]]; then
             printf '%s\n' "$TEST_UPDATE_WRAPPER_TARGET_HOME"
             return 0
         fi
@@ -4902,25 +4902,25 @@ EOF
 
     unset TARGET_HOME
 
-    run find_update_script_for_user "acfsuser"
+    run find_update_script_for_user "gtbiuser"
     assert_success
-    assert_output "$target_home/.acfs/scripts/lib/update.sh"
+    assert_output "$target_home/.gtbi/scripts/lib/update.sh"
 }
 
-@test "acfs global wrapper resolves non-current owner home after owner discovery" {
-    local global_wrapper="$PROJECT_ROOT/scripts/acfs-global"
+@test "gtbi global wrapper resolves non-current owner home after owner discovery" {
+    local global_wrapper="$PROJECT_ROOT/scripts/gtbi-global"
     local target_home
     target_home="$(create_temp_dir)"
     export TEST_GLOBAL_WRAPPER_TARGET_HOME="$target_home"
 
     mkdir -p "$target_home/.local/bin"
-    touch "$target_home/.local/bin/acfs"
-    chmod +x "$target_home/.local/bin/acfs"
+    touch "$target_home/.local/bin/gtbi"
+    chmod +x "$target_home/.local/bin/gtbi"
 
     eval "$(sed -n '/^sanitize_abs_nonroot_path()/,/^}$/p' "$global_wrapper")"
     eval "$(sed -n '/^is_valid_username()/,/^}$/p' "$global_wrapper")"
-    eval "$(sed -n '/^find_acfs_bin_for_home()/,/^}$/p' "$global_wrapper")"
-    eval "$(sed -n '/^find_acfs_bin()/,/^}$/p' "$global_wrapper")"
+    eval "$(sed -n '/^find_gtbi_bin_for_home()/,/^}$/p' "$global_wrapper")"
+    eval "$(sed -n '/^find_gtbi_bin()/,/^}$/p' "$global_wrapper")"
 
     validated_target_user_for_dispatch() {
         return 1
@@ -4930,12 +4930,12 @@ EOF
         printf 'caller\n'
     }
 
-    current_home_matches_acfs_install() {
+    current_home_matches_gtbi_install() {
         return 1
     }
 
     resolve_home_for_user() {
-        if [[ "${1:-}" == "acfsuser" ]]; then
+        if [[ "${1:-}" == "gtbiuser" ]]; then
             printf '%s\n' "$TEST_GLOBAL_WRAPPER_TARGET_HOME"
             return 0
         fi
@@ -4944,9 +4944,9 @@ EOF
 
     unset TARGET_HOME
 
-    run find_acfs_bin "acfsuser"
+    run find_gtbi_bin "gtbiuser"
     assert_success
-    assert_output "$target_home/.local/bin/acfs"
+    assert_output "$target_home/.local/bin/gtbi"
 }
 
 @test "global wrappers clamp multiline state strings from jq" {
@@ -4987,19 +4987,19 @@ set -euo pipefail
 EOF_WRAPPER_MULTILINE_STATE
         assert_success "$label wrapper leaked a multiline state value"
     done <<EOF
-acfs-update|$PROJECT_ROOT/scripts/acfs-update
-acfs-global|$PROJECT_ROOT/scripts/acfs-global
+gtbi-update|$PROJECT_ROOT/scripts/gtbi-update
+gtbi-global|$PROJECT_ROOT/scripts/gtbi-global
 EOF
 }
 
-@test "acfs-update wrapper only promotes system state homes with an update script" {
-    local update_wrapper="$PROJECT_ROOT/scripts/acfs-update"
+@test "gtbi-update wrapper only promotes system state homes with an update script" {
+    local update_wrapper="$PROJECT_ROOT/scripts/gtbi-update"
     local stale_home
 
     stale_home="$(create_temp_dir)"
-    mkdir -p "$stale_home/.acfs"
+    mkdir -p "$stale_home/.gtbi"
 
-    ACFS_SYSTEM_STATE_FILE="$stale_home/.acfs/state.json"
+    GTBI_SYSTEM_STATE_FILE="$stale_home/.gtbi/state.json"
     resolve_target_home_from_state_hint() { printf '%s\n' "$stale_home"; }
     find_update_script_for_home() { return 1; }
     eval "$(sed -n '/^resolve_live_system_state_home()/,/^}/p' "$update_wrapper")"
@@ -5008,8 +5008,8 @@ EOF
     assert_failure
 }
 
-@test "acfs-update wrapper prefers valid HOME install over stale live system state" {
-    local update_wrapper="$PROJECT_ROOT/scripts/acfs-update"
+@test "gtbi-update wrapper prefers valid HOME install over stale live system state" {
+    local update_wrapper="$PROJECT_ROOT/scripts/gtbi-update"
     local wrapper_dir
     local target_home
     local stale_home
@@ -5022,11 +5022,11 @@ EOF
     system_state="$BATS_TEST_TMPDIR/update-wrapper-live-stale-system-state.json"
     current_user="$(id -un 2>/dev/null || whoami 2>/dev/null || true)"
 
-    mkdir -p "$target_home/.acfs/scripts/lib" "$stale_home/.acfs/scripts/lib"
-    cp "$update_wrapper" "$wrapper_dir/acfs-update"
-    chmod +x "$wrapper_dir/acfs-update"
+    mkdir -p "$target_home/.gtbi/scripts/lib" "$stale_home/.gtbi/scripts/lib"
+    cp "$update_wrapper" "$wrapper_dir/gtbi-update"
+    chmod +x "$wrapper_dir/gtbi-update"
 
-    cat > "$target_home/.acfs/state.json" <<EOF
+    cat > "$target_home/.gtbi/state.json" <<EOF
 {
   "target_user": "$current_user",
   "target_home": "$target_home"
@@ -5037,25 +5037,25 @@ EOF
   "target_home": "$stale_home"
 }
 EOF
-    cat > "$target_home/.acfs/scripts/lib/update.sh" <<'EOF'
+    cat > "$target_home/.gtbi/scripts/lib/update.sh" <<'EOF'
 #!/usr/bin/env bash
-printf 'LIVE_HOME_INSTALL HOME=%s TARGET_HOME=%s ACFS_HOME=%s\n' "$HOME" "${TARGET_HOME:-}" "${ACFS_HOME:-}"
+printf 'LIVE_HOME_INSTALL HOME=%s TARGET_HOME=%s GTBI_HOME=%s\n' "$HOME" "${TARGET_HOME:-}" "${GTBI_HOME:-}"
 EOF
-    cat > "$stale_home/.acfs/scripts/lib/update.sh" <<'EOF'
+    cat > "$stale_home/.gtbi/scripts/lib/update.sh" <<'EOF'
 #!/usr/bin/env bash
-printf 'STALE_SYSTEM_STATE HOME=%s TARGET_HOME=%s ACFS_HOME=%s\n' "$HOME" "${TARGET_HOME:-}" "${ACFS_HOME:-}"
+printf 'STALE_SYSTEM_STATE HOME=%s TARGET_HOME=%s GTBI_HOME=%s\n' "$HOME" "${TARGET_HOME:-}" "${GTBI_HOME:-}"
 EOF
-    chmod +x "$target_home/.acfs/scripts/lib/update.sh" "$stale_home/.acfs/scripts/lib/update.sh"
+    chmod +x "$target_home/.gtbi/scripts/lib/update.sh" "$stale_home/.gtbi/scripts/lib/update.sh"
 
-    run env HOME="$target_home" ACFS_SYSTEM_STATE_FILE="$system_state" bash "$wrapper_dir/acfs-update" --no-self-update
+    run env HOME="$target_home" GTBI_SYSTEM_STATE_FILE="$system_state" bash "$wrapper_dir/gtbi-update" --no-self-update
 
     assert_success
     refute_output --partial "STALE_SYSTEM_STATE"
-    assert_output --partial "LIVE_HOME_INSTALL HOME=$target_home TARGET_HOME=$target_home ACFS_HOME=$target_home/.acfs"
+    assert_output --partial "LIVE_HOME_INSTALL HOME=$target_home TARGET_HOME=$target_home GTBI_HOME=$target_home/.gtbi"
 }
 
-@test "acfs global wrapper honors explicit TARGET_HOME over stale system state" {
-    local global_wrapper="$PROJECT_ROOT/scripts/acfs-global"
+@test "gtbi global wrapper honors explicit TARGET_HOME over stale system state" {
+    local global_wrapper="$PROJECT_ROOT/scripts/gtbi-global"
     local wrapper_dir
     local root_home
     local target_home
@@ -5070,19 +5070,19 @@ EOF
     system_state="$BATS_TEST_TMPDIR/global-wrapper-system-state.json"
     current_user="$(id -un 2>/dev/null || whoami 2>/dev/null || true)"
 
-    mkdir -p "$target_home/.local/bin" "$target_home/.acfs" "$stale_home/.local/bin" "$stale_home/.acfs"
-    cp "$global_wrapper" "$wrapper_dir/acfs"
-    chmod +x "$wrapper_dir/acfs"
+    mkdir -p "$target_home/.local/bin" "$target_home/.gtbi" "$stale_home/.local/bin" "$stale_home/.gtbi"
+    cp "$global_wrapper" "$wrapper_dir/gtbi"
+    chmod +x "$wrapper_dir/gtbi"
 
-    cat > "$target_home/.local/bin/acfs" <<'EOF'
+    cat > "$target_home/.local/bin/gtbi" <<'EOF'
 #!/usr/bin/env bash
-printf 'LIVE_ACFS HOME=%s TARGET_HOME=%s ACFS_HOME=%s\n' "$HOME" "${TARGET_HOME:-}" "${ACFS_HOME:-}"
+printf 'LIVE_GTBI HOME=%s TARGET_HOME=%s GTBI_HOME=%s\n' "$HOME" "${TARGET_HOME:-}" "${GTBI_HOME:-}"
 EOF
-    cat > "$stale_home/.local/bin/acfs" <<'EOF'
+    cat > "$stale_home/.local/bin/gtbi" <<'EOF'
 #!/usr/bin/env bash
-printf 'STALE_ACFS HOME=%s TARGET_HOME=%s ACFS_HOME=%s\n' "$HOME" "${TARGET_HOME:-}" "${ACFS_HOME:-}"
+printf 'STALE_GTBI HOME=%s TARGET_HOME=%s GTBI_HOME=%s\n' "$HOME" "${TARGET_HOME:-}" "${GTBI_HOME:-}"
 EOF
-    chmod +x "$target_home/.local/bin/acfs" "$stale_home/.local/bin/acfs"
+    chmod +x "$target_home/.local/bin/gtbi" "$stale_home/.local/bin/gtbi"
 
     cat > "$system_state" <<EOF
 {
@@ -5091,15 +5091,15 @@ EOF
 }
 EOF
 
-    run env HOME="$root_home" TARGET_HOME="$target_home" ACFS_SYSTEM_STATE_FILE="$system_state" bash "$wrapper_dir/acfs"
+    run env HOME="$root_home" TARGET_HOME="$target_home" GTBI_SYSTEM_STATE_FILE="$system_state" bash "$wrapper_dir/gtbi"
 
     assert_success
-    refute_output --partial "STALE_ACFS"
-    assert_output --partial "LIVE_ACFS HOME=$target_home TARGET_HOME=$target_home ACFS_HOME=$target_home/.acfs"
+    refute_output --partial "STALE_GTBI"
+    assert_output --partial "LIVE_GTBI HOME=$target_home TARGET_HOME=$target_home GTBI_HOME=$target_home/.gtbi"
 }
 
-@test "acfs global wrapper prefers valid HOME install over stale live system state" {
-    local global_wrapper="$PROJECT_ROOT/scripts/acfs-global"
+@test "gtbi global wrapper prefers valid HOME install over stale live system state" {
+    local global_wrapper="$PROJECT_ROOT/scripts/gtbi-global"
     local wrapper_dir
     local target_home
     local stale_home
@@ -5112,11 +5112,11 @@ EOF
     system_state="$BATS_TEST_TMPDIR/global-wrapper-live-stale-system-state.json"
     current_user="$(id -un 2>/dev/null || whoami 2>/dev/null || true)"
 
-    mkdir -p "$target_home/.local/bin" "$target_home/.acfs" "$stale_home/.local/bin" "$stale_home/.acfs"
-    cp "$global_wrapper" "$wrapper_dir/acfs"
-    chmod +x "$wrapper_dir/acfs"
+    mkdir -p "$target_home/.local/bin" "$target_home/.gtbi" "$stale_home/.local/bin" "$stale_home/.gtbi"
+    cp "$global_wrapper" "$wrapper_dir/gtbi"
+    chmod +x "$wrapper_dir/gtbi"
 
-    cat > "$target_home/.acfs/state.json" <<EOF
+    cat > "$target_home/.gtbi/state.json" <<EOF
 {
   "target_user": "$current_user",
   "target_home": "$target_home"
@@ -5127,26 +5127,26 @@ EOF
   "target_home": "$stale_home"
 }
 EOF
-    cat > "$target_home/.local/bin/acfs" <<'EOF'
+    cat > "$target_home/.local/bin/gtbi" <<'EOF'
 #!/usr/bin/env bash
-printf 'LIVE_HOME_ACFS HOME=%s TARGET_HOME=%s ACFS_HOME=%s\n' "$HOME" "${TARGET_HOME:-}" "${ACFS_HOME:-}"
+printf 'LIVE_HOME_GTBI HOME=%s TARGET_HOME=%s GTBI_HOME=%s\n' "$HOME" "${TARGET_HOME:-}" "${GTBI_HOME:-}"
 EOF
-    cat > "$stale_home/.local/bin/acfs" <<'EOF'
+    cat > "$stale_home/.local/bin/gtbi" <<'EOF'
 #!/usr/bin/env bash
-printf 'STALE_SYSTEM_ACFS HOME=%s TARGET_HOME=%s ACFS_HOME=%s\n' "$HOME" "${TARGET_HOME:-}" "${ACFS_HOME:-}"
+printf 'STALE_SYSTEM_GTBI HOME=%s TARGET_HOME=%s GTBI_HOME=%s\n' "$HOME" "${TARGET_HOME:-}" "${GTBI_HOME:-}"
 EOF
-    chmod +x "$target_home/.local/bin/acfs" "$stale_home/.local/bin/acfs"
+    chmod +x "$target_home/.local/bin/gtbi" "$stale_home/.local/bin/gtbi"
 
-    run env HOME="$target_home" ACFS_SYSTEM_STATE_FILE="$system_state" bash "$wrapper_dir/acfs"
+    run env HOME="$target_home" GTBI_SYSTEM_STATE_FILE="$system_state" bash "$wrapper_dir/gtbi"
 
     assert_success
-    refute_output --partial "STALE_SYSTEM_ACFS"
-    assert_output --partial "LIVE_HOME_ACFS HOME=$target_home TARGET_HOME=$target_home ACFS_HOME=$target_home/.acfs"
+    refute_output --partial "STALE_SYSTEM_GTBI"
+    assert_output --partial "LIVE_HOME_GTBI HOME=$target_home TARGET_HOME=$target_home GTBI_HOME=$target_home/.gtbi"
 }
 
-@test "global wrappers repair stale ACFS env before cross-user re-exec" {
-    local update_wrapper="$PROJECT_ROOT/scripts/acfs-update"
-    local global_wrapper="$PROJECT_ROOT/scripts/acfs-global"
+@test "global wrappers repair stale GTBI env before cross-user re-exec" {
+    local update_wrapper="$PROJECT_ROOT/scripts/gtbi-update"
+    local global_wrapper="$PROJECT_ROOT/scripts/gtbi-global"
     local wrapper=""
     local function_body=""
     local target_home
@@ -5160,14 +5160,14 @@ EOF
         stale_home="$(create_temp_dir)"
         fake_sudo="$BATS_TEST_TMPDIR/$label-sudo"
 
-        mkdir -p "$target_home/.acfs" "$stale_home/.acfs"
-        cat > "$target_home/.acfs/state.json" <<EOF
+        mkdir -p "$target_home/.gtbi" "$stale_home/.gtbi"
+        cat > "$target_home/.gtbi/state.json" <<EOF
 {
-  "target_user": "acfstestuser",
+  "target_user": "gtbitestuser",
   "target_home": "$target_home"
 }
 EOF
-        cat > "$stale_home/.acfs/state.json" <<EOF
+        cat > "$stale_home/.gtbi/state.json" <<EOF
 {
   "target_user": "staleuser",
   "target_home": "$stale_home"
@@ -5188,9 +5188,9 @@ EOF
         run env -i \
             PATH="/usr/bin:/bin" \
             TARGET_HOME="$target_home" \
-            ACFS_HOME="$stale_home/.acfs" \
-            ACFS_STATE_FILE="$stale_home/.acfs/state.json" \
-            ACFS_SYSTEM_STATE_FILE="$stale_home/.acfs/state.json" \
+            GTBI_HOME="$stale_home/.gtbi" \
+            GTBI_STATE_FILE="$stale_home/.gtbi/state.json" \
+            GTBI_SYSTEM_STATE_FILE="$stale_home/.gtbi/state.json" \
             TEST_FAKE_SUDO="$fake_sudo" \
             TEST_FUNCTION_BODY="$function_body" \
             bash -c '
@@ -5212,7 +5212,7 @@ EOF
                     is_valid_username "${1:-}" || exit 77
                 }
                 state_file_matches_target_home() {
-                    [[ "${1:-}" == "$TARGET_HOME/.acfs/state.json" ]] && [[ "${2:-}" == "$TARGET_HOME" ]]
+                    [[ "${1:-}" == "$TARGET_HOME/.gtbi/state.json" ]] && [[ "${2:-}" == "$TARGET_HOME" ]]
                 }
                 system_binary_path() {
                     case "${1:-}" in
@@ -5222,35 +5222,35 @@ EOF
                         *) return 1 ;;
                     esac
                 }
-                exec_as_target_user acfstestuser bash /tmp/acfs-child
+                exec_as_target_user gtbitestuser bash /tmp/gtbi-child
             '
         assert_success
         assert_output --partial "HOME=$target_home"
         assert_output --partial "TARGET_HOME=$target_home"
-        assert_output --partial "ACFS_HOME=$target_home/.acfs"
-        assert_output --partial "ACFS_STATE_FILE=$target_home/.acfs/state.json"
-        refute_output --partial "ACFS_HOME=$stale_home/.acfs"
-        refute_output --partial "ACFS_STATE_FILE=$stale_home/.acfs/state.json"
-        refute_output --partial "ACFS_SYSTEM_STATE_FILE=$stale_home/.acfs/state.json"
+        assert_output --partial "GTBI_HOME=$target_home/.gtbi"
+        assert_output --partial "GTBI_STATE_FILE=$target_home/.gtbi/state.json"
+        refute_output --partial "GTBI_HOME=$stale_home/.gtbi"
+        refute_output --partial "GTBI_STATE_FILE=$stale_home/.gtbi/state.json"
+        refute_output --partial "GTBI_SYSTEM_STATE_FILE=$stale_home/.gtbi/state.json"
     done
 }
 
 @test "global wrappers use noninteractive sudo for cross-user re-exec" {
-    local update_wrapper="$PROJECT_ROOT/scripts/acfs-update"
-    local global_wrapper="$PROJECT_ROOT/scripts/acfs-global"
+    local update_wrapper="$PROJECT_ROOT/scripts/gtbi-update"
+    local global_wrapper="$PROJECT_ROOT/scripts/gtbi-global"
 
     run grep -F 'exec "$sudo_bin" -n -u "$user" -H "${cmd_with_env[@]}"' "$update_wrapper"
     assert_success
     run grep -F 'if ! "$sudo_bin" -n -u "$user" -H "$true_bin" 2>/dev/null; then' "$update_wrapper"
     assert_success
-    run grep -F 'passwordless sudo is required to run acfs-update as' "$update_wrapper"
+    run grep -F 'passwordless sudo is required to run gtbi-update as' "$update_wrapper"
     assert_success
 
     run grep -F 'exec "$sudo_bin" -n -u "$user" -H "${cmd_with_env[@]}"' "$global_wrapper"
     assert_success
     run grep -F 'if ! "$sudo_bin" -n -u "$user" -H "$true_bin" 2>/dev/null; then' "$global_wrapper"
     assert_success
-    run grep -F 'passwordless sudo is required to run acfs as' "$global_wrapper"
+    run grep -F 'passwordless sudo is required to run gtbi as' "$global_wrapper"
     assert_success
     run grep -F 'sudo -n -u <user> -H -- \"$0\" [args...]' "$global_wrapper"
     assert_success
@@ -5261,14 +5261,14 @@ EOF
     local child_script
     target_home="$(create_temp_dir)"
 
-    mkdir -p "$target_home/.acfs" "$target_home/.local/bin"
+    mkdir -p "$target_home/.gtbi" "$target_home/.local/bin"
     child_script="$target_home/update-child.sh"
     cat > "$child_script" <<'EOF'
 #!/usr/bin/env bash
 printf 'TARGET_USER=%s\n' "${TARGET_USER:-}"
 printf 'TARGET_HOME=%s\n' "${TARGET_HOME:-}"
-printf 'ACFS_HOME=%s\n' "${ACFS_HOME:-}"
-printf 'ACFS_BIN_DIR=%s\n' "${ACFS_BIN_DIR:-}"
+printf 'GTBI_HOME=%s\n' "${GTBI_HOME:-}"
+printf 'GTBI_BIN_DIR=%s\n' "${GTBI_BIN_DIR:-}"
 printf 'HOME=%s\n' "${HOME:-}"
 EOF
     chmod +x "$child_script"
@@ -5279,33 +5279,33 @@ EOF
         child_script="$2"
         target_home="$3"
 
-        eval "$(sed -n "/^_acfs_doctor_sanitize_abs_nonroot_path()/,/^}$/p" "$doctor_lib")"
-        eval "$(sed -n "/^_acfs_doctor_system_binary_path()/,/^}$/p" "$doctor_lib")"
-        eval "$(sed -n "/^_acfs_doctor_acfs_home_for_home()/,/^}$/p" "$doctor_lib")"
-        eval "$(sed -n "/^_acfs_doctor_acfs_home_matches_home()/,/^}$/p" "$doctor_lib")"
-        eval "$(sed -n "/^_acfs_doctor_exec_bash_script()/,/^}$/p" "$doctor_lib")"
+        eval "$(sed -n "/^_gtbi_doctor_sanitize_abs_nonroot_path()/,/^}$/p" "$doctor_lib")"
+        eval "$(sed -n "/^_gtbi_doctor_system_binary_path()/,/^}$/p" "$doctor_lib")"
+        eval "$(sed -n "/^_gtbi_doctor_gtbi_home_for_home()/,/^}$/p" "$doctor_lib")"
+        eval "$(sed -n "/^_gtbi_doctor_gtbi_home_matches_home()/,/^}$/p" "$doctor_lib")"
+        eval "$(sed -n "/^_gtbi_doctor_exec_bash_script()/,/^}$/p" "$doctor_lib")"
 
         export HOME="$target_home"
         export TARGET_USER="tester"
         export TARGET_HOME="$target_home"
-        export ACFS_HOME="$target_home/.acfs"
-        export ACFS_BIN_DIR="$target_home/.local/bin"
-        _acfs_doctor_original_home="$target_home"
-        _ACFS_DOCTOR_ENV_ACFS_HOME="$target_home/.acfs"
-        unset _ACFS_DOCTOR_ENV_TARGET_USER _ACFS_DOCTOR_ENV_TARGET_HOME _ACFS_DOCTOR_ENV_BIN_DIR
+        export GTBI_HOME="$target_home/.gtbi"
+        export GTBI_BIN_DIR="$target_home/.local/bin"
+        _gtbi_doctor_original_home="$target_home"
+        _GTBI_DOCTOR_ENV_GTBI_HOME="$target_home/.gtbi"
+        unset _GTBI_DOCTOR_ENV_TARGET_USER _GTBI_DOCTOR_ENV_TARGET_HOME _GTBI_DOCTOR_ENV_BIN_DIR
 
-        _acfs_doctor_exec_bash_script "$child_script"
+        _gtbi_doctor_exec_bash_script "$child_script"
     ' _ "$PROJECT_ROOT/scripts/lib/doctor.sh" "$child_script" "$target_home"
 
     assert_success
     assert_output --partial "TARGET_USER=tester"
     assert_output --partial "TARGET_HOME=$target_home"
-    assert_output --partial "ACFS_HOME=$target_home/.acfs"
-    assert_output --partial "ACFS_BIN_DIR=$target_home/.local/bin"
+    assert_output --partial "GTBI_HOME=$target_home/.gtbi"
+    assert_output --partial "GTBI_BIN_DIR=$target_home/.local/bin"
     assert_output --partial "HOME=$target_home"
 }
 
-@test "ACFS home resolvers honor explicit TARGET_HOME over stale system state" {
+@test "GTBI home resolvers honor explicit TARGET_HOME over stale system state" {
     local current_home
     local target_home
     local stale_home
@@ -5320,13 +5320,13 @@ EOF
     stale_home="$(create_temp_dir)"
     system_state="$BATS_TEST_TMPDIR/resolver-system-state.json"
 
-    mkdir -p "$current_home" "$target_home/.acfs" "$stale_home/.acfs"
-    printf 'live\n' > "$target_home/.acfs/VERSION"
-    printf 'stale\n' > "$stale_home/.acfs/VERSION"
-    printf '{}\n' > "$target_home/.acfs/state.json"
-    printf '{}\n' > "$stale_home/.acfs/state.json"
-    printf '# live\n' > "$target_home/.acfs/CHANGELOG.md"
-    printf '# stale\n' > "$stale_home/.acfs/CHANGELOG.md"
+    mkdir -p "$current_home" "$target_home/.gtbi" "$stale_home/.gtbi"
+    printf 'live\n' > "$target_home/.gtbi/VERSION"
+    printf 'stale\n' > "$stale_home/.gtbi/VERSION"
+    printf '{}\n' > "$target_home/.gtbi/state.json"
+    printf '{}\n' > "$stale_home/.gtbi/state.json"
+    printf '# live\n' > "$target_home/.gtbi/CHANGELOG.md"
+    printf '# stale\n' > "$stale_home/.gtbi/CHANGELOG.md"
 
     cat > "$system_state" <<EOF
 {
@@ -5335,17 +5335,17 @@ EOF
 EOF
 
     while IFS='|' read -r label script func expected; do
-        run env -i PATH="/usr/bin:/bin" HOME="$current_home" TARGET_HOME="$target_home" ACFS_SYSTEM_STATE_FILE="$system_state" bash -c 'source "$1" >/dev/null 2>&1; func="$2"; "$func"' _ "$script" "$func"
+        run env -i PATH="/usr/bin:/bin" HOME="$current_home" TARGET_HOME="$target_home" GTBI_SYSTEM_STATE_FILE="$system_state" bash -c 'source "$1" >/dev/null 2>&1; func="$2"; "$func"' _ "$script" "$func"
         assert_success
         assert_output "$expected"
     done <<EOF
-status|$PROJECT_ROOT/scripts/lib/status.sh|_status_resolve_acfs_home|$target_home/.acfs
-dashboard|$PROJECT_ROOT/scripts/lib/dashboard.sh|dashboard_resolve_acfs_home|$target_home/.acfs
-export-config|$PROJECT_ROOT/scripts/lib/export-config.sh|resolve_acfs_home|$target_home/.acfs
-support|$PROJECT_ROOT/scripts/lib/support.sh|support_resolve_acfs_home|$target_home/.acfs
-cheatsheet|$PROJECT_ROOT/scripts/lib/cheatsheet.sh|cheatsheet_resolve_acfs_home|$target_home/.acfs
-continue|$PROJECT_ROOT/scripts/lib/continue.sh|get_install_state_file|$target_home/.acfs/state.json
-changelog|$PROJECT_ROOT/scripts/lib/changelog.sh|resolve_changelog_acfs_home|$target_home/.acfs
+status|$PROJECT_ROOT/scripts/lib/status.sh|_status_resolve_gtbi_home|$target_home/.gtbi
+dashboard|$PROJECT_ROOT/scripts/lib/dashboard.sh|dashboard_resolve_gtbi_home|$target_home/.gtbi
+export-config|$PROJECT_ROOT/scripts/lib/export-config.sh|resolve_gtbi_home|$target_home/.gtbi
+support|$PROJECT_ROOT/scripts/lib/support.sh|support_resolve_gtbi_home|$target_home/.gtbi
+cheatsheet|$PROJECT_ROOT/scripts/lib/cheatsheet.sh|cheatsheet_resolve_gtbi_home|$target_home/.gtbi
+continue|$PROJECT_ROOT/scripts/lib/continue.sh|get_install_state_file|$target_home/.gtbi/state.json
+changelog|$PROJECT_ROOT/scripts/lib/changelog.sh|resolve_changelog_gtbi_home|$target_home/.gtbi
 EOF
 }
 
@@ -5363,9 +5363,9 @@ EOF
     stale_home="$(create_temp_dir)"
     system_state="$BATS_TEST_TMPDIR/target-home-resolver-system-state.json"
 
-    mkdir -p "$current_home" "$target_home/.acfs" "$stale_home/.acfs"
-    printf '{}\n' > "$target_home/.acfs/state.json"
-    printf '{}\n' > "$stale_home/.acfs/state.json"
+    mkdir -p "$current_home" "$target_home/.gtbi" "$stale_home/.gtbi"
+    printf '{}\n' > "$target_home/.gtbi/state.json"
+    printf '{}\n' > "$stale_home/.gtbi/state.json"
 
     cat > "$system_state" <<EOF
 {
@@ -5374,7 +5374,7 @@ EOF
 EOF
 
     while IFS='|' read -r label script func; do
-        run env -i PATH="/usr/bin:/bin" HOME="$current_home" TARGET_HOME="$target_home" ACFS_SYSTEM_STATE_FILE="$system_state" bash -c 'source "$1" >/dev/null 2>&1; func="$2"; "$func" "$3"' _ "$script" "$func" "$target_home/.acfs/state.json"
+        run env -i PATH="/usr/bin:/bin" HOME="$current_home" TARGET_HOME="$target_home" GTBI_SYSTEM_STATE_FILE="$system_state" bash -c 'source "$1" >/dev/null 2>&1; func="$2"; "$func" "$3"' _ "$script" "$func" "$target_home/.gtbi/state.json"
         assert_success
         assert_output "$target_home"
     done <<EOF
@@ -5396,11 +5396,11 @@ EOF
     stale_home="$(create_temp_dir)"
     system_state="$BATS_TEST_TMPDIR/context-builder-system-state.json"
 
-    mkdir -p "$current_home" "$target_home/.acfs" "$stale_home/.acfs"
-    printf 'live\n' > "$target_home/.acfs/VERSION"
-    printf 'stale\n' > "$stale_home/.acfs/VERSION"
-    printf '{}\n' > "$target_home/.acfs/state.json"
-    printf '{}\n' > "$stale_home/.acfs/state.json"
+    mkdir -p "$current_home" "$target_home/.gtbi" "$stale_home/.gtbi"
+    printf 'live\n' > "$target_home/.gtbi/VERSION"
+    printf 'stale\n' > "$stale_home/.gtbi/VERSION"
+    printf '{}\n' > "$target_home/.gtbi/state.json"
+    printf '{}\n' > "$stale_home/.gtbi/state.json"
 
     cat > "$system_state" <<EOF
 {
@@ -5408,21 +5408,21 @@ EOF
 }
 EOF
 
-    run env -i PATH="/usr/bin:/bin" HOME="$current_home" TARGET_HOME="$target_home" ACFS_SYSTEM_STATE_FILE="$system_state" bash -c 'source "$1" >/dev/null 2>&1; printf "data_home=%s\nstate_file=%s\ntarget_home=%s\n" "$(info_get_data_home 2>/dev/null || true)" "$(info_get_install_state_file 2>/dev/null || true)" "$(info_resolve_target_home "$(info_get_install_state_file 2>/dev/null || true)" 2>/dev/null || true)"' _ "$PROJECT_ROOT/scripts/lib/info.sh"
+    run env -i PATH="/usr/bin:/bin" HOME="$current_home" TARGET_HOME="$target_home" GTBI_SYSTEM_STATE_FILE="$system_state" bash -c 'source "$1" >/dev/null 2>&1; printf "data_home=%s\nstate_file=%s\ntarget_home=%s\n" "$(info_get_data_home 2>/dev/null || true)" "$(info_get_install_state_file 2>/dev/null || true)" "$(info_resolve_target_home "$(info_get_install_state_file 2>/dev/null || true)" 2>/dev/null || true)"' _ "$PROJECT_ROOT/scripts/lib/info.sh"
     assert_success
-    assert_output --partial "data_home=$target_home/.acfs"
-    assert_output --partial "state_file=$target_home/.acfs/state.json"
+    assert_output --partial "data_home=$target_home/.gtbi"
+    assert_output --partial "state_file=$target_home/.gtbi/state.json"
     assert_output --partial "target_home=$target_home"
 
-    run env -i PATH="/usr/bin:/bin" HOME="$current_home" TARGET_HOME="$target_home" ACFS_SYSTEM_STATE_FILE="$system_state" bash -c 'source "$1" >/dev/null 2>&1; dashboard_prepare_context >/dev/null 2>&1; printf "%s\n" "${_DASHBOARD_RESOLVED_TARGET_HOME:-}"' _ "$PROJECT_ROOT/scripts/lib/dashboard.sh"
+    run env -i PATH="/usr/bin:/bin" HOME="$current_home" TARGET_HOME="$target_home" GTBI_SYSTEM_STATE_FILE="$system_state" bash -c 'source "$1" >/dev/null 2>&1; dashboard_prepare_context >/dev/null 2>&1; printf "%s\n" "${_DASHBOARD_RESOLVED_TARGET_HOME:-}"' _ "$PROJECT_ROOT/scripts/lib/dashboard.sh"
     assert_success
     assert_output "$target_home"
 
-    run env -i PATH="/usr/bin:/bin" HOME="$current_home" TARGET_HOME="$target_home" ACFS_SYSTEM_STATE_FILE="$system_state" bash -c 'source "$1" >/dev/null 2>&1; support_initialize_context >/dev/null 2>&1; printf "%s\n" "${SUPPORT_TARGET_HOME:-}"' _ "$PROJECT_ROOT/scripts/lib/support.sh"
+    run env -i PATH="/usr/bin:/bin" HOME="$current_home" TARGET_HOME="$target_home" GTBI_SYSTEM_STATE_FILE="$system_state" bash -c 'source "$1" >/dev/null 2>&1; support_initialize_context >/dev/null 2>&1; printf "%s\n" "${SUPPORT_TARGET_HOME:-}"' _ "$PROJECT_ROOT/scripts/lib/support.sh"
     assert_success
     assert_output "$target_home"
 
-    run env -i PATH="/usr/bin:/bin" HOME="$current_home" TARGET_HOME="$target_home" ACFS_SYSTEM_STATE_FILE="$system_state" bash -c 'source "$1" >/dev/null 2>&1; cheatsheet_prepare_context >/dev/null 2>&1; printf "%s\n" "${_CHEATSHEET_RESOLVED_TARGET_HOME:-}"' _ "$PROJECT_ROOT/scripts/lib/cheatsheet.sh"
+    run env -i PATH="/usr/bin:/bin" HOME="$current_home" TARGET_HOME="$target_home" GTBI_SYSTEM_STATE_FILE="$system_state" bash -c 'source "$1" >/dev/null 2>&1; cheatsheet_prepare_context >/dev/null 2>&1; printf "%s\n" "${_CHEATSHEET_RESOLVED_TARGET_HOME:-}"' _ "$PROJECT_ROOT/scripts/lib/cheatsheet.sh"
     assert_success
     assert_output "$target_home"
 }
@@ -5440,23 +5440,23 @@ EOF
     stale_home="$(create_temp_dir)"
     system_state="$BATS_TEST_TMPDIR/current-home-stale-system-state.json"
 
-    mkdir -p "$target_home/.acfs/onboard" "$stale_home/.acfs/onboard"
-    cat > "$target_home/.acfs/state.json" <<EOF
+    mkdir -p "$target_home/.gtbi/onboard" "$stale_home/.gtbi/onboard"
+    cat > "$target_home/.gtbi/state.json" <<EOF
 {
   "target_user": "tester",
   "target_home": "$target_home"
 }
 EOF
-    cat > "$stale_home/.acfs/state.json" <<EOF
+    cat > "$stale_home/.gtbi/state.json" <<EOF
 {
   "target_user": "staleuser",
   "target_home": "$stale_home"
 }
 EOF
-    printf 'live\n' > "$target_home/.acfs/VERSION"
-    printf 'stale\n' > "$stale_home/.acfs/VERSION"
-    printf '# live\n' > "$target_home/.acfs/CHANGELOG.md"
-    printf '# stale\n' > "$stale_home/.acfs/CHANGELOG.md"
+    printf 'live\n' > "$target_home/.gtbi/VERSION"
+    printf 'stale\n' > "$stale_home/.gtbi/VERSION"
+    printf '# live\n' > "$target_home/.gtbi/CHANGELOG.md"
+    printf '# stale\n' > "$stale_home/.gtbi/CHANGELOG.md"
 
     cat > "$system_state" <<EOF
 {
@@ -5465,7 +5465,7 @@ EOF
 EOF
 
     while IFS='|' read -r label script func expected; do
-        run env -i PATH="/usr/bin:/bin" HOME="$target_home" ACFS_SYSTEM_STATE_FILE="$system_state" bash -c '
+        run env -i PATH="/usr/bin:/bin" HOME="$target_home" GTBI_SYSTEM_STATE_FILE="$system_state" bash -c '
             source "$1" >/dev/null 2>&1
             target_home="$2"
             system_state="$3"
@@ -5475,25 +5475,25 @@ EOF
             case "$label" in
                 status)
                     _STATUS_CURRENT_HOME="$target_home"
-                    _STATUS_DEFAULT_ACFS_HOME="$target_home/.acfs"
+                    _STATUS_DEFAULT_GTBI_HOME="$target_home/.gtbi"
                     _STATUS_SYSTEM_STATE_WAS_EXPLICIT=true
                     _STATUS_SYSTEM_STATE_FILE="$system_state"
-                    _STATUS_RESOLVED_ACFS_HOME=""
+                    _STATUS_RESOLVED_GTBI_HOME=""
                     _status_resolve_current_user() { printf "tester\n"; }
                     _status_home_for_user() { [[ "${1:-}" == "tester" ]] && printf "%s\n" "$target_home"; }
                     ;;
                 info)
                     _INFO_CURRENT_HOME="$target_home"
-                    _INFO_DEFAULT_ACFS_HOME="$target_home/.acfs"
+                    _INFO_DEFAULT_GTBI_HOME="$target_home/.gtbi"
                     _INFO_SYSTEM_STATE_WAS_EXPLICIT=true
                     _INFO_SYSTEM_STATE_FILE="$system_state"
-                    _INFO_RESOLVED_ACFS_HOME=""
+                    _INFO_RESOLVED_GTBI_HOME=""
                     info_resolve_current_user() { printf "tester\n"; }
                     info_home_for_user() { [[ "${1:-}" == "tester" ]] && printf "%s\n" "$target_home"; }
                     ;;
                 support)
                     _SUPPORT_CURRENT_HOME="$target_home"
-                    _SUPPORT_DEFAULT_ACFS_HOME="$target_home/.acfs"
+                    _SUPPORT_DEFAULT_GTBI_HOME="$target_home/.gtbi"
                     SUPPORT_SYSTEM_STATE_WAS_EXPLICIT=true
                     SUPPORT_SYSTEM_STATE_FILE="$system_state"
                     support_resolve_current_user() { printf "tester\n"; }
@@ -5501,53 +5501,53 @@ EOF
                     ;;
                 dashboard)
                     _DASHBOARD_CURRENT_HOME="$target_home"
-                    _DASHBOARD_DEFAULT_ACFS_HOME="$target_home/.acfs"
+                    _DASHBOARD_DEFAULT_GTBI_HOME="$target_home/.gtbi"
                     _DASHBOARD_SYSTEM_STATE_WAS_EXPLICIT=true
                     _DASHBOARD_SYSTEM_STATE_FILE="$system_state"
-                    _DASHBOARD_RESOLVED_ACFS_HOME=""
+                    _DASHBOARD_RESOLVED_GTBI_HOME=""
                     dashboard_resolve_current_user() { printf "tester\n"; }
                     dashboard_home_for_user() { [[ "${1:-}" == "tester" ]] && printf "%s\n" "$target_home"; }
                     ;;
                 export-config)
                     _EXPORT_CURRENT_HOME="$target_home"
-                    _EXPORT_DEFAULT_ACFS_HOME="$target_home/.acfs"
+                    _EXPORT_DEFAULT_GTBI_HOME="$target_home/.gtbi"
                     _EXPORT_SYSTEM_STATE_WAS_EXPLICIT=true
                     _EXPORT_SYSTEM_STATE_FILE="$system_state"
-                    _EXPORT_RESOLVED_ACFS_HOME=""
+                    _EXPORT_RESOLVED_GTBI_HOME=""
                     export_resolve_current_user() { printf "tester\n"; }
                     home_for_user() { [[ "${1:-}" == "tester" ]] && printf "%s\n" "$target_home"; }
                     ;;
                 cheatsheet)
                     _CHEATSHEET_CURRENT_HOME="$target_home"
-                    _CHEATSHEET_DEFAULT_ACFS_HOME="$target_home/.acfs"
+                    _CHEATSHEET_DEFAULT_GTBI_HOME="$target_home/.gtbi"
                     _CHEATSHEET_SYSTEM_STATE_WAS_EXPLICIT=true
                     _CHEATSHEET_SYSTEM_STATE_FILE="$system_state"
-                    _CHEATSHEET_RESOLVED_ACFS_HOME=""
+                    _CHEATSHEET_RESOLVED_GTBI_HOME=""
                     cheatsheet_resolve_current_user() { printf "tester\n"; }
                     cheatsheet_home_for_user() { [[ "${1:-}" == "tester" ]] && printf "%s\n" "$target_home"; }
                     ;;
                 onboard)
                     _ONBOARD_CURRENT_HOME="$target_home"
-                    _ONBOARD_DEFAULT_ACFS_HOME="$target_home/.acfs"
+                    _ONBOARD_DEFAULT_GTBI_HOME="$target_home/.gtbi"
                     _ONBOARD_SYSTEM_STATE_FILE="$system_state"
-                    _ONBOARD_ACFS_HOME=""
-                    _ONBOARD_ACFS_HOME_SOURCE=""
+                    _ONBOARD_GTBI_HOME=""
+                    _ONBOARD_GTBI_HOME_SOURCE=""
                     _ONBOARD_RUNTIME_HOME=""
                     _ONBOARD_RUNTIME_HOME_SOURCE=""
                     onboard_resolve_current_user() { printf "tester\n"; }
                     onboard_home_for_user() { [[ "${1:-}" == "tester" ]] && printf "%s\n" "$target_home"; }
                     onboard_probe_current_home() {
-                        _ONBOARD_ACFS_HOME="$(onboard_resolve_acfs_home 2>/dev/null || true)"
+                        _ONBOARD_GTBI_HOME="$(onboard_resolve_gtbi_home 2>/dev/null || true)"
                         onboard_resolve_runtime_home >/dev/null 2>&1 || true
-                        printf "%s|%s\n" "${_ONBOARD_ACFS_HOME:-}" "${_ONBOARD_RUNTIME_HOME:-}"
+                        printf "%s|%s\n" "${_ONBOARD_GTBI_HOME:-}" "${_ONBOARD_RUNTIME_HOME:-}"
                     }
                     ;;
                 continue)
                     _CONTINUE_CURRENT_HOME="$target_home"
-                    _CONTINUE_DEFAULT_ACFS_HOME="$target_home/.acfs"
+                    _CONTINUE_DEFAULT_GTBI_HOME="$target_home/.gtbi"
                     _CONTINUE_SYSTEM_STATE_FILE="$system_state"
                     _CONTINUE_STATE_FILE=""
-                    _CONTINUE_EXPLICIT_ACFS_HOME=""
+                    _CONTINUE_EXPLICIT_GTBI_HOME=""
                     _CONTINUE_EXPLICIT_TARGET_HOME_RAW=""
                     _CONTINUE_EXPLICIT_TARGET_USER_RAW=""
                     continue_resolve_current_user() { printf "tester\n"; }
@@ -5555,18 +5555,18 @@ EOF
                     ;;
                 changelog)
                     _CHANGELOG_CURRENT_HOME="$target_home"
-                    _CHANGELOG_DEFAULT_ACFS_HOME="$target_home/.acfs"
-                    _CHANGELOG_ACFS_HOME="$target_home/.acfs"
+                    _CHANGELOG_DEFAULT_GTBI_HOME="$target_home/.gtbi"
+                    _CHANGELOG_GTBI_HOME="$target_home/.gtbi"
                     _CHANGELOG_SYSTEM_STATE_WAS_EXPLICIT=true
                     _CHANGELOG_SYSTEM_STATE_FILE="$system_state"
-                    _CHANGELOG_RESOLVED_ACFS_HOME=""
+                    _CHANGELOG_RESOLVED_GTBI_HOME=""
                     changelog_resolve_current_user() { printf "tester\n"; }
                     changelog_home_for_user() { [[ "${1:-}" == "tester" ]] && printf "%s\n" "$target_home"; }
                     ;;
                 smoke)
                     _SMOKE_CURRENT_USER="tester"
                     _SMOKE_CURRENT_HOME="$target_home"
-                    _SMOKE_DEFAULT_ACFS_HOME="$target_home/.acfs"
+                    _SMOKE_DEFAULT_GTBI_HOME="$target_home/.gtbi"
                     _SMOKE_SYSTEM_STATE_FILE="$system_state"
                     _smoke_resolve_current_user() { printf "tester\n"; }
                     _smoke_home_for_user() { [[ "${1:-}" == "tester" ]] && printf "%s\n" "$target_home"; }
@@ -5578,43 +5578,43 @@ EOF
         assert_success
         assert_output "$expected"
     done <<EOF
-status|$PROJECT_ROOT/scripts/lib/status.sh|_status_resolve_acfs_home|$target_home/.acfs
-info|$PROJECT_ROOT/scripts/lib/info.sh|info_get_data_home|$target_home/.acfs
-support|$PROJECT_ROOT/scripts/lib/support.sh|support_resolve_acfs_home|$target_home/.acfs
-dashboard|$PROJECT_ROOT/scripts/lib/dashboard.sh|dashboard_resolve_acfs_home|$target_home/.acfs
-export-config|$PROJECT_ROOT/scripts/lib/export-config.sh|resolve_acfs_home|$target_home/.acfs
-cheatsheet|$PROJECT_ROOT/scripts/lib/cheatsheet.sh|cheatsheet_resolve_acfs_home|$target_home/.acfs
-onboard|$PROJECT_ROOT/packages/onboard/onboard.sh|onboard_probe_current_home|$target_home/.acfs|$target_home
-continue|$PROJECT_ROOT/scripts/lib/continue.sh|get_install_state_file|$target_home/.acfs/state.json
-changelog|$PROJECT_ROOT/scripts/lib/changelog.sh|resolve_changelog_acfs_home|$target_home/.acfs
-smoke|$PROJECT_ROOT/scripts/lib/smoke_test.sh|_smoke_resolve_bootstrap_state_file|$target_home/.acfs/state.json
+status|$PROJECT_ROOT/scripts/lib/status.sh|_status_resolve_gtbi_home|$target_home/.gtbi
+info|$PROJECT_ROOT/scripts/lib/info.sh|info_get_data_home|$target_home/.gtbi
+support|$PROJECT_ROOT/scripts/lib/support.sh|support_resolve_gtbi_home|$target_home/.gtbi
+dashboard|$PROJECT_ROOT/scripts/lib/dashboard.sh|dashboard_resolve_gtbi_home|$target_home/.gtbi
+export-config|$PROJECT_ROOT/scripts/lib/export-config.sh|resolve_gtbi_home|$target_home/.gtbi
+cheatsheet|$PROJECT_ROOT/scripts/lib/cheatsheet.sh|cheatsheet_resolve_gtbi_home|$target_home/.gtbi
+onboard|$PROJECT_ROOT/packages/onboard/onboard.sh|onboard_probe_current_home|$target_home/.gtbi|$target_home
+continue|$PROJECT_ROOT/scripts/lib/continue.sh|get_install_state_file|$target_home/.gtbi/state.json
+changelog|$PROJECT_ROOT/scripts/lib/changelog.sh|resolve_changelog_gtbi_home|$target_home/.gtbi
+smoke|$PROJECT_ROOT/scripts/lib/smoke_test.sh|_smoke_resolve_bootstrap_state_file|$target_home/.gtbi/state.json
 EOF
 }
 
-@test "doctor ignores stale caller ACFS_HOME when resolving install state" {
+@test "doctor ignores stale caller GTBI_HOME when resolving install state" {
     local target_home
     local stale_home
 
     target_home="$(create_temp_dir)"
     stale_home="$(create_temp_dir)"
 
-    mkdir -p "$target_home/.acfs" "$stale_home/.acfs"
-    cat > "$target_home/.acfs/state.json" <<EOF
+    mkdir -p "$target_home/.gtbi" "$stale_home/.gtbi"
+    cat > "$target_home/.gtbi/state.json" <<EOF
 {
   "target_user": "tester",
   "target_home": "$target_home"
 }
 EOF
-    cat > "$stale_home/.acfs/state.json" <<EOF
+    cat > "$stale_home/.gtbi/state.json" <<EOF
 {
   "target_user": "staleuser",
   "target_home": "$stale_home"
 }
 EOF
 
-    run env -i PATH="/usr/bin:/bin" HOME="$target_home" TARGET_USER="tester" TARGET_HOME="$target_home" ACFS_HOME="$stale_home/.acfs" bash -c '
-        eval "$(sed -n "1,/^export ACFS_HOME$/p" "$1")"
-        printf "TARGET_USER=%s\nTARGET_HOME=%s\nACFS_HOME=%s\n" "$TARGET_USER" "$TARGET_HOME" "$ACFS_HOME"
+    run env -i PATH="/usr/bin:/bin" HOME="$target_home" TARGET_USER="tester" TARGET_HOME="$target_home" GTBI_HOME="$stale_home/.gtbi" bash -c '
+        eval "$(sed -n "1,/^export GTBI_HOME$/p" "$1")"
+        printf "TARGET_USER=%s\nTARGET_HOME=%s\nGTBI_HOME=%s\n" "$TARGET_USER" "$TARGET_HOME" "$GTBI_HOME"
     ' _ "$PROJECT_ROOT/scripts/lib/doctor.sh"
     assert_success
     refute_output --partial "staleuser"
@@ -5811,9 +5811,9 @@ EOF
     safe_bin="$BATS_TEST_TMPDIR/continue-safe-bin"
     poison_bin="$BATS_TEST_TMPDIR/continue-poison-bin"
 
-    mkdir -p "$safe_home/.acfs" "$poisoned_home/.acfs" "$safe_bin" "$poison_bin"
-    printf '{}\n' > "$safe_home/.acfs/state.json"
-    printf '{}\n' > "$poisoned_home/.acfs/state.json"
+    mkdir -p "$safe_home/.gtbi" "$poisoned_home/.gtbi" "$safe_bin" "$poison_bin"
+    printf '{}\n' > "$safe_home/.gtbi/state.json"
+    printf '{}\n' > "$poisoned_home/.gtbi/state.json"
 
     cat > "$safe_bin/getent" <<EOF
 #!/usr/bin/env bash
@@ -5844,7 +5844,7 @@ continue_system_binary_path() {
 find_scanned_install_state_file
 EOF_CONTINUE_SCAN
     assert_success
-    assert_output "$safe_home/.acfs/state.json"
+    assert_output "$safe_home/.gtbi/state.json"
 }
 
 @test "support environment summary ignores PATH-poisoned whoami fallback" {
@@ -5852,7 +5852,7 @@ EOF_CONTINUE_SCAN
     local current_home
     local fake_bin
     local bundle_dir
-    local acfs_home
+    local gtbi_home
     local jq_real
 
     jq_real="$(command -v jq 2>/dev/null || true)"
@@ -5868,8 +5868,8 @@ EOF_CONTINUE_SCAN
 
     fake_bin="$BATS_TEST_TMPDIR/support-path-poison-bin"
     bundle_dir="$(create_temp_dir)"
-    acfs_home="$(create_temp_dir)/.acfs"
-    mkdir -p "$fake_bin" "$bundle_dir" "$acfs_home"
+    gtbi_home="$(create_temp_dir)/.gtbi"
+    mkdir -p "$fake_bin" "$bundle_dir" "$gtbi_home"
 
     cat > "$fake_bin/whoami" <<'EOF'
 #!/usr/bin/env bash
@@ -5880,19 +5880,19 @@ EOF
 exec "$jq_real" "\$@"
 EOF
     chmod +x "$fake_bin/whoami" "$fake_bin/jq"
-    printf '0.0.0-test\n' > "$acfs_home/VERSION"
+    printf '0.0.0-test\n' > "$gtbi_home/VERSION"
 
-    run env -i PATH="$fake_bin:/usr/bin:/bin" HOME="$current_home" SHELL="/bin/bash" bash -s -- "$PROJECT_ROOT/scripts/lib/support.sh" "$bundle_dir" "$acfs_home" <<'EOF_SUPPORT_ENV'
+    run env -i PATH="$fake_bin:/usr/bin:/bin" HOME="$current_home" SHELL="/bin/bash" bash -s -- "$PROJECT_ROOT/scripts/lib/support.sh" "$bundle_dir" "$gtbi_home" <<'EOF_SUPPORT_ENV'
 script="$1"
 bundle_dir="$2"
-acfs_home="$3"
+gtbi_home="$3"
 record_bundle_file() { :; }
 log_warn() { :; }
 eval "$(sed -n "/^support_system_binary_path()/,/^}$/p" "$script")"
 eval "$(sed -n "/^support_resolve_current_user()/,/^}$/p" "$script")"
 eval "$(sed -n "/^capture_env_summary()/,/^}$/p" "$script")"
 _SUPPORT_CURRENT_HOME="$HOME"
-_SUPPORT_ACFS_HOME="$acfs_home"
+_SUPPORT_GTBI_HOME="$gtbi_home"
 SUPPORT_TARGET_HOME="$HOME"
 SUPPORT_TARGET_USER=""
 capture_env_summary "$bundle_dir"
@@ -5906,7 +5906,7 @@ EOF_SUPPORT_ENV
     local current_user
     local current_home
     local fake_bin
-    local acfs_home
+    local gtbi_home
     local port
 
     current_user="$(id -un 2>/dev/null || whoami 2>/dev/null || true)"
@@ -5918,10 +5918,10 @@ EOF_SUPPORT_ENV
     current_home="${current_home%/}"
 
     fake_bin="$BATS_TEST_TMPDIR/dashboard-path-poison-bin"
-    acfs_home="$(create_temp_dir)/.acfs"
+    gtbi_home="$(create_temp_dir)/.gtbi"
     port=18080
-    mkdir -p "$fake_bin" "$acfs_home/dashboard"
-    printf '<html></html>\n' > "$acfs_home/dashboard/index.html"
+    mkdir -p "$fake_bin" "$gtbi_home/dashboard"
+    printf '<html></html>\n' > "$gtbi_home/dashboard/index.html"
 
     cat > "$fake_bin/whoami" <<'EOF'
 #!/usr/bin/env bash
@@ -5941,9 +5941,9 @@ exit 0
 EOF
     chmod +x "$fake_bin/whoami" "$fake_bin/hostname" "$fake_bin/lsof" "$fake_bin/python3"
 
-    run env -i PATH="$fake_bin:/usr/bin:/bin" HOME="$current_home" bash -s -- "$PROJECT_ROOT/scripts/lib/dashboard.sh" "$acfs_home" "$port" "$fake_bin" <<'EOF_DASHBOARD_SERVE'
+    run env -i PATH="$fake_bin:/usr/bin:/bin" HOME="$current_home" bash -s -- "$PROJECT_ROOT/scripts/lib/dashboard.sh" "$gtbi_home" "$port" "$fake_bin" <<'EOF_DASHBOARD_SERVE'
 script="$1"
-acfs_home="$2"
+gtbi_home="$2"
 port="$3"
 fake_bin="$4"
 validate_port() { return 0; }
@@ -5976,7 +5976,7 @@ dashboard_system_binary_path() {
     done
     return 1
 }
-_DASHBOARD_ACFS_HOME="$acfs_home"
+_DASHBOARD_GTBI_HOME="$gtbi_home"
 _DASHBOARD_RESOLVED_TARGET_USER=""
 dashboard_serve --port "$port"
 EOF_DASHBOARD_SERVE
@@ -6042,7 +6042,7 @@ EOF_TOP_LEVEL_RESOLVERS_REJECT_PATHS
     done <<EOF
 preflight|$PROJECT_ROOT/scripts/preflight.sh|preflight_system_binary_path
 services-setup|$PROJECT_ROOT/scripts/services-setup.sh|services_setup_system_binary_path
-install-workflow|$PROJECT_ROOT/scripts/install-acfs-workflow.sh|workflow_system_binary_path
+install-workflow|$PROJECT_ROOT/scripts/install-gtbi-workflow.sh|workflow_system_binary_path
 EOF
 }
 
@@ -6057,21 +6057,21 @@ EOF
     assert_success
     run grep -F 'effective_ssh_target:-' "$workflow"
     assert_success
-    run grep -F 'ACFS_FACTORY_RUNNER' "$workflow"
+    run grep -F 'GTBI_FACTORY_RUNNER' "$workflow"
     assert_success
     run grep -F "default: \"\"" "$workflow"
     assert_success
-    run grep -F 'Leave blank to use ACFS_FACTORY_RUNNER or ubuntu-latest.' "$workflow"
+    run grep -F 'Leave blank to use GTBI_FACTORY_RUNNER or ubuntu-latest.' "$workflow"
     assert_success
     run grep -F 'QEMU backend requires /dev/kvm' "$workflow"
     assert_success
-    run grep -A1 -F 'ACFS_FACTORY_SSH_TARGET:' "$workflow"
+    run grep -A1 -F 'GTBI_FACTORY_SSH_TARGET:' "$workflow"
     assert_success
     assert_output --partial 'required: false'
-    run grep -A1 -F 'ACFS_FACTORY_SSH_PRIVATE_KEY:' "$workflow"
+    run grep -A1 -F 'GTBI_FACTORY_SSH_PRIVATE_KEY:' "$workflow"
     assert_success
     assert_output --partial 'required: false'
-    run grep -F 'real-host factory E2E requires client_payload.ssh_target or ACFS_FACTORY_SSH_TARGET' "$workflow"
+    run grep -F 'real-host factory E2E requires client_payload.ssh_target or GTBI_FACTORY_SSH_TARGET' "$workflow"
     assert_success
     run grep -F 'Skipping real-host factory E2E' "$workflow"
     assert_failure
@@ -6094,7 +6094,7 @@ EOF
 @test "qemu factory keeps generated SSH private key outside uploaded artifacts" {
     local qemu_script="$PROJECT_ROOT/tests/vm/test_factory_install_qemu.sh"
 
-    run grep -F 'KEY_DIR="${ACFS_QEMU_KEY_DIR:-}"' "$qemu_script"
+    run grep -F 'KEY_DIR="${GTBI_QEMU_KEY_DIR:-}"' "$qemu_script"
     assert_success
     run grep -F 'ssh_key="$KEY_DIR/root_ssh_key"' "$qemu_script"
     assert_success
@@ -6119,7 +6119,7 @@ EOF
 
     run grep -F 'redact_factory_artifacts()' "$harness"
     assert_success
-    run grep -F 'support_lib="/home/ubuntu/.acfs/scripts/lib/support.sh"' "$harness"
+    run grep -F 'support_lib="/home/ubuntu/.gtbi/scripts/lib/support.sh"' "$harness"
     assert_success
     run grep -F 'tar -czf "$archive" -C "$FACTORY_REDACTED_ARTIFACT_DIR" .' "$harness"
     assert_success
@@ -6129,7 +6129,7 @@ EOF
     assert_success
     run grep -F -- '--exclude="$archive"' "$harness"
     assert_failure
-    run grep -F '/home/ubuntu/.acfs/logs' "$harness"
+    run grep -F '/home/ubuntu/.gtbi/logs' "$harness"
     assert_success
 }
 
@@ -6152,7 +6152,7 @@ set -euo pipefail
 EOF_DIRECT_RESOLVERS_REJECT_PATHS
         assert_success "$label resolver accepted a pathlike name"
     done <<EOF
-install-early|$PROJECT_ROOT/install.sh|acfs_early_system_binary_path
+install-early|$PROJECT_ROOT/install.sh|gtbi_early_system_binary_path
 onboard|$PROJECT_ROOT/packages/onboard/onboard.sh|onboard_system_binary_path
 autofix|$PROJECT_ROOT/scripts/lib/autofix.sh|autofix_system_binary_path
 changelog|$PROJECT_ROOT/scripts/lib/changelog.sh|changelog_system_binary_path
@@ -6163,7 +6163,7 @@ github-api|$PROJECT_ROOT/scripts/lib/github_api.sh|_github_api_system_binary_pat
 languages|$PROJECT_ROOT/scripts/lib/languages.sh|_lang_system_binary_path
 nightly-update|$PROJECT_ROOT/scripts/lib/nightly_update.sh|system_binary_path
 os-detect|$PROJECT_ROOT/scripts/lib/os_detect.sh|os_detect_system_binary_path
-security|$PROJECT_ROOT/scripts/lib/security.sh|acfs_security_system_binary_path
+security|$PROJECT_ROOT/scripts/lib/security.sh|gtbi_security_system_binary_path
 supabase-update|$PROJECT_ROOT/scripts/lib/update.sh|supabase_system_binary_path
 user|$PROJECT_ROOT/scripts/lib/user.sh|user_system_binary_path
 zsh|$PROJECT_ROOT/scripts/lib/zsh.sh|zsh_system_binary_path
@@ -6445,7 +6445,7 @@ set -euo pipefail
 EOF_DOCTOR_RESOLVER_REJECTS_PATHS
         assert_success "$label resolver accepted a pathlike name"
     done <<EOF
-doctor|$PROJECT_ROOT/scripts/lib/doctor.sh|_acfs_doctor_system_binary_path
+doctor|$PROJECT_ROOT/scripts/lib/doctor.sh|_gtbi_doctor_system_binary_path
 doctor-fix|$PROJECT_ROOT/scripts/lib/doctor_fix.sh|doctor_fix_system_binary_path
 smoke|$PROJECT_ROOT/scripts/lib/smoke_test.sh|_smoke_system_binary_path
 EOF
@@ -6475,11 +6475,11 @@ EOF
 script="$1"
 state_file="$2"
 marker="$3"
-eval "$(sed -n '/^_acfs_doctor_system_binary_path()/,/^}$/p' "$script")"
-eval "$(sed -n '/^_acfs_doctor_read_json_string_key()/,/^}$/p' "$script")"
+eval "$(sed -n '/^_gtbi_doctor_system_binary_path()/,/^}$/p' "$script")"
+eval "$(sed -n '/^_gtbi_doctor_read_json_string_key()/,/^}$/p' "$script")"
 set -euo pipefail
-[[ "$(_acfs_doctor_read_json_string_key "$state_file" target_home)" == "/tmp/real-home" ]]
-[[ "$(_acfs_doctor_read_json_string_key "$state_file" target_user)" == "realuser" ]]
+[[ "$(_gtbi_doctor_read_json_string_key "$state_file" target_home)" == "/tmp/real-home" ]]
+[[ "$(_gtbi_doctor_read_json_string_key "$state_file" target_user)" == "realuser" ]]
 [[ ! -e "$marker" ]]
 EOF_DOCTOR_JSON_HELPER
 
@@ -6493,19 +6493,19 @@ EOF_DOCTOR_JSON_HELPER
     assert_failure
     run grep -F 'TARGET_HOME="$(jq -r' "$doctor"
     assert_failure
-    run grep -F 'ACFS_BIN_DIR="$(jq -r' "$doctor"
+    run grep -F 'GTBI_BIN_DIR="$(jq -r' "$doctor"
     assert_failure
 }
 
 @test "dashboard generate failure clears cleanup RETURN trap under set -u" {
-    local acfs_home
+    local gtbi_home
     local fake_info
     local test_home
 
-    acfs_home="$(create_temp_dir)/.acfs"
+    gtbi_home="$(create_temp_dir)/.gtbi"
     fake_info="$(create_temp_dir)/info.sh"
     test_home="$(create_temp_dir)"
-    mkdir -p "$acfs_home/dashboard"
+    mkdir -p "$gtbi_home/dashboard"
 
     cat > "$fake_info" <<'EOF'
 #!/usr/bin/env bash
@@ -6513,11 +6513,11 @@ exit 7
 EOF
     chmod +x "$fake_info"
 
-    run env -i PATH="/usr/bin:/bin" HOME="$test_home" ACFS_HOME="$acfs_home" bash -s -- "$PROJECT_ROOT/scripts/lib/dashboard.sh" "$fake_info" "$acfs_home" <<'EOF_DASHBOARD_TRAP'
+    run env -i PATH="/usr/bin:/bin" HOME="$test_home" GTBI_HOME="$gtbi_home" bash -s -- "$PROJECT_ROOT/scripts/lib/dashboard.sh" "$fake_info" "$gtbi_home" <<'EOF_DASHBOARD_TRAP'
 set -euo pipefail
 script="$1"
 fake_info="$2"
-acfs_home="$3"
+gtbi_home="$3"
 
 source "$script"
 set -euo pipefail
@@ -6527,7 +6527,7 @@ find_info_script() {
 }
 
 dashboard_prepare_context() {
-    _DASHBOARD_ACFS_HOME="$acfs_home"
+    _DASHBOARD_GTBI_HOME="$gtbi_home"
 }
 
 dashboard_generate --force >/dev/null 2>&1 || true
@@ -6540,8 +6540,8 @@ EOF_DASHBOARD_TRAP
 }
 
 @test "username helpers and wrappers allow dotted usernames and validate before re-exec" {
-    local update_wrapper="$PROJECT_ROOT/scripts/acfs-update"
-    local global_wrapper="$PROJECT_ROOT/scripts/acfs-global"
+    local update_wrapper="$PROJECT_ROOT/scripts/gtbi-update"
+    local global_wrapper="$PROJECT_ROOT/scripts/gtbi-global"
     local preflight="$PROJECT_ROOT/scripts/preflight.sh"
     local services_setup="$PROJECT_ROOT/scripts/services-setup.sh"
     local onboard="$PROJECT_ROOT/packages/onboard/onboard.sh"
@@ -6678,7 +6678,7 @@ EOF_DASHBOARD_TRAP
     mkdir -p "$poisoned_home/.local/bin"
     export HOME="$poisoned_home"
     export TARGET_HOME="$poisoned_home"
-    export ACFS_BIN_DIR="$poisoned_home/.local/bin"
+    export GTBI_BIN_DIR="$poisoned_home/.local/bin"
     unset TARGET_USER
 
     source_lib "stack"
@@ -6719,15 +6719,15 @@ EOF
 
     export TARGET_USER="ubuntu"
     export TARGET_HOME="$target_home"
-    export ACFS_BIN_DIR="/home/ubuntu/.local/bin"
-    export ACFS_STACK_TRUST_TARGET_HOME=true
+    export GTBI_BIN_DIR="/home/ubuntu/.local/bin"
+    export GTBI_STACK_TRUST_TARGET_HOME=true
 
     run _stack_agent_mail_cli_path
     assert_success
     assert_output "$target_am"
 }
 
-@test "stack MCP Agent Mail installer skips upstream setup and waits on ACFS service" {
+@test "stack MCP Agent Mail installer skips upstream setup and waits on GTBI service" {
     source_lib "stack"
 
     local args_file="$BATS_TEST_TMPDIR/mcp-agent-mail-installer.args"
@@ -6736,7 +6736,7 @@ EOF
 
     export TARGET_USER="$(id -un)"
     export TARGET_HOME="$target_home"
-    export ACFS_STACK_TRUST_TARGET_HOME=true
+    export GTBI_STACK_TRUST_TARGET_HOME=true
 
     _stack_tool_ready() { return 1; }
     _stack_is_installed() {
@@ -6767,10 +6767,10 @@ EOF
 @test "stack SLB installer checks active Go PATH lines only" {
     local stack="$PROJECT_ROOT/scripts/lib/stack.sh"
 
-    run grep -F 'acfs_has_active_go_bin_path() {' "$stack"
+    run grep -F 'gtbi_has_active_go_bin_path() {' "$stack"
     assert_success
 
-    run grep -F 'if ! acfs_has_active_go_bin_path ~/.zshrc; then' "$stack"
+    run grep -F 'if ! gtbi_has_active_go_bin_path ~/.zshrc; then' "$stack"
     assert_success
 
     run grep -F "grep -q 'export PATH=.*\$HOME/go/bin' ~/.zshrc" "$stack"
@@ -6780,7 +6780,7 @@ EOF
 @test "run-as-user helper libs reject invalid TARGET_USER before sudo" {
     export TARGET_USER="../bad user"
     export TARGET_HOME="/home/tester"
-    export ACFS_BIN_DIR="/home/tester/.local/bin"
+    export GTBI_BIN_DIR="/home/tester/.local/bin"
 
     source_lib "cli_tools"
     spy_command "sudo"
@@ -6869,7 +6869,7 @@ EOF
     export TARGET_USER="tester"
     export TARGET_HOME="$target_home"
     export HOME="$current_home"
-    unset ACFS_BIN_DIR ACFS_INITIAL_ENV_HOME _UPDATE_INITIAL_ENV_HOME SUDO_USER
+    unset GTBI_BIN_DIR GTBI_INITIAL_ENV_HOME _UPDATE_INITIAL_ENV_HOME SUDO_USER
 
     source_lib "cli_tools"
     _cli_resolve_current_user() { printf 'tester\n'; }
@@ -6935,8 +6935,8 @@ EOF
     export TARGET_USER="$current_user"
     export TARGET_HOME="$stale_home"
     export HOME="$resolved_home"
-    export ACFS_INITIAL_ENV_HOME="$stale_home"
-    export ACFS_BIN_DIR="$stale_home/.local/bin"
+    export GTBI_INITIAL_ENV_HOME="$stale_home"
+    export GTBI_BIN_DIR="$stale_home/.local/bin"
 
     source_lib "cli_tools"
     run _cli_target_home "$current_user"
@@ -6969,7 +6969,7 @@ EOF
     assert_output "$resolved_home"
 }
 
-@test "helper home resolvers prefer TARGET_USER passwd over stale TARGET_HOME and ACFS_BIN_DIR" {
+@test "helper home resolvers prefer TARGET_USER passwd over stale TARGET_HOME and GTBI_BIN_DIR" {
     local current_user
     local resolved_home
     local caller_home
@@ -6986,7 +6986,7 @@ EOF
     export TARGET_USER="$current_user"
     export TARGET_HOME="$stale_home"
     export HOME="$caller_home"
-    export ACFS_BIN_DIR="$stale_home/.local/bin"
+    export GTBI_BIN_DIR="$stale_home/.local/bin"
 
     source_lib "cli_tools"
     run _cli_target_home "$current_user"
@@ -7056,9 +7056,9 @@ EOF
     export TARGET_USER="root"
     export TARGET_HOME="$stale_home"
     export HOME="$stale_home"
-    export ACFS_BIN_DIR="$stale_home/.local/bin"
+    export GTBI_BIN_DIR="$stale_home/.local/bin"
 
-    run env TARGET_USER="root" TARGET_HOME="$stale_home" HOME="$stale_home" ACFS_BIN_DIR="$stale_home/.local/bin" bash -c 'source "$1"; printf "%s\n" "$HOME"' _ "$PROJECT_ROOT/scripts/lib/update.sh"
+    run env TARGET_USER="root" TARGET_HOME="$stale_home" HOME="$stale_home" GTBI_BIN_DIR="$stale_home/.local/bin" bash -c 'source "$1"; printf "%s\n" "$HOME"' _ "$PROJECT_ROOT/scripts/lib/update.sh"
     assert_success
     assert_output "/root"
 
@@ -7176,7 +7176,7 @@ EOF
     export TARGET_USER="$current_user"
     export TARGET_HOME="$current_home"
     export HOME="$current_home"
-    export ACFS_BIN_DIR="$current_home/.local/bin"
+    export GTBI_BIN_DIR="$current_home/.local/bin"
 
     whoami() {
         printf 'poisoned-user\n'
@@ -7229,9 +7229,9 @@ EOF
     bash_bin="$(command -v bash)"
     marker="$target_home/poisoned"
     mkdir -p "$target_home/.local/bin"
-    export TARGET_USER="acfsuser"
+    export TARGET_USER="gtbiuser"
     export TARGET_HOME="$target_home"
-    export ACFS_BIN_DIR="$target_home/.local/bin"
+    export GTBI_BIN_DIR="$target_home/.local/bin"
     export TEST_PRIV_TARGET_HOME="$target_home"
     export TEST_PRIV_SAFE_SUDO="$safe_sudo"
     export TEST_PRIV_BASH_BIN="$bash_bin"
@@ -7273,7 +7273,7 @@ EOF
     }
     run _cli_run_as_user "printf ok"
     assert_success
-    assert_output --partial "safe-sudo:-n -u acfsuser -H"
+    assert_output --partial "safe-sudo:-n -u gtbiuser -H"
     [[ ! -e "$marker" ]] || fail "_cli_run_as_user executed function-poisoned helper: $(<"$marker")"
 
     source_lib "agents"
@@ -7289,7 +7289,7 @@ EOF
     }
     run _agent_run_as_user "printf ok"
     assert_success
-    assert_output --partial "safe-sudo:-n -u acfsuser -H"
+    assert_output --partial "safe-sudo:-n -u gtbiuser -H"
     [[ ! -e "$marker" ]] || fail "_agent_run_as_user executed function-poisoned helper: $(<"$marker")"
 
     source_lib "languages"
@@ -7305,7 +7305,7 @@ EOF
     }
     run _lang_run_as_user "printf ok"
     assert_success
-    assert_output --partial "safe-sudo:-n -u acfsuser -H"
+    assert_output --partial "safe-sudo:-n -u gtbiuser -H"
     [[ ! -e "$marker" ]] || fail "_lang_run_as_user executed function-poisoned helper: $(<"$marker")"
 
     source_lib "cloud_db"
@@ -7321,7 +7321,7 @@ EOF
     }
     run _cloud_run_as_user "printf ok"
     assert_success
-    assert_output --partial "safe-sudo:-n -u acfsuser -H"
+    assert_output --partial "safe-sudo:-n -u gtbiuser -H"
     [[ ! -e "$marker" ]] || fail "_cloud_run_as_user executed function-poisoned helper: $(<"$marker")"
 
     source_lib "stack"
@@ -7338,7 +7338,7 @@ EOF
     }
     run _stack_run_as_user "printf ok"
     assert_success
-    assert_output --partial "safe-sudo:-n -u acfsuser -H"
+    assert_output --partial "safe-sudo:-n -u gtbiuser -H"
     [[ ! -e "$marker" ]] || fail "_stack_run_as_user executed function-poisoned helper: $(<"$marker")"
 }
 
@@ -7365,7 +7365,7 @@ EOF
     export TARGET_USER="$current_user"
     export TARGET_HOME="$current_home"
     export HOME="$current_home"
-    export ACFS_BIN_DIR="$fake_bin_dir"
+    export GTBI_BIN_DIR="$fake_bin_dir"
 
     getent() {
         if [[ "$1" == "passwd" ]]; then
@@ -7487,12 +7487,12 @@ EOF
     passwd_home="$(create_temp_dir)"
     poisoned_home="$(create_temp_dir)"
     mkdir -p "$passwd_home" "$poisoned_home"
-    export ACFS_TEST_CURRENT_USER="$current_user"
-    export ACFS_TEST_PASSWD_HOME="$passwd_home"
+    export GTBI_TEST_CURRENT_USER="$current_user"
+    export GTBI_TEST_PASSWD_HOME="$passwd_home"
 
     getent() {
-        if [[ "${1:-}" == "passwd" ]] && [[ "${2:-}" == "$ACFS_TEST_CURRENT_USER" ]]; then
-            printf '%s:x:1000:1000::%s:/bin/bash\n' "$ACFS_TEST_CURRENT_USER" "$ACFS_TEST_PASSWD_HOME"
+        if [[ "${1:-}" == "passwd" ]] && [[ "${2:-}" == "$GTBI_TEST_CURRENT_USER" ]]; then
+            printf '%s:x:1000:1000::%s:/bin/bash\n' "$GTBI_TEST_CURRENT_USER" "$GTBI_TEST_PASSWD_HOME"
             return 0
         fi
         return 2
@@ -7500,14 +7500,14 @@ EOF
 
     id() {
         if [[ "${1:-}" == "-un" ]]; then
-            printf '%s\n' "$ACFS_TEST_CURRENT_USER"
+            printf '%s\n' "$GTBI_TEST_CURRENT_USER"
             return 0
         fi
         command id "$@"
     }
 
     whoami() {
-        printf '%s\n' "$ACFS_TEST_CURRENT_USER"
+        printf '%s\n' "$GTBI_TEST_CURRENT_USER"
     }
 
     while IFS='|' read -r label script func; do
@@ -7650,13 +7650,13 @@ fi
 exit 2
 EOF
                 chmod +x "$notify_bin_dir/id" "$notify_bin_dir/whoami" "$notify_bin_dir/getent"
-                eval "$(sed -n '/^_acfs_notify_sanitize_abs_nonroot_path()/,/^}$/p' "$script")"
-                eval "$(sed -n '/^_acfs_notify_system_binary_path()/,/^}$/p' "$script")"
-                eval "$(sed -n '/^_acfs_notify_resolve_current_user()/,/^}$/p' "$script")"
-                eval "$(sed -n '/^_acfs_notify_getent_passwd_entry()/,/^}$/p' "$script")"
-                eval "$(sed -n '/^_acfs_notify_passwd_home_from_entry()/,/^}$/p' "$script")"
-                eval "$(sed -n '/^_acfs_notify_resolve_current_home()/,/^}$/p' "$script")"
-                _acfs_notify_system_binary_path() {
+                eval "$(sed -n '/^_gtbi_notify_sanitize_abs_nonroot_path()/,/^}$/p' "$script")"
+                eval "$(sed -n '/^_gtbi_notify_system_binary_path()/,/^}$/p' "$script")"
+                eval "$(sed -n '/^_gtbi_notify_resolve_current_user()/,/^}$/p' "$script")"
+                eval "$(sed -n '/^_gtbi_notify_getent_passwd_entry()/,/^}$/p' "$script")"
+                eval "$(sed -n '/^_gtbi_notify_passwd_home_from_entry()/,/^}$/p' "$script")"
+                eval "$(sed -n '/^_gtbi_notify_resolve_current_home()/,/^}$/p' "$script")"
+                _gtbi_notify_system_binary_path() {
                     local name="${1:-}"
                     [[ -n "$name" ]] || return 1
                     printf '%s/%s\n' "$notify_bin_dir" "$name"
@@ -7722,13 +7722,13 @@ fi
 exit 2
 EOF
                 chmod +x "$doctor_bin_dir/id" "$doctor_bin_dir/whoami" "$doctor_bin_dir/getent"
-                eval "$(sed -n '/^_acfs_doctor_sanitize_abs_nonroot_path()/,/^}$/p' "$script")"
-                eval "$(sed -n '/^_acfs_doctor_system_binary_path()/,/^}$/p' "$script")"
-                eval "$(sed -n '/^_acfs_doctor_resolve_current_user()/,/^}$/p' "$script")"
-                eval "$(sed -n '/^_acfs_doctor_getent_passwd_entry()/,/^}$/p' "$script")"
-                eval "$(sed -n '/^_acfs_doctor_passwd_home_from_entry()/,/^}$/p' "$script")"
-                eval "$(sed -n '/^_acfs_doctor_resolve_current_home()/,/^}$/p' "$script")"
-                _acfs_doctor_system_binary_path() {
+                eval "$(sed -n '/^_gtbi_doctor_sanitize_abs_nonroot_path()/,/^}$/p' "$script")"
+                eval "$(sed -n '/^_gtbi_doctor_system_binary_path()/,/^}$/p' "$script")"
+                eval "$(sed -n '/^_gtbi_doctor_resolve_current_user()/,/^}$/p' "$script")"
+                eval "$(sed -n '/^_gtbi_doctor_getent_passwd_entry()/,/^}$/p' "$script")"
+                eval "$(sed -n '/^_gtbi_doctor_passwd_home_from_entry()/,/^}$/p' "$script")"
+                eval "$(sed -n '/^_gtbi_doctor_resolve_current_home()/,/^}$/p' "$script")"
+                _gtbi_doctor_system_binary_path() {
                     local name="${1:-}"
                     [[ -n "$name" ]] || return 1
                     printf '%s/%s\n' "$doctor_bin_dir" "$name"
@@ -7891,9 +7891,9 @@ EOF
 preflight|$PROJECT_ROOT/scripts/preflight.sh|resolve_current_home
 services-setup|$PROJECT_ROOT/scripts/services-setup.sh|services_setup_resolve_current_home
 notifications|$PROJECT_ROOT/scripts/lib/notifications.sh|notifications_resolve_current_home
-notify|$PROJECT_ROOT/scripts/lib/notify.sh|_acfs_notify_resolve_current_home
+notify|$PROJECT_ROOT/scripts/lib/notify.sh|_gtbi_notify_resolve_current_home
 webhook|$PROJECT_ROOT/scripts/lib/webhook.sh|webhook_resolve_current_home
-doctor|$PROJECT_ROOT/scripts/lib/doctor.sh|_acfs_doctor_resolve_current_home
+doctor|$PROJECT_ROOT/scripts/lib/doctor.sh|_gtbi_doctor_resolve_current_home
 doctor-fix|$PROJECT_ROOT/scripts/lib/doctor_fix.sh|doctor_fix_resolve_current_home
 nightly-update|$PROJECT_ROOT/scripts/lib/nightly_update.sh|resolve_current_home
 smoke|$PROJECT_ROOT/scripts/lib/smoke_test.sh|_smoke_resolve_current_home
@@ -7973,14 +7973,14 @@ EOF
                     }
                     ;;
                 notify)
-                    eval "$(sed -n "/^_acfs_notify_sanitize_abs_nonroot_path()/,/^}$/p" "$script")"
-                    eval "$(sed -n "/^_acfs_notify_resolve_current_user()/,/^}$/p" "$script")"
-                    eval "$(sed -n "/^_acfs_notify_getent_passwd_entry()/,/^}$/p" "$script")"
-                    eval "$(sed -n "/^_acfs_notify_passwd_home_from_entry()/,/^}$/p" "$script")"
-                    eval "$(sed -n "/^_acfs_notify_resolve_current_home()/,/^}$/p" "$script")"
-                    eval "$(sed -n "/^_acfs_notify_runtime_home()/,/^}$/p" "$script")"
-                    _acfs_notify_resolve_current_user() { printf "calleruser\n"; }
-                    _acfs_notify_getent_passwd_entry() {
+                    eval "$(sed -n "/^_gtbi_notify_sanitize_abs_nonroot_path()/,/^}$/p" "$script")"
+                    eval "$(sed -n "/^_gtbi_notify_resolve_current_user()/,/^}$/p" "$script")"
+                    eval "$(sed -n "/^_gtbi_notify_getent_passwd_entry()/,/^}$/p" "$script")"
+                    eval "$(sed -n "/^_gtbi_notify_passwd_home_from_entry()/,/^}$/p" "$script")"
+                    eval "$(sed -n "/^_gtbi_notify_resolve_current_home()/,/^}$/p" "$script")"
+                    eval "$(sed -n "/^_gtbi_notify_runtime_home()/,/^}$/p" "$script")"
+                    _gtbi_notify_resolve_current_user() { printf "calleruser\n"; }
+                    _gtbi_notify_getent_passwd_entry() {
                         if [[ "${1:-}" == "targetuser" ]]; then
                             printf "targetuser:x:1000:1000::%s:/bin/bash\n" "$target_home"
                             return 0
@@ -8033,7 +8033,7 @@ EOF
         fi
     done <<EOF
 notifications|$PROJECT_ROOT/scripts/lib/notifications.sh|notifications_runtime_home
-notify|$PROJECT_ROOT/scripts/lib/notify.sh|_acfs_notify_runtime_home
+notify|$PROJECT_ROOT/scripts/lib/notify.sh|_gtbi_notify_runtime_home
 webhook|$PROJECT_ROOT/scripts/lib/webhook.sh|webhook_runtime_home
 EOF
 
@@ -8050,11 +8050,11 @@ EOF
 
     stale_home="$(create_temp_dir)"
 
-    run env TARGET_USER="missinguser" TARGET_HOME="$stale_home" HOME="$stale_home" bash -c 'source "$1"; printf "runtime=%s state=%s\n" "${_ACFS_NOTIFY_RUNTIME_HOME:-}" "${_ACFS_NOTIFY_STATE_DIR:-}"' _ "$notify_script"
+    run env TARGET_USER="missinguser" TARGET_HOME="$stale_home" HOME="$stale_home" bash -c 'source "$1"; printf "runtime=%s state=%s\n" "${_GTBI_NOTIFY_RUNTIME_HOME:-}" "${_GTBI_NOTIFY_STATE_DIR:-}"' _ "$notify_script"
     assert_success
     assert_output "runtime= state="
 
-    run env TARGET_USER="missinguser" TARGET_HOME="$stale_home" HOME="$stale_home" bash -c 'source "$1" status >/dev/null || true; printf "runtime=%s dir=%s file=%s\n" "${_ACFS_NOTIFICATIONS_RUNTIME_HOME:-}" "${ACFS_CONFIG_DIR:-}" "${ACFS_CONFIG_FILE:-}"' _ "$notifications_script"
+    run env TARGET_USER="missinguser" TARGET_HOME="$stale_home" HOME="$stale_home" bash -c 'source "$1" status >/dev/null || true; printf "runtime=%s dir=%s file=%s\n" "${_GTBI_NOTIFICATIONS_RUNTIME_HOME:-}" "${GTBI_CONFIG_DIR:-}" "${GTBI_CONFIG_FILE:-}"' _ "$notifications_script"
     assert_success
     assert_output "runtime= dir= file="
 }
@@ -8232,11 +8232,11 @@ EOF
     assert_output "$caller_home"
 }
 
-@test "preflight: binary helper ignores stale other-user ACFS_BIN_DIR" {
+@test "preflight: binary helper ignores stale other-user GTBI_BIN_DIR" {
     local preflight="$PROJECT_ROOT/scripts/preflight.sh"
     local current_home
     local target_home
-    local tool_name="acfs-preflight-test-tool"
+    local tool_name="gtbi-preflight-test-tool"
 
     eval "$(sed -n '/^preflight_sanitize_abs_nonroot_path()/,/^}$/p' "$preflight")"
     eval "$(sed -n '/^preflight_is_valid_username()/,/^}$/p' "$preflight")"
@@ -8259,7 +8259,7 @@ EOF
     export HOME="$current_home"
     export TARGET_HOME="$target_home"
     unset TARGET_USER
-    export ACFS_BIN_DIR="$current_home/.local/bin"
+    export GTBI_BIN_DIR="$current_home/.local/bin"
 
     run preflight_binary_path "$tool_name"
     assert_success
@@ -8269,7 +8269,7 @@ EOF
 @test "run-as-user helper libs reject unresolved TARGET_HOME before sudo" {
     export TARGET_USER="missinguser"
     export TARGET_HOME=""
-    export ACFS_BIN_DIR="/home/tester/.local/bin"
+    export GTBI_BIN_DIR="/home/tester/.local/bin"
 
     getent() {
         return 2
@@ -8415,8 +8415,8 @@ EOF
 
     assert_success
     assert_output --partial "HOME=$target_home"
-    assert_output --partial "UPDATE_LOG_DIR=$target_home/.acfs/logs/updates"
-    assert_output --partial "CHECKSUMS_LOCAL=$target_home/.acfs/checksums.yaml"
+    assert_output --partial "UPDATE_LOG_DIR=$target_home/.gtbi/logs/updates"
+    assert_output --partial "CHECKSUMS_LOCAL=$target_home/.gtbi/checksums.yaml"
 }
 
 @test "agent mail MCP path detection prefers target install over current-shell am" {
@@ -8608,55 +8608,55 @@ EOF
     assert_output 'oauth-personal'
 }
 
-@test "install and update deploy all acfs doctor-dispatched runtime scripts" {
+@test "install and update deploy all gtbi doctor-dispatched runtime scripts" {
     local installer="$PROJECT_ROOT/install.sh"
     local update="$PROJECT_ROOT/scripts/lib/update.sh"
     local install_asset_line
     local update_pair
     local -a install_asset_lines=(
-        'install_asset "acfs/tmux/tmux.conf" "$ACFS_HOME/tmux/tmux.conf"'
-        'install_asset "packages/onboard/onboard.sh" "$ACFS_HOME/onboard/onboard.sh"'
-        'install_asset "scripts/lib/logging.sh" "$ACFS_HOME/scripts/lib/logging.sh"'
-        'install_asset "scripts/lib/output.sh" "$ACFS_HOME/scripts/lib/output.sh"'
-        'install_asset "scripts/lib/gum_ui.sh" "$ACFS_HOME/scripts/lib/gum_ui.sh"'
-        'install_asset "scripts/lib/progress.sh" "$ACFS_HOME/scripts/lib/progress.sh"'
-        'install_asset "scripts/lib/install_helpers.sh" "$ACFS_HOME/scripts/lib/install_helpers.sh"'
-        'install_asset "scripts/lib/stack.sh" "$ACFS_HOME/scripts/lib/stack.sh"'
-        'install_asset "scripts/lib/contract.sh" "$ACFS_HOME/scripts/lib/contract.sh"'
-        'install_asset "scripts/lib/security.sh" "$ACFS_HOME/scripts/lib/security.sh"'
-        'install_asset "scripts/lib/github_api.sh" "$ACFS_HOME/scripts/lib/github_api.sh"'
-        'install_asset "scripts/lib/tools.sh" "$ACFS_HOME/scripts/lib/tools.sh"'
-        'install_asset "scripts/lib/autofix.sh" "$ACFS_HOME/scripts/lib/autofix.sh"'
-        'install_asset "scripts/lib/doctor_fix.sh" "$ACFS_HOME/scripts/lib/doctor_fix.sh"'
-        'install_asset "scripts/lib/doctor.sh" "$ACFS_HOME/scripts/lib/doctor.sh"'
-        'install_asset "scripts/lib/nightly_update.sh" "$ACFS_HOME/scripts/lib/nightly_update.sh"'
-        'install_asset "scripts/lib/nightly_update.sh" "$ACFS_HOME/scripts/nightly-update.sh"'
-        'install_asset "scripts/lib/update.sh" "$ACFS_HOME/scripts/lib/update.sh"'
-        'install_asset "scripts/lib/session.sh" "$ACFS_HOME/scripts/lib/session.sh"'
-        'install_asset "scripts/lib/continue.sh" "$ACFS_HOME/scripts/lib/continue.sh"'
-        'install_asset "scripts/lib/info.sh" "$ACFS_HOME/scripts/lib/info.sh"'
-        'install_asset "scripts/lib/status.sh" "$ACFS_HOME/scripts/lib/status.sh"'
-        'install_asset "scripts/lib/changelog.sh" "$ACFS_HOME/scripts/lib/changelog.sh"'
-        'install_asset "scripts/lib/export-config.sh" "$ACFS_HOME/scripts/lib/export-config.sh"'
-        'install_asset "scripts/lib/cheatsheet.sh" "$ACFS_HOME/scripts/lib/cheatsheet.sh"'
-        'install_asset "scripts/lib/webhook.sh" "$ACFS_HOME/scripts/lib/webhook.sh"'
-        'install_asset "scripts/lib/notify.sh" "$ACFS_HOME/scripts/lib/notify.sh"'
-        'install_asset "scripts/lib/notifications.sh" "$ACFS_HOME/scripts/lib/notifications.sh"'
-        'install_asset "scripts/lib/dashboard.sh" "$ACFS_HOME/scripts/lib/dashboard.sh"'
-        'install_asset "scripts/lib/support.sh" "$ACFS_HOME/scripts/lib/support.sh"'
-        'install_asset "scripts/generate-root-agents-md.sh" "$ACFS_HOME/bin/flywheel-update-agents-md"'
-        'install_asset "scripts/services-setup.sh" "$ACFS_HOME/scripts/services-setup.sh"'
-        'install_asset "scripts/lib/newproj.sh" "$ACFS_HOME/scripts/lib/newproj.sh"'
-        'install_asset "scripts/lib/newproj_agents.sh" "$ACFS_HOME/scripts/lib/newproj_agents.sh"'
-        'install_asset "scripts/lib/newproj_detect.sh" "$ACFS_HOME/scripts/lib/newproj_detect.sh"'
-        'install_asset "scripts/lib/newproj_errors.sh" "$ACFS_HOME/scripts/lib/newproj_errors.sh"'
-        'install_asset "scripts/lib/newproj_logging.sh" "$ACFS_HOME/scripts/lib/newproj_logging.sh"'
-        'install_asset "scripts/lib/newproj_screens.sh" "$ACFS_HOME/scripts/lib/newproj_screens.sh"'
-        'install_asset "scripts/lib/newproj_tui.sh" "$ACFS_HOME/scripts/lib/newproj_tui.sh"'
-        'install_asset "scripts/lib/newproj_screens/$screen" "$ACFS_HOME/scripts/lib/newproj_screens/$screen"'
+        'install_asset "gtbi/tmux/tmux.conf" "$GTBI_HOME/tmux/tmux.conf"'
+        'install_asset "packages/onboard/onboard.sh" "$GTBI_HOME/onboard/onboard.sh"'
+        'install_asset "scripts/lib/logging.sh" "$GTBI_HOME/scripts/lib/logging.sh"'
+        'install_asset "scripts/lib/output.sh" "$GTBI_HOME/scripts/lib/output.sh"'
+        'install_asset "scripts/lib/gum_ui.sh" "$GTBI_HOME/scripts/lib/gum_ui.sh"'
+        'install_asset "scripts/lib/progress.sh" "$GTBI_HOME/scripts/lib/progress.sh"'
+        'install_asset "scripts/lib/install_helpers.sh" "$GTBI_HOME/scripts/lib/install_helpers.sh"'
+        'install_asset "scripts/lib/stack.sh" "$GTBI_HOME/scripts/lib/stack.sh"'
+        'install_asset "scripts/lib/contract.sh" "$GTBI_HOME/scripts/lib/contract.sh"'
+        'install_asset "scripts/lib/security.sh" "$GTBI_HOME/scripts/lib/security.sh"'
+        'install_asset "scripts/lib/github_api.sh" "$GTBI_HOME/scripts/lib/github_api.sh"'
+        'install_asset "scripts/lib/tools.sh" "$GTBI_HOME/scripts/lib/tools.sh"'
+        'install_asset "scripts/lib/autofix.sh" "$GTBI_HOME/scripts/lib/autofix.sh"'
+        'install_asset "scripts/lib/doctor_fix.sh" "$GTBI_HOME/scripts/lib/doctor_fix.sh"'
+        'install_asset "scripts/lib/doctor.sh" "$GTBI_HOME/scripts/lib/doctor.sh"'
+        'install_asset "scripts/lib/nightly_update.sh" "$GTBI_HOME/scripts/lib/nightly_update.sh"'
+        'install_asset "scripts/lib/nightly_update.sh" "$GTBI_HOME/scripts/nightly-update.sh"'
+        'install_asset "scripts/lib/update.sh" "$GTBI_HOME/scripts/lib/update.sh"'
+        'install_asset "scripts/lib/session.sh" "$GTBI_HOME/scripts/lib/session.sh"'
+        'install_asset "scripts/lib/continue.sh" "$GTBI_HOME/scripts/lib/continue.sh"'
+        'install_asset "scripts/lib/info.sh" "$GTBI_HOME/scripts/lib/info.sh"'
+        'install_asset "scripts/lib/status.sh" "$GTBI_HOME/scripts/lib/status.sh"'
+        'install_asset "scripts/lib/changelog.sh" "$GTBI_HOME/scripts/lib/changelog.sh"'
+        'install_asset "scripts/lib/export-config.sh" "$GTBI_HOME/scripts/lib/export-config.sh"'
+        'install_asset "scripts/lib/cheatsheet.sh" "$GTBI_HOME/scripts/lib/cheatsheet.sh"'
+        'install_asset "scripts/lib/webhook.sh" "$GTBI_HOME/scripts/lib/webhook.sh"'
+        'install_asset "scripts/lib/notify.sh" "$GTBI_HOME/scripts/lib/notify.sh"'
+        'install_asset "scripts/lib/notifications.sh" "$GTBI_HOME/scripts/lib/notifications.sh"'
+        'install_asset "scripts/lib/dashboard.sh" "$GTBI_HOME/scripts/lib/dashboard.sh"'
+        'install_asset "scripts/lib/support.sh" "$GTBI_HOME/scripts/lib/support.sh"'
+        'install_asset "scripts/generate-root-agents-md.sh" "$GTBI_HOME/bin/flywheel-update-agents-md"'
+        'install_asset "scripts/services-setup.sh" "$GTBI_HOME/scripts/services-setup.sh"'
+        'install_asset "scripts/lib/newproj.sh" "$GTBI_HOME/scripts/lib/newproj.sh"'
+        'install_asset "scripts/lib/newproj_agents.sh" "$GTBI_HOME/scripts/lib/newproj_agents.sh"'
+        'install_asset "scripts/lib/newproj_detect.sh" "$GTBI_HOME/scripts/lib/newproj_detect.sh"'
+        'install_asset "scripts/lib/newproj_errors.sh" "$GTBI_HOME/scripts/lib/newproj_errors.sh"'
+        'install_asset "scripts/lib/newproj_logging.sh" "$GTBI_HOME/scripts/lib/newproj_logging.sh"'
+        'install_asset "scripts/lib/newproj_screens.sh" "$GTBI_HOME/scripts/lib/newproj_screens.sh"'
+        'install_asset "scripts/lib/newproj_tui.sh" "$GTBI_HOME/scripts/lib/newproj_tui.sh"'
+        'install_asset "scripts/lib/newproj_screens/$screen" "$GTBI_HOME/scripts/lib/newproj_screens/$screen"'
     )
     local -a update_pairs=(
-        '"acfs/tmux/tmux.conf:tmux/tmux.conf"'
+        '"gtbi/tmux/tmux.conf:tmux/tmux.conf"'
         '"packages/onboard/onboard.sh:onboard/onboard.sh"'
         '"scripts/lib/logging.sh:scripts/lib/logging.sh"'
         '"scripts/lib/output.sh:scripts/lib/output.sh"'
@@ -8671,8 +8671,8 @@ EOF
         '"scripts/lib/autofix.sh:scripts/lib/autofix.sh"'
         '"scripts/lib/doctor_fix.sh:scripts/lib/doctor_fix.sh"'
         '"scripts/lib/doctor.sh:scripts/lib/doctor.sh"'
-        '"scripts/lib/doctor.sh:bin/acfs"'
-        '"scripts/acfs-update:bin/acfs-update"'
+        '"scripts/lib/doctor.sh:bin/gtbi"'
+        '"scripts/gtbi-update:bin/gtbi-update"'
         '"scripts/generate-root-agents-md.sh:bin/flywheel-update-agents-md"'
         '"scripts/lib/nightly_update.sh:scripts/lib/nightly_update.sh"'
         '"scripts/lib/nightly_update.sh:scripts/nightly-update.sh"'
@@ -8718,19 +8718,19 @@ EOF
         assert_success
     done
 
-    run grep -F '"/data/projects/agentic_coding_flywheel_setup/scripts/lib/stack.sh"' "$update"
+    run grep -F '"/data/projects/gastown_batteries_included/scripts/lib/stack.sh"' "$update"
     assert_success
-    run grep -F 'bin/acfs|bin/acfs-update|bin/flywheel-update-agents-md|onboard/onboard.sh|scripts/generated/*.sh|scripts/lib/*.sh|scripts/nightly-update.sh|scripts/services-setup.sh)' "$update"
+    run grep -F 'bin/gtbi|bin/gtbi-update|bin/flywheel-update-agents-md|onboard/onboard.sh|scripts/generated/*.sh|scripts/lib/*.sh|scripts/nightly-update.sh|scripts/services-setup.sh)' "$update"
     assert_success
-    run grep -F 'for generated_script in "$ACFS_REPO_ROOT/scripts/generated/"*.sh; do' "$update"
+    run grep -F 'for generated_script in "$GTBI_REPO_ROOT/scripts/generated/"*.sh; do' "$update"
     assert_success
-    run grep -F 'for lesson_file in "$ACFS_REPO_ROOT/acfs/onboard/lessons/"*.md; do' "$update"
+    run grep -F 'for lesson_file in "$GTBI_REPO_ROOT/gtbi/onboard/lessons/"*.md; do' "$update"
     assert_success
-    run grep -F 'sync_acfs_global_wrapper' "$update"
+    run grep -F 'sync_gtbi_global_wrapper' "$update"
     assert_success
 }
 
-@test "sync_acfs_deployed deploys install-time runtime assets and executable modes" {
+@test "sync_gtbi_deployed deploys install-time runtime assets and executable modes" {
     local temp_root
     local repo_root
     local deployed_home
@@ -8738,19 +8738,19 @@ EOF
 
     temp_root="$(create_temp_dir)"
     repo_root="$temp_root/repo"
-    deployed_home="$temp_root/deployed-acfs"
+    deployed_home="$temp_root/deployed-gtbi"
     log_file="$temp_root/update.log"
 
     mkdir -p \
-        "$repo_root/acfs/onboard/lessons" \
-        "$repo_root/acfs/tmux" \
+        "$repo_root/gtbi/onboard/lessons" \
+        "$repo_root/gtbi/tmux" \
         "$repo_root/packages/onboard" \
         "$repo_root/scripts/generated" \
         "$repo_root/scripts/lib/newproj_screens" \
         "$deployed_home"
 
-    printf "tmux-runtime\n" > "$repo_root/acfs/tmux/tmux.conf"
-    printf "lesson-runtime\n" > "$repo_root/acfs/onboard/lessons/00_welcome.md"
+    printf "tmux-runtime\n" > "$repo_root/gtbi/tmux/tmux.conf"
+    printf "lesson-runtime\n" > "$repo_root/gtbi/onboard/lessons/00_welcome.md"
     printf "#!/usr/bin/env bash\nprintf 'onboard-runtime\\n'\n" > "$repo_root/packages/onboard/onboard.sh"
     printf "#!/usr/bin/env bash\nprintf 'agents-runtime\\n'\n" > "$repo_root/scripts/generate-root-agents-md.sh"
     printf "#!/usr/bin/env bash\nprintf 'generated-runtime\\n'\n" > "$repo_root/scripts/generated/install_stack.sh"
@@ -8764,14 +8764,14 @@ EOF
     printf "newproj-runtime\n" > "$repo_root/scripts/lib/newproj.sh"
     printf "screen-runtime\n" > "$repo_root/scripts/lib/newproj_screens/screen_welcome.sh"
 
-    ACFS_REPO_ROOT="$repo_root"
-    ACFS_HOME="$deployed_home"
+    GTBI_REPO_ROOT="$repo_root"
+    GTBI_HOME="$deployed_home"
     UPDATE_LOG_FILE="$log_file"
     DRY_RUN=false
 
-    update_runtime_acfs_home() { printf '%s\n' "$deployed_home"; }
+    update_runtime_gtbi_home() { printf '%s\n' "$deployed_home"; }
 
-    run sync_acfs_deployed
+    run sync_gtbi_deployed
     assert_success
 
     run cat "$deployed_home/tmux/tmux.conf"
@@ -8822,7 +8822,7 @@ EOF
     [[ -x "$deployed_home/scripts/lib/github_api.sh" ]]
     [[ -x "$deployed_home/scripts/lib/newproj_screens/screen_welcome.sh" ]]
 
-    run grep -F "Synced acfs/onboard/lessons/00_welcome.md -> $deployed_home/onboard/lessons/00_welcome.md" "$log_file"
+    run grep -F "Synced gtbi/onboard/lessons/00_welcome.md -> $deployed_home/onboard/lessons/00_welcome.md" "$log_file"
     assert_success
 }
 
@@ -8838,14 +8838,14 @@ EOF
     seed_repo="$temp_root/seed"
     origin_repo="$temp_root/origin.git"
     work_repo="$temp_root/work"
-    deployed_home="$temp_root/deployed-acfs"
+    deployed_home="$temp_root/deployed-gtbi"
     log_file="$temp_root/update.log"
 
     mkdir -p "$seed_repo/scripts/lib" "$deployed_home/scripts/lib" "$deployed_home/bin"
     git -C "$seed_repo" init -b main >/dev/null
     git -C "$seed_repo" config user.email test@example.invalid
-    git -C "$seed_repo" config user.name "ACFS Test"
-    printf "#!/usr/bin/env bash\nprintf 'fresh-acfs-doctor\\n'\n" > "$seed_repo/scripts/lib/doctor.sh"
+    git -C "$seed_repo" config user.name "GTBI Test"
+    printf "#!/usr/bin/env bash\nprintf 'fresh-gtbi-doctor\\n'\n" > "$seed_repo/scripts/lib/doctor.sh"
     printf "fresh-stack-lib\n" > "$seed_repo/scripts/lib/stack.sh"
     git -C "$seed_repo" add scripts/lib/doctor.sh scripts/lib/stack.sh
     git -C "$seed_repo" commit -m base >/dev/null
@@ -8853,32 +8853,32 @@ EOF
     git clone --bare "$seed_repo" "$origin_repo" >/dev/null 2>&1
     git clone "$origin_repo" "$work_repo" >/dev/null 2>&1
 
-    ACFS_REPO_ROOT="$work_repo"
-    ACFS_HOME="$deployed_home"
+    GTBI_REPO_ROOT="$work_repo"
+    GTBI_HOME="$deployed_home"
     UPDATE_LOG_FILE="$log_file"
     UPDATE_SELF=true
-    ACFS_SELF_UPDATE_DONE=false
+    GTBI_SELF_UPDATE_DONE=false
     DRY_RUN=false
     BOOTSTRAP_SELF_UPDATE=false
-    ACFS_VERSION_DISPLAY="vtest"
+    GTBI_VERSION_DISPLAY="vtest"
     NO_COLOR=1
     RED="" GREEN="" YELLOW="" CYAN="" BOLD="" DIM="" NC=""
 
-    is_expected_acfs_origin_url() { return 0; }
-    update_runtime_acfs_home() { printf '%s\n' "$deployed_home"; }
+    is_expected_gtbi_origin_url() { return 0; }
+    update_runtime_gtbi_home() { printf '%s\n' "$deployed_home"; }
     update_refresh_installed_security() { :; }
     log_item() { printf "%s|%s|%s\n" "$1" "$2" "${3:-}"; }
 
-    run update_acfs_self
+    run update_gtbi_self
     assert_success
-    assert_output --partial "ok|ACFS vtest|already up to date"
+    assert_output --partial "ok|GTBI vtest|already up to date"
     run cat "$deployed_home/scripts/lib/stack.sh"
     assert_success
     assert_output "fresh-stack-lib"
-    run "$deployed_home/bin/acfs"
+    run "$deployed_home/bin/gtbi"
     assert_success
-    assert_output "fresh-acfs-doctor"
-    [[ -x "$deployed_home/bin/acfs" ]]
+    assert_output "fresh-gtbi-doctor"
+    [[ -x "$deployed_home/bin/gtbi" ]]
     run grep -F "Synced scripts/lib/stack.sh -> $deployed_home/scripts/lib/stack.sh" "$log_file"
     assert_success
 }
@@ -8897,63 +8897,63 @@ EOF
     seed_repo="$temp_root/seed"
     origin_repo="$temp_root/origin.git"
     work_repo="$temp_root/work"
-    deployed_home="$temp_root/deployed-acfs"
+    deployed_home="$temp_root/deployed-gtbi"
     log_file="$temp_root/update.log"
     global_wrapper_args="$temp_root/global-wrapper-args"
 
     mkdir -p "$seed_repo/scripts/lib" "$seed_repo/scripts/generated" "$deployed_home/bin" "$deployed_home/scripts/lib" "$deployed_home/scripts/generated"
     git -C "$seed_repo" init -b main >/dev/null
     git -C "$seed_repo" config user.email test@example.invalid
-    git -C "$seed_repo" config user.name "ACFS Test"
-    printf "#!/usr/bin/env bash\nprintf 'base-global-acfs\\n'\n" > "$seed_repo/scripts/acfs-global"
-    printf "#!/usr/bin/env bash\nprintf 'base-acfs-doctor\\n'\n" > "$seed_repo/scripts/lib/doctor.sh"
+    git -C "$seed_repo" config user.name "GTBI Test"
+    printf "#!/usr/bin/env bash\nprintf 'base-global-gtbi\\n'\n" > "$seed_repo/scripts/gtbi-global"
+    printf "#!/usr/bin/env bash\nprintf 'base-gtbi-doctor\\n'\n" > "$seed_repo/scripts/lib/doctor.sh"
     printf "base-update\n" > "$seed_repo/scripts/lib/update.sh"
     printf "base-stack-lib\n" > "$seed_repo/scripts/lib/stack.sh"
     printf "base-generated\n" > "$seed_repo/scripts/generated/install_stack.sh"
-    git -C "$seed_repo" add scripts/acfs-global scripts/lib/doctor.sh scripts/lib/update.sh scripts/lib/stack.sh scripts/generated/install_stack.sh
+    git -C "$seed_repo" add scripts/gtbi-global scripts/lib/doctor.sh scripts/lib/update.sh scripts/lib/stack.sh scripts/generated/install_stack.sh
     git -C "$seed_repo" commit -m base >/dev/null
 
     git clone --bare "$seed_repo" "$origin_repo" >/dev/null 2>&1
     git clone "$origin_repo" "$work_repo" >/dev/null 2>&1
     git -C "$seed_repo" remote add origin "$origin_repo"
 
-    printf "#!/usr/bin/env bash\nprintf 'remote-global-acfs\\n'\n" > "$seed_repo/scripts/acfs-global"
-    printf "#!/usr/bin/env bash\nprintf 'remote-acfs-doctor\\n'\n" > "$seed_repo/scripts/lib/doctor.sh"
+    printf "#!/usr/bin/env bash\nprintf 'remote-global-gtbi\\n'\n" > "$seed_repo/scripts/gtbi-global"
+    printf "#!/usr/bin/env bash\nprintf 'remote-gtbi-doctor\\n'\n" > "$seed_repo/scripts/lib/doctor.sh"
     printf "remote-stack-lib\n" > "$seed_repo/scripts/lib/stack.sh"
     printf "remote-generated\n" > "$seed_repo/scripts/generated/install_stack.sh"
-    git -C "$seed_repo" add scripts/acfs-global scripts/lib/doctor.sh scripts/lib/stack.sh scripts/generated/install_stack.sh
+    git -C "$seed_repo" add scripts/gtbi-global scripts/lib/doctor.sh scripts/lib/stack.sh scripts/generated/install_stack.sh
     git -C "$seed_repo" commit -m "remote runtime update" >/dev/null
     git -C "$seed_repo" push origin main >/dev/null 2>&1
 
     printf "local-dirty-update\n" > "$work_repo/scripts/lib/update.sh"
-    printf "#!/usr/bin/env bash\nprintf 'stale-acfs-doctor\\n'\n" > "$deployed_home/bin/acfs"
-    chmod 644 "$deployed_home/bin/acfs"
+    printf "#!/usr/bin/env bash\nprintf 'stale-gtbi-doctor\\n'\n" > "$deployed_home/bin/gtbi"
+    chmod 644 "$deployed_home/bin/gtbi"
     printf "stale-stack-lib\n" > "$deployed_home/scripts/lib/stack.sh"
     printf "stale-generated\n" > "$deployed_home/scripts/generated/install_stack.sh"
     local_head="$(git -C "$work_repo" rev-parse HEAD)"
 
-    ACFS_REPO_ROOT="$work_repo"
-    ACFS_HOME="$deployed_home"
+    GTBI_REPO_ROOT="$work_repo"
+    GTBI_HOME="$deployed_home"
     UPDATE_LOG_FILE="$log_file"
     UPDATE_SELF=true
-    ACFS_SELF_UPDATE_DONE=false
+    GTBI_SELF_UPDATE_DONE=false
     DRY_RUN=false
     BOOTSTRAP_SELF_UPDATE=false
-    ACFS_VERSION_DISPLAY="vtest"
+    GTBI_VERSION_DISPLAY="vtest"
     NO_COLOR=1
     RED="" GREEN="" YELLOW="" CYAN="" BOLD="" DIM="" NC=""
 
-    is_expected_acfs_origin_url() { return 0; }
-    update_runtime_acfs_home() { printf '%s\n' "$deployed_home"; }
+    is_expected_gtbi_origin_url() { return 0; }
+    update_runtime_gtbi_home() { printf '%s\n' "$deployed_home"; }
     update_refresh_installed_security() { :; }
-    sync_acfs_global_wrapper() { printf '%s\n' "$*" > "$global_wrapper_args"; }
+    sync_gtbi_global_wrapper() { printf '%s\n' "$*" > "$global_wrapper_args"; }
     log_item() { printf "%s|%s|%s\n" "$1" "$2" "${3:-}"; }
 
-    run update_acfs_self
+    run update_gtbi_self
     assert_success
-    assert_output --partial "warn|ACFS self-update|tracked files have local modifications; skipping full pull"
+    assert_output --partial "warn|GTBI self-update|tracked files have local modifications; skipping full pull"
     [[ "$(git -C "$work_repo" rev-parse HEAD)" == "$local_head" ]]
-    [[ "$(bash "$work_repo/scripts/lib/doctor.sh")" == "base-acfs-doctor" ]]
+    [[ "$(bash "$work_repo/scripts/lib/doctor.sh")" == "base-gtbi-doctor" ]]
     [[ "$(cat "$work_repo/scripts/lib/stack.sh")" == "base-stack-lib" ]]
     [[ "$(cat "$work_repo/scripts/generated/install_stack.sh")" == "base-generated" ]]
     [[ "$(cat "$work_repo/scripts/lib/update.sh")" == "local-dirty-update" ]]
@@ -8961,11 +8961,11 @@ EOF
     assert_success
     assert_output "origin/main"
 
-    run "$deployed_home/bin/acfs"
+    run "$deployed_home/bin/gtbi"
     assert_success
-    assert_output "remote-acfs-doctor"
-    [[ -x "$deployed_home/bin/acfs" ]]
-    run grep -F "Synced origin/main:scripts/lib/doctor.sh -> $deployed_home/bin/acfs" "$log_file"
+    assert_output "remote-gtbi-doctor"
+    [[ -x "$deployed_home/bin/gtbi" ]]
+    run grep -F "Synced origin/main:scripts/lib/doctor.sh -> $deployed_home/bin/gtbi" "$log_file"
     assert_success
     run cat "$deployed_home/scripts/lib/stack.sh"
     assert_success
@@ -8979,7 +8979,7 @@ EOF
     assert_success
 }
 
-@test "sync_acfs_global_wrapper installs global wrapper from fetched remote" {
+@test "sync_gtbi_global_wrapper installs global wrapper from fetched remote" {
     local temp_root
     local seed_repo
     local origin_repo
@@ -8991,39 +8991,39 @@ EOF
     seed_repo="$temp_root/seed"
     origin_repo="$temp_root/origin.git"
     work_repo="$temp_root/work"
-    deployed_file="$temp_root/acfs-global"
+    deployed_file="$temp_root/gtbi-global"
     log_file="$temp_root/update.log"
 
     mkdir -p "$seed_repo/scripts"
     git -C "$seed_repo" init -b main >/dev/null
     git -C "$seed_repo" config user.email test@example.invalid
-    git -C "$seed_repo" config user.name "ACFS Test"
-    printf "#!/usr/bin/env bash\nprintf 'base-global-acfs\\n'\n" > "$seed_repo/scripts/acfs-global"
-    git -C "$seed_repo" add scripts/acfs-global
+    git -C "$seed_repo" config user.name "GTBI Test"
+    printf "#!/usr/bin/env bash\nprintf 'base-global-gtbi\\n'\n" > "$seed_repo/scripts/gtbi-global"
+    git -C "$seed_repo" add scripts/gtbi-global
     git -C "$seed_repo" commit -m base >/dev/null
 
     git clone --bare "$seed_repo" "$origin_repo" >/dev/null 2>&1
     git clone "$origin_repo" "$work_repo" >/dev/null 2>&1
     git -C "$seed_repo" remote add origin "$origin_repo"
 
-    printf "#!/usr/bin/env bash\nprintf 'remote-global-acfs\\n'\n" > "$seed_repo/scripts/acfs-global"
-    git -C "$seed_repo" add scripts/acfs-global
+    printf "#!/usr/bin/env bash\nprintf 'remote-global-gtbi\\n'\n" > "$seed_repo/scripts/gtbi-global"
+    git -C "$seed_repo" add scripts/gtbi-global
     git -C "$seed_repo" commit -m "remote global wrapper update" >/dev/null
     git -C "$seed_repo" push origin main >/dev/null 2>&1
     git -C "$work_repo" fetch origin main >/dev/null 2>&1
 
-    ACFS_REPO_ROOT="$work_repo"
+    GTBI_REPO_ROOT="$work_repo"
     UPDATE_LOG_FILE="$log_file"
     DRY_RUN=false
 
-    run sync_acfs_global_wrapper "origin/main" "$deployed_file"
+    run sync_gtbi_global_wrapper "origin/main" "$deployed_file"
     assert_success
     run "$deployed_file"
     assert_success
-    assert_output "remote-global-acfs"
+    assert_output "remote-global-gtbi"
     [[ -x "$deployed_file" ]]
-    [[ "$(cat "$work_repo/scripts/acfs-global")" != *"remote-global-acfs"* ]]
-    run grep -F "Synced origin/main:scripts/acfs-global -> $deployed_file" "$log_file"
+    [[ "$(cat "$work_repo/scripts/gtbi-global")" != *"remote-global-gtbi"* ]]
+    run grep -F "Synced origin/main:scripts/gtbi-global -> $deployed_file" "$log_file"
     assert_success
 }
 
@@ -9035,28 +9035,28 @@ EOF
 
     temp_root="$(create_temp_dir)"
     repo_root="$temp_root/repo"
-    deployed_home="$temp_root/deployed-acfs"
+    deployed_home="$temp_root/deployed-gtbi"
     log_file="$temp_root/update.log"
 
     mkdir -p "$repo_root/scripts/lib" "$deployed_home/bin"
-    printf "#!/usr/bin/env bash\nprintf 'current-acfs-doctor\\n'\n" > "$repo_root/scripts/lib/doctor.sh"
-    cp "$repo_root/scripts/lib/doctor.sh" "$deployed_home/bin/acfs"
-    chmod 644 "$deployed_home/bin/acfs"
+    printf "#!/usr/bin/env bash\nprintf 'current-gtbi-doctor\\n'\n" > "$repo_root/scripts/lib/doctor.sh"
+    cp "$repo_root/scripts/lib/doctor.sh" "$deployed_home/bin/gtbi"
+    chmod 644 "$deployed_home/bin/gtbi"
 
-    ACFS_REPO_ROOT="$repo_root"
-    ACFS_HOME="$deployed_home"
+    GTBI_REPO_ROOT="$repo_root"
+    GTBI_HOME="$deployed_home"
     UPDATE_LOG_FILE="$log_file"
     DRY_RUN=false
 
-    update_runtime_acfs_home() { printf '%s\n' "$deployed_home"; }
+    update_runtime_gtbi_home() { printf '%s\n' "$deployed_home"; }
 
-    run sync_acfs_deployed
+    run sync_gtbi_deployed
     assert_success
-    run "$deployed_home/bin/acfs"
+    run "$deployed_home/bin/gtbi"
     assert_success
-    assert_output "current-acfs-doctor"
-    [[ -x "$deployed_home/bin/acfs" ]]
-    run grep -F "Synced scripts/lib/doctor.sh -> $deployed_home/bin/acfs" "$log_file"
+    assert_output "current-gtbi-doctor"
+    [[ -x "$deployed_home/bin/gtbi" ]]
+    run grep -F "Synced scripts/lib/doctor.sh -> $deployed_home/bin/gtbi" "$log_file"
     assert_success
 }
 
@@ -9068,55 +9068,55 @@ EOF
 
     temp_root="$(create_temp_dir)"
     repo_root="$temp_root/repo"
-    deployed_file="$temp_root/acfs-global"
+    deployed_file="$temp_root/gtbi-global"
     log_file="$temp_root/update.log"
 
     mkdir -p "$repo_root/scripts"
-    printf "#!/usr/bin/env bash\nprintf 'current-global-acfs\\n'\n" > "$repo_root/scripts/acfs-global"
-    cp "$repo_root/scripts/acfs-global" "$deployed_file"
+    printf "#!/usr/bin/env bash\nprintf 'current-global-gtbi\\n'\n" > "$repo_root/scripts/gtbi-global"
+    cp "$repo_root/scripts/gtbi-global" "$deployed_file"
     chmod 644 "$deployed_file"
 
-    ACFS_REPO_ROOT="$repo_root"
+    GTBI_REPO_ROOT="$repo_root"
     UPDATE_LOG_FILE="$log_file"
     DRY_RUN=false
 
-    run sync_acfs_global_wrapper "" "$deployed_file"
+    run sync_gtbi_global_wrapper "" "$deployed_file"
     assert_success
     run "$deployed_file"
     assert_success
-    assert_output "current-global-acfs"
+    assert_output "current-global-gtbi"
     [[ -x "$deployed_file" ]]
-    run grep -F "Synced scripts/acfs-global -> $deployed_file" "$log_file"
+    run grep -F "Synced scripts/gtbi-global -> $deployed_file" "$log_file"
     assert_success
 }
 
-@test "global core command link sync publishes onboard and acfs-update" {
+@test "global core command link sync publishes onboard and gtbi-update" {
     local temp_root
     local deployed_home
     local global_bin
     local log_file
 
     temp_root="$(create_temp_dir)"
-    deployed_home="$temp_root/deployed-acfs"
+    deployed_home="$temp_root/deployed-gtbi"
     global_bin="$temp_root/global-bin"
     log_file="$temp_root/update.log"
 
     mkdir -p "$deployed_home/bin" "$deployed_home/onboard" "$global_bin"
-    printf "#!/usr/bin/env bash\nprintf 'update\\n'\n" > "$deployed_home/bin/acfs-update"
+    printf "#!/usr/bin/env bash\nprintf 'update\\n'\n" > "$deployed_home/bin/gtbi-update"
     printf "#!/usr/bin/env bash\nprintf 'onboard\\n'\n" > "$deployed_home/onboard/onboard.sh"
-    chmod 755 "$deployed_home/bin/acfs-update" "$deployed_home/onboard/onboard.sh"
+    chmod 755 "$deployed_home/bin/gtbi-update" "$deployed_home/onboard/onboard.sh"
 
     UPDATE_LOG_FILE="$log_file"
-    ACFS_GLOBAL_BIN_DIR="$global_bin"
+    GTBI_GLOBAL_BIN_DIR="$global_bin"
     DRY_RUN=false
 
-    update_runtime_acfs_home() { printf '%s\n' "$deployed_home"; }
+    update_runtime_gtbi_home() { printf '%s\n' "$deployed_home"; }
 
-    run sync_acfs_global_command_links
+    run sync_gtbi_global_command_links
     assert_success
-    [[ "$(readlink "$global_bin/acfs-update")" == "$deployed_home/bin/acfs-update" ]]
+    [[ "$(readlink "$global_bin/gtbi-update")" == "$deployed_home/bin/gtbi-update" ]]
     [[ "$(readlink "$global_bin/onboard")" == "$deployed_home/onboard/onboard.sh" ]]
-    run grep -F "Linked $global_bin/acfs-update -> $deployed_home/bin/acfs-update" "$log_file"
+    run grep -F "Linked $global_bin/gtbi-update -> $deployed_home/bin/gtbi-update" "$log_file"
     assert_success
     run grep -F "Linked $global_bin/onboard -> $deployed_home/onboard/onboard.sh" "$log_file"
     assert_success
@@ -9129,44 +9129,44 @@ EOF
 
     temp_root="$(create_temp_dir)"
     repo_root="$temp_root/repo"
-    deployed_home="$temp_root/deployed-acfs"
+    deployed_home="$temp_root/deployed-gtbi"
 
     mkdir -p "$repo_root/scripts/lib" "$deployed_home/scripts/lib"
     git -C "$repo_root" init -b main >/dev/null
-    git -C "$repo_root" remote add origin "https://example.invalid/not-acfs.git"
+    git -C "$repo_root" remote add origin "https://example.invalid/not-gtbi.git"
     printf "untrusted-stack-lib\n" > "$repo_root/scripts/lib/stack.sh"
 
-    ACFS_REPO_ROOT="$repo_root"
-    ACFS_HOME="$deployed_home"
+    GTBI_REPO_ROOT="$repo_root"
+    GTBI_HOME="$deployed_home"
     UPDATE_SELF=true
-    ACFS_SELF_UPDATE_DONE=true
+    GTBI_SELF_UPDATE_DONE=true
     DRY_RUN=false
     NO_COLOR=1
     RED="" GREEN="" YELLOW="" CYAN="" BOLD="" DIM="" NC=""
 
-    update_runtime_acfs_home() { printf '%s\n' "$deployed_home"; }
+    update_runtime_gtbi_home() { printf '%s\n' "$deployed_home"; }
     log_item() { printf "%s|%s|%s\n" "$1" "$2" "${3:-}"; }
 
-    run update_acfs_self
+    run update_gtbi_self
     assert_success
-    assert_output --partial "info|ACFS self-update|already completed"
+    assert_output --partial "info|GTBI self-update|already completed"
     [[ ! -f "$deployed_home/scripts/lib/stack.sh" ]]
 }
 
 @test "update_source_stack_lib skips stale stack candidates missing Agent Mail helpers" {
     local stale_lib="$BATS_TEST_TMPDIR/stale-lib"
-    local runtime_acfs="$BATS_TEST_TMPDIR/runtime-acfs"
+    local runtime_gtbi="$BATS_TEST_TMPDIR/runtime-gtbi"
     local repo_root="$BATS_TEST_TMPDIR/repo"
     local log_file="$BATS_TEST_TMPDIR/update.log"
 
-    mkdir -p "$stale_lib" "$runtime_acfs/scripts/lib" "$repo_root/scripts/lib"
+    mkdir -p "$stale_lib" "$runtime_gtbi/scripts/lib" "$repo_root/scripts/lib"
 
     cat > "$stale_lib/stack.sh" <<'EOF'
 #!/usr/bin/env bash
 _stack_configure_agent_mail_service() { printf 'stale-config\n'; }
 EOF
 
-    cat > "$runtime_acfs/scripts/lib/stack.sh" <<'EOF'
+    cat > "$runtime_gtbi/scripts/lib/stack.sh" <<'EOF'
 #!/usr/bin/env bash
 _stack_agent_mail_cli_path() { printf 'runtime-cli\n'; }
 _stack_repair_agent_mail_cli_symlink() { printf 'runtime-symlink\n'; }
@@ -9182,9 +9182,9 @@ _stack_wait_for_agent_mail_health() { printf 'fresh-health\n'; }
 EOF
 
     SCRIPT_DIR="$stale_lib"
-    ACFS_REPO_ROOT="$repo_root"
+    GTBI_REPO_ROOT="$repo_root"
     UPDATE_LOG_FILE="$log_file"
-    update_runtime_acfs_home() { printf '%s\n' "$runtime_acfs"; }
+    update_runtime_gtbi_home() { printf '%s\n' "$runtime_gtbi"; }
 
     update_source_stack_lib
 
@@ -9203,17 +9203,17 @@ EOF
 @test "doctor_fix_source_stack_lib skips stale stack candidates missing Agent Mail helpers" {
     local doctor_fix="$PROJECT_ROOT/scripts/lib/doctor_fix.sh"
     local stale_lib="$BATS_TEST_TMPDIR/stale-lib"
-    local runtime_acfs="$BATS_TEST_TMPDIR/runtime-acfs"
+    local runtime_gtbi="$BATS_TEST_TMPDIR/runtime-gtbi"
     local repo_root="$BATS_TEST_TMPDIR/repo"
 
-    mkdir -p "$stale_lib" "$runtime_acfs/scripts/lib" "$repo_root/scripts/lib"
+    mkdir -p "$stale_lib" "$runtime_gtbi/scripts/lib" "$repo_root/scripts/lib"
 
     cat > "$stale_lib/stack.sh" <<'EOF'
 #!/usr/bin/env bash
 _stack_configure_agent_mail_service() { printf 'stale-config\n'; }
 EOF
 
-    cat > "$runtime_acfs/scripts/lib/stack.sh" <<'EOF'
+    cat > "$runtime_gtbi/scripts/lib/stack.sh" <<'EOF'
 #!/usr/bin/env bash
 _stack_agent_mail_cli_path() { printf 'runtime-cli\n'; }
 _stack_repair_agent_mail_cli_symlink() { printf 'runtime-symlink\n'; }
@@ -9233,8 +9233,8 @@ EOF
     eval "$(sed -n '/^doctor_fix_source_stack_lib()/,/^}$/p' "$doctor_fix")"
 
     SCRIPT_DIR="$stale_lib"
-    ACFS_REPO_ROOT="$repo_root"
-    doctor_fix_runtime_acfs_home() { printf '%s\n' "$runtime_acfs"; }
+    GTBI_REPO_ROOT="$repo_root"
+    doctor_fix_runtime_gtbi_home() { printf '%s\n' "$runtime_gtbi"; }
 
     doctor_fix_source_stack_lib
 
@@ -9247,13 +9247,13 @@ EOF
     assert_output "fresh-config"
 }
 
-@test "finalize keeps legacy runtime deployment after generated acfs phase" {
+@test "finalize keeps legacy runtime deployment after generated gtbi phase" {
     local installer="$PROJECT_ROOT/install.sh"
     local block=""
 
-    block="$(sed -n '/if acfs_use_generated_category "acfs"/,/^    # Copy tmux config/p' "$installer")"
+    block="$(sed -n '/if gtbi_use_generated_category "gtbi"/,/^    # Copy tmux config/p' "$installer")"
 
-    [[ "$block" == *'acfs_run_generated_category_phase "acfs" "10" || return 1'* ]]
+    [[ "$block" == *'gtbi_run_generated_category_phase "gtbi" "10" || return 1'* ]]
     [[ "$block" == *'continuing legacy finalize for full runtime deployment parity'* ]]
     [[ "$block" != *$'\n        return 0'* ]]
 }
@@ -9261,44 +9261,44 @@ EOF
 @test "custom bin dir persists in state and nightly service PATH includes runtime bins" {
     local state_lib="$PROJECT_ROOT/scripts/lib/state.sh"
     local nightly="$PROJECT_ROOT/scripts/lib/nightly_update.sh"
-    local service_template="$PROJECT_ROOT/scripts/templates/acfs-nightly-update.service"
-    local global_wrapper="$PROJECT_ROOT/scripts/acfs-global"
-    local update_wrapper="$PROJECT_ROOT/scripts/acfs-update"
+    local service_template="$PROJECT_ROOT/scripts/templates/gtbi-nightly-update.service"
+    local global_wrapper="$PROJECT_ROOT/scripts/gtbi-global"
+    local update_wrapper="$PROJECT_ROOT/scripts/gtbi-update"
 
     run grep -F 'bin_dir: $bin_dir,' "$state_lib"
     assert_success
-    run grep -F '"bin_dir": "${ACFS_BIN_DIR:-$resolved_target_home/.local/bin}",' "$state_lib"
+    run grep -F '"bin_dir": "${GTBI_BIN_DIR:-$resolved_target_home/.local/bin}",' "$state_lib"
     assert_success
 
-    run grep -F 'ACFS_BIN_DIR="$(read_bin_dir_from_state_file "$state_candidate" 2>/dev/null || true)"' "$nightly"
+    run grep -F 'GTBI_BIN_DIR="$(read_bin_dir_from_state_file "$state_candidate" 2>/dev/null || true)"' "$nightly"
     assert_success
     run grep -F 'command -v jq' "$nightly"
     assert_failure
     run grep -F 'jq_bin="$(system_binary_path jq 2>/dev/null || true)"' "$nightly"
     assert_success
-    run grep -F 'ACFS_BIN_DIR="$(sanitize_abs_nonroot_path "${ACFS_BIN_DIR:-}" 2>/dev/null || true)"' "$nightly"
+    run grep -F 'GTBI_BIN_DIR="$(sanitize_abs_nonroot_path "${GTBI_BIN_DIR:-}" 2>/dev/null || true)"' "$nightly"
     assert_success
-    run grep -F '"$HOME/.acfs/bin/acfs-update"' "$nightly"
+    run grep -F '"$HOME/.gtbi/bin/gtbi-update"' "$nightly"
     assert_success
-    run grep -F '%h/.acfs/bin:%h/.local/bin:%h/.cargo/bin:%h/.bun/bin:%h/.atuin/bin:%h/go/bin' "$service_template"
+    run grep -F '%h/.gtbi/bin:%h/.local/bin:%h/.cargo/bin:%h/.bun/bin:%h/.atuin/bin:%h/go/bin' "$service_template"
     assert_success
 
-    run grep -F '[[ -n "$sanitized_bin_dir" ]] && env_args+=("ACFS_BIN_DIR=$sanitized_bin_dir")' "$global_wrapper"
+    run grep -F '[[ -n "$sanitized_bin_dir" ]] && env_args+=("GTBI_BIN_DIR=$sanitized_bin_dir")' "$global_wrapper"
     assert_success
-    run grep -F '[[ -n "$sanitized_bin_dir" ]] && env_args+=("ACFS_BIN_DIR=$sanitized_bin_dir")' "$update_wrapper"
+    run grep -F '[[ -n "$sanitized_bin_dir" ]] && env_args+=("GTBI_BIN_DIR=$sanitized_bin_dir")' "$update_wrapper"
     assert_success
 }
 
 @test "legacy finalize installs and enables nightly user timer" {
     local installer="$PROJECT_ROOT/install.sh"
 
-    run grep -F 'configure_acfs_nightly_timer() {' "$installer"
+    run grep -F 'configure_gtbi_nightly_timer() {' "$installer"
     assert_success
-    run grep -F 'cp "$service_src" "$HOME/.config/systemd/user/acfs-nightly-update.service"' "$installer"
+    run grep -F 'cp "$service_src" "$HOME/.config/systemd/user/gtbi-nightly-update.service"' "$installer"
     assert_success
-    run grep -F 'systemctl --user enable --now acfs-nightly-update.timer' "$installer"
+    run grep -F 'systemctl --user enable --now gtbi-nightly-update.timer' "$installer"
     assert_success
-    run grep -F 'try_step "Configuring ACFS nightly update timer" configure_acfs_nightly_timer' "$installer"
+    run grep -F 'try_step "Configuring GTBI nightly update timer" configure_gtbi_nightly_timer' "$installer"
     assert_success
 }
 
@@ -9311,22 +9311,22 @@ EOF
     [[ "$block" == *'continue'* ]]
 }
 
-@test "install execution helpers preserve ACFS bootstrap context" {
+@test "install execution helpers preserve GTBI bootstrap context" {
     local installer="$PROJECT_ROOT/install.sh"
     local install_helpers="$PROJECT_ROOT/scripts/lib/install_helpers.sh"
 
     for context_var in \
-        ACFS_BOOTSTRAP_DIR \
-        ACFS_LIB_DIR \
-        ACFS_GENERATED_DIR \
-        ACFS_ASSETS_DIR \
-        ACFS_CHECKSUMS_YAML \
-        ACFS_MANIFEST_YAML \
+        GTBI_BOOTSTRAP_DIR \
+        GTBI_LIB_DIR \
+        GTBI_GENERATED_DIR \
+        GTBI_ASSETS_DIR \
+        GTBI_CHECKSUMS_YAML \
+        GTBI_MANIFEST_YAML \
         CHECKSUMS_FILE \
         SCRIPT_DIR \
-        ACFS_RAW \
-        ACFS_VERSION \
-        ACFS_REF
+        GTBI_RAW \
+        GTBI_VERSION \
+        GTBI_REF
     do
         local expected="env_args+=(\"$context_var=\$$context_var\")"
 
@@ -9338,23 +9338,23 @@ EOF
         [[ "$output" -ge 2 ]] || fail "Expected $context_var in both target and root helper env allowlists"
     done
 
-    run grep -F 'export CHECKSUMS_FILE="${ACFS_CHECKSUMS_YAML:-${CHECKSUMS_FILE:-}}"' "$installer"
+    run grep -F 'export CHECKSUMS_FILE="${GTBI_CHECKSUMS_YAML:-${CHECKSUMS_FILE:-}}"' "$installer"
     assert_success
 }
 
 @test "install.sh target-home contexts repair stale TARGET_HOME from passwd" {
     local installer="$PROJECT_ROOT/install.sh"
 
-    run grep -F 'local acfs_home_for_target=""' "$installer"
+    run grep -F 'local gtbi_home_for_target=""' "$installer"
     assert_success
 
-    run grep -F 'if [[ -n "$acfs_home_for_target" ]]; then env_args+=("ACFS_HOME=$acfs_home_for_target"); fi' "$installer"
+    run grep -F 'if [[ -n "$gtbi_home_for_target" ]]; then env_args+=("GTBI_HOME=$gtbi_home_for_target"); fi' "$installer"
     assert_success
 
-    run grep -F 'resolved_target_home="$(acfs_home_for_user "$TARGET_USER" "$explicit_target_home" 2>/dev/null || true)"' "$installer"
+    run grep -F 'resolved_target_home="$(gtbi_home_for_user "$TARGET_USER" "$explicit_target_home" 2>/dev/null || true)"' "$installer"
     assert_success
 
-    run grep -F 'resolved_target_home="$(acfs_home_for_user "${TARGET_USER:-ubuntu}" "$explicit_target_home" 2>/dev/null || true)"' "$installer"
+    run grep -F 'resolved_target_home="$(gtbi_home_for_user "${TARGET_USER:-ubuntu}" "$explicit_target_home" 2>/dev/null || true)"' "$installer"
     assert_success
 
     run grep -F 'TARGET_HOME="${TARGET_HOME%/}"' "$installer"
@@ -9363,13 +9363,13 @@ EOF
     run grep -F 'resolved_target_home="${resolved_target_home%/}"' "$installer"
     assert_success
 
-    run bash -c 'sed -n "/^acfs_summary_emit()/,/^}/p" "$1" | grep -F "[[ \"\$resolved_target_home\" == \"/\" ]]"' _ "$installer"
+    run bash -c 'sed -n "/^gtbi_summary_emit()/,/^}/p" "$1" | grep -F "[[ \"\$resolved_target_home\" == \"/\" ]]"' _ "$installer"
     assert_success
 
-    run bash -c 'sed -n "/^acfs_summary_emit()/,/^}/p" "$1" | grep -F "local explicit_target_home=\"\""' _ "$installer"
+    run bash -c 'sed -n "/^gtbi_summary_emit()/,/^}/p" "$1" | grep -F "local explicit_target_home=\"\""' _ "$installer"
     assert_success
 
-    run bash -c 'sed -n "/^acfs_summary_emit()/,/^}/p" "$1" | grep -F "acfs_home_for_user \"\${TARGET_USER:-ubuntu}\" 2>/dev/null"' _ "$installer"
+    run bash -c 'sed -n "/^gtbi_summary_emit()/,/^}/p" "$1" | grep -F "gtbi_home_for_user \"\${TARGET_USER:-ubuntu}\" 2>/dev/null"' _ "$installer"
     assert_failure
 
     run bash -c 'sed -n "/^init_target_paths()/,/^}/p" "$1" | grep -F "local explicit_target_home_raw=\"\${TARGET_HOME:-}\""' _ "$installer"
@@ -9384,7 +9384,7 @@ EOF
     run bash -c 'sed -n "/^init_target_paths()/,/^}/p" "$1" | grep -F "$2"' _ "$installer" 'elif [[ $EUID -eq 0 ]] && ! id "$TARGET_USER" &>/dev/null; then'
     assert_success
 
-    run bash -c 'sed -n "/^init_target_paths()/,/^}/p" "$1" | grep -F "$2"' _ "$installer" 'TARGET_HOME="$(acfs_default_home_for_new_user "$TARGET_USER" 2>/dev/null || true)"'
+    run bash -c 'sed -n "/^init_target_paths()/,/^}/p" "$1" | grep -F "$2"' _ "$installer" 'TARGET_HOME="$(gtbi_default_home_for_new_user "$TARGET_USER" 2>/dev/null || true)"'
     assert_success
 
     run grep -F 'local explicit_user_home_for_repair=""' "$installer"
@@ -9396,39 +9396,39 @@ EOF
     run grep -F "LC_ALL=C tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 32 || true" "$installer"
     assert_success
 
-    run grep -F '_acfs_lock_home="$(acfs_default_home_for_new_user "${TARGET_USER:-ubuntu}" 2>/dev/null || true)"' "$installer"
+    run grep -F '_gtbi_lock_home="$(gtbi_default_home_for_new_user "${TARGET_USER:-ubuntu}" 2>/dev/null || true)"' "$installer"
     assert_success
 
-    run bash -c 'sed -n "/^init_target_paths()/,/^}/p" "$1" | grep -F "ACFS_BIN_DIR=\"\$TARGET_HOME/.local/bin\""' _ "$installer"
+    run bash -c 'sed -n "/^init_target_paths()/,/^}/p" "$1" | grep -F "GTBI_BIN_DIR=\"\$TARGET_HOME/.local/bin\""' _ "$installer"
     assert_success
 
-    run bash -c 'sed -n "/^init_target_paths()/,/^}/p" "$1" | grep -F "ACFS_HOME=\"\$TARGET_HOME/.acfs\""' _ "$installer"
+    run bash -c 'sed -n "/^init_target_paths()/,/^}/p" "$1" | grep -F "GTBI_HOME=\"\$TARGET_HOME/.gtbi\""' _ "$installer"
     assert_success
 
-    run bash -c 'sed -n "/^init_target_paths()/,/^}/p" "$1" | grep -F "ACFS_STATE_FILE=\"\$ACFS_HOME/state.json\""' _ "$installer"
+    run bash -c 'sed -n "/^init_target_paths()/,/^}/p" "$1" | grep -F "GTBI_STATE_FILE=\"\$GTBI_HOME/state.json\""' _ "$installer"
     assert_success
 
     run bash -c 'sed -n "/^init_target_paths()/,/^}/p" "$1" | grep -F "if [[ -z \"\${TARGET_HOME:-}\" ]]; then"' _ "$installer"
     assert_failure
 
-    run bash -c 'sed -n "/^acfs_summary_emit()/,/^}/p" "$1" | grep -F "local resolved_target_home=\"\${TARGET_HOME:-}\""' _ "$installer"
+    run bash -c 'sed -n "/^gtbi_summary_emit()/,/^}/p" "$1" | grep -F "local resolved_target_home=\"\${TARGET_HOME:-}\""' _ "$installer"
     assert_failure
 }
 
 @test "install.sh: missing-user default home uses target username" {
     local installer="$PROJECT_ROOT/install.sh"
 
-    eval "$(sed -n '/^acfs_default_home_for_new_user()/,/^}/p' "$installer")"
+    eval "$(sed -n '/^gtbi_default_home_for_new_user()/,/^}/p' "$installer")"
 
-    run acfs_default_home_for_new_user "ubuntu"
+    run gtbi_default_home_for_new_user "ubuntu"
     assert_success
     assert_output "/home/ubuntu"
 
-    run acfs_default_home_for_new_user "acfstest_user"
+    run gtbi_default_home_for_new_user "gtbitest_user"
     assert_success
-    assert_output "/home/acfstest_user"
+    assert_output "/home/gtbitest_user"
 
-    run acfs_default_home_for_new_user "../bad user"
+    run gtbi_default_home_for_new_user "../bad user"
     assert_failure
 }
 
@@ -9444,11 +9444,11 @@ EOF
     export TARGET_HOME="$stale_home"
     export HOME="$stale_home"
 
-    _acfs_getent_passwd_entry() {
+    _gtbi_getent_passwd_entry() {
         return 1
     }
 
-    _acfs_resolve_current_user() {
+    _gtbi_resolve_current_user() {
         printf 'calleruser\n'
     }
 
@@ -9510,11 +9510,11 @@ EOF
         printf '%s\n' "$*" >&2
     }
 
-    _acfs_resolve_current_user() {
+    _gtbi_resolve_current_user() {
         printf 'calleruser\n'
     }
 
-    _acfs_getent_passwd_entry() {
+    _gtbi_getent_passwd_entry() {
         if [[ "${1:-}" == "calleruser" ]]; then
             printf 'calleruser:x:1000:1000::%s:/bin/bash\n' "$TEST_INSTALL_HELPERS_TARGET_HOME"
             return 0
@@ -9538,7 +9538,7 @@ EOF
     export TARGET_USER="calleruser"
     export TARGET_HOME="$target_home"
     export HOME="$target_home"
-    export ACFS_BIN_DIR="$target_home/.local/bin"
+    export GTBI_BIN_DIR="$target_home/.local/bin"
     export PATH="$target_home/.local/bin:$PATH"
 
     run run_as_current_shell 'printf current'
@@ -9593,19 +9593,19 @@ EOF
         printf '%s\n' "$*" >&2
     }
 
-    _acfs_resolve_current_user() {
+    _gtbi_resolve_current_user() {
         printf 'calleruser\n'
     }
 
-    _acfs_getent_passwd_entry() {
-        if [[ "${1:-}" == "acfsuser" ]]; then
-            printf 'acfsuser:x:1000:1000::%s:/bin/bash\n' "$TEST_INSTALL_HELPERS_TARGET_HOME"
+    _gtbi_getent_passwd_entry() {
+        if [[ "${1:-}" == "gtbiuser" ]]; then
+            printf 'gtbiuser:x:1000:1000::%s:/bin/bash\n' "$TEST_INSTALL_HELPERS_TARGET_HOME"
             return 0
         fi
         return 1
     }
 
-    _acfs_system_binary_path() {
+    _gtbi_system_binary_path() {
         case "${1:-}" in
             env) printf '%s\n' "$TEST_INSTALL_HELPERS_ENV_BIN" ;;
             bash) printf '%s\n' "$TEST_INSTALL_HELPERS_BASH_BIN" ;;
@@ -9641,9 +9641,9 @@ EOF
         return 99
     }
 
-    export TARGET_USER="acfsuser"
+    export TARGET_USER="gtbiuser"
     export TARGET_HOME="$target_home"
-    export ACFS_BIN_DIR="$target_home/.local/bin"
+    export GTBI_BIN_DIR="$target_home/.local/bin"
 
     run run_as_target true
     assert_success
@@ -9695,7 +9695,7 @@ EOF
         printf '%s\n' "$*" >&2
     }
 
-    acfs_early_system_binary_path() {
+    gtbi_early_system_binary_path() {
         case "${1:-}" in
             env) printf '%s\n' "$TEST_INSTALL_SH_ENV_BIN" ;;
             bash) printf '%s\n' "$TEST_INSTALL_SH_BASH_BIN" ;;
@@ -9705,11 +9705,11 @@ EOF
         esac
     }
 
-    acfs_early_resolve_current_user() {
+    gtbi_early_resolve_current_user() {
         printf 'calleruser\n'
     }
 
-    acfs_early_getent_passwd_entry() {
+    gtbi_early_getent_passwd_entry() {
         if [[ "${1:-}" == "calleruser" ]]; then
             printf 'calleruser:x:1000:1000::%s:/bin/bash\n' "$TEST_INSTALL_SH_TARGET_HOME"
             return 0
@@ -9717,7 +9717,7 @@ EOF
         return 1
     }
 
-    acfs_home_for_user() {
+    gtbi_home_for_user() {
         if [[ "${1:-}" == "calleruser" ]]; then
             printf '%s\n' "$TEST_INSTALL_SH_TARGET_HOME"
             return 0
@@ -9741,7 +9741,7 @@ EOF
     export TARGET_USER="calleruser"
     export TARGET_HOME="$target_home"
     export HOME="$target_home"
-    export ACFS_BIN_DIR="$target_home/.local/bin"
+    export GTBI_BIN_DIR="$target_home/.local/bin"
     export PATH="$target_home/.local/bin:$PATH"
 
     run run_as_target bash -c 'printf direct'
@@ -9768,9 +9768,9 @@ EOF
     export TEST_INSTALL_SH_MARKER="$marker"
     export SUDO="sudo"
 
-    eval "$(sed -n '/^acfs_early_sudo_binary_path()/,/^}/p' "$installer")"
+    eval "$(sed -n '/^gtbi_early_sudo_binary_path()/,/^}/p' "$installer")"
 
-    acfs_early_system_binary_path() {
+    gtbi_early_system_binary_path() {
         case "${1:-}" in
             sudo) printf '%s\n' "$TEST_INSTALL_SH_SAFE_SUDO" ;;
             *) return 1 ;;
@@ -9782,7 +9782,7 @@ EOF
         return 99
     }
 
-    run acfs_early_sudo_binary_path
+    run gtbi_early_sudo_binary_path
     assert_success
     assert_output "$safe_sudo"
     [[ ! -e "$marker" ]] || fail "function-poisoned sudo executed: $(<"$marker")"
@@ -9849,11 +9849,11 @@ EOF
         printf '%s\n' "$*" >&2
     }
 
-    acfs_early_sudo_binary_path() {
+    gtbi_early_sudo_binary_path() {
         printf '%s\n' "$TEST_INSTALL_SH_SAFE_SUDO"
     }
 
-    acfs_early_system_binary_path() {
+    gtbi_early_system_binary_path() {
         case "${1:-}" in
             mkdir) printf '%s\n' "$TEST_INSTALL_SH_MKDIR_BIN" ;;
             cp) printf '%s\n' "$TEST_INSTALL_SH_CP_BIN" ;;
@@ -9939,13 +9939,13 @@ EOF
     run grep -F 'vault_bin="$(binary_path vault 2>/dev/null || true)"' "$installer"
     assert_success
 
-    run grep -F 'export PATH="${ACFS_BIN_DIR:-$HOME/.local/bin}:$HOME/.local/bin:$HOME/.acfs/bin:$HOME/.cargo/bin:$HOME/.bun/bin:$HOME/.atuin/bin:$HOME/go/bin:/usr/local/bin:/usr/bin:/bin:/snap/bin"' "$installer"
+    run grep -F 'export PATH="${GTBI_BIN_DIR:-$HOME/.local/bin}:$HOME/.local/bin:$HOME/.gtbi/bin:$HOME/.cargo/bin:$HOME/.bun/bin:$HOME/.atuin/bin:$HOME/go/bin:/usr/local/bin:/usr/bin:/bin:/snap/bin"' "$installer"
     assert_success
 
-    run grep -F 'run_as_target env "ACFS_AGENT_MAIL_TARGET_DIR=$target_dir" bash -c' "$installer"
+    run grep -F 'run_as_target env "GTBI_AGENT_MAIL_TARGET_DIR=$target_dir" bash -c' "$installer"
     assert_success
 
-    run grep -F 'am_src="$ACFS_AGENT_MAIL_TARGET_DIR/am"' "$installer"
+    run grep -F 'am_src="$GTBI_AGENT_MAIL_TARGET_DIR/am"' "$installer"
     assert_success
 
     run grep -F '"$am_bin" migrate >>"$fallback_log_file" 2>&1' "$installer"
@@ -10046,7 +10046,7 @@ EOF
     run grep -F "$env_line" "$installer"
     assert_success
 
-    run grep -F '"$ACFS_HOME/scripts/services-setup.sh" --install-claude-guard --yes' "$installer"
+    run grep -F '"$GTBI_HOME/scripts/services-setup.sh" --install-claude-guard --yes' "$installer"
     assert_success
 
     run grep -F 'try_step_eval "Installing DCG hook"' "$installer"
@@ -10059,22 +10059,22 @@ EOF
 @test "install.sh: resolves target user and shell via trusted helpers" {
     local installer="$PROJECT_ROOT/install.sh"
 
-    run grep -F '_ACFS_DETECTED_USER="$(acfs_early_resolve_current_user 2>/dev/null || true)"' "$installer"
+    run grep -F '_GTBI_DETECTED_USER="$(gtbi_early_resolve_current_user 2>/dev/null || true)"' "$installer"
     assert_success
 
-    run grep -F 'passwd_entry="$(acfs_early_getent_passwd_entry "$user" 2>/dev/null || true)"' "$installer"
+    run grep -F 'passwd_entry="$(gtbi_early_getent_passwd_entry "$user" 2>/dev/null || true)"' "$installer"
     assert_success
 
-    run grep -F 'current_user="$(acfs_early_resolve_current_user 2>/dev/null || true)"' "$installer"
+    run grep -F 'current_user="$(gtbi_early_resolve_current_user 2>/dev/null || true)"' "$installer"
     assert_success
 
-    run grep -F 'current_shell_entry="$(acfs_early_getent_passwd_entry "$TARGET_USER" 2>/dev/null || true)"' "$installer"
+    run grep -F 'current_shell_entry="$(gtbi_early_getent_passwd_entry "$TARGET_USER" 2>/dev/null || true)"' "$installer"
     assert_success
 
     run grep -F '$SUDO "$chsh_path" -s "$zsh_path" "$TARGET_USER"' "$installer"
     assert_success
 
-    run grep -F '_ACFS_DETECTED_USER="${SUDO_USER:-$(whoami)}"' "$installer"
+    run grep -F '_GTBI_DETECTED_USER="${SUDO_USER:-$(whoami)}"' "$installer"
     assert_failure
 
     run grep -F 'passwd_entry="$(getent passwd "$user" 2>/dev/null || true)"' "$installer"
@@ -10091,26 +10091,26 @@ EOF
     current_home="$(create_temp_dir)"
     target_home="$(create_temp_dir)"
 
-    eval "$(sed -n '/^acfs_home_for_user()/,/^}$/p' "$installer")"
+    eval "$(sed -n '/^gtbi_home_for_user()/,/^}$/p' "$installer")"
 
-    acfs_early_getent_passwd_entry() {
+    gtbi_early_getent_passwd_entry() {
         return 1
     }
 
-    acfs_early_resolve_current_user() {
-        printf 'acfstestuser\n'
+    gtbi_early_resolve_current_user() {
+        printf 'gtbitestuser\n'
     }
 
     export HOME="$current_home"
 
-    run acfs_home_for_user "acfstestuser" "$target_home"
+    run gtbi_home_for_user "gtbitestuser" "$target_home"
     assert_failure
 
-    run acfs_home_for_user "acfstestuser" "$current_home"
+    run gtbi_home_for_user "gtbitestuser" "$current_home"
     assert_success
     assert_output "$current_home"
 
-    run acfs_home_for_user "acfstestuser"
+    run gtbi_home_for_user "gtbitestuser"
     assert_success
     assert_output "$current_home"
 }
@@ -10118,38 +10118,38 @@ EOF
 @test "packages/manifest generator emits trusted passwd and identity helpers" {
     local generator="$PROJECT_ROOT/packages/manifest/src/generate.ts"
 
-    run grep -F 'acfs_generated_getent_passwd_entry() {' "$generator"
+    run grep -F 'gtbi_generated_getent_passwd_entry() {' "$generator"
     assert_success
 
-    run grep -F 'acfs_generated_passwd_home_from_entry() {' "$generator"
+    run grep -F 'gtbi_generated_passwd_home_from_entry() {' "$generator"
     assert_success
 
-    run grep -F '_ACFS_DETECTED_USER="\${SUDO_USER:-\$(whoami)}"' "$generator"
+    run grep -F '_GTBI_DETECTED_USER="\${SUDO_USER:-\$(whoami)}"' "$generator"
     assert_failure
 
     run grep -F 'cut -d: -f6' "$generator"
     assert_failure
 
-    run grep -F 'current_user="$(acfs_generated_resolve_current_user 2>/dev/null || true)"' "$generator"
+    run grep -F 'current_user="$(gtbi_generated_resolve_current_user 2>/dev/null || true)"' "$generator"
     assert_success
 }
 
 @test "packages/manifest generator preserves explicit TARGET_HOME against stale HOME fallback" {
     local generator="$PROJECT_ROOT/packages/manifest/src/generate.ts"
 
-    run grep -F '_ACFS_EXPLICIT_TARGET_HOME="\${TARGET_HOME:-}"' "$generator"
+    run grep -F '_GTBI_EXPLICIT_TARGET_HOME="\${TARGET_HOME:-}"' "$generator"
     assert_success
 
-    run grep -F '_ACFS_RESOLVED_TARGET_HOME="\$(_acfs_resolve_target_home "\${TARGET_USER}" "\$_ACFS_EXPLICIT_TARGET_HOME" || true)"' "$generator"
+    run grep -F '_GTBI_RESOLVED_TARGET_HOME="\$(_gtbi_resolve_target_home "\${TARGET_USER}" "\$_GTBI_EXPLICIT_TARGET_HOME" || true)"' "$generator"
     assert_success
 
-    run grep -F '{ [[ -z "\$_ACFS_EXPLICIT_TARGET_HOME" ]] || [[ "\$_acfs_current_home" == "\$_ACFS_EXPLICIT_TARGET_HOME" ]]; }' "$generator"
+    run grep -F '{ [[ -z "\$_GTBI_EXPLICIT_TARGET_HOME" ]] || [[ "\$_gtbi_current_home" == "\$_GTBI_EXPLICIT_TARGET_HOME" ]]; }' "$generator"
     assert_success
 
     run grep -F 'explicit_target_home="$target_home"' "$generator"
     assert_success
 
-    run grep -F 'resolved_target_home="$(_acfs_resolve_target_home "$target_user" "$explicit_target_home" || true)"' "$generator"
+    run grep -F 'resolved_target_home="$(_gtbi_resolve_target_home "$target_user" "$explicit_target_home" || true)"' "$generator"
     assert_success
 
     run grep -F 'target_home="$explicit_target_home"' "$generator"
@@ -10159,22 +10159,22 @@ EOF
     assert_success
 }
 
-@test "acfs.manifest inline shell blocks use trusted passwd and identity helpers" {
-    local manifest="$PROJECT_ROOT/acfs.manifest.yaml"
+@test "gtbi.manifest inline shell blocks use trusted passwd and identity helpers" {
+    local manifest="$PROJECT_ROOT/gtbi.manifest.yaml"
 
-    run grep -F 'acfs_generated_getent_passwd_entry "${TARGET_USER:-ubuntu}"' "$manifest"
+    run grep -F 'gtbi_generated_getent_passwd_entry "${TARGET_USER:-ubuntu}"' "$manifest"
     assert_success
 
-    run grep -F 'acfs_generated_passwd_home_from_entry "$_acfs_passwd_entry"' "$manifest"
+    run grep -F 'gtbi_generated_passwd_home_from_entry "$_gtbi_passwd_entry"' "$manifest"
     assert_success
 
-    run grep -F 'current_user="$(acfs_generated_resolve_current_user 2>/dev/null || true)"' "$manifest"
+    run grep -F 'current_user="$(gtbi_generated_resolve_current_user 2>/dev/null || true)"' "$manifest"
     assert_success
 
-    run grep -F '_acfs_passwd_entry="$(getent passwd "${TARGET_USER:-ubuntu}" 2>/dev/null || true)"' "$manifest"
+    run grep -F '_gtbi_passwd_entry="$(getent passwd "${TARGET_USER:-ubuntu}" 2>/dev/null || true)"' "$manifest"
     assert_failure
 
-    run grep -F 'target_home="$(printf '\''%s\n'\'' "$_acfs_passwd_entry" | cut -d: -f6)"' "$manifest"
+    run grep -F 'target_home="$(printf '\''%s\n'\'' "$_gtbi_passwd_entry" | cut -d: -f6)"' "$manifest"
     assert_failure
 
     run grep -F 'passwd_entry="$(getent passwd "$(whoami)" 2>/dev/null || true)"' "$manifest"
@@ -10184,8 +10184,8 @@ EOF
     assert_failure
 }
 
-@test "acfs.manifest inline shell blocks preserve explicit TARGET_HOME against stale HOME fallback" {
-    local manifest="$PROJECT_ROOT/acfs.manifest.yaml"
+@test "gtbi.manifest inline shell blocks preserve explicit TARGET_HOME against stale HOME fallback" {
+    local manifest="$PROJECT_ROOT/gtbi.manifest.yaml"
 
     run grep -F 'explicit_target_home="${TARGET_HOME:-}"' "$manifest"
     assert_success
@@ -10211,8 +10211,8 @@ EOF
     eval "$(sed -n '/^binary_installed()/,/^}$/p' "$installer")"
 
     export TARGET_HOME="$HOME/target-home"
-    export ACFS_BIN_DIR="$TARGET_HOME/.local/bin"
-    mkdir -p "$ACFS_BIN_DIR"
+    export GTBI_BIN_DIR="$TARGET_HOME/.local/bin"
+    mkdir -p "$GTBI_BIN_DIR"
 
     cat > "$STUB_DIR/current-shell-only-tool" <<'EOF'
 #!/usr/bin/env bash
@@ -10224,15 +10224,15 @@ EOF
     run binary_path "current-shell-only-tool"
     assert_failure
 
-    cat > "$ACFS_BIN_DIR/current-shell-only-tool" <<'EOF'
+    cat > "$GTBI_BIN_DIR/current-shell-only-tool" <<'EOF'
 #!/usr/bin/env bash
 echo "target-local-tool"
 EOF
-    chmod +x "$ACFS_BIN_DIR/current-shell-only-tool"
+    chmod +x "$GTBI_BIN_DIR/current-shell-only-tool"
 
     run binary_path "current-shell-only-tool"
     assert_success
-    assert_output "$ACFS_BIN_DIR/current-shell-only-tool"
+    assert_output "$GTBI_BIN_DIR/current-shell-only-tool"
 
     run binary_installed "current-shell-only-tool"
     assert_success
@@ -10250,8 +10250,8 @@ EOF
 
     export TARGET_USER="tester"
     export TARGET_HOME="$HOME/target-home"
-    export ACFS_BIN_DIR="$TARGET_HOME/.local/bin"
-    mkdir -p "$ACFS_BIN_DIR"
+    export GTBI_BIN_DIR="$TARGET_HOME/.local/bin"
+    mkdir -p "$GTBI_BIN_DIR"
 
     cat > "$STUB_DIR/current-shell-only-tool" <<'EOF'
 #!/usr/bin/env bash
@@ -10267,14 +10267,14 @@ EOF
     run _smoke_run_as_target "command -v current-shell-only-tool >/dev/null && current-shell-only-tool --help >/dev/null 2>&1"
     assert_failure
 
-    cat > "$ACFS_BIN_DIR/current-shell-only-tool" <<'EOF'
+    cat > "$GTBI_BIN_DIR/current-shell-only-tool" <<'EOF'
 #!/usr/bin/env bash
 if [[ "${1:-}" == "--help" ]]; then
   exit 0
 fi
 exit 0
 EOF
-    chmod +x "$ACFS_BIN_DIR/current-shell-only-tool"
+    chmod +x "$GTBI_BIN_DIR/current-shell-only-tool"
 
     run _smoke_run_as_target "command -v current-shell-only-tool >/dev/null && current-shell-only-tool --help >/dev/null 2>&1"
     assert_success
@@ -10294,8 +10294,8 @@ EOF
 
     export TARGET_HOME="$HOME/target-home"
     export _SMOKE_TARGET_HOME="$TARGET_HOME"
-    export ACFS_BIN_DIR="$TARGET_HOME/.local/bin"
-    mkdir -p "$ACFS_BIN_DIR"
+    export GTBI_BIN_DIR="$TARGET_HOME/.local/bin"
+    mkdir -p "$GTBI_BIN_DIR"
 
     cat > "$STUB_DIR/current-shell-only-tool" <<'EOF'
 #!/usr/bin/env bash
@@ -10310,51 +10310,51 @@ EOF
     run _smoke_binary_exists "current-shell-only-tool"
     assert_failure
 
-    cat > "$ACFS_BIN_DIR/current-shell-only-tool" <<'EOF'
+    cat > "$GTBI_BIN_DIR/current-shell-only-tool" <<'EOF'
 #!/usr/bin/env bash
 echo "target-local-tool"
 EOF
-    chmod +x "$ACFS_BIN_DIR/current-shell-only-tool"
+    chmod +x "$GTBI_BIN_DIR/current-shell-only-tool"
 
     run _smoke_binary_path "current-shell-only-tool"
     assert_success
-    assert_output "$ACFS_BIN_DIR/current-shell-only-tool"
+    assert_output "$GTBI_BIN_DIR/current-shell-only-tool"
 
     run _smoke_binary_exists "current-shell-only-tool"
     assert_success
 }
 
-@test "cheatsheet.sh: prepend_user_paths prefers ACFS bin and skips missing dirs" {
+@test "cheatsheet.sh: prepend_user_paths prefers GTBI bin and skips missing dirs" {
     local cheatsheet="$PROJECT_ROOT/scripts/lib/cheatsheet.sh"
     local test_home
     local expected_path=""
 
     test_home="$(create_temp_dir)"
-    mkdir -p "$test_home/custom-bin" "$test_home/.acfs/bin" "$test_home/google-cloud-sdk/bin"
+    mkdir -p "$test_home/custom-bin" "$test_home/.gtbi/bin" "$test_home/google-cloud-sdk/bin"
 
     # shellcheck disable=SC1090
     eval "$(sed -n '/^cheatsheet_sanitize_abs_nonroot_path()/,/^}$/p' "$cheatsheet")"
     # shellcheck disable=SC1090
     eval "$(sed -n '/^cheatsheet_prepend_user_paths()/,/^}$/p' "$cheatsheet")"
 
-    export ACFS_BIN_DIR="$test_home/custom-bin"
+    export GTBI_BIN_DIR="$test_home/custom-bin"
     PATH="/usr/bin:/bin"
     cheatsheet_prepend_user_paths "$test_home"
 
-    expected_path="$test_home/custom-bin:$test_home/.acfs/bin:$test_home/google-cloud-sdk/bin:/usr/bin:/bin"
+    expected_path="$test_home/custom-bin:$test_home/.gtbi/bin:$test_home/google-cloud-sdk/bin:/usr/bin:/bin"
     [ "$PATH" = "$expected_path" ]
 }
 
-@test "cheatsheet.sh: parse_zshrc sees tools installed only in ACFS bins" {
+@test "cheatsheet.sh: parse_zshrc sees tools installed only in GTBI bins" {
     local cheatsheet="$PROJECT_ROOT/scripts/lib/cheatsheet.sh"
     local test_home
     local zshrc
 
     test_home="$(create_temp_dir)"
-    zshrc="$test_home/acfs.zshrc"
-    mkdir -p "$test_home/.acfs/bin" "$test_home/google-cloud-sdk/bin"
+    zshrc="$test_home/gtbi.zshrc"
+    mkdir -p "$test_home/.gtbi/bin" "$test_home/google-cloud-sdk/bin"
 
-    cat > "$test_home/.acfs/bin/am" <<'EOF'
+    cat > "$test_home/.gtbi/bin/am" <<'EOF'
 #!/usr/bin/env bash
 exit 0
 EOF
@@ -10362,7 +10362,7 @@ EOF
 #!/usr/bin/env bash
 exit 0
 EOF
-    chmod +x "$test_home/.acfs/bin/am" "$test_home/google-cloud-sdk/bin/gcloud"
+    chmod +x "$test_home/.gtbi/bin/am" "$test_home/google-cloud-sdk/bin/gcloud"
 
     cat > "$zshrc" <<'EOF'
 # --- Agents ---
@@ -10381,7 +10381,7 @@ EOF
     # shellcheck disable=SC1090
     eval "$(sed -n '/^cheatsheet_parse_zshrc()/,/^}$/p' "$cheatsheet")"
 
-    export ACFS_BIN_DIR=""
+    export GTBI_BIN_DIR=""
     export CHEATSHEET_DELIM=$'	'
     PATH="/usr/bin:/bin"
     cheatsheet_prepend_user_paths "$test_home"
@@ -10399,17 +10399,17 @@ EOF
     local expected_path=""
 
     test_home="$(create_temp_dir)"
-    mkdir -p "$test_home/custom-bin" "$test_home/.acfs/bin" "$test_home/google-cloud-sdk/bin"
+    mkdir -p "$test_home/custom-bin" "$test_home/.gtbi/bin" "$test_home/google-cloud-sdk/bin"
 
-    info_preferred_bin_dir() { printf '%s\n' "$ACFS_BIN_DIR"; }
+    info_preferred_bin_dir() { printf '%s\n' "$GTBI_BIN_DIR"; }
     # shellcheck disable=SC1090
     eval "$(sed -n '/^info_prepend_user_paths()/,/^}$/p' "$info_lib")"
 
-    export ACFS_BIN_DIR="$test_home/custom-bin"
+    export GTBI_BIN_DIR="$test_home/custom-bin"
     PATH="/usr/bin:/bin"
     info_prepend_user_paths "$test_home"
 
-    expected_path="$test_home/custom-bin:$test_home/.acfs/bin:$test_home/google-cloud-sdk/bin:/usr/bin:/bin"
+    expected_path="$test_home/custom-bin:$test_home/.gtbi/bin:$test_home/google-cloud-sdk/bin:/usr/bin:/bin"
     [ "$PATH" = "$expected_path" ]
 }
 
@@ -10419,17 +10419,17 @@ EOF
     local expected_path=""
 
     test_home="$(create_temp_dir)"
-    mkdir -p "$test_home/custom-bin" "$test_home/.acfs/bin" "$test_home/google-cloud-sdk/bin"
+    mkdir -p "$test_home/custom-bin" "$test_home/.gtbi/bin" "$test_home/google-cloud-sdk/bin"
 
-    _status_preferred_bin_dir() { printf '%s\n' "$ACFS_BIN_DIR"; }
+    _status_preferred_bin_dir() { printf '%s\n' "$GTBI_BIN_DIR"; }
     # shellcheck disable=SC1090
     eval "$(sed -n '/^_status_prepend_user_paths()/,/^}$/p' "$status_lib")"
 
-    export ACFS_BIN_DIR="$test_home/custom-bin"
+    export GTBI_BIN_DIR="$test_home/custom-bin"
     PATH="/usr/bin:/bin"
     _status_prepend_user_paths "$test_home"
 
-    expected_path="$test_home/custom-bin:$test_home/.acfs/bin:$test_home/google-cloud-sdk/bin:/usr/bin:/bin"
+    expected_path="$test_home/custom-bin:$test_home/.gtbi/bin:$test_home/google-cloud-sdk/bin:/usr/bin:/bin"
     [ "$PATH" = "$expected_path" ]
 }
 
@@ -10439,17 +10439,17 @@ EOF
     local expected_path=""
 
     test_home="$(create_temp_dir)"
-    mkdir -p "$test_home/custom-bin" "$test_home/.acfs/bin" "$test_home/google-cloud-sdk/bin"
+    mkdir -p "$test_home/custom-bin" "$test_home/.gtbi/bin" "$test_home/google-cloud-sdk/bin"
 
     # shellcheck disable=SC1090
     eval "$(sed -n '/^augment_path_for_target_user()/,/^}$/p' "$export_config")"
 
     export TARGET_HOME="$test_home"
-    export ACFS_BIN_DIR="$test_home/custom-bin"
+    export GTBI_BIN_DIR="$test_home/custom-bin"
     PATH="/usr/bin:/bin"
     augment_path_for_target_user
 
-    expected_path="$test_home/custom-bin:$test_home/.acfs/bin:$test_home/google-cloud-sdk/bin:/usr/bin:/bin"
+    expected_path="$test_home/custom-bin:$test_home/.gtbi/bin:$test_home/google-cloud-sdk/bin:/usr/bin:/bin"
     [ "$PATH" = "$expected_path" ]
 }
 
@@ -10459,17 +10459,17 @@ EOF
     local expected_path=""
 
     test_home="$(create_temp_dir)"
-    mkdir -p "$test_home/custom-bin" "$test_home/.acfs/bin" "$test_home/google-cloud-sdk/bin"
+    mkdir -p "$test_home/custom-bin" "$test_home/.gtbi/bin" "$test_home/google-cloud-sdk/bin"
 
-    _smoke_preferred_bin_dir() { printf '%s\n' "$ACFS_BIN_DIR"; }
+    _smoke_preferred_bin_dir() { printf '%s\n' "$GTBI_BIN_DIR"; }
     # shellcheck disable=SC1090
     eval "$(sed -n '/^_smoke_prepend_user_paths()/,/^}$/p' "$smoke_lib")"
 
-    export ACFS_BIN_DIR="$test_home/custom-bin"
+    export GTBI_BIN_DIR="$test_home/custom-bin"
     PATH="/usr/bin:/bin"
     _smoke_prepend_user_paths "$test_home"
 
-    expected_path="$test_home/custom-bin:$test_home/.acfs/bin:$test_home/google-cloud-sdk/bin:/usr/bin:/bin"
+    expected_path="$test_home/custom-bin:$test_home/.gtbi/bin:$test_home/google-cloud-sdk/bin:/usr/bin:/bin"
     [ "$PATH" = "$expected_path" ]
 }
 
@@ -10484,8 +10484,8 @@ EOF
     eval "$(sed -n '/^info_binary_exists()/,/^}$/p' "$info_lib")"
 
     export TARGET_HOME="$HOME/target-home"
-    export ACFS_BIN_DIR="$TARGET_HOME/.local/bin"
-    mkdir -p "$ACFS_BIN_DIR"
+    export GTBI_BIN_DIR="$TARGET_HOME/.local/bin"
+    mkdir -p "$GTBI_BIN_DIR"
 
     cat > "$STUB_DIR/current-shell-only-tool" <<'EOF'
 #!/usr/bin/env bash
@@ -10500,15 +10500,15 @@ EOF
     run info_binary_exists "current-shell-only-tool"
     assert_failure
 
-    cat > "$ACFS_BIN_DIR/current-shell-only-tool" <<'EOF'
+    cat > "$GTBI_BIN_DIR/current-shell-only-tool" <<'EOF'
 #!/usr/bin/env bash
 echo "target-local-tool"
 EOF
-    chmod +x "$ACFS_BIN_DIR/current-shell-only-tool"
+    chmod +x "$GTBI_BIN_DIR/current-shell-only-tool"
 
     run info_binary_path "current-shell-only-tool"
     assert_success
-    assert_output "$ACFS_BIN_DIR/current-shell-only-tool"
+    assert_output "$GTBI_BIN_DIR/current-shell-only-tool"
 
     run info_binary_exists "current-shell-only-tool"
     assert_success
@@ -10518,55 +10518,55 @@ EOF
     local update="$PROJECT_ROOT/scripts/lib/update.sh"
     local test_home="$BATS_TEST_TMPDIR/update-home"
     local expected_path=""
-    mkdir -p "$test_home/.local/bin" "$test_home/.acfs/bin" "$test_home/google-cloud-sdk/bin"
+    mkdir -p "$test_home/.local/bin" "$test_home/.gtbi/bin" "$test_home/google-cloud-sdk/bin"
 
-    run env -u TARGET_HOME -u ACFS_BIN_DIR HOME="$test_home" PATH="/usr/bin:/bin" bash -c 'source "$1"; ACFS_BIN_DIR=""; PATH=""; ensure_path; printf "%s\n" "$PATH"' _ "$update"
+    run env -u TARGET_HOME -u GTBI_BIN_DIR HOME="$test_home" PATH="/usr/bin:/bin" bash -c 'source "$1"; GTBI_BIN_DIR=""; PATH=""; ensure_path; printf "%s\n" "$PATH"' _ "$update"
     assert_success
 
-    expected_path="$test_home/.local/bin:$test_home/.acfs/bin:$test_home/google-cloud-sdk/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin"
+    expected_path="$test_home/.local/bin:$test_home/.gtbi/bin:$test_home/google-cloud-sdk/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin"
     [ "$output" = "$expected_path" ]
 }
 
-@test "update.sh: ensure_path ignores relative ACFS_BIN_DIR when PATH is empty" {
+@test "update.sh: ensure_path ignores relative GTBI_BIN_DIR when PATH is empty" {
     local update="$PROJECT_ROOT/scripts/lib/update.sh"
     local test_home="$BATS_TEST_TMPDIR/update-home-relative"
     local cwd="$BATS_TEST_TMPDIR/update-relative-cwd"
     local expected_path=""
-    mkdir -p "$test_home/.local/bin" "$test_home/.acfs/bin" "$test_home/google-cloud-sdk/bin" "$cwd/relative/bin"
+    mkdir -p "$test_home/.local/bin" "$test_home/.gtbi/bin" "$test_home/google-cloud-sdk/bin" "$cwd/relative/bin"
 
-    run env -u TARGET_HOME -u ACFS_BIN_DIR HOME="$test_home" PATH="/usr/bin:/bin" bash -c 'cd "$3"; source "$1"; ACFS_BIN_DIR="relative/bin"; PATH=""; ensure_path; printf "%s\n" "$PATH"' _ "$update" unused "$cwd"
+    run env -u TARGET_HOME -u GTBI_BIN_DIR HOME="$test_home" PATH="/usr/bin:/bin" bash -c 'cd "$3"; source "$1"; GTBI_BIN_DIR="relative/bin"; PATH=""; ensure_path; printf "%s\n" "$PATH"' _ "$update" unused "$cwd"
     assert_success
 
-    expected_path="$test_home/.local/bin:$test_home/.acfs/bin:$test_home/google-cloud-sdk/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin"
+    expected_path="$test_home/.local/bin:$test_home/.gtbi/bin:$test_home/google-cloud-sdk/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin"
     [ "$output" = "$expected_path" ]
 }
 
-@test "doctor.sh: defaults ACFS_SYSTEM_STATE_FILE to system state path" {
+@test "doctor.sh: defaults GTBI_SYSTEM_STATE_FILE to system state path" {
     local doctor_lib="$PROJECT_ROOT/scripts/lib/doctor.sh"
     local test_home
 
     test_home="$(create_temp_dir)"
     mkdir -p "$test_home"
 
-    unset TARGET_USER TARGET_HOME ACFS_HOME ACFS_STATE_FILE ACFS_SYSTEM_STATE_FILE ACFS_BIN_DIR
+    unset TARGET_USER TARGET_HOME GTBI_HOME GTBI_STATE_FILE GTBI_SYSTEM_STATE_FILE GTBI_BIN_DIR
     export HOME="$test_home"
 
     # shellcheck disable=SC1090
-    eval "$(sed -n '/^_acfs_doctor_sanitize_abs_nonroot_path()/,/^}$/p' "$doctor_lib")"
+    eval "$(sed -n '/^_gtbi_doctor_sanitize_abs_nonroot_path()/,/^}$/p' "$doctor_lib")"
     # shellcheck disable=SC1090
-    eval "$(sed -n '/^_acfs_doctor_system_binary_path()/,/^}$/p' "$doctor_lib")"
+    eval "$(sed -n '/^_gtbi_doctor_system_binary_path()/,/^}$/p' "$doctor_lib")"
     # shellcheck disable=SC1090
-    eval "$(sed -n '/^_acfs_doctor_resolve_current_user()/,/^}$/p' "$doctor_lib")"
+    eval "$(sed -n '/^_gtbi_doctor_resolve_current_user()/,/^}$/p' "$doctor_lib")"
     # shellcheck disable=SC1090
-    eval "$(sed -n '/^_acfs_doctor_getent_passwd_entry()/,/^}$/p' "$doctor_lib")"
+    eval "$(sed -n '/^_gtbi_doctor_getent_passwd_entry()/,/^}$/p' "$doctor_lib")"
     # shellcheck disable=SC1090
-    eval "$(sed -n '/^_acfs_doctor_passwd_home_from_entry()/,/^}$/p' "$doctor_lib")"
+    eval "$(sed -n '/^_gtbi_doctor_passwd_home_from_entry()/,/^}$/p' "$doctor_lib")"
     # shellcheck disable=SC1090
-    eval "$(sed -n '/^_acfs_doctor_resolve_current_home()/,/^}$/p' "$doctor_lib")"
+    eval "$(sed -n '/^_gtbi_doctor_resolve_current_home()/,/^}$/p' "$doctor_lib")"
     # shellcheck disable=SC1090
-    eval "$(sed -n '/^_acfs_doctor_current_home="\$(_acfs_doctor_resolve_current_home/,/^export TARGET_HOME ACFS_HOME ACFS_STATE_FILE ACFS_SYSTEM_STATE_FILE ACFS_BIN_DIR$/p' "$doctor_lib")"
+    eval "$(sed -n '/^_gtbi_doctor_current_home="\$(_gtbi_doctor_resolve_current_home/,/^export TARGET_HOME GTBI_HOME GTBI_STATE_FILE GTBI_SYSTEM_STATE_FILE GTBI_BIN_DIR$/p' "$doctor_lib")"
 
-    [[ "$ACFS_SYSTEM_STATE_FILE" == "/var/lib/acfs/state.json" ]]
+    [[ "$GTBI_SYSTEM_STATE_FILE" == "/var/lib/gtbi/state.json" ]]
 }
 
 @test "doctor.sh: Vault config check requires active VAULT_ADDR assignment" {
@@ -10579,25 +10579,25 @@ EOF
     zshrc_local="$test_home/.zshrc.local"
 
     # shellcheck disable=SC1090
-    eval "$(sed -n '/^_acfs_doctor_shell_has_active_assignment()/,/^}$/p' "$doctor_lib")"
+    eval "$(sed -n '/^_gtbi_doctor_shell_has_active_assignment()/,/^}$/p' "$doctor_lib")"
 
     cat > "$zshrc_local" <<'EOF'
 # export VAULT_ADDR="https://vault.example"
 alias keep_me="true"
 EOF
-    run _acfs_doctor_shell_has_active_assignment "$zshrc_local" "VAULT_ADDR"
+    run _gtbi_doctor_shell_has_active_assignment "$zshrc_local" "VAULT_ADDR"
     assert_failure
 
     cat > "$zshrc_local" <<'EOF'
 export VAULT_ADDR=""
 EOF
-    run _acfs_doctor_shell_has_active_assignment "$zshrc_local" "VAULT_ADDR"
+    run _gtbi_doctor_shell_has_active_assignment "$zshrc_local" "VAULT_ADDR"
     assert_failure
 
     cat > "$zshrc_local" <<'EOF'
   export VAULT_ADDR="https://vault.example"
 EOF
-    run _acfs_doctor_shell_has_active_assignment "$zshrc_local" "VAULT_ADDR"
+    run _gtbi_doctor_shell_has_active_assignment "$zshrc_local" "VAULT_ADDR"
     assert_success
 }
 
@@ -10808,7 +10808,7 @@ EOF_AUTH_PARSER_TRUSTED_JQ
     pattern='(^|[[:space:]/])dcg([[:space:]]|$)'
 
     # shellcheck disable=SC1090
-    eval "$(sed -n '/^_acfs_doctor_claude_settings_has_command_hook()/,/^}$/p' "$doctor_lib")"
+    eval "$(sed -n '/^_gtbi_doctor_claude_settings_has_command_hook()/,/^}$/p' "$doctor_lib")"
 
     cat > "$settings_file" <<'EOF'
 {
@@ -10818,7 +10818,7 @@ EOF_AUTH_PARSER_TRUSTED_JQ
   }
 }
 EOF
-    run _acfs_doctor_claude_settings_has_command_hook "$settings_file" "$pattern"
+    run _gtbi_doctor_claude_settings_has_command_hook "$settings_file" "$pattern"
     assert_failure
 
     cat > "$settings_file" <<'EOF'
@@ -10833,7 +10833,7 @@ EOF
   }
 }
 EOF
-    run _acfs_doctor_claude_settings_has_command_hook "$settings_file" "$pattern"
+    run _gtbi_doctor_claude_settings_has_command_hook "$settings_file" "$pattern"
     assert_success
 
     cat > "$settings_file" <<'EOF'
@@ -10853,7 +10853,7 @@ EOF
   }
 }
 EOF
-    run _acfs_doctor_claude_settings_has_command_hook "$settings_file" "$pattern"
+    run _gtbi_doctor_claude_settings_has_command_hook "$settings_file" "$pattern"
     assert_success
 }
 
@@ -11046,7 +11046,7 @@ export TARGET_USER
 TARGET_USER="$(id -un)"
 export TARGET_HOME="$target_home"
 export HOME="$target_home"
-export ACFS_BIN_DIR="$target_home/.local/bin"
+export GTBI_BIN_DIR="$target_home/.local/bin"
 
 remove_dcg_hook_from_settings "$settings_file"
 [[ ! -e "$marker" ]]
@@ -11154,7 +11154,7 @@ export TARGET_USER
 TARGET_USER="$(id -un)"
 export TARGET_HOME="$target_home"
 export HOME="$target_home"
-export ACFS_BIN_DIR="$target_home/.local/bin"
+export GTBI_BIN_DIR="$target_home/.local/bin"
 export SERVICES_SETUP_NONINTERACTIVE="false"
 
 configure_dcg
@@ -11177,7 +11177,7 @@ EOF_DCG_CONFIG_TRUSTED_HELPERS
     # shellcheck disable=SC1090
     source "$stack_lib"
 
-    unset ACFS_FSFS_VERSION
+    unset GTBI_FSFS_VERSION
     log_detail() { :; }
     curl() {
         : > "$curl_marker"
@@ -11262,7 +11262,7 @@ EOF_DCG_CONFIG_TRUSTED_HELPERS
 
 @test "Agent Mail installer health checks do not use bare curl" {
     local installer="$PROJECT_ROOT/install.sh"
-    local manifest="$PROJECT_ROOT/acfs.manifest.yaml"
+    local manifest="$PROJECT_ROOT/gtbi.manifest.yaml"
     local generated_stack="$PROJECT_ROOT/scripts/generated/install_stack.sh"
 
     run grep -F 'agent_mail_service_curl() {' "$installer"
@@ -11334,13 +11334,13 @@ EOF_DCG_CONFIG_TRUSTED_HELPERS
     get_checksum() { printf '%s\n' "abc123"; }
     log_warn() { printf '%s\n' "$*" >&2; }
     _stack_run_as_user() { printf '%s\n' "$1"; }
-    STACK_SCRIPT_DIR="/tmp/acfs stack's dir"
+    STACK_SCRIPT_DIR="/tmp/gtbi stack's dir"
 
-    run _stack_run_verified_installer_with_env "test_tool" "TEST_ENV=ok;touch /tmp/acfs-pwned" "--flag"
+    run _stack_run_verified_installer_with_env "test_tool" "TEST_ENV=ok;touch /tmp/gtbi-pwned" "--flag"
     assert_success
-    assert_output --partial "TEST_ENV=ok\\;touch\\ /tmp/acfs-pwned"
-    refute_output --partial "TEST_ENV=ok;touch /tmp/acfs-pwned"
-    assert_output --partial "set -o pipefail; source /tmp/acfs\\ stack\\'s\\ dir/security.sh"
+    assert_output --partial "TEST_ENV=ok\\;touch\\ /tmp/gtbi-pwned"
+    refute_output --partial "TEST_ENV=ok;touch /tmp/gtbi-pwned"
+    assert_output --partial "set -o pipefail; source /tmp/gtbi\\ stack\\'s\\ dir/security.sh"
     assert_output --partial "bash -s -- --flag"
 }
 
@@ -11463,9 +11463,9 @@ SECURITY
         printf 'arg=%s\n' "$4"
     }
 
-    run update_run_verified_installer_with_env "test_tool" "TEST_ENV=ok; touch /tmp/acfs pwned" "--flag"
+    run update_run_verified_installer_with_env "test_tool" "TEST_ENV=ok; touch /tmp/gtbi pwned" "--flag"
     assert_success
-    assert_output --partial "env=TEST_ENV=ok; touch /tmp/acfs pwned"
+    assert_output --partial "env=TEST_ENV=ok; touch /tmp/gtbi pwned"
     assert_output --partial "cmd=bash"
     assert_output --partial "arg=--flag"
 }
@@ -11518,7 +11518,7 @@ SECURITY
     run cat "$path_file"
     assert_success
     [[ "$output" != "$private_tmp/"* ]]
-    [[ "$output" == */acfs-update-test_tool.* ]]
+    [[ "$output" == */gtbi-update-test_tool.* ]]
     run cat "$mode_file"
     assert_success
     assert_output "755"
@@ -11531,7 +11531,7 @@ SECURITY
     declare -gA KNOWN_INSTALLERS=([test_tool]="https://example.test/install.sh")
     mkdir -p "$private_tmp" "$shared_tmp"
     export TMPDIR="$private_tmp"
-    export ACFS_UPDATE_TMPDIR="$shared_tmp"
+    export GTBI_UPDATE_TMPDIR="$shared_tmp"
 
     update_require_security() { return 0; }
     get_checksum() { printf '%s\n' "abc123"; }
@@ -11560,17 +11560,17 @@ SECURITY
 
     run cat "$path_file"
     assert_success
-    [[ "$output" == "$shared_tmp/acfs-update-test_tool."* ]]
+    [[ "$output" == "$shared_tmp/gtbi-update-test_tool."* ]]
 }
 
 @test "update special MCP Agent Mail installer uses target-readable temp helper" {
     local update="$PROJECT_ROOT/scripts/lib/update.sh"
 
-    run grep -F 'tmp_install="$(update_create_target_readable_temp_file "acfs-install-am" 2>/dev/null)"' "$update"
+    run grep -F 'tmp_install="$(update_create_target_readable_temp_file "gtbi-install-am" 2>/dev/null)"' "$update"
     assert_success
     run grep -F 'candidate_dirs+=("/data/tmp" "/var/tmp" "/tmp")' "$update"
     assert_success
-    run grep -F 'mktemp "${TMPDIR:-/tmp}/acfs-install-am.XXXXXX"' "$update"
+    run grep -F 'mktemp "${TMPDIR:-/tmp}/gtbi-install-am.XXXXXX"' "$update"
     assert_failure
 }
 
@@ -11595,7 +11595,7 @@ SECURITY
                 [[ "${1:-}" == "" ]]
                 [[ "${3:-}" == "-d" ]]
                 printf '%s\n' "${4:-}" > "$TEST_MKTEMP_TEMPLATE"
-                printf '%s\n' "$TEST_TARGET_HOME/.cache/acfs/installer-tmp/cass.ABC123"
+                printf '%s\n' "$TEST_TARGET_HOME/.cache/gtbi/installer-tmp/cass.ABC123"
                 return 0
                 ;;
         esac
@@ -11611,9 +11611,9 @@ SECURITY
 
     local prepared_tmpdir
     prepared_tmpdir="$(cat "$TEST_PREPARED_FILE")"
-    [[ "$prepared_tmpdir" == "$TEST_TARGET_HOME/.cache/acfs/installer-tmp" ]]
-    [[ "$(cat "$TEST_MKTEMP_TEMPLATE")" == "$TEST_TARGET_HOME/.cache/acfs/installer-tmp/cass.XXXXXX" ]]
-    [[ "$(cat "$TEST_INSTALLER_ARGS")" == "cass TMPDIR=$TEST_TARGET_HOME/.cache/acfs/installer-tmp/cass.ABC123 --easy-mode --verify" ]]
+    [[ "$prepared_tmpdir" == "$TEST_TARGET_HOME/.cache/gtbi/installer-tmp" ]]
+    [[ "$(cat "$TEST_MKTEMP_TEMPLATE")" == "$TEST_TARGET_HOME/.cache/gtbi/installer-tmp/cass.XXXXXX" ]]
+    [[ "$(cat "$TEST_INSTALLER_ARGS")" == "cass TMPDIR=$TEST_TARGET_HOME/.cache/gtbi/installer-tmp/cass.ABC123 --easy-mode --verify" ]]
 }
 
 @test "update verified installer with target tmpdir skips transient failure when existing cass is healthy" {
@@ -11634,7 +11634,7 @@ EOF
     VERBOSE=false
     DRY_RUN=false
     ABORT_ON_FAILURE=false
-    ACFS_UPDATE_RETRY_MAX_ATTEMPTS=1
+    GTBI_UPDATE_RETRY_MAX_ATTEMPTS=1
     UPDATE_LOG_FILE="$HOME/update.log"
     SUCCESS_COUNT=0
     FAIL_COUNT=0
@@ -11664,7 +11664,7 @@ EOF
     VERBOSE=false
     DRY_RUN=false
     ABORT_ON_FAILURE=false
-    ACFS_UPDATE_RETRY_MAX_ATTEMPTS=1
+    GTBI_UPDATE_RETRY_MAX_ATTEMPTS=1
     UPDATE_LOG_FILE="$HOME/update.log"
     SUCCESS_COUNT=0
     FAIL_COUNT=0
@@ -11692,7 +11692,7 @@ EOF
     VERBOSE=false
     DRY_RUN=false
     ABORT_ON_FAILURE=false
-    ACFS_UPDATE_RETRY_MAX_ATTEMPTS=1
+    GTBI_UPDATE_RETRY_MAX_ATTEMPTS=1
     UPDATE_LOG_FILE="$HOME/update.log"
     SUCCESS_COUNT=0
     FAIL_COUNT=0
@@ -11772,9 +11772,9 @@ EOF
     assert_output --partial "env="
     assert_output --partial "cmd=bash"
     assert_output --partial "mode=-c"
-    assert_output --partial "ACFS_UPDATE_TMPDIR"
+    assert_output --partial "GTBI_UPDATE_TMPDIR"
     assert_output --partial "/data/tmp"
-    assert_output --partial 'mktemp -d "$candidate/acfs_cargo_build.XXXXXX"'
+    assert_output --partial 'mktemp -d "$candidate/gtbi_cargo_build.XXXXXX"'
     assert_output --partial "sentinel=_"
     assert_output --partial "repo=https://example.test/tool.git"
     assert_output --partial "binary=tool-bin"
@@ -11807,7 +11807,7 @@ EOF
 }
 
 @test "update fsfs artifact contract falls back when latest checksum is not ready" {
-    unset ACFS_FSFS_VERSION
+    unset GTBI_FSFS_VERSION
     log_to_file() { :; }
     update_curl() {
         case "$*" in
@@ -11842,7 +11842,7 @@ EOF
 }
 
 @test "update fsfs version resolver falls back to release redirect" {
-    unset ACFS_FSFS_VERSION
+    unset GTBI_FSFS_VERSION
     update_curl() {
         case "$*" in
             *api.github.com*) return 22 ;;
@@ -11858,7 +11858,7 @@ EOF
 }
 
 @test "update fsfs version resolver rejects malformed override" {
-    export ACFS_FSFS_VERSION="../v1.2.5"
+    export GTBI_FSFS_VERSION="../v1.2.5"
 
     run update_resolve_fsfs_latest_version
 
@@ -11938,19 +11938,19 @@ EOF
     run grep -E '(Fix:|re-run:|Re-run:|Install bun first:).*--only-phase' "$installer" "$agents_lib" "$smoke_lib"
     assert_failure
 
-    run grep -F 'acfs_smoke_install_fix_command lang.bun lang.uv lang.rust lang.go' "$installer"
+    run grep -F 'gtbi_smoke_install_fix_command lang.bun lang.uv lang.rust lang.go' "$installer"
     assert_success
 
-    run grep -F 'acfs_smoke_install_fix_command agents.claude agents.codex agents.gemini' "$installer"
+    run grep -F 'gtbi_smoke_install_fix_command agents.claude agents.codex agents.gemini' "$installer"
     assert_success
 
-    run grep -F 'acfs_smoke_install_fix_command stack.ntm' "$installer"
+    run grep -F 'gtbi_smoke_install_fix_command stack.ntm' "$installer"
     assert_success
 
-    run grep -F 'acfs_smoke_install_fix_command acfs.onboard' "$installer"
+    run grep -F 'gtbi_smoke_install_fix_command gtbi.onboard' "$installer"
     assert_success
 
-    run grep -F 'acfs_smoke_install_fix_command stack.mcp_agent_mail' "$installer"
+    run grep -F 'gtbi_smoke_install_fix_command stack.mcp_agent_mail' "$installer"
     assert_success
 
     run grep -F -- '--force-reinstall --only stack.ntm' "$smoke_lib"
@@ -11964,28 +11964,28 @@ EOF
     local installer="$PROJECT_ROOT/install.sh"
 
     # shellcheck disable=SC1090
-    eval "$(sed -n '/^acfs_smoke_install_fix_command()/,/^}$/p' "$installer")"
+    eval "$(sed -n '/^gtbi_smoke_install_fix_command()/,/^}$/p' "$installer")"
 
-    ACFS_REPO_OWNER="Dicklesworthstone"
-    ACFS_REPO_NAME="agentic_coding_flywheel_setup"
-    ACFS_COMMIT_SHA_FULL="abc1234"
-    ACFS_REF_INPUT="feature/test"
+    GTBI_REPO_OWNER="Dicklesworthstone"
+    GTBI_REPO_NAME="gastown_batteries_included"
+    GTBI_COMMIT_SHA_FULL="abc1234"
+    GTBI_REF_INPUT="feature/test"
 
-    run acfs_smoke_install_fix_command "stack.ntm"
+    run gtbi_smoke_install_fix_command "stack.ntm"
     assert_success
-    assert_output --partial "https://raw.githubusercontent.com/Dicklesworthstone/agentic_coding_flywheel_setup/abc1234/install.sh"
+    assert_output --partial "https://raw.githubusercontent.com/jonbackhaus/gtbi/abc1234/install.sh"
     assert_output --partial "bash -s -- --yes --force-reinstall --only stack.ntm --ref abc1234"
 
-    unset ACFS_COMMIT_SHA_FULL
-    ACFS_REF_INPUT="feature/test"
+    unset GTBI_COMMIT_SHA_FULL
+    GTBI_REF_INPUT="feature/test"
 
-    run acfs_smoke_install_fix_command "stack.ntm"
+    run gtbi_smoke_install_fix_command "stack.ntm"
     assert_success
-    assert_output --partial "https://raw.githubusercontent.com/Dicklesworthstone/agentic_coding_flywheel_setup/feature/test/install.sh"
+    assert_output --partial "https://raw.githubusercontent.com/jonbackhaus/gtbi/feature/test/install.sh"
     assert_output --partial "bash -s -- --yes --force-reinstall --only stack.ntm --ref feature/test"
 
-    ACFS_REF_INPUT="main"
-    run acfs_smoke_install_fix_command "stack.ntm"
+    GTBI_REF_INPUT="main"
+    run gtbi_smoke_install_fix_command "stack.ntm"
     assert_success
     assert_output --partial "https://agent-flywheel.com/install"
     refute_output --partial "--ref"
@@ -11995,19 +11995,19 @@ EOF
     local doctor_lib="$PROJECT_ROOT/scripts/lib/doctor.sh"
 
     # shellcheck disable=SC1090
-    eval "$(sed -n '/^_acfs_doctor_normalize_mode()/,/^}$/p' "$doctor_lib")"
+    eval "$(sed -n '/^_gtbi_doctor_normalize_mode()/,/^}$/p' "$doctor_lib")"
 
-    run _acfs_doctor_normalize_mode "safe"
+    run _gtbi_doctor_normalize_mode "safe"
     assert_success
     assert_output "safe"
 
-    run _acfs_doctor_normalize_mode "safe --skip-cloud"
+    run _gtbi_doctor_normalize_mode "safe --skip-cloud"
     assert_failure
 
-    run grep -F 'ACFS_MODE="$(_acfs_doctor_normalize_mode "${ACFS_MODE:-}" 2>/dev/null || true)"' "$doctor_lib"
+    run grep -F 'GTBI_MODE="$(_gtbi_doctor_normalize_mode "${GTBI_MODE:-}" 2>/dev/null || true)"' "$doctor_lib"
     assert_success
 
-    run grep -F 'ACFS_MODE="${ACFS_MODE:-vibe}"' "$doctor_lib"
+    run grep -F 'GTBI_MODE="${GTBI_MODE:-vibe}"' "$doctor_lib"
     assert_success
 }
 
@@ -12022,21 +12022,21 @@ EOF
     printf -v output_q '%q' "$output_file"
 
     # shellcheck disable=SC1090
-    eval "$(sed -n '/^_acfs_doctor_sanitize_abs_nonroot_path()/,/^}$/p' "$doctor_lib")"
+    eval "$(sed -n '/^_gtbi_doctor_sanitize_abs_nonroot_path()/,/^}$/p' "$doctor_lib")"
     # shellcheck disable=SC1090
-    eval "$(sed -n '/^_acfs_doctor_system_binary_path()/,/^}$/p' "$doctor_lib")"
+    eval "$(sed -n '/^_gtbi_doctor_system_binary_path()/,/^}$/p' "$doctor_lib")"
     # shellcheck disable=SC1090
-    eval "$(sed -n '/^_acfs_doctor_passwd_home_from_entry()/,/^}$/p' "$doctor_lib")"
+    eval "$(sed -n '/^_gtbi_doctor_passwd_home_from_entry()/,/^}$/p' "$doctor_lib")"
     # shellcheck disable=SC1090
     eval "$(sed -n '/^_doctor_run_manifest_check()/,/^}$/p' "$doctor_lib")"
 
-    _acfs_doctor_getent_passwd_entry() {
+    _gtbi_doctor_getent_passwd_entry() {
         printf 'tester:x:1000:1000::%s:/bin/bash\n' "$target_home"
     }
-    _acfs_doctor_resolve_current_user() {
+    _gtbi_doctor_resolve_current_user() {
         printf 'tester\n'
     }
-    _acfs_doctor_validate_bin_dir_for_home() {
+    _gtbi_doctor_validate_bin_dir_for_home() {
         return 1
     }
     log_error() {
@@ -12053,7 +12053,7 @@ EOF
 
     TARGET_USER="tester"
     TARGET_HOME="$target_home"
-    ACFS_BIN_DIR=""
+    GTBI_BIN_DIR=""
 
     run _doctor_run_manifest_check target_user "printf '%s\n' \"\$TARGET_USER:\$TARGET_HOME\" > $output_q"
     assert_success
@@ -12067,32 +12067,32 @@ EOF
 
     cat > "$fixture_state_file" <<'EOF'
 {
-  "pinned_ref": "main\"; touch /tmp/acfs-pwned #"
+  "pinned_ref": "main\"; touch /tmp/gtbi-pwned #"
 }
 EOF
 
     # shellcheck disable=SC1090
-    eval "$(sed -n '/^_acfs_doctor_system_binary_path()/,/^}$/p' "$doctor_lib")"
+    eval "$(sed -n '/^_gtbi_doctor_system_binary_path()/,/^}$/p' "$doctor_lib")"
     # shellcheck disable=SC1090
-    eval "$(sed -n '/^_acfs_doctor_read_json_string_key()/,/^}$/p' "$doctor_lib")"
+    eval "$(sed -n '/^_gtbi_doctor_read_json_string_key()/,/^}$/p' "$doctor_lib")"
     # shellcheck disable=SC1090
-    eval "$(sed -n '/^_acfs_doctor_normalize_mode()/,/^}$/p' "$doctor_lib")"
+    eval "$(sed -n '/^_gtbi_doctor_normalize_mode()/,/^}$/p' "$doctor_lib")"
     # shellcheck disable=SC1090
-    eval "$(sed -n '/^_acfs_doctor_normalize_ref()/,/^}$/p' "$doctor_lib")"
+    eval "$(sed -n '/^_gtbi_doctor_normalize_ref()/,/^}$/p' "$doctor_lib")"
     # shellcheck disable=SC1090
     eval "$(sed -n '/^build_fix_suggestion()/,/^}$/p' "$doctor_lib")"
 
-    _acfs_doctor_find_project_path() {
+    _gtbi_doctor_find_project_path() {
         [[ "${1:-}" == "state.json" ]] || return 1
         printf '%s\n' "$fixture_state_file"
     }
 
-    ACFS_MODE="safe --skip-cloud"
+    GTBI_MODE="safe --skip-cloud"
     run build_fix_suggestion "stack.ntm"
     assert_success
     assert_output --partial "--mode vibe"
-    refute_output --partial "ACFS_REF="
-    refute_output --partial "touch /tmp/acfs-pwned"
+    refute_output --partial "GTBI_REF="
+    refute_output --partial "touch /tmp/gtbi-pwned"
     refute_output --partial "--ref"
 
     cat > "$fixture_state_file" <<'EOF'
@@ -12101,12 +12101,12 @@ EOF
 }
 EOF
 
-    ACFS_MODE="safe"
+    GTBI_MODE="safe"
     run build_fix_suggestion "stack.ntm"
     assert_success
-    assert_output --partial "https://raw.githubusercontent.com/Dicklesworthstone/agentic_coding_flywheel_setup/abc1234/install.sh"
+    assert_output --partial "https://raw.githubusercontent.com/jonbackhaus/gtbi/abc1234/install.sh"
     assert_output --partial "bash -s -- --yes --force-reinstall --mode safe --only stack.ntm --ref abc1234"
-    refute_output --partial "ACFS_REF="
+    refute_output --partial "GTBI_REF="
 
     cat > "$fixture_state_file" <<'EOF'
 {
@@ -12131,11 +12131,11 @@ EOF
     test_stale_home="$(create_temp_dir)"
 
     # shellcheck disable=SC1090
-    eval "$(sed -n '/^_acfs_doctor_sanitize_abs_nonroot_path()/,/^}$/p' "$doctor_lib")"
+    eval "$(sed -n '/^_gtbi_doctor_sanitize_abs_nonroot_path()/,/^}$/p' "$doctor_lib")"
     # shellcheck disable=SC1090
-    eval "$(sed -n '/^_acfs_doctor_passwd_home_from_entry()/,/^}$/p' "$doctor_lib")"
+    eval "$(sed -n '/^_gtbi_doctor_passwd_home_from_entry()/,/^}$/p' "$doctor_lib")"
 
-    _acfs_doctor_getent_passwd_entry() {
+    _gtbi_doctor_getent_passwd_entry() {
         if [[ "${1:-}" == "$test_current_user" ]]; then
             printf '%s:x:1000:1000::%s:/bin/bash\n' "$test_current_user" "$test_trusted_home"
             return 0
@@ -12143,17 +12143,17 @@ EOF
         return 1
     }
 
-    _acfs_doctor_resolve_current_user() {
+    _gtbi_doctor_resolve_current_user() {
         printf '%s\n' "$test_current_user"
     }
 
     TARGET_USER="$test_current_user"
     TARGET_HOME="$test_stale_home"
-    _ACFS_DOCTOR_ENV_TARGET_HOME="$test_stale_home"
-    _acfs_doctor_current_home="$test_stale_home"
+    _GTBI_DOCTOR_ENV_TARGET_HOME="$test_stale_home"
+    _gtbi_doctor_current_home="$test_stale_home"
 
     # shellcheck disable=SC1090
-    eval "$(sed -n '/^_acfs_doctor_resolved_target_home=""/,/^unset _acfs_doctor_resolved_target_home$/p' "$doctor_lib")"
+    eval "$(sed -n '/^_gtbi_doctor_resolved_target_home=""/,/^unset _gtbi_doctor_resolved_target_home$/p' "$doctor_lib")"
 
     [[ "$TARGET_HOME" == "$test_trusted_home" ]] || {
         printf 'doctor TARGET_HOME was not repaired: %s\n' "$TARGET_HOME" >&2
@@ -12172,9 +12172,9 @@ EOF
         TARGET_HOME="$stale_home" \
         HOME="$stale_home" \
         PATH="/usr/bin:/bin" \
-        bash -c 'source <(sed "$ d" "$1"); printf "TARGET_USER=%s TARGET_HOME=%s ACFS_HOME=%s\n" "${TARGET_USER:-}" "${TARGET_HOME:-}" "${ACFS_HOME:-}"' _ "$doctor_lib"
+        bash -c 'source <(sed "$ d" "$1"); printf "TARGET_USER=%s TARGET_HOME=%s GTBI_HOME=%s\n" "${TARGET_USER:-}" "${TARGET_HOME:-}" "${GTBI_HOME:-}"' _ "$doctor_lib"
     assert_success
-    assert_output "TARGET_USER=missinguser TARGET_HOME= ACFS_HOME="
+    assert_output "TARGET_USER=missinguser TARGET_HOME= GTBI_HOME="
 }
 
 @test "doctor manifest checks and fresh-vps heuristic repair stale TARGET_HOME" {
@@ -12187,7 +12187,7 @@ EOF
     assert_success
     run grep -F 'explicit_target_home="$target_home"' "$doctor_lib"
     assert_success
-    run grep -F 'resolved_target_home="$(_acfs_doctor_passwd_home_from_entry "$passwd_entry" 2>/dev/null || true)"' "$doctor_lib"
+    run grep -F 'resolved_target_home="$(_gtbi_doctor_passwd_home_from_entry "$passwd_entry" 2>/dev/null || true)"' "$doctor_lib"
     assert_success
     run grep -F 'target_home="${resolved_target_home%/}"' "$doctor_lib"
     assert_success
@@ -12226,10 +12226,10 @@ EOF
     target_home="$(create_temp_dir)"
     stale_home="$(create_temp_dir)"
 
-    eval "$(sed -n '/^_acfs_doctor_system_binary_path()/,/^}$/p' "$doctor_lib")"
+    eval "$(sed -n '/^_gtbi_doctor_system_binary_path()/,/^}$/p' "$doctor_lib")"
     eval "$(sed -n '/^_doctor_run_manifest_check()/,/^}/p' "$doctor_lib")"
 
-    _acfs_doctor_sanitize_abs_nonroot_path() {
+    _gtbi_doctor_sanitize_abs_nonroot_path() {
         local path_value="${1:-}"
         [[ -n "$path_value" ]] || return 1
         path_value="${path_value%/}"
@@ -12239,15 +12239,15 @@ EOF
         printf '%s\n' "$path_value"
     }
 
-    _acfs_doctor_getent_passwd_entry() {
+    _gtbi_doctor_getent_passwd_entry() {
         return 1
     }
 
-    _acfs_doctor_resolve_current_user() {
-        printf 'acfstestuser\n'
+    _gtbi_doctor_resolve_current_user() {
+        printf 'gtbitestuser\n'
     }
 
-    _acfs_doctor_validate_bin_dir_for_home() {
+    _gtbi_doctor_validate_bin_dir_for_home() {
         return 1
     }
 
@@ -12255,9 +12255,9 @@ EOF
         printf '%s\n' "$*" >&2
     }
 
-    export TARGET_USER="acfstestuser"
+    export TARGET_USER="gtbitestuser"
     export TARGET_HOME="$target_home"
-    export _acfs_doctor_current_home="$stale_home"
+    export _gtbi_doctor_current_home="$stale_home"
 
     run _doctor_run_manifest_check current 'printf "TARGET_HOME=%s\n" "$TARGET_HOME"'
     assert_success
@@ -12277,7 +12277,7 @@ EOF
     target_home="$(create_temp_dir)"
     stale_home="$(create_temp_dir)"
     printf '# default ubuntu profile\n' >"$target_home/.bashrc"
-    printf '# ACFS managed profile\n' >"$stale_home/.bashrc"
+    printf '# GTBI managed profile\n' >"$stale_home/.bashrc"
 
     run bash -c '
         set -euo pipefail
@@ -12292,7 +12292,7 @@ EOF
         }
 
         os_detect_resolve_current_user() {
-            printf "acfstestuser\n"
+            printf "gtbitestuser\n"
         }
 
         log_detail() {
@@ -12313,7 +12313,7 @@ EOF
             done
         }
 
-        export TARGET_USER="acfstestuser"
+        export TARGET_USER="gtbitestuser"
         export TARGET_HOME="$target_home"
         export HOME="$stale_home"
 
@@ -12333,7 +12333,7 @@ EOF
         }
 
         os_detect_resolve_current_user() {
-            printf "acfstestuser\n"
+            printf "gtbitestuser\n"
         }
 
         log_detail() {
@@ -12354,7 +12354,7 @@ EOF
             done
         }
 
-        export TARGET_USER="acfstestuser"
+        export TARGET_USER="gtbitestuser"
         export TARGET_HOME="$stale_home"
         export HOME="$stale_home"
 
@@ -12536,20 +12536,20 @@ current_home_var="$7"
 passwd_home="$8"
 stale_home="$9"
 
-export ACFS_TEST_CURRENT_USER="tester"
-export ACFS_TEST_PASSWD_HOME="$passwd_home"
+export GTBI_TEST_CURRENT_USER="tester"
+export GTBI_TEST_PASSWD_HOME="$passwd_home"
 
 eval "$(sed -n "/^${sanitize_func}()/,/^}$/p" "$script")"
 eval "$(sed -n "/^${passwd_func}()/,/^}$/p" "$script")"
 eval "$(sed -n "/^${home_func}()/,/^}$/p" "$script")"
-eval "${current_func}() { printf '%s\n' \"\$ACFS_TEST_CURRENT_USER\"; }"
-eval "${getent_func}() { if [[ \"\${1:-}\" == \"\$ACFS_TEST_CURRENT_USER\" ]]; then printf '%s:x:1000:1000::%s:/bin/bash\n' \"\$ACFS_TEST_CURRENT_USER\" \"\$ACFS_TEST_PASSWD_HOME\"; return 0; fi; return 1; }"
+eval "${current_func}() { printf '%s\n' \"\$GTBI_TEST_CURRENT_USER\"; }"
+eval "${getent_func}() { if [[ \"\${1:-}\" == \"\$GTBI_TEST_CURRENT_USER\" ]]; then printf '%s:x:1000:1000::%s:/bin/bash\n' \"\$GTBI_TEST_CURRENT_USER\" \"\$GTBI_TEST_PASSWD_HOME\"; return 0; fi; return 1; }"
 
 printf -v "$current_home_var" '%s' "$stale_home"
-"$home_func" "$ACFS_TEST_CURRENT_USER"
+"$home_func" "$GTBI_TEST_CURRENT_USER"
 
 eval "${getent_func}() { return 1; }"
-"$home_func" "$ACFS_TEST_CURRENT_USER"
+"$home_func" "$GTBI_TEST_CURRENT_USER"
 EOF
 
         if [[ "$status" -ne 0 || "$output" != "$expected_output" ]]; then
@@ -12574,29 +12574,29 @@ EOF
     local doctor_lib="$PROJECT_ROOT/scripts/lib/doctor.sh"
     local test_home="$BATS_TEST_TMPDIR/doctor-home"
     local expected_path=""
-    mkdir -p "$test_home/.local/bin" "$test_home/.acfs/bin" "$test_home/google-cloud-sdk/bin"
+    mkdir -p "$test_home/.local/bin" "$test_home/.gtbi/bin" "$test_home/google-cloud-sdk/bin"
 
     # shellcheck disable=SC1090
-    eval "$(sed -n '/^_acfs_doctor_sanitize_abs_nonroot_path()/,/^}$/p' "$doctor_lib")"
+    eval "$(sed -n '/^_gtbi_doctor_sanitize_abs_nonroot_path()/,/^}$/p' "$doctor_lib")"
     # shellcheck disable=SC1090
-    eval "$(sed -n '/^_acfs_doctor_system_binary_path()/,/^}$/p' "$doctor_lib")"
+    eval "$(sed -n '/^_gtbi_doctor_system_binary_path()/,/^}$/p' "$doctor_lib")"
     # shellcheck disable=SC1090
-    eval "$(sed -n '/^_acfs_doctor_getent_passwd_entry()/,/^}$/p' "$doctor_lib")"
+    eval "$(sed -n '/^_gtbi_doctor_getent_passwd_entry()/,/^}$/p' "$doctor_lib")"
     # shellcheck disable=SC1090
-    eval "$(sed -n '/^_acfs_doctor_passwd_home_from_entry()/,/^}$/p' "$doctor_lib")"
+    eval "$(sed -n '/^_gtbi_doctor_passwd_home_from_entry()/,/^}$/p' "$doctor_lib")"
     # shellcheck disable=SC1090
-    eval "$(sed -n '/^_acfs_doctor_validate_bin_dir_for_home()/,/^}$/p' "$doctor_lib")"
+    eval "$(sed -n '/^_gtbi_doctor_validate_bin_dir_for_home()/,/^}$/p' "$doctor_lib")"
     # shellcheck disable=SC1090
     eval "$(sed -n '/^ensure_path()/,/^}$/p' "$doctor_lib")"
 
     export TARGET_HOME="$test_home"
-    export ACFS_BIN_DIR=""
-    _acfs_doctor_current_home="$test_home"
+    export GTBI_BIN_DIR=""
+    _gtbi_doctor_current_home="$test_home"
     # shellcheck disable=SC2123
     PATH=""
     ensure_path
 
-    expected_path="$test_home/.local/bin:$test_home/.acfs/bin:$test_home/google-cloud-sdk/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin"
+    expected_path="$test_home/.local/bin:$test_home/.gtbi/bin:$test_home/google-cloud-sdk/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin"
     [ "$PATH" = "$expected_path" ]
 }
 
@@ -12604,26 +12604,26 @@ EOF
     local doctor_lib="$PROJECT_ROOT/scripts/lib/doctor.sh"
     local test_home="$BATS_TEST_TMPDIR/doctor-runtime-home"
     local original_path="${PATH-}"
-    mkdir -p "$test_home/.local/bin" "$test_home/.acfs/bin" "$test_home/google-cloud-sdk/bin"
+    mkdir -p "$test_home/.local/bin" "$test_home/.gtbi/bin" "$test_home/google-cloud-sdk/bin"
 
     # shellcheck disable=SC1090
-    eval "$(sed -n '/^_acfs_doctor_sanitize_abs_nonroot_path()/,/^}$/p' "$doctor_lib")"
+    eval "$(sed -n '/^_gtbi_doctor_sanitize_abs_nonroot_path()/,/^}$/p' "$doctor_lib")"
     # shellcheck disable=SC1090
     eval "$(sed -n '/^doctor_runtime_home()/,/^}$/p' "$doctor_lib")"
     # shellcheck disable=SC1090
     eval "$(sed -n '/^doctor_runtime_path()/,/^}$/p' "$doctor_lib")"
 
     export TARGET_HOME="$test_home"
-    export ACFS_HOME=""
-    export ACFS_BIN_DIR=""
-    _acfs_doctor_current_home="$test_home"
+    export GTBI_HOME=""
+    export GTBI_BIN_DIR=""
+    _gtbi_doctor_current_home="$test_home"
     # shellcheck disable=SC2123
     PATH=""
 
     run doctor_runtime_path
     PATH="${original_path:-/usr/bin:/bin}"
     assert_success
-    [ "$output" = "$test_home/.local/bin:$test_home/.acfs/bin:$test_home/.bun/bin:$test_home/.cargo/bin:$test_home/.atuin/bin:$test_home/go/bin:$test_home/google-cloud-sdk/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin" ]
+    [ "$output" = "$test_home/.local/bin:$test_home/.gtbi/bin:$test_home/.bun/bin:$test_home/.cargo/bin:$test_home/.atuin/bin:$test_home/go/bin:$test_home/google-cloud-sdk/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin" ]
 }
 
 @test "update.sh: target path includes google cloud sdk bin and hardened system PATH" {
@@ -12631,9 +12631,9 @@ EOF
     local target_home="$BATS_TEST_TMPDIR/update-target-home"
     mkdir -p "$target_home"
 
-    run env HOME="$target_home" PATH="/usr/bin:/bin" /bin/bash -c 'source "$1"; ACFS_BIN_DIR=""; PATH=""; update_target_path "$2"' _ "$update" "$target_home"
+    run env HOME="$target_home" PATH="/usr/bin:/bin" /bin/bash -c 'source "$1"; GTBI_BIN_DIR=""; PATH=""; update_target_path "$2"' _ "$update" "$target_home"
     assert_success
-    [ "$output" = "$target_home/.local/bin:$target_home/.acfs/bin:$target_home/.bun/bin:$target_home/.cargo/bin:$target_home/.atuin/bin:$target_home/go/bin:$target_home/google-cloud-sdk/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin" ]
+    [ "$output" = "$target_home/.local/bin:$target_home/.gtbi/bin:$target_home/.bun/bin:$target_home/.cargo/bin:$target_home/.atuin/bin:$target_home/go/bin:$target_home/google-cloud-sdk/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin" ]
 }
 
 @test "update.sh: run_in_target_context rejects unresolved target_home before sudo" {
@@ -12676,8 +12676,8 @@ EOF
     }
 
     export TARGET_HOME="$HOME/target-home"
-    export ACFS_BIN_DIR="$TARGET_HOME/.local/bin"
-    mkdir -p "$ACFS_BIN_DIR"
+    export GTBI_BIN_DIR="$TARGET_HOME/.local/bin"
+    mkdir -p "$GTBI_BIN_DIR"
 
     cat > "$STUB_DIR/current-shell-only-tool" <<'EOF'
 #!/usr/bin/env bash
@@ -12692,15 +12692,15 @@ EOF
     run doctor_binary_exists "current-shell-only-tool"
     assert_failure
 
-    cat > "$ACFS_BIN_DIR/current-shell-only-tool" <<'EOF'
+    cat > "$GTBI_BIN_DIR/current-shell-only-tool" <<'EOF'
 #!/usr/bin/env bash
 echo "target-local-tool"
 EOF
-    chmod +x "$ACFS_BIN_DIR/current-shell-only-tool"
+    chmod +x "$GTBI_BIN_DIR/current-shell-only-tool"
 
     run doctor_binary_path "current-shell-only-tool"
     assert_success
-    assert_output "$ACFS_BIN_DIR/current-shell-only-tool"
+    assert_output "$GTBI_BIN_DIR/current-shell-only-tool"
 
     run doctor_binary_exists "current-shell-only-tool"
     assert_success
@@ -12731,9 +12731,9 @@ EOF
     }
 
     export TARGET_HOME="$HOME/target-home"
-    export ACFS_BIN_DIR="$TARGET_HOME/.local/bin"
+    export GTBI_BIN_DIR="$TARGET_HOME/.local/bin"
     DOCTOR_VERSION_TIMEOUT=2
-    mkdir -p "$ACFS_BIN_DIR"
+    mkdir -p "$GTBI_BIN_DIR"
 
     cat > "$STUB_DIR/current-shell-only-tool" <<'EOF'
 #!/usr/bin/env bash
@@ -12750,7 +12750,7 @@ EOF
     assert_success
     assert_output 'test.id|Tool Label|fail|not found|fix me'
 
-    cat > "$ACFS_BIN_DIR/current-shell-only-tool" <<'EOF'
+    cat > "$GTBI_BIN_DIR/current-shell-only-tool" <<'EOF'
 #!/usr/bin/env bash
 if [[ "${1:-}" == "--version" ]]; then
   echo "target-local-tool 1.2.3"
@@ -12758,7 +12758,7 @@ if [[ "${1:-}" == "--version" ]]; then
 fi
 echo "target-local-tool"
 EOF
-    chmod +x "$ACFS_BIN_DIR/current-shell-only-tool"
+    chmod +x "$GTBI_BIN_DIR/current-shell-only-tool"
 
     run check_command "test.id" "Tool Label" "current-shell-only-tool" "fix me"
     assert_success
@@ -12780,8 +12780,8 @@ EOF
     }
 
     export TARGET_HOME="$HOME/target-home"
-    export ACFS_BIN_DIR="$TARGET_HOME/.local/bin"
-    mkdir -p "$TARGET_HOME/mcp_agent_mail" "$ACFS_BIN_DIR"
+    export GTBI_BIN_DIR="$TARGET_HOME/.local/bin"
+    mkdir -p "$TARGET_HOME/mcp_agent_mail" "$GTBI_BIN_DIR"
 
     cat > "$STUB_DIR/am" <<'EOF'
 #!/usr/bin/env bash
@@ -12799,15 +12799,15 @@ EOF
     run doctor_agent_mail_cli_path
     assert_failure
 
-    cat > "$ACFS_BIN_DIR/am" <<'EOF'
+    cat > "$GTBI_BIN_DIR/am" <<'EOF'
 #!/usr/bin/env bash
 echo "target shim"
 EOF
-    chmod +x "$ACFS_BIN_DIR/am"
+    chmod +x "$GTBI_BIN_DIR/am"
 
     run doctor_agent_mail_cli_path
     assert_success
-    assert_output "$ACFS_BIN_DIR/am"
+    assert_output "$GTBI_BIN_DIR/am"
 }
 
 @test "doctor.sh: agent mail doctor check uses target CLI instead of current-shell am" {
@@ -12835,8 +12835,8 @@ EOF
 
     export DEEP_CHECK_TIMEOUT=5
     export TARGET_HOME="$HOME/target-home"
-    export ACFS_BIN_DIR="$TARGET_HOME/.local/bin"
-    mkdir -p "$ACFS_BIN_DIR"
+    export GTBI_BIN_DIR="$TARGET_HOME/.local/bin"
+    mkdir -p "$GTBI_BIN_DIR"
 
     cat > "$STUB_DIR/am" <<'EOF'
 #!/usr/bin/env bash
@@ -12846,7 +12846,7 @@ EOF
     chmod +x "$STUB_DIR/am"
     export PATH="$STUB_DIR:/usr/bin:/bin"
 
-    cat > "$ACFS_BIN_DIR/am" <<'EOF'
+    cat > "$GTBI_BIN_DIR/am" <<'EOF'
 #!/usr/bin/env bash
 if [[ "${1:-}" == "doctor" && "${2:-}" == "check" && "${3:-}" == "--json" ]]; then
   echo '{"healthy":true,"source":"target"}'
@@ -12854,7 +12854,7 @@ if [[ "${1:-}" == "doctor" && "${2:-}" == "check" && "${3:-}" == "--json" ]]; th
 fi
 exit 1
 EOF
-    chmod +x "$ACFS_BIN_DIR/am"
+    chmod +x "$GTBI_BIN_DIR/am"
 
     run agent_mail_doctor_check_json
     assert_success
@@ -12923,7 +12923,7 @@ EOF
     fix_for_module() {
         printf 'fix %s\n' "${1:-}"
     }
-    _acfs_doctor_system_binary_path() {
+    _gtbi_doctor_system_binary_path() {
         case "${1:-}" in
             curl|id|systemctl) printf '%s/%s\n' "$STUB_DIR" "$1" ;;
             *) return 1 ;;
@@ -12949,71 +12949,71 @@ EOF
 }
 
 @test "update_retry_max_attempts: defaults malformed values and clamps zero" {
-    unset ACFS_UPDATE_RETRY_MAX_ATTEMPTS
+    unset GTBI_UPDATE_RETRY_MAX_ATTEMPTS
     run update_retry_max_attempts
     assert_success
     assert_output "3"
 
-    export ACFS_UPDATE_RETRY_MAX_ATTEMPTS=bogus
+    export GTBI_UPDATE_RETRY_MAX_ATTEMPTS=bogus
     run update_retry_max_attempts
     assert_success
     assert_output "3"
 
-    export ACFS_UPDATE_RETRY_MAX_ATTEMPTS=0
+    export GTBI_UPDATE_RETRY_MAX_ATTEMPTS=0
     run update_retry_max_attempts
     assert_success
     assert_output "1"
 
-    export ACFS_UPDATE_RETRY_MAX_ATTEMPTS=2
+    export GTBI_UPDATE_RETRY_MAX_ATTEMPTS=2
     run update_retry_max_attempts
     assert_success
     assert_output "2"
 
-    export ACFS_UPDATE_RETRY_MAX_ATTEMPTS=08
+    export GTBI_UPDATE_RETRY_MAX_ATTEMPTS=08
     run update_retry_max_attempts
     assert_success
     assert_output "8"
 
-    export ACFS_UPDATE_RETRY_MAX_ATTEMPTS=999
+    export GTBI_UPDATE_RETRY_MAX_ATTEMPTS=999
     run update_retry_max_attempts
     assert_success
     assert_output "20"
 }
 
 @test "update_retry_sleep_seconds: defaults malformed values and preserves zero override" {
-    unset ACFS_UPDATE_RETRY_SLEEP_SECONDS
+    unset GTBI_UPDATE_RETRY_SLEEP_SECONDS
     run update_retry_sleep_seconds 3
     assert_success
     assert_output "6"
 
-    export ACFS_UPDATE_RETRY_SLEEP_SECONDS=bogus
+    export GTBI_UPDATE_RETRY_SLEEP_SECONDS=bogus
     run update_retry_sleep_seconds 3
     assert_success
     assert_output "6"
 
-    export ACFS_UPDATE_RETRY_SLEEP_SECONDS=-1
+    export GTBI_UPDATE_RETRY_SLEEP_SECONDS=-1
     run update_retry_sleep_seconds 3
     assert_success
     assert_output "6"
 
-    export ACFS_UPDATE_RETRY_SLEEP_SECONDS=0
+    export GTBI_UPDATE_RETRY_SLEEP_SECONDS=0
     run update_retry_sleep_seconds 3
     assert_success
     assert_output "0"
 
-    export ACFS_UPDATE_RETRY_SLEEP_SECONDS=08
+    export GTBI_UPDATE_RETRY_SLEEP_SECONDS=08
     run update_retry_sleep_seconds 3
     assert_success
     assert_output "8"
 
-    export ACFS_UPDATE_RETRY_SLEEP_SECONDS=9999
+    export GTBI_UPDATE_RETRY_SLEEP_SECONDS=9999
     run update_retry_sleep_seconds 3
     assert_success
     assert_output "300"
 }
 
 @test "update_retry_sleep_seconds: normalizes direct attempt argument before fallback" {
-    unset ACFS_UPDATE_RETRY_SLEEP_SECONDS
+    unset GTBI_UPDATE_RETRY_SLEEP_SECONDS
 
     run update_retry_sleep_seconds 08
     assert_success
@@ -13023,7 +13023,7 @@ EOF
     assert_success
     assert_output "40"
 
-    export ACFS_UPDATE_RETRY_SLEEP_SECONDS=bogus
+    export GTBI_UPDATE_RETRY_SLEEP_SECONDS=bogus
     run update_retry_sleep_seconds 9999
     assert_success
     assert_output "40"
@@ -13032,8 +13032,8 @@ EOF
 @test "update_run_command_capture_with_retry: malformed retry sleep still retries transient failure" {
     init_stub_dir
     export PATH="$STUB_DIR:$PATH"
-    export ACFS_UPDATE_RETRY_MAX_ATTEMPTS=2
-    export ACFS_UPDATE_RETRY_SLEEP_SECONDS=bogus
+    export GTBI_UPDATE_RETRY_MAX_ATTEMPTS=2
+    export GTBI_UPDATE_RETRY_SLEEP_SECONDS=bogus
     UPDATE_LOG_FILE="$HOME/update.log"
 
     cat > "$STUB_DIR/transient-capture" <<'EOF'
@@ -13067,8 +13067,8 @@ EOF
 @test "update_run_command_capture_with_retry: zero retry max still runs once and fails" {
     init_stub_dir
     export PATH="$STUB_DIR:$PATH"
-    export ACFS_UPDATE_RETRY_MAX_ATTEMPTS=0
-    export ACFS_UPDATE_RETRY_SLEEP_SECONDS=0
+    export GTBI_UPDATE_RETRY_MAX_ATTEMPTS=0
+    export GTBI_UPDATE_RETRY_SLEEP_SECONDS=0
     UPDATE_LOG_FILE="$HOME/update.log"
 
     cat > "$STUB_DIR/fail-capture" <<'EOF'
@@ -13094,8 +13094,8 @@ EOF
 @test "run_cmd_attempt_with_retry: zero retry max still runs once and fails" {
     init_stub_dir
     export PATH="$STUB_DIR:$PATH"
-    export ACFS_UPDATE_RETRY_MAX_ATTEMPTS=0
-    export ACFS_UPDATE_RETRY_SLEEP_SECONDS=0
+    export GTBI_UPDATE_RETRY_MAX_ATTEMPTS=0
+    export GTBI_UPDATE_RETRY_SLEEP_SECONDS=0
     QUIET=true
     VERBOSE=false
     DRY_RUN=false
@@ -13127,8 +13127,8 @@ EOF
 @test "run_cmd_bun_with_retry: honors configured retry max and sleep" {
     init_stub_dir
     export PATH="$STUB_DIR:$PATH"
-    export ACFS_UPDATE_RETRY_MAX_ATTEMPTS=2
-    export ACFS_UPDATE_RETRY_SLEEP_SECONDS=0
+    export GTBI_UPDATE_RETRY_MAX_ATTEMPTS=2
+    export GTBI_UPDATE_RETRY_SLEEP_SECONDS=0
     QUIET=true
     VERBOSE=false
     DRY_RUN=false
@@ -13165,8 +13165,8 @@ EOF
 }
 
 @test "update_agents: Codex fallback failure honors abort-on-failure" {
-    export ACFS_UPDATE_RETRY_MAX_ATTEMPTS=1
-    export ACFS_UPDATE_RETRY_SLEEP_SECONDS=0
+    export GTBI_UPDATE_RETRY_MAX_ATTEMPTS=1
+    export GTBI_UPDATE_RETRY_SLEEP_SECONDS=0
     QUIET=true
     VERBOSE=false
     DRY_RUN=false
@@ -13215,8 +13215,8 @@ EOF
 @test "update_zoxide: retries transient reinstall failures before succeeding" {
     init_stub_dir
     export PATH="$STUB_DIR:$PATH"
-    export ACFS_UPDATE_RETRY_MAX_ATTEMPTS=2
-    export ACFS_UPDATE_RETRY_SLEEP_SECONDS=0
+    export GTBI_UPDATE_RETRY_MAX_ATTEMPTS=2
+    export GTBI_UPDATE_RETRY_SLEEP_SECONDS=0
     QUIET=true
     VERBOSE=false
     DRY_RUN=false
@@ -13266,8 +13266,8 @@ EOF
 @test "update_zoxide: skips transient reinstall failure when existing binary remains healthy" {
     init_stub_dir
     export PATH="$STUB_DIR:$PATH"
-    export ACFS_UPDATE_RETRY_MAX_ATTEMPTS=1
-    export ACFS_UPDATE_RETRY_SLEEP_SECONDS=0
+    export GTBI_UPDATE_RETRY_MAX_ATTEMPTS=1
+    export GTBI_UPDATE_RETRY_SLEEP_SECONDS=0
     QUIET=true
     VERBOSE=false
     DRY_RUN=false
@@ -13318,7 +13318,7 @@ EOF
 }
 
 
-@test "update_preferred_user_bin_dir: ignores stale other-user ACFS_BIN_DIR" {
+@test "update_preferred_user_bin_dir: ignores stale other-user GTBI_BIN_DIR" {
     local current_home
     local target_home
     local stale_home
@@ -13329,20 +13329,20 @@ EOF
     mkdir -p "$stale_home/.local/bin"
 
     export HOME="$current_home"
-    export TARGET_USER="acfstestuser"
+    export TARGET_USER="gtbitestuser"
     export TARGET_HOME="$target_home"
-    export ACFS_BIN_DIR="$stale_home/.local/bin"
+    export GTBI_BIN_DIR="$stale_home/.local/bin"
     export TEST_UPDATE_TARGET_HOME="$target_home"
-    unset ACFS_STATE_FILE
-    unset ACFS_HOME
+    unset GTBI_STATE_FILE
+    unset GTBI_HOME
 
     update_getent_passwd_entry() {
-        if [[ "${1:-}" == "acfstestuser" ]]; then
-            printf 'acfstestuser:x:1000:1000::%s:/bin/bash\n' "$TEST_UPDATE_TARGET_HOME"
+        if [[ "${1:-}" == "gtbitestuser" ]]; then
+            printf 'gtbitestuser:x:1000:1000::%s:/bin/bash\n' "$TEST_UPDATE_TARGET_HOME"
             return 0
         fi
         if [[ -z "${1:-}" ]]; then
-            printf 'acfstestuser:x:1000:1000::%s:/bin/bash\n' "$TEST_UPDATE_TARGET_HOME"
+            printf 'gtbitestuser:x:1000:1000::%s:/bin/bash\n' "$TEST_UPDATE_TARGET_HOME"
             printf 'other:x:1001:1001::%s:/bin/bash\n' "$stale_home"
             return 0
         fi
@@ -13354,7 +13354,7 @@ EOF
     assert_output "$target_home/.local/bin"
 }
 
-@test "update_binary_path: ignores stale other-user ACFS_BIN_DIR when target binary exists" {
+@test "update_binary_path: ignores stale other-user GTBI_BIN_DIR when target binary exists" {
     local current_home
     local target_home
     local stale_home
@@ -13365,12 +13365,12 @@ EOF
     mkdir -p "$target_home/.local/bin" "$stale_home/.local/bin"
 
     export HOME="$current_home"
-    export TARGET_USER="acfstestuser"
+    export TARGET_USER="gtbitestuser"
     export TARGET_HOME="$target_home"
-    export ACFS_BIN_DIR="$stale_home/.local/bin"
+    export GTBI_BIN_DIR="$stale_home/.local/bin"
     export TEST_UPDATE_TARGET_HOME="$target_home"
-    unset ACFS_STATE_FILE
-    unset ACFS_HOME
+    unset GTBI_STATE_FILE
+    unset GTBI_HOME
 
     cat > "$stale_home/.local/bin/gh" <<'EOF'
 #!/usr/bin/env bash
@@ -13385,12 +13385,12 @@ EOF
     chmod +x "$target_home/.local/bin/gh"
 
     update_getent_passwd_entry() {
-        if [[ "${1:-}" == "acfstestuser" ]]; then
-            printf 'acfstestuser:x:1000:1000::%s:/bin/bash\n' "$TEST_UPDATE_TARGET_HOME"
+        if [[ "${1:-}" == "gtbitestuser" ]]; then
+            printf 'gtbitestuser:x:1000:1000::%s:/bin/bash\n' "$TEST_UPDATE_TARGET_HOME"
             return 0
         fi
         if [[ -z "${1:-}" ]]; then
-            printf 'acfstestuser:x:1000:1000::%s:/bin/bash\n' "$TEST_UPDATE_TARGET_HOME"
+            printf 'gtbitestuser:x:1000:1000::%s:/bin/bash\n' "$TEST_UPDATE_TARGET_HOME"
             printf 'other:x:1001:1001::%s:/bin/bash\n' "$stale_home"
             return 0
         fi
@@ -13402,17 +13402,17 @@ EOF
     assert_output "$target_home/.local/bin/gh"
 }
 
-@test "update.sh: target path ignores stale other-user ACFS_BIN_DIR" {
+@test "update.sh: target path ignores stale other-user GTBI_BIN_DIR" {
     local target_home
     local stale_home
     target_home="$(create_temp_dir)"
     stale_home="$(create_temp_dir)"
 
-    mkdir -p "$target_home/.local/bin" "$target_home/.acfs/bin" "$target_home/google-cloud-sdk/bin" "$stale_home/.local/bin"
+    mkdir -p "$target_home/.local/bin" "$target_home/.gtbi/bin" "$target_home/google-cloud-sdk/bin" "$stale_home/.local/bin"
 
-    export TARGET_USER="acfstestuser"
+    export TARGET_USER="gtbitestuser"
     export TARGET_HOME="$target_home"
-    export ACFS_BIN_DIR="$stale_home/.local/bin"
+    export GTBI_BIN_DIR="$stale_home/.local/bin"
     PATH="/usr/bin:/bin"
 
     getent() {
@@ -13430,7 +13430,7 @@ EOF
     refute_output --partial "$stale_home/.local/bin"
 }
 
-@test "update_require_security: ignores stale other-user ACFS_BIN_DIR" {
+@test "update_require_security: ignores stale other-user GTBI_BIN_DIR" {
     local current_home
     local target_home
     local stale_home
@@ -13463,12 +13463,12 @@ EOF
     chmod +x "$stale_home/.local/bin/security.sh"
 
     export HOME="$current_home"
-    export TARGET_USER="acfstestuser"
+    export TARGET_USER="gtbitestuser"
     export TARGET_HOME="$target_home"
-    export ACFS_BIN_DIR="$stale_home/.local/bin"
-    export ACFS_HOME="$current_home/missing-acfs"
+    export GTBI_BIN_DIR="$stale_home/.local/bin"
+    export GTBI_HOME="$current_home/missing-gtbi"
     export TEST_UPDATE_TARGET_HOME="$target_home"
-    unset ACFS_REPO_ROOT
+    unset GTBI_REPO_ROOT
     export CHECKSUMS_LOCAL="$current_home/checksums.yaml"
     UPDATE_SECURITY_READY=false
 
@@ -13477,12 +13477,12 @@ EOF
     }
 
     update_getent_passwd_entry() {
-        if [[ "${1:-}" == "acfstestuser" ]]; then
-            printf 'acfstestuser:x:1000:1000::%s:/bin/bash\n' "$TEST_UPDATE_TARGET_HOME"
+        if [[ "${1:-}" == "gtbitestuser" ]]; then
+            printf 'gtbitestuser:x:1000:1000::%s:/bin/bash\n' "$TEST_UPDATE_TARGET_HOME"
             return 0
         fi
         if [[ -z "${1:-}" ]]; then
-            printf 'acfstestuser:x:1000:1000::%s:/bin/bash\n' "$TEST_UPDATE_TARGET_HOME"
+            printf 'gtbitestuser:x:1000:1000::%s:/bin/bash\n' "$TEST_UPDATE_TARGET_HOME"
             printf 'other:x:1001:1001::%s:/bin/bash\n' "$stale_home"
             return 0
         fi
@@ -13505,7 +13505,7 @@ EOF
     export HOME="$current_home"
     export TARGET_USER="missinguser"
     export TARGET_HOME="/"
-    export ACFS_BIN_DIR="$current_home/.local/bin"
+    export GTBI_BIN_DIR="$current_home/.local/bin"
 
     getent() {
         return 2
@@ -13515,34 +13515,34 @@ EOF
     assert_failure
 }
 
-@test "update_runtime_acfs_home: fails closed for different unresolved target" {
+@test "update_runtime_gtbi_home: fails closed for different unresolved target" {
     local current_home
     current_home="$(create_temp_dir)"
 
-    mkdir -p "$current_home/.acfs"
+    mkdir -p "$current_home/.gtbi"
 
     export HOME="$current_home"
     export TARGET_USER="missinguser"
     export TARGET_HOME="/"
-    export ACFS_HOME="$current_home/.acfs"
+    export GTBI_HOME="$current_home/.gtbi"
 
     getent() {
         return 2
     }
 
-    run update_runtime_acfs_home
+    run update_runtime_gtbi_home
     assert_failure
 }
 
 @test "update_require_security: does not fall back to current HOME when different target is unresolved" {
     local current_home
     local bin_marker
-    local acfs_marker
+    local gtbi_marker
     current_home="$(create_temp_dir)"
     bin_marker="$BATS_TEST_TMPDIR/current-bin-security.marker"
-    acfs_marker="$BATS_TEST_TMPDIR/current-acfs-security.marker"
+    gtbi_marker="$BATS_TEST_TMPDIR/current-gtbi-security.marker"
 
-    mkdir -p "$current_home/.local/bin" "$current_home/.acfs/scripts/lib"
+    mkdir -p "$current_home/.local/bin" "$current_home/.gtbi/scripts/lib"
 
     cat > "$current_home/.local/bin/security.sh" <<EOF
 #!/usr/bin/env bash
@@ -13553,21 +13553,21 @@ load_checksums() {
 EOF
     chmod +x "$current_home/.local/bin/security.sh"
 
-    cat > "$current_home/.acfs/scripts/lib/security.sh" <<EOF
+    cat > "$current_home/.gtbi/scripts/lib/security.sh" <<EOF
 #!/usr/bin/env bash
 load_checksums() {
-    : > "$acfs_marker"
+    : > "$gtbi_marker"
     return 0
 }
 EOF
-    chmod +x "$current_home/.acfs/scripts/lib/security.sh"
+    chmod +x "$current_home/.gtbi/scripts/lib/security.sh"
 
     export HOME="$current_home"
     export TARGET_USER="missinguser"
     export TARGET_HOME="/"
-    export ACFS_BIN_DIR="$current_home/.local/bin"
-    export ACFS_HOME="$current_home/.acfs"
-    unset ACFS_REPO_ROOT
+    export GTBI_BIN_DIR="$current_home/.local/bin"
+    export GTBI_HOME="$current_home/.gtbi"
+    unset GTBI_REPO_ROOT
     export CHECKSUMS_LOCAL="$current_home/checksums.yaml"
     UPDATE_SECURITY_READY=false
 
@@ -13582,7 +13582,7 @@ EOF
     run update_require_security
     assert_failure
     [[ ! -e "$bin_marker" ]]
-    [[ ! -e "$acfs_marker" ]]
+    [[ ! -e "$gtbi_marker" ]]
 }
 
 @test "refresh_checksums: does not fall back to current HOME when different target is unresolved" {
@@ -13591,12 +13591,12 @@ EOF
     current_home="$(create_temp_dir)"
     curl_marker="$BATS_TEST_TMPDIR/refresh-curl.marker"
 
-    mkdir -p "$current_home/.acfs"
+    mkdir -p "$current_home/.gtbi"
 
     export HOME="$current_home"
     export TARGET_USER="missinguser"
     export TARGET_HOME="/"
-    export ACFS_HOME="$current_home/.acfs"
+    export GTBI_HOME="$current_home/.gtbi"
     export CHECKSUMS_LOCAL="$current_home/fallback-checksums.yaml"
 
     curl() {
@@ -13611,7 +13611,7 @@ EOF
     run refresh_checksums true
     assert_failure
     [[ ! -e "$curl_marker" ]]
-    [[ ! -e "$current_home/.acfs/checksums.yaml" ]]
+    [[ ! -e "$current_home/.gtbi/checksums.yaml" ]]
     [[ ! -e "$CHECKSUMS_LOCAL" ]]
 }
 
@@ -13635,7 +13635,7 @@ EOF
     run grep -F '{ exec 200>&-; } 2>/dev/null || true' "$PROJECT_ROOT/scripts/lib/state.sh"
     assert_success
 
-    run grep -F '{ exec {ACFS_LOG_ORIGINAL_STDERR_FD}>&-; } 2>/dev/null || true' "$PROJECT_ROOT/scripts/lib/logging.sh"
+    run grep -F '{ exec {GTBI_LOG_ORIGINAL_STDERR_FD}>&-; } 2>/dev/null || true' "$PROJECT_ROOT/scripts/lib/logging.sh"
     assert_success
 
     run grep -F '{ exec {lock_fd}>&-; } 2>/dev/null || true' "$PROJECT_ROOT/packages/onboard/onboard.sh"
@@ -13651,7 +13651,7 @@ EOF
 }
 
 @test "doctor.sh: supplemental manifest checks carry generated helpers into child shell" {
-    run grep -F 'if [[ "$cmd" == *"acfs_generated_"* ]]; then' "$PROJECT_ROOT/scripts/lib/doctor.sh"
+    run grep -F 'if [[ "$cmd" == *"gtbi_generated_"* ]]; then' "$PROJECT_ROOT/scripts/lib/doctor.sh"
     assert_success
 
     run grep -F 'cmd="${helper_prelude}"$'\''\n'\''"${cmd}"' "$PROJECT_ROOT/scripts/lib/doctor.sh"
@@ -13675,9 +13675,9 @@ EOF
 @test "onboard: no-arg noninteractive menu exits with TTY error" {
     local home_dir
     home_dir="$(create_temp_dir)"
-    mkdir -p "$home_dir/.acfs"
+    mkdir -p "$home_dir/.gtbi"
 
-    run bash -c 'HOME="$1" ACFS_HOME="$1/.acfs" ACFS_PROGRESS_FILE="$1/progress.json" ACFS_LESSONS_DIR="$2/acfs/onboard/lessons" timeout 5s "$2/packages/onboard/onboard.sh" </dev/null' _ "$home_dir" "$PROJECT_ROOT"
+    run bash -c 'HOME="$1" GTBI_HOME="$1/.gtbi" GTBI_PROGRESS_FILE="$1/progress.json" GTBI_LESSONS_DIR="$2/gtbi/onboard/lessons" timeout 5s "$2/packages/onboard/onboard.sh" </dev/null' _ "$home_dir" "$PROJECT_ROOT"
     assert_failure
     [[ "$status" -eq 1 ]]
     [[ "$output" == *"Interactive menu requires a TTY"* ]]
@@ -13695,11 +13695,11 @@ EOF
     local br_line
     local bv_line
 
-    run grep -F 'Installing Beads Rust" acfs_run_verified_upstream_script_as_target "br" "bash"' "$PROJECT_ROOT/install.sh"
+    run grep -F 'Installing Beads Rust" gtbi_run_verified_upstream_script_as_target "br" "bash"' "$PROJECT_ROOT/install.sh"
     assert_success
 
-    br_line="$(grep -n 'Installing Beads Rust" acfs_run_verified_upstream_script_as_target "br" "bash"' "$PROJECT_ROOT/install.sh" | head -1 | cut -d: -f1)"
-    bv_line="$(grep -n 'Installing Beads Viewer" acfs_run_verified_upstream_script_as_target "bv" "bash"' "$PROJECT_ROOT/install.sh" | head -1 | cut -d: -f1)"
+    br_line="$(grep -n 'Installing Beads Rust" gtbi_run_verified_upstream_script_as_target "br" "bash"' "$PROJECT_ROOT/install.sh" | head -1 | cut -d: -f1)"
+    bv_line="$(grep -n 'Installing Beads Viewer" gtbi_run_verified_upstream_script_as_target "bv" "bash"' "$PROJECT_ROOT/install.sh" | head -1 | cut -d: -f1)"
 
     [[ -n "$br_line" ]]
     [[ -n "$bv_line" ]]
@@ -13707,10 +13707,10 @@ EOF
 }
 
 @test "install.sh: install-wide lock is explicitly released during cleanup" {
-    run grep -F 'acfs_remember_install_lock "$_acfs_lock_fd" "$_acfs_lock_file"' "$PROJECT_ROOT/install.sh"
+    run grep -F 'gtbi_remember_install_lock "$_gtbi_lock_fd" "$_gtbi_lock_file"' "$PROJECT_ROOT/install.sh"
     assert_success
 
-    run grep -F 'acfs_release_install_lock' "$PROJECT_ROOT/install.sh"
+    run grep -F 'gtbi_release_install_lock' "$PROJECT_ROOT/install.sh"
     assert_success
 
     run grep -F 'flock -u 199 2>/dev/null || true' "$PROJECT_ROOT/install.sh"
@@ -13720,8 +13720,8 @@ EOF
     assert_success
 }
 
-@test "install.sh: completion summary reconnects with the ACFS SSH key" {
-    run grep -F 'target_ssh_command="ssh -i ~/.ssh/acfs_ed25519 ${TARGET_USER}@YOUR_SERVER_IP"' "$PROJECT_ROOT/install.sh"
+@test "install.sh: completion summary reconnects with the GTBI SSH key" {
+    run grep -F 'target_ssh_command="ssh -i ~/.ssh/gtbi_ed25519 ${TARGET_USER}@YOUR_SERVER_IP"' "$PROJECT_ROOT/install.sh"
     assert_success
 
     run grep -F 'echo -e "     ${GRAY}$target_ssh_command${NC}"' "$PROJECT_ROOT/install.sh"
@@ -13735,7 +13735,7 @@ EOF
 }
 
 @test "install.sh: password-only root summary includes macOS key repair" {
-    run grep -F 'target_user_ssh_repair_command="cat ~/.ssh/acfs_ed25519.pub | ssh ${TARGET_USER}@YOUR_SERVER_IP' "$PROJECT_ROOT/install.sh"
+    run grep -F 'target_user_ssh_repair_command="cat ~/.ssh/gtbi_ed25519.pub | ssh ${TARGET_USER}@YOUR_SERVER_IP' "$PROJECT_ROOT/install.sh"
     assert_success
 
     run grep -F 'This uses the $TARGET_USER account and does not ask for the VPS root password.' "$PROJECT_ROOT/install.sh"
@@ -13753,17 +13753,17 @@ EOF
     run grep -F 'ssh-copy-id is optional and only works if you know the $TARGET_USER Linux account password:' "$PROJECT_ROOT/install.sh"
     assert_success
 
-    run grep -F 'ssh-copy-id -i ~/.ssh/acfs_ed25519.pub ${TARGET_USER}@YOUR_SERVER_IP' "$PROJECT_ROOT/install.sh"
+    run grep -F 'ssh-copy-id -i ~/.ssh/gtbi_ed25519.pub ${TARGET_USER}@YOUR_SERVER_IP' "$PROJECT_ROOT/install.sh"
     assert_success
 
-    run grep -F 'cat ~/.ssh/acfs_ed25519.pub | ssh root@YOUR_SERVER_IP' "$PROJECT_ROOT/install.sh"
+    run grep -F 'cat ~/.ssh/gtbi_ed25519.pub | ssh root@YOUR_SERVER_IP' "$PROJECT_ROOT/install.sh"
     assert_success
 
     run grep -F 'if ! grep -qxF' "$PROJECT_ROOT/install.sh"
     assert_success
-    [[ "$output" == *'acfs_pubkey'* ]]
+    [[ "$output" == *'gtbi_pubkey'* ]]
 
-    run grep -F '\\\"\\\$acfs_pubkey\\\"' "$PROJECT_ROOT/install.sh"
+    run grep -F '\\\"\\\$gtbi_pubkey\\\"' "$PROJECT_ROOT/install.sh"
     assert_success
 
     run grep -F "printf -v target_ssh_dir_for_summary_q '%q' \"\$target_ssh_dir_for_summary\"" "$PROJECT_ROOT/install.sh"
@@ -13807,7 +13807,7 @@ EOF
     run grep -F 'local max_wait=90' "$PROJECT_ROOT/scripts/lib/stack.sh"
     assert_success
 
-    run grep -F 'max_wait=90' "$PROJECT_ROOT/acfs.manifest.yaml"
+    run grep -F 'max_wait=90' "$PROJECT_ROOT/gtbi.manifest.yaml"
     assert_success
 }
 
@@ -13837,7 +13837,7 @@ EOF
 }
 
 @test "user.sh: SSH fallback guidance uses idempotent key commands" {
-    run grep -F 'cat ~/.ssh/acfs_ed25519.pub | ssh ${target}@YOUR_SERVER_IP' "$PROJECT_ROOT/scripts/lib/user.sh"
+    run grep -F 'cat ~/.ssh/gtbi_ed25519.pub | ssh ${target}@YOUR_SERVER_IP' "$PROJECT_ROOT/scripts/lib/user.sh"
     assert_success
 
     run grep -F 'If that cannot connect, use the root fallback:' "$PROJECT_ROOT/scripts/lib/user.sh"
@@ -13872,10 +13872,10 @@ EOF
 
     run grep -F 'if ! grep -qxF' "$PROJECT_ROOT/scripts/lib/user.sh"
     assert_success
-    [[ "$output" == *'acfs_pubkey'* ]]
+    [[ "$output" == *'gtbi_pubkey'* ]]
     [[ "$output" == *'$target_authorized_keys_q'* ]]
 
-    run grep -F '\\\"\\\$acfs_pubkey\\\"' "$PROJECT_ROOT/scripts/lib/user.sh"
+    run grep -F '\\\"\\\$gtbi_pubkey\\\"' "$PROJECT_ROOT/scripts/lib/user.sh"
     assert_success
 
     run grep -F 'tail -c 1 ${target_home}/.ssh/authorized_keys' "$PROJECT_ROOT/scripts/lib/user.sh"

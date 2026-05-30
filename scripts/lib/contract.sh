@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # shellcheck disable=SC1091
 # ============================================================
-# ACFS Installer - Runtime Contract Validation
+# GTBI Installer - Runtime Contract Validation
 # Ensures required env vars and helper functions exist before
 # invoking generated modules or orchestrator logic.
 #
@@ -12,12 +12,12 @@
 CONTRACT_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Ensure we have logging functions available
-if [[ -z "${ACFS_BLUE:-}" ]]; then
+if [[ -z "${GTBI_BLUE:-}" ]]; then
     # shellcheck source=logging.sh
     source "$CONTRACT_SCRIPT_DIR/logging.sh" 2>/dev/null || true
 fi
 
-acfs_require_contract() {
+gtbi_require_contract() {
     local context="${1:-generated}"
     local missing=()
 
@@ -28,12 +28,12 @@ acfs_require_contract() {
     # When running via curl|bash, SCRIPT_DIR is empty and we expect
     # a bootstrap directory to be prepared with libs, manifest, assets.
     if [[ -z "${SCRIPT_DIR:-}" ]]; then
-        [[ -z "${ACFS_BOOTSTRAP_DIR:-}" ]] && missing+=("ACFS_BOOTSTRAP_DIR")
-        [[ -z "${ACFS_LIB_DIR:-}" ]] && missing+=("ACFS_LIB_DIR")
-        [[ -z "${ACFS_GENERATED_DIR:-}" ]] && missing+=("ACFS_GENERATED_DIR")
-        [[ -z "${ACFS_ASSETS_DIR:-}" ]] && missing+=("ACFS_ASSETS_DIR")
-        [[ -z "${ACFS_CHECKSUMS_YAML:-}" ]] && missing+=("ACFS_CHECKSUMS_YAML")
-        [[ -z "${ACFS_MANIFEST_YAML:-}" ]] && missing+=("ACFS_MANIFEST_YAML")
+        [[ -z "${GTBI_BOOTSTRAP_DIR:-}" ]] && missing+=("GTBI_BOOTSTRAP_DIR")
+        [[ -z "${GTBI_LIB_DIR:-}" ]] && missing+=("GTBI_LIB_DIR")
+        [[ -z "${GTBI_GENERATED_DIR:-}" ]] && missing+=("GTBI_GENERATED_DIR")
+        [[ -z "${GTBI_ASSETS_DIR:-}" ]] && missing+=("GTBI_ASSETS_DIR")
+        [[ -z "${GTBI_CHECKSUMS_YAML:-}" ]] && missing+=("GTBI_CHECKSUMS_YAML")
+        [[ -z "${GTBI_MANIFEST_YAML:-}" ]] && missing+=("GTBI_MANIFEST_YAML")
     fi
 
     if ! declare -f log_detail >/dev/null 2>&1; then
@@ -54,7 +54,7 @@ acfs_require_contract() {
 
     if [[ ${#missing[@]} -gt 0 ]]; then
         if declare -f log_error >/dev/null 2>&1; then
-            log_error "ACFS contract violation (${context})"
+            log_error "GTBI contract violation (${context})"
             if declare -f log_detail >/dev/null 2>&1; then
                 log_detail "Missing: ${missing[*]}"
                 log_detail "Fix: install.sh must source scripts/lib/*.sh, set required vars, and only then invoke generated module functions."
@@ -63,7 +63,7 @@ acfs_require_contract() {
                 echo "    Fix: install.sh must source scripts/lib/*.sh, set required vars, and only then invoke generated module functions." >&2
             fi
         else
-            echo "ERROR: ACFS contract violation (${context})" >&2
+            echo "ERROR: GTBI contract violation (${context})" >&2
             echo "Missing: ${missing[*]}" >&2
             echo "Fix: install.sh must source scripts/lib/*.sh, set required vars, and only then invoke generated module functions." >&2
         fi

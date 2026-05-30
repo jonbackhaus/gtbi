@@ -143,7 +143,7 @@ const ISSUES: Omit<TroubleshootingIssue, "searchable">[] = [
       "Permission denied (publickey,keyboard-interactive)",
     ],
     causes: [
-      "The installer did not finish adding the ACFS key to the configured SSH user",
+      "The installer did not finish adding the GTBI key to the configured SSH user",
       "Using root for a post-install key-based login instead of the configured SSH user",
       "SSH key file has wrong permissions",
       "Using wrong SSH key file",
@@ -156,7 +156,7 @@ const ISSUES: Omit<TroubleshootingIssue, "searchable">[] = [
           "If you configured a different SSH user, use that username instead",
           "For the first password login before installing, follow the wizard's root SSH step instead",
         ],
-        command: "ssh -i ~/.ssh/acfs_ed25519 ubuntu@YOUR_VPS_IP",
+        command: "ssh -i ~/.ssh/gtbi_ed25519 ubuntu@YOUR_VPS_IP",
       },
       {
         title: "Check SSH key permissions",
@@ -164,7 +164,7 @@ const ISSUES: Omit<TroubleshootingIssue, "searchable">[] = [
           "SSH keys must have restricted permissions (600 or 400)",
           "Run the chmod command to fix permissions",
         ],
-        command: "chmod 600 ~/.ssh/acfs_ed25519",
+        command: "chmod 600 ~/.ssh/gtbi_ed25519",
       },
       {
         title: "Use password authentication first",
@@ -172,11 +172,11 @@ const ISSUES: Omit<TroubleshootingIssue, "searchable">[] = [
           "If you are still before the installer step, connect as root with the VPS password first",
           "If root login is disabled, connect as ubuntu and run sudo -i before continuing",
           "If sudo -i asks for a password, use the ubuntu Linux account password; if you only have the VPS root password, use the provider console or root SSH path instead",
-          "Then run the installer so ACFS can set up key-based login for your normal SSH user",
+          "Then run the installer so GTBI can set up key-based login for your normal SSH user",
         ],
       },
       {
-        title: "Copy the ACFS key through ubuntu first",
+        title: "Copy the GTBI key through ubuntu first",
         steps: [
           "If the installer finished but warned that no root SSH key was available, use the follow-up command printed in the installer summary",
           "This local command uses the ubuntu account and does not ask for the VPS root password",
@@ -189,7 +189,7 @@ const ISSUES: Omit<TroubleshootingIssue, "searchable">[] = [
         title: "Use the root fallback if ubuntu still cannot connect",
         steps: [
           "Use this when the ubuntu repair command cannot connect or asks for a password you do not know",
-          "This local command asks for the VPS root password once, then installs your ACFS public key for ubuntu",
+          "This local command asks for the VPS root password once, then installs your GTBI public key for ubuntu",
           "This default troubleshooting command targets ubuntu; if you chose a different SSH user, use the personalized root-fallback command from the installer summary or wizard handoff runbook",
           "After it completes, retry the key-based SSH command for ubuntu or your configured SSH user",
         ],
@@ -294,7 +294,7 @@ const ISSUES: Omit<TroubleshootingIssue, "searchable">[] = [
       {
         title: "Re-run installer from root",
         steps: [
-          "Run the ACFS install command only after you're in the root shell",
+          "Run the GTBI install command only after you're in the root shell",
           "After the installer completes, reconnect as the configured SSH user (ubuntu by default) for daily work",
         ],
       },
@@ -319,7 +319,7 @@ const ISSUES: Omit<TroubleshootingIssue, "searchable">[] = [
         title: "Check available disk space",
         steps: [
           "View disk usage",
-          "You need at least 10GB free for ACFS",
+          "You need at least 10GB free for GTBI",
         ],
         command: "df -h",
       },
@@ -417,9 +417,9 @@ const ISSUES: Omit<TroubleshootingIssue, "searchable">[] = [
       {
         title: "Skip or configure",
         steps: [
-          "Press 'q' to quit and use ACFS defaults",
+          "Press 'q' to quit and use GTBI defaults",
           "Or follow the prompts to customize your terminal appearance",
-          "Either option is fine - ACFS already set sensible defaults",
+          "Either option is fine - GTBI already set sensible defaults",
         ],
       },
     ],
@@ -482,7 +482,7 @@ const ISSUES: Omit<TroubleshootingIssue, "searchable">[] = [
           "Tell SSH to only use your specific key file",
           "The IdentitiesOnly option prevents trying other keys",
         ],
-        command: "ssh -i ~/.ssh/acfs_ed25519 -o IdentitiesOnly=yes ubuntu@YOUR_VPS_IP",
+        command: "ssh -i ~/.ssh/gtbi_ed25519 -o IdentitiesOnly=yes ubuntu@YOUR_VPS_IP",
       },
       {
         title: "Clear SSH agent keys",
@@ -490,7 +490,7 @@ const ISSUES: Omit<TroubleshootingIssue, "searchable">[] = [
           "If you have many keys loaded in your SSH agent",
           "Clear them all and add only the one you need",
         ],
-        command: "ssh-add -D && ssh-add ~/.ssh/acfs_ed25519",
+        command: "ssh-add -D && ssh-add ~/.ssh/gtbi_ed25519",
       },
     ],
     prevention: "Use an SSH config file to specify which key to use for each server.",
@@ -878,7 +878,7 @@ export default function TroubleshootingPage() {
                 <span>
                   Visit the{" "}
                   <a
-                    href="https://github.com/Dicklesworthstone/agentic_coding_flywheel_setup/issues"
+                    href="https://github.com/jonbackhaus/gtbi/issues"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-primary hover:underline"

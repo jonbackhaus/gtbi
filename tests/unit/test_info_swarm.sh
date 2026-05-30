@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-# Unit tests for acfs info swarm operations summary
+# Unit tests for gtbi info swarm operations summary
 # ============================================================
 
 set -euo pipefail
@@ -11,7 +11,7 @@ DASHBOARD_SH="$REPO_ROOT/scripts/lib/dashboard.sh"
 
 TESTS_PASSED=0
 TESTS_FAILED=0
-ARTIFACT_DIR="${ACFS_INFO_SWARM_TEST_ARTIFACTS_DIR:-${TMPDIR:-/tmp}/acfs-info-swarm-test-artifacts-$(date +%Y%m%d-%H%M%S)-$$}"
+ARTIFACT_DIR="${GTBI_INFO_SWARM_TEST_ARTIFACTS_DIR:-${TMPDIR:-/tmp}/gtbi-info-swarm-test-artifacts-$(date +%Y%m%d-%H%M%S)-$$}"
 
 mkdir -p "$ARTIFACT_DIR"
 
@@ -117,9 +117,9 @@ run_info() {
 
     env \
         HOME="$ARTIFACT_DIR/home" \
-        ACFS_INFO_SWARM_STATUS_SCRIPT="$status_script" \
-        ACFS_INFO_SWARM_STATUS_DEADLINE=1 \
-        ACFS_INFO_SWARM_STATUS_TIMEOUT=1 \
+        GTBI_INFO_SWARM_STATUS_SCRIPT="$status_script" \
+        GTBI_INFO_SWARM_STATUS_DEADLINE=1 \
+        GTBI_INFO_SWARM_STATUS_TIMEOUT=1 \
         bash "$INFO_SH" "$@"
 }
 
@@ -198,7 +198,7 @@ test_pressure_json_keeps_dashboard_decision_visible() {
 test_dashboard_generate_writes_swarm_panel() {
     local status_script output status dashboard_home html_path
     status_script="$(pressure_status_script)"
-    dashboard_home="$ARTIFACT_DIR/home/.acfs"
+    dashboard_home="$ARTIFACT_DIR/home/.gtbi"
     html_path="$dashboard_home/dashboard/index.html"
     mkdir -p "$dashboard_home"
     printf '{"target_home":"%s","target_user":"ubuntu"}\n' "$ARTIFACT_DIR/home" > "$dashboard_home/state.json"
@@ -206,10 +206,10 @@ test_dashboard_generate_writes_swarm_panel() {
     set +e
     output="$(env \
         HOME="$ARTIFACT_DIR/home" \
-        ACFS_HOME="$dashboard_home" \
-        ACFS_INFO_SWARM_STATUS_SCRIPT="$status_script" \
-        ACFS_INFO_SWARM_STATUS_DEADLINE=1 \
-        ACFS_INFO_SWARM_STATUS_TIMEOUT=1 \
+        GTBI_HOME="$dashboard_home" \
+        GTBI_INFO_SWARM_STATUS_SCRIPT="$status_script" \
+        GTBI_INFO_SWARM_STATUS_DEADLINE=1 \
+        GTBI_INFO_SWARM_STATUS_TIMEOUT=1 \
         bash "$DASHBOARD_SH" generate --force 2>&1)"
     status=$?
     set -e

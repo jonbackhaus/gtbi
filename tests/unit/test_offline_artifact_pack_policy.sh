@@ -33,8 +33,8 @@ test_policy_doc_exists() {
 }
 
 test_manifest_schema_and_layout_are_defined() {
-    require_text "acfs.offline-artifact-pack.v1" || return 1
-    require_text "acfs-offline-pack/" || return 1
+    require_text "gtbi.offline-artifact-pack.v1" || return 1
+    require_text "gtbi-offline-pack/" || return 1
     require_text "manifest.json" || return 1
     require_text "artifacts/" || return 1
     require_text "provenance/" || return 1

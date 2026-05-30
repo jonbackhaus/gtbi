@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-# ACFS Policy Lint - read-only guidance/template policy checks
+# GTBI Policy Lint - read-only guidance/template policy checks
 #
 # Detects drift in AGENTS.md, templates, onboarding lessons, and docs that
 # teach future agents unsafe or repo-inconsistent behavior.
@@ -20,9 +20,9 @@ POLICY_LINT_FILES_SCANNED=0
 
 policy_lint_usage() {
     cat <<'EOF'
-Usage: acfs policy-lint [OPTIONS]
+Usage: gtbi policy-lint [OPTIONS]
 
-Read-only lint for ACFS guidance, templates, and startup context. It reports
+Read-only lint for GTBI guidance, templates, and startup context. It reports
 policy drift but never edits files.
 
 Options:
@@ -33,8 +33,8 @@ Options:
   --help, -h      Show this help
 
 Inline allow comments:
-  acfs-policy-lint: allow <policy-id>
-  acfs-policy-lint: allow
+  gtbi-policy-lint: allow <policy-id>
+  gtbi-policy-lint: allow
 EOF
 }
 
@@ -65,7 +65,7 @@ policy_lint_parse_args() {
                 ;;
             *)
                 echo "Error: unknown option: $1" >&2
-                echo "Run 'acfs policy-lint --help' for usage." >&2
+                echo "Run 'gtbi policy-lint --help' for usage." >&2
                 return 2
                 ;;
         esac
@@ -88,7 +88,7 @@ policy_lint_binary_path() {
 
 policy_lint_require_jq() {
     if ! policy_lint_binary_path jq >/dev/null 2>&1; then
-        echo "Error: jq is required for acfs policy-lint" >&2
+        echo "Error: jq is required for gtbi policy-lint" >&2
         return 2
     fi
 }
@@ -143,12 +143,12 @@ policy_lint_collect_default_files() {
     local path=""
 
     policy_lint_add_file_if_present "$root/AGENTS.md"
-    policy_lint_add_file_if_present "$root/acfs/AGENTS.md"
+    policy_lint_add_file_if_present "$root/gtbi/AGENTS.md"
     policy_lint_add_file_if_present "$root/README.md"
     policy_lint_add_file_if_present "$root/apps/web/README.md"
     policy_lint_add_file_if_present "$root/tests/README.md"
 
-    for dir in "$root/docs" "$root/acfs/onboard/lessons" "$root/acfs/templates" "$root/scripts/templates"; do
+    for dir in "$root/docs" "$root/gtbi/onboard/lessons" "$root/gtbi/templates" "$root/scripts/templates"; do
         [[ -d "$dir" ]] || continue
         while IFS= read -r path; do
             [[ -f "$path" ]] || continue
@@ -175,8 +175,8 @@ policy_lint_has_allow_directive() {
     local lower=""
 
     lower="$(policy_lint_lower "$line")"
-    [[ "$lower" == *"acfs-policy-lint: allow"* ]] || return 1
-    [[ "$lower" == *"acfs-policy-lint: allow $policy_id"* || "$lower" == *"acfs-policy-lint: allow"* ]]
+    [[ "$lower" == *"gtbi-policy-lint: allow"* ]] || return 1
+    [[ "$lower" == *"gtbi-policy-lint: allow $policy_id"* || "$lower" == *"gtbi-policy-lint: allow"* ]]
 }
 
 policy_lint_context_is_negative() {
@@ -478,7 +478,7 @@ policy_lint_scan_file() {
     grep -Eiq 'before editing' "$path" && mentions_before_editing=true
     grep -Eiq 'agent mail' "$path" && mentions_agent_mail=true
     grep -Eiq 'reservation|reserve files|file_reservation_paths' "$path" && mentions_reservation=true
-    grep -Eiq 'acfs-policy-lint: allow( coordination\.agent_mail_reservation)?' "$path" && allow_reservation=true
+    grep -Eiq 'gtbi-policy-lint: allow( coordination\.agent_mail_reservation)?' "$path" && allow_reservation=true
 
     while IFS= read -r hit; do
         line_number="${hit%%:*}"
@@ -594,11 +594,11 @@ policy_lint_render_human() {
     local object=""
 
     if [[ ${#POLICY_LINT_VIOLATIONS[@]} -eq 0 ]]; then
-        printf 'PASS: ACFS policy lint found no violations in %d file(s).\n' "$POLICY_LINT_FILES_SCANNED"
+        printf 'PASS: GTBI policy lint found no violations in %d file(s).\n' "$POLICY_LINT_FILES_SCANNED"
         return 0
     fi
 
-    printf 'FAIL: ACFS policy lint found %d violation(s) in %d file(s).\n' \
+    printf 'FAIL: GTBI policy lint found %d violation(s) in %d file(s).\n' \
         "${#POLICY_LINT_VIOLATIONS[@]}" \
         "$POLICY_LINT_FILES_SCANNED"
     for object in "${POLICY_LINT_VIOLATIONS[@]}"; do

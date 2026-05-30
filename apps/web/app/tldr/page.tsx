@@ -78,7 +78,7 @@ function FlywheelExplanation() {
 // FOOTER CTA WITH COPY BUTTON
 // =============================================================================
 
-const INSTALL_COMMAND = `curl -fsSL https://raw.githubusercontent.com/Dicklesworthstone/agentic_coding_flywheel_setup/main/install.sh | bash -s -- --yes --mode vibe`;
+const INSTALL_COMMAND = `curl -fsSL https://raw.githubusercontent.com/jonbackhaus/gtbi/main/install.sh | bash -s -- --yes --mode vibe`;
 
 function FooterCTA({ id }: { id?: string }) {
   const [copied, setCopied] = useState(false);
@@ -114,7 +114,7 @@ function FooterCTA({ id }: { id?: string }) {
           Get Started
         </h2>
         <p className="mx-auto mt-4 max-w-xl text-sm text-muted-foreground sm:text-base">
-          The fastest way to set up the entire flywheel ecosystem is with ACFS.
+          The fastest way to set up the entire flywheel ecosystem is with GTBI.
           One command, 30 minutes, and you&apos;re ready to go.
         </p>
         <div className="mt-6 flex flex-col items-center gap-4 md:mt-8">

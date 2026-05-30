@@ -597,8 +597,8 @@ function getAcquisitionData(): {
   };
 }
 
-const FIRST_VISIT_KEY = 'acfs_first_visit';
-const FIRST_SOURCE_KEY = 'acfs_first_source';
+const FIRST_VISIT_KEY = 'gtbi_first_visit';
+const FIRST_SOURCE_KEY = 'gtbi_first_source';
 
 /**
  * Detect platform from user agent
@@ -673,8 +673,8 @@ export const trackSessionStart = (): void => {
   });
 
   // Check for returning user (use || 0 to handle NaN from corrupted storage)
-  const visitCount = (parseInt(safeGetItem('acfs_visit_count') || '0', 10) || 0) + 1;
-  safeSetItem('acfs_visit_count', String(visitCount));
+  const visitCount = (parseInt(safeGetItem('gtbi_visit_count') || '0', 10) || 0) + 1;
+  safeSetItem('gtbi_visit_count', String(visitCount));
 
   // Set comprehensive user properties
   setUserProperties({
@@ -704,7 +704,7 @@ export const trackSessionStart = (): void => {
 export const getOrCreateUserId = (): string => {
   if (typeof window === 'undefined') return '';
 
-  const storageKey = 'acfs_user_id';
+  const storageKey = 'gtbi_user_id';
   let userId = safeGetItem(storageKey);
 
   if (!userId) {
@@ -767,7 +767,7 @@ export const trackExperimentVariant = (
 // Funnel Tracking
 // ============================================================
 
-const FUNNEL_STORAGE_KEY = 'acfs_funnel_data';
+const FUNNEL_STORAGE_KEY = 'gtbi_funnel_data';
 
 interface FunnelData {
   sessionId: string;
@@ -1082,7 +1082,7 @@ export const trackLandingEngagement = (
 // Learning Hub Funnel Tracking
 // ============================================================
 
-const LESSON_FUNNEL_STORAGE_KEY = 'acfs_lesson_funnel_data';
+const LESSON_FUNNEL_STORAGE_KEY = 'gtbi_lesson_funnel_data';
 
 interface LessonFunnelData {
   sessionId: string;

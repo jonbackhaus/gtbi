@@ -32,7 +32,7 @@ test_fail() {
 # Test: Check function returns valid JSON
 test_check_returns_json() {
     local result
-    result=$(autofix_existing_acfs_check 2>/dev/null)
+    result=$(autofix_existing_gtbi_check 2>/dev/null)
 
     if ! echo "$result" | jq . &>/dev/null; then
         test_fail "check_returns_json" "Output is not valid JSON"

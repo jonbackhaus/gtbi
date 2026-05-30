@@ -22,13 +22,13 @@ init_vercel_fixture_repo() {
         cd "$repo" || exit 1
         git init -q
         git config user.email "test@example.invalid"
-        git config user.name "ACFS Test"
+        git config user.name "GTBI Test"
 
         printf '{}\n' > package.json
         printf 'lock\n' > bun.lock
         printf '{"framework":"nextjs"}\n' > vercel.json
         printf 'core.*\n' > .vercelignore
-        printf '{"name":"@acfs/web"}\n' > apps/web/package.json
+        printf '{"name":"/web"}\n' > apps/web/package.json
         printf '{"framework":"nextjs"}\n' > apps/web/vercel.json
         printf 'notes\n' > docs/notes.md
 
@@ -82,7 +82,7 @@ run_ignore_script_for_head_range() {
 
 @test "vercel ignore build proceeds for web app changes from app cwd" {
     repo=$(init_vercel_fixture_repo)
-    commit_fixture_change "$repo" "apps/web/package.json" '{"name":"@acfs/web","changed":true}'
+    commit_fixture_change "$repo" "apps/web/package.json" '{"name":"/web","changed":true}'
 
     run run_ignore_script_for_head_range "$repo" "apps/web"
 

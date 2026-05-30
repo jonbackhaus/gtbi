@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # ============================================================
-# ACFS Fresh-Root Bootstrap Regression Test
+# GTBI Fresh-Root Bootstrap Regression Test
 #
 # This is a focused production-regression test for the real beginner path:
 #   root@fresh-ubuntu:~# curl .../install.sh | bash -s -- --yes --mode vibe
 #
 # It proves that a container with no ubuntu user can run the installer from
-# stdin, that ACFS creates a missing target user automatically, that --yes mode
+# stdin, that GTBI creates a missing target user automatically, that --yes mode
 # cannot stop to ask for an SSH public key, and that pre-existing
 # authorized_keys files with no trailing newline are merged safely.
 # ============================================================
@@ -76,7 +76,7 @@ fi
 
 PASS=0
 FAIL=0
-LOG_DIR="/tmp/acfs-fresh-root-bootstrap-regression.$$"
+LOG_DIR="/tmp/gtbi-fresh-root-bootstrap-regression.$$"
 LOCAL_BOOTSTRAP_ARCHIVE=""
 mkdir -p "$LOG_DIR"
 
@@ -107,19 +107,19 @@ create_bootstrap_archive() {
     local stage_dir=""
 
     stage_dir="$(mktemp -d "$LOG_DIR/archive-stage.XXXXXX")"
-    mkdir -p "$stage_dir/acfs-local/scripts"
+    mkdir -p "$stage_dir/gtbi-local/scripts"
 
-    cp -R /repo/scripts/lib "$stage_dir/acfs-local/scripts/"
-    cp -R /repo/scripts/generated "$stage_dir/acfs-local/scripts/"
-    cp /repo/scripts/preflight.sh "$stage_dir/acfs-local/scripts/preflight.sh"
-    cp /repo/scripts/acfs-global "$stage_dir/acfs-local/scripts/acfs-global"
-    cp /repo/scripts/acfs-update "$stage_dir/acfs-local/scripts/acfs-update"
-    cp -R /repo/acfs "$stage_dir/acfs-local/acfs"
-    cp /repo/checksums.yaml "$stage_dir/acfs-local/checksums.yaml"
-    cp /repo/acfs.manifest.yaml "$stage_dir/acfs-local/acfs.manifest.yaml"
-    cp /repo/VERSION "$stage_dir/acfs-local/VERSION"
+    cp -R /repo/scripts/lib "$stage_dir/gtbi-local/scripts/"
+    cp -R /repo/scripts/generated "$stage_dir/gtbi-local/scripts/"
+    cp /repo/scripts/preflight.sh "$stage_dir/gtbi-local/scripts/preflight.sh"
+    cp /repo/scripts/gtbi-global "$stage_dir/gtbi-local/scripts/gtbi-global"
+    cp /repo/scripts/gtbi-update "$stage_dir/gtbi-local/scripts/gtbi-update"
+    cp -R /repo/gtbi "$stage_dir/gtbi-local/gtbi"
+    cp /repo/checksums.yaml "$stage_dir/gtbi-local/checksums.yaml"
+    cp /repo/gtbi.manifest.yaml "$stage_dir/gtbi-local/gtbi.manifest.yaml"
+    cp /repo/VERSION "$stage_dir/gtbi-local/VERSION"
 
-    tar -czf "$archive_path" -C "$stage_dir" acfs-local
+    tar -czf "$archive_path" -C "$stage_dir" gtbi-local
 }
 
 assert_user_home() {
@@ -184,9 +184,9 @@ run_stdin_install() {
     timeout 240s bash -c '
         set -euo pipefail
         cat /repo/install.sh | env \
-            ACFS_TEST_MODE=1 \
-            ACFS_TEST_ARCHIVE="$2" \
-            ACFS_GENERATED_MIGRATED_CATEGORIES=filesystem,cli,network,tools,lang,agents,db,cloud,stack,acfs \
+            GTBI_TEST_MODE=1 \
+            GTBI_TEST_ARCHIVE="$2" \
+            GTBI_GENERATED_MIGRATED_CATEGORIES=filesystem,cli,network,tools,lang,agents,db,cloud,stack,gtbi \
             TARGET_USER="$1" \
             bash -s -- --yes --skip-preflight --skip-ubuntu-upgrade --mode vibe --only users.ubuntu --no-deps
     ' _ "$target_user" "$LOCAL_BOOTSTRAP_ARCHIVE" > "$log_file" 2>&1
@@ -214,7 +214,7 @@ require_cmd timeout
 
 cd /repo
 
-LOCAL_BOOTSTRAP_ARCHIVE="$LOG_DIR/acfs-local-bootstrap.tar.gz"
+LOCAL_BOOTSTRAP_ARCHIVE="$LOG_DIR/gtbi-local-bootstrap.tar.gz"
 log "Creating local bootstrap archive from current checkout"
 create_bootstrap_archive "$LOCAL_BOOTSTRAP_ARCHIVE"
 if [[ -f "$LOCAL_BOOTSTRAP_ARCHIVE" ]]; then
@@ -223,7 +223,7 @@ else
     fail "local bootstrap archive was not created"
 fi
 
-FRESH_TARGET_USER="acfsfresh"
+FRESH_TARGET_USER="gtbifresh"
 FRESH_TARGET_HOME="/home/$FRESH_TARGET_USER"
 
 log "Verifying missing target-user starting point"
@@ -253,10 +253,10 @@ else
 fi
 assert_user_home "$FRESH_TARGET_USER" "$FRESH_TARGET_HOME"
 
-if [[ -d "$FRESH_TARGET_HOME/.acfs" ]]; then
-    pass "installer created $FRESH_TARGET_HOME/.acfs"
+if [[ -d "$FRESH_TARGET_HOME/.gtbi" ]]; then
+    pass "installer created $FRESH_TARGET_HOME/.gtbi"
 else
-    fail "installer did not create $FRESH_TARGET_HOME/.acfs"
+    fail "installer did not create $FRESH_TARGET_HOME/.gtbi"
 fi
 
 if runuser -u "$FRESH_TARGET_USER" -- sudo -n true >/dev/null 2>&1; then
@@ -283,10 +283,10 @@ assert_file_not_contains "$SECOND_LOG" "Unable to resolve TARGET_HOME" "rerun lo
 assert_file_not_contains "$SECOND_LOG" "Paste your public key" "rerun did not prompt for a public key"
 assert_file_contains "$SECOND_LOG" "Test mode: using local archive" "rerun used the local checkout archive"
 
-KEY_TARGET_USER="acfskeytest"
+KEY_TARGET_USER="gtbikeytest"
 KEY_TARGET_HOME="/home/$KEY_TARGET_USER"
-EXISTING_KEY="ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIExistingTargetKey acfs-existing"
-NEW_KEY="ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMigrationRegressionKey acfs-e2e"
+EXISTING_KEY="ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIExistingTargetKey gtbi-existing"
+NEW_KEY="ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMigrationRegressionKey gtbi-e2e"
 
 log "Preparing pre-existing target authorized_keys without a trailing newline"
 if ! id "$KEY_TARGET_USER" >/dev/null 2>&1; then

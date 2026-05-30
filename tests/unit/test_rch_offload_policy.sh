@@ -10,7 +10,7 @@ LINTER_SH="$REPO_ROOT/scripts/tests/lint_rch_offload_policy.sh"
 
 TESTS_PASSED=0
 TESTS_FAILED=0
-ARTIFACT_DIR="${ACFS_RCH_POLICY_TEST_ARTIFACTS_DIR:-${TMPDIR:-/tmp}/acfs-rch-policy-test-artifacts-$(date +%Y%m%d-%H%M%S)-$$}"
+ARTIFACT_DIR="${GTBI_RCH_POLICY_TEST_ARTIFACTS_DIR:-${TMPDIR:-/tmp}/gtbi-rch-policy-test-artifacts-$(date +%Y%m%d-%H%M%S)-$$}"
 
 mkdir -p "$ARTIFACT_DIR"
 

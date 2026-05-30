@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-# ACFS Factory Ubuntu Installer E2E (QEMU/KVM)
+# GTBI Factory Ubuntu Installer E2E (QEMU/KVM)
 #
 # Boots an official Ubuntu cloud image in QEMU/KVM, waits for root SSH, then
 # delegates to test_factory_install_ubuntu.sh. This is the local VM equivalent
@@ -13,24 +13,24 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
-UBUNTU_VERSION="${ACFS_QEMU_UBUNTU_VERSION:-25.10}"
-MODE="${ACFS_QEMU_MODE:-vibe}"
-REF="${ACFS_REF:-main}"
-EXPECT_FINAL_UBUNTU_VERSION="${ACFS_QEMU_EXPECT_FINAL_UBUNTU_VERSION:-$UBUNTU_VERSION}"
-INSTALL_TIMEOUT_SECONDS="${ACFS_QEMU_INSTALL_TIMEOUT_SECONDS:-14400}"
-POST_REBOOT_TIMEOUT_SECONDS="${ACFS_QEMU_POST_REBOOT_TIMEOUT_SECONDS:-14400}"
-BOOT_TIMEOUT_SECONDS="${ACFS_QEMU_BOOT_TIMEOUT_SECONDS:-900}"
-MEMORY_MB="${ACFS_QEMU_MEMORY_MB:-8192}"
-CPUS="${ACFS_QEMU_CPUS:-4}"
-DISK_SIZE="${ACFS_QEMU_DISK_SIZE:-80G}"
-SSH_PORT="${ACFS_QEMU_SSH_PORT:-}"
-IMAGE_URL="${ACFS_QEMU_IMAGE_URL:-}"
-IMAGE_SHA256SUMS_URL="${ACFS_QEMU_IMAGE_SHA256SUMS_URL:-}"
-CACHE_DIR="${ACFS_QEMU_CACHE_DIR:-$REPO_ROOT/tests/artifacts/qemu-cache}"
-ARTIFACTS_DIR="${ACFS_QEMU_ARTIFACTS_DIR:-}"
-KEY_DIR="${ACFS_QEMU_KEY_DIR:-}"
-INSTALL_URL="${ACFS_FACTORY_INSTALL_URL:-}"
-ALLOW_INSTALL_REBOOT="${ACFS_QEMU_ALLOW_INSTALL_REBOOT:-false}"
+UBUNTU_VERSION="${GTBI_QEMU_UBUNTU_VERSION:-25.10}"
+MODE="${GTBI_QEMU_MODE:-vibe}"
+REF="${GTBI_REF:-main}"
+EXPECT_FINAL_UBUNTU_VERSION="${GTBI_QEMU_EXPECT_FINAL_UBUNTU_VERSION:-$UBUNTU_VERSION}"
+INSTALL_TIMEOUT_SECONDS="${GTBI_QEMU_INSTALL_TIMEOUT_SECONDS:-14400}"
+POST_REBOOT_TIMEOUT_SECONDS="${GTBI_QEMU_POST_REBOOT_TIMEOUT_SECONDS:-14400}"
+BOOT_TIMEOUT_SECONDS="${GTBI_QEMU_BOOT_TIMEOUT_SECONDS:-900}"
+MEMORY_MB="${GTBI_QEMU_MEMORY_MB:-8192}"
+CPUS="${GTBI_QEMU_CPUS:-4}"
+DISK_SIZE="${GTBI_QEMU_DISK_SIZE:-80G}"
+SSH_PORT="${GTBI_QEMU_SSH_PORT:-}"
+IMAGE_URL="${GTBI_QEMU_IMAGE_URL:-}"
+IMAGE_SHA256SUMS_URL="${GTBI_QEMU_IMAGE_SHA256SUMS_URL:-}"
+CACHE_DIR="${GTBI_QEMU_CACHE_DIR:-$REPO_ROOT/tests/artifacts/qemu-cache}"
+ARTIFACTS_DIR="${GTBI_QEMU_ARTIFACTS_DIR:-}"
+KEY_DIR="${GTBI_QEMU_KEY_DIR:-}"
+INSTALL_URL="${GTBI_FACTORY_INSTALL_URL:-}"
+ALLOW_INSTALL_REBOOT="${GTBI_QEMU_ALLOW_INSTALL_REBOOT:-false}"
 LEAVE_RUNNING=false
 TIMESTAMP="$(date -u +%Y%m%dT%H%M%SZ)"
 
@@ -43,7 +43,7 @@ Usage:
 
 Options:
   --ubuntu <version>           Ubuntu cloud image version (default: 25.10).
-  --ref <ref>                  ACFS ref to install (default: ACFS_REF or main).
+  --ref <ref>                  GTBI ref to install (default: GTBI_REF or main).
   --mode <mode>                Install mode: vibe or safe (default: vibe).
   --expect-final-ubuntu <ver>  Required final VERSION_ID after install/resume.
   --install-url <url>          Override public install.sh URL.
@@ -229,9 +229,9 @@ fi
 
 if [[ -z "$KEY_DIR" ]]; then
     if [[ -n "${RUNNER_TEMP:-}" ]]; then
-        KEY_DIR="$RUNNER_TEMP/acfs-qemu-keys-${TIMESTAMP}"
+        KEY_DIR="$RUNNER_TEMP/gtbi-qemu-keys-${TIMESTAMP}"
     else
-        KEY_DIR="$(mktemp -d "${TMPDIR:-/tmp}/acfs-qemu-keys-${TIMESTAMP}.XXXXXX")"
+        KEY_DIR="$(mktemp -d "${TMPDIR:-/tmp}/gtbi-qemu-keys-${TIMESTAMP}.XXXXXX")"
     fi
 fi
 
@@ -287,7 +287,7 @@ chmod 700 "$KEY_DIR"
 image_name="$(basename "$IMAGE_URL")"
 base_image="$CACHE_DIR/$image_name"
 sha_file="$CACHE_DIR/${image_name}.SHA256SUMS"
-disk_path="$ARTIFACTS_DIR/acfs-factory.qcow2"
+disk_path="$ARTIFACTS_DIR/gtbi-factory.qcow2"
 seed_iso="$ARTIFACTS_DIR/seed.iso"
 user_data="$ARTIFACTS_DIR/user-data.yml"
 meta_data="$ARTIFACTS_DIR/meta-data.yml"
@@ -342,7 +342,7 @@ PY
 
 write_cloud_init_seed() {
     if [[ ! -f "$ssh_key" ]]; then
-        ssh-keygen -q -t ed25519 -N "" -C "acfs-qemu-factory-${TIMESTAMP}" -f "$ssh_key"
+        ssh-keygen -q -t ed25519 -N "" -C "gtbi-qemu-factory-${TIMESTAMP}" -f "$ssh_key"
     fi
 
     public_key="$(<"${ssh_key}.pub")"
@@ -363,8 +363,8 @@ runcmd:
 EOF
 
     cat > "$meta_data" <<EOF
-instance-id: acfs-qemu-factory-${TIMESTAMP}
-local-hostname: acfs-qemu-factory
+instance-id: gtbi-qemu-factory-${TIMESTAMP}
+local-hostname: gtbi-qemu-factory
 EOF
 
     cloud-localds "$seed_iso" "$user_data" "$meta_data"

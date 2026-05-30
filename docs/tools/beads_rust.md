@@ -160,4 +160,4 @@ Agents should:
 
 - `bv` - Beads Viewer TUI for interactive task management
 - `am` - Agent Mail for multi-agent coordination
-- `acfs doctor` - Verifies br installation
+- `gtbi doctor` - Verifies br installation

@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # ============================================================
-# ACFS Unit Test Helper
+# GTBI Unit Test Helper
 # Common setup, utilities, and mocks for bats unit tests
 # ============================================================
 
 # Determine paths
 TESTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PROJECT_ROOT="$(cd "$TESTS_DIR/.." && pwd)"
-ACFS_LIB_DIR="$PROJECT_ROOT/scripts/lib"
+GTBI_LIB_DIR="$PROJECT_ROOT/scripts/lib"
 FIXTURES_DIR="$TESTS_DIR/fixtures"
 LOGS_DIR="$TESTS_DIR/logs"
 
@@ -176,25 +176,25 @@ log_debug() {
 # Set up mock terminal for TUI tests
 setup_mock_terminal() {
     export TERM=dumb
-    export ACFS_TEST_MODE=1
+    export GTBI_TEST_MODE=1
     export COLUMNS=80
     export LINES=24
     # Disable any interactive prompts
-    export ACFS_NONINTERACTIVE=1
+    export GTBI_NONINTERACTIVE=1
     
     # Disable colors for easier matching
-    export ACFS_RED=""
-    export ACFS_GREEN=""
-    export ACFS_YELLOW=""
-    export ACFS_BLUE=""
-    export ACFS_GRAY=""
-    export ACFS_NC=""
+    export GTBI_RED=""
+    export GTBI_GREEN=""
+    export GTBI_YELLOW=""
+    export GTBI_BLUE=""
+    export GTBI_GRAY=""
+    export GTBI_NC=""
 }
 
 # Reset terminal settings
 teardown_mock_terminal() {
-    unset ACFS_TEST_MODE
-    unset ACFS_NONINTERACTIVE
+    unset GTBI_TEST_MODE
+    unset GTBI_NONINTERACTIVE
 }
 
 # ============================================================
@@ -477,10 +477,10 @@ assert_matches_golden() {
 # Source a library file from scripts/lib
 source_lib() {
     local lib_name="$1"
-    local lib_path="$ACFS_LIB_DIR/${lib_name}.sh"
+    local lib_path="$GTBI_LIB_DIR/${lib_name}.sh"
 
     if [[ ! -f "$lib_path" ]]; then
-        echo "DEBUG: ACFS_LIB_DIR=$ACFS_LIB_DIR" >&2
+        echo "DEBUG: GTBI_LIB_DIR=$GTBI_LIB_DIR" >&2
         echo "DEBUG: PROJECT_ROOT=$PROJECT_ROOT" >&2
         echo "DEBUG: TESTS_DIR=$TESTS_DIR" >&2
         log_fail "Library not found: $lib_path"

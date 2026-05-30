@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # shellcheck disable=SC1091
 # ============================================================
-# ACFS Installer - Install Helpers
+# GTBI Installer - Install Helpers
 # Shared helpers for module execution and selection.
 # ============================================================
 
@@ -11,13 +11,13 @@
 INSTALL_HELPERS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Ensure logging functions are available (best effort)
-if [[ -z "${ACFS_BLUE:-}" ]]; then
+if [[ -z "${GTBI_BLUE:-}" ]]; then
     # shellcheck source=logging.sh
     source "$INSTALL_HELPERS_DIR/logging.sh" 2>/dev/null || true
 fi
 
 # Source progress bar library (bd-21kh)
-if [[ -z "${ACFS_PROGRESS_TOTAL:-}" ]]; then
+if [[ -z "${GTBI_PROGRESS_TOTAL:-}" ]]; then
     # shellcheck source=progress.sh
     source "$INSTALL_HELPERS_DIR/progress.sh" 2>/dev/null || true
 fi
@@ -44,27 +44,27 @@ fi
 # category-by-category while keeping a fast rollback path.
 #
 # Precedence:
-#   1) ACFS_USE_GENERATED_<CATEGORY> (if set)
-#   2) ACFS_USE_GENERATED            (if set)
-#   3) Default for migrated categories (see ACFS_GENERATED_MIGRATED_CATEGORIES)
+#   1) GTBI_USE_GENERATED_<CATEGORY> (if set)
+#   2) GTBI_USE_GENERATED            (if set)
+#   3) Default for migrated categories (see GTBI_GENERATED_MIGRATED_CATEGORIES)
 #
 # Valid values: 0/1, true/false, yes/no, on/off (case-insensitive)
 #
-# Categories are the manifest "category" values (e.g., base, shell, cli, lang, tools, agents, db, cloud, stack, acfs).
+# Categories are the manifest "category" values (e.g., base, shell, cli, lang, tools, agents, db, cloud, stack, gtbi).
 #
 # Note: The orchestrator (install.sh) remains responsible for state/resume framing.
 
-# Default categories array. Set via ACFS_GENERATED_DEFAULT_CATEGORIES in code,
-# or override at runtime with ACFS_GENERATED_MIGRATED_CATEGORIES env var (comma-separated).
-ACFS_GENERATED_DEFAULT_CATEGORIES=() # Empty until categories are explicitly migrated.
+# Default categories array. Set via GTBI_GENERATED_DEFAULT_CATEGORIES in code,
+# or override at runtime with GTBI_GENERATED_MIGRATED_CATEGORIES env var (comma-separated).
+GTBI_GENERATED_DEFAULT_CATEGORIES=() # Empty until categories are explicitly migrated.
 
-_acfs_upper() {
+_gtbi_upper() {
     local s="${1:-}"
     # Bash 4+: ${var^^}
     echo "${s^^}"
 }
 
-_acfs_normalize_bool() {
+_gtbi_normalize_bool() {
     local raw="${1:-}"
     case "${raw,,}" in
         1|true|yes|on) echo "1" ;;
@@ -73,7 +73,7 @@ _acfs_normalize_bool() {
     esac
 }
 
-acfs_flag_bool() {
+gtbi_flag_bool() {
     local var_name="$1"
     local raw="${!var_name:-}"
 
@@ -83,7 +83,7 @@ acfs_flag_bool() {
     fi
 
     local normalized=""
-    if normalized="$(_acfs_normalize_bool "$raw")"; then
+    if normalized="$(_gtbi_normalize_bool "$raw")"; then
         echo "$normalized"
         return 0
     fi
@@ -102,12 +102,12 @@ acfs_flag_bool() {
 # Effective selection (computed once after manifest_index)
 # Uses -g for global scope when sourced inside a function
 # ------------------------------------------------------------
-declare -gA ACFS_EFFECTIVE_RUN=()
-declare -gA ACFS_PLAN_REASON=()
-declare -gA ACFS_PLAN_EXCLUDE_REASON=()
-declare -ga ACFS_EFFECTIVE_PLAN=()
+declare -gA GTBI_EFFECTIVE_RUN=()
+declare -gA GTBI_PLAN_REASON=()
+declare -gA GTBI_PLAN_EXCLUDE_REASON=()
+declare -ga GTBI_EFFECTIVE_PLAN=()
 
-acfs_normalize_only_phases() {
+gtbi_normalize_only_phases() {
     if [[ "${#ONLY_PHASES[@]}" -eq 0 ]]; then
         return 0
     fi
@@ -144,29 +144,29 @@ acfs_normalize_only_phases() {
     return 0
 }
 
-acfs_resolve_selection() {
-    if [[ "${ACFS_MANIFEST_INDEX_LOADED:-false}" != "true" ]]; then
+gtbi_resolve_selection() {
+    if [[ "${GTBI_MANIFEST_INDEX_LOADED:-false}" != "true" ]]; then
         log_error "Manifest index not loaded. Cannot resolve selection."
         return 1
     fi
 
     # Clear arrays while preserving their types
     # Re-declare with -gA to ensure they remain global associative arrays
-    declare -gA ACFS_EFFECTIVE_RUN=()
-    declare -gA ACFS_PLAN_REASON=()
-    declare -gA ACFS_PLAN_EXCLUDE_REASON=()
-    ACFS_EFFECTIVE_PLAN=()
+    declare -gA GTBI_EFFECTIVE_RUN=()
+    declare -gA GTBI_PLAN_REASON=()
+    declare -gA GTBI_PLAN_EXCLUDE_REASON=()
+    GTBI_EFFECTIVE_PLAN=()
 
     # Normalize named phases like "agents" to manifest phase numbers
-    acfs_normalize_only_phases
+    gtbi_normalize_only_phases
 
     local -A module_exists=()
     local -A phase_exists=()
     local module=""
     local phase=""
-    for module in "${ACFS_MODULES_IN_ORDER[@]}"; do
+    for module in "${GTBI_MODULES_IN_ORDER[@]}"; do
         module_exists["$module"]=1
-        phase="${ACFS_MODULE_PHASE["$module"]:-}"
+        phase="${GTBI_MODULE_PHASE["$module"]:-}"
         if [[ -n "$phase" ]]; then
             phase_exists["$phase"]=1
         fi
@@ -193,8 +193,8 @@ acfs_resolve_selection() {
                 return 1
             fi
         done
-        for module in "${ACFS_MODULES_IN_ORDER[@]}"; do
-            phase="${ACFS_MODULE_PHASE["$module"]:-}"
+        for module in "${GTBI_MODULES_IN_ORDER[@]}"; do
+            phase="${GTBI_MODULE_PHASE["$module"]:-}"
             for target_phase in "${ONLY_PHASES[@]}"; do
                 if [[ "$phase" == "$target_phase" ]]; then
                     desired["$module"]=1
@@ -204,13 +204,13 @@ acfs_resolve_selection() {
             done
         done
     else
-        for module in "${ACFS_MODULES_IN_ORDER[@]}"; do
-            local enabled="${ACFS_MODULE_DEFAULT["$module"]:-1}"
+        for module in "${GTBI_MODULES_IN_ORDER[@]}"; do
+            local enabled="${GTBI_MODULE_DEFAULT["$module"]:-1}"
             if [[ "$enabled" == "1" || "$enabled" == "true" ]]; then
                 desired["$module"]=1
                 start_reason["$module"]="default"
             else
-                ACFS_PLAN_EXCLUDE_REASON["$module"]="disabled by default"
+                GTBI_PLAN_EXCLUDE_REASON["$module"]="disabled by default"
             fi
         done
     fi
@@ -232,8 +232,8 @@ acfs_resolve_selection() {
         local tag=""
         for tag in "${SKIP_TAGS[@]}"; do
             [[ -n "$tag" ]] || continue
-            for module in "${ACFS_MODULES_IN_ORDER[@]}"; do
-                local tags="${ACFS_MODULE_TAGS["$module"]:-}"
+            for module in "${GTBI_MODULES_IN_ORDER[@]}"; do
+                local tags="${GTBI_MODULE_TAGS["$module"]:-}"
                 [[ -n "$tags" ]] || continue
                 IFS=',' read -ra _tags <<< "$tags"
                 local _tag=""
@@ -254,8 +254,8 @@ acfs_resolve_selection() {
         local category=""
         for category in "${SKIP_CATEGORIES[@]}"; do
             [[ -n "$category" ]] || continue
-            for module in "${ACFS_MODULES_IN_ORDER[@]}"; do
-                if [[ "${ACFS_MODULE_CATEGORY["$module"]:-}" == "$category" ]]; then
+            for module in "${GTBI_MODULES_IN_ORDER[@]}"; do
+                if [[ "${GTBI_MODULE_CATEGORY["$module"]:-}" == "$category" ]]; then
                     skip_set["$module"]=1
                     if [[ -z "${skip_reason[$module]:-}" ]]; then
                         skip_reason["$module"]="skipped category $category"
@@ -279,9 +279,9 @@ acfs_resolve_selection() {
     for module in "${!skip_set[@]}"; do
         if [[ -n "${desired[$module]:-}" ]]; then
             unset "desired[$module]"
-            ACFS_PLAN_EXCLUDE_REASON["$module"]="${skip_reason[$module]}"
-        elif [[ -z "${ACFS_PLAN_EXCLUDE_REASON[$module]:-}" ]]; then
-            ACFS_PLAN_EXCLUDE_REASON["$module"]="${skip_reason[$module]}"
+            GTBI_PLAN_EXCLUDE_REASON["$module"]="${skip_reason[$module]}"
+        elif [[ -z "${GTBI_PLAN_EXCLUDE_REASON[$module]:-}" ]]; then
+            GTBI_PLAN_EXCLUDE_REASON["$module"]="${skip_reason[$module]}"
         fi
     done
 
@@ -291,10 +291,10 @@ acfs_resolve_selection() {
     if [[ "${NO_DEPS:-false}" != "true" ]]; then
         local found_dep=""
         local found_chain=""
-        _acfs_find_skipped_dep() {
+        _gtbi_find_skipped_dep() {
             local current="$1"
             local path="$2"
-            local deps="${ACFS_MODULE_DEPS["$current"]:-}"
+            local deps="${GTBI_MODULE_DEPS["$current"]:-}"
             [[ -n "$deps" ]] || return 1
             IFS=',' read -ra _deps <<< "$deps"
             local dep=""
@@ -309,7 +309,7 @@ acfs_resolve_selection() {
                     continue
                 fi
                 visited["$dep"]=1
-                if _acfs_find_skipped_dep "$dep" "$path -> $dep"; then
+                if _gtbi_find_skipped_dep "$dep" "$path -> $dep"; then
                     return 0
                 fi
             done
@@ -321,7 +321,7 @@ acfs_resolve_selection() {
             visited["$module"]=1
             found_dep=""
             found_chain=""
-            if _acfs_find_skipped_dep "$module" "$module"; then
+            if _gtbi_find_skipped_dep "$module" "$module"; then
                 log_error "Selection error: $module depends on skipped $found_dep"
                 log_error "Dependency chain: $found_chain"
                 log_error "Remove --skip $found_dep or omit $module."
@@ -341,7 +341,7 @@ acfs_resolve_selection() {
         while [[ $idx -lt ${#queue[@]} ]]; do
             local current="${queue[$idx]}"
             idx=$((idx + 1))
-            local deps="${ACFS_MODULE_DEPS["$current"]:-}"
+            local deps="${GTBI_MODULE_DEPS["$current"]:-}"
             [[ -n "$deps" ]] || continue
             IFS=',' read -ra _deps <<< "$deps"
             local dep=""
@@ -367,28 +367,28 @@ acfs_resolve_selection() {
         done
     fi
 
-    for module in "${ACFS_MODULES_IN_ORDER[@]}"; do
+    for module in "${GTBI_MODULES_IN_ORDER[@]}"; do
         if [[ -n "${desired[$module]:-}" ]]; then
-            unset "ACFS_PLAN_EXCLUDE_REASON[$module]"
-            ACFS_EFFECTIVE_RUN["$module"]=1
-            ACFS_EFFECTIVE_PLAN+=("$module")
+            unset "GTBI_PLAN_EXCLUDE_REASON[$module]"
+            GTBI_EFFECTIVE_RUN["$module"]=1
+            GTBI_EFFECTIVE_PLAN+=("$module")
             if [[ -n "${start_reason[$module]:-}" ]]; then
                 # shellcheck disable=SC2034  # consumed by print_execution_plan
-                ACFS_PLAN_REASON["$module"]="${start_reason[$module]}"
+                GTBI_PLAN_REASON["$module"]="${start_reason[$module]}"
             else
                 # shellcheck disable=SC2034  # consumed by print_execution_plan
-                ACFS_PLAN_REASON["$module"]="included"
+                GTBI_PLAN_REASON["$module"]="included"
             fi
         else
-            if [[ -n "${ACFS_PLAN_EXCLUDE_REASON[$module]:-}" ]]; then
+            if [[ -n "${GTBI_PLAN_EXCLUDE_REASON[$module]:-}" ]]; then
                 continue
             fi
             if [[ "${#ONLY_MODULES[@]}" -gt 0 ]]; then
-                ACFS_PLAN_EXCLUDE_REASON["$module"]="not selected"
+                GTBI_PLAN_EXCLUDE_REASON["$module"]="not selected"
             elif [[ "${#ONLY_PHASES[@]}" -gt 0 ]]; then
-                ACFS_PLAN_EXCLUDE_REASON["$module"]="filtered by phase"
+                GTBI_PLAN_EXCLUDE_REASON["$module"]="filtered by phase"
             else
-                ACFS_PLAN_EXCLUDE_REASON["$module"]="not selected"
+                GTBI_PLAN_EXCLUDE_REASON["$module"]="not selected"
             fi
         fi
     done
@@ -396,7 +396,7 @@ acfs_resolve_selection() {
 
 should_run_module() {
     local module_id="$1"
-    [[ -n "${ACFS_EFFECTIVE_RUN[$module_id]:-}" ]]
+    [[ -n "${GTBI_EFFECTIVE_RUN[$module_id]:-}" ]]
 }
 
 # ------------------------------------------------------------
@@ -406,35 +406,35 @@ should_run_module() {
 # to manifest-driven generated installers, category-by-category.
 #
 # Global switch:
-#   ACFS_USE_GENERATED=0|1
+#   GTBI_USE_GENERATED=0|1
 #     - 0: force legacy for all categories (except per-category overrides)
 #     - 1: enable generated for categories that are migrated by default
 #
 # Per-category overrides (override global):
-#   ACFS_USE_GENERATED_<CATEGORY>=0|1
+#   GTBI_USE_GENERATED_<CATEGORY>=0|1
 #
 # Default behavior when per-category overrides are unset:
 #   - generated for migrated categories
 #   - legacy for unmigrated categories
 #
 # Configure migrated categories via:
-#   - ACFS_GENERATED_MIGRATED_CATEGORIES="base,lang,agents"   (comma-separated), OR
-#   - ACFS_GENERATED_DEFAULT_CATEGORIES (array in this file)
+#   - GTBI_GENERATED_MIGRATED_CATEGORIES="base,lang,agents"   (comma-separated), OR
+#   - GTBI_GENERATED_DEFAULT_CATEGORIES (array in this file)
 # ------------------------------------------------------------
 
-: "${ACFS_USE_GENERATED:=1}" # Default to "enabled", but only affects migrated categories.
+: "${GTBI_USE_GENERATED:=1}" # Default to "enabled", but only affects migrated categories.
 
-_acfs_category_is_migrated() {
+_gtbi_category_is_migrated() {
     local category="${1:-}"
     [[ -n "$category" ]] || return 1
 
     local migrated_categories=()
-    if [[ -n "${ACFS_GENERATED_MIGRATED_CATEGORIES:-}" ]]; then
+    if [[ -n "${GTBI_GENERATED_MIGRATED_CATEGORIES:-}" ]]; then
         # Runtime override via env var (comma-separated)
-        IFS=',' read -ra migrated_categories <<< "${ACFS_GENERATED_MIGRATED_CATEGORIES}"
+        IFS=',' read -ra migrated_categories <<< "${GTBI_GENERATED_MIGRATED_CATEGORIES}"
     else
         # Code-defined defaults
-        migrated_categories=("${ACFS_GENERATED_DEFAULT_CATEGORIES[@]}")
+        migrated_categories=("${GTBI_GENERATED_DEFAULT_CATEGORIES[@]}")
     fi
 
     local c=""
@@ -452,7 +452,7 @@ _acfs_category_is_migrated() {
 }
 
 # Returns 0 (true) if generated should be used, 1 (false) for legacy.
-acfs_use_generated_for_category() {
+gtbi_use_generated_for_category() {
     local category="${1:-}"
     [[ -n "$category" ]] || return 1
 
@@ -461,15 +461,15 @@ acfs_use_generated_for_category() {
     # `generated: false` with an empty install list, so enabling generated users would
     # effectively skip user creation and fail verification.
     #
-    # Guardrail: force legacy for users even if someone sets ACFS_USE_GENERATED_USERS=1.
+    # Guardrail: force legacy for users even if someone sets GTBI_USE_GENERATED_USERS=1.
     if [[ "${category,,}" == "users" ]]; then
         local users_flag
-        users_flag="$(acfs_flag_bool "ACFS_USE_GENERATED_USERS")"
+        users_flag="$(gtbi_flag_bool "GTBI_USE_GENERATED_USERS")"
         if [[ "$users_flag" == "1" ]]; then
             if declare -f log_warn >/dev/null 2>&1; then
-                log_warn "ACFS_USE_GENERATED_USERS=1 is not supported yet (users is orchestration-only); using legacy user normalization"
+                log_warn "GTBI_USE_GENERATED_USERS=1 is not supported yet (users is orchestration-only); using legacy user normalization"
             else
-                echo "WARN: ACFS_USE_GENERATED_USERS=1 is not supported yet (users is orchestration-only); using legacy user normalization" >&2
+                echo "WARN: GTBI_USE_GENERATED_USERS=1 is not supported yet (users is orchestration-only); using legacy user normalization" >&2
             fi
         fi
         return 1
@@ -477,10 +477,10 @@ acfs_use_generated_for_category() {
 
     # 1) Per-category override
     local category_upper
-    category_upper="$(_acfs_upper "$category")"
-    local category_var="ACFS_USE_GENERATED_${category_upper}"
+    category_upper="$(_gtbi_upper "$category")"
+    local category_var="GTBI_USE_GENERATED_${category_upper}"
     local category_value
-    category_value="$(acfs_flag_bool "$category_var")"
+    category_value="$(gtbi_flag_bool "$category_var")"
     if [[ "$category_value" == "1" ]]; then
         return 0
     elif [[ "$category_value" == "0" ]]; then
@@ -489,7 +489,7 @@ acfs_use_generated_for_category() {
 
     # 2) Global kill switch (0 forces legacy)
     local global_value
-    global_value="$(acfs_flag_bool "ACFS_USE_GENERATED")"
+    global_value="$(gtbi_flag_bool "GTBI_USE_GENERATED")"
     if [[ -z "$global_value" ]]; then
         global_value="1"
     fi
@@ -498,25 +498,25 @@ acfs_use_generated_for_category() {
     fi
 
     # 3) Default: generated only for migrated categories
-    _acfs_category_is_migrated "$category"
+    _gtbi_category_is_migrated "$category"
 }
 
 # Determines category from module ID (e.g., "lang.bun" -> "lang").
-acfs_use_generated_for_module() {
+gtbi_use_generated_for_module() {
     local module_id="${1:-}"
     [[ -n "$module_id" ]] || return 1
 
     local category="${module_id%%.*}"
-    acfs_use_generated_for_category "$category"
+    gtbi_use_generated_for_category "$category"
 }
 
 # Returns generated function name (from manifest_index) if enabled, else empty string.
-acfs_get_module_installer() {
+gtbi_get_module_installer() {
     local module_id="${1:-}"
     [[ -n "$module_id" ]] || { echo ""; return 0; }
 
-    if acfs_use_generated_for_module "$module_id"; then
-        echo "${ACFS_MODULE_FUNC[$module_id]:-}"
+    if gtbi_use_generated_for_module "$module_id"; then
+        echo "${GTBI_MODULE_FUNC[$module_id]:-}"
         return 0
     fi
 
@@ -525,24 +525,24 @@ acfs_get_module_installer() {
 }
 
 # Log current feature flag state (for debugging).
-acfs_log_feature_flags() {
-    local categories=("base" "users" "shell" "cli" "lang" "tools" "agents" "db" "cloud" "stack" "acfs")
+gtbi_log_feature_flags() {
+    local categories=("base" "users" "shell" "cli" "lang" "tools" "agents" "db" "cloud" "stack" "gtbi")
 
     if declare -f log_detail >/dev/null 2>&1; then
         log_detail "Feature flags:"
-        log_detail "  ACFS_USE_GENERATED=${ACFS_USE_GENERATED:-1}"
-        log_detail "  ACFS_GENERATED_MIGRATED_CATEGORIES=${ACFS_GENERATED_MIGRATED_CATEGORIES:-<default>}"
+        log_detail "  GTBI_USE_GENERATED=${GTBI_USE_GENERATED:-1}"
+        log_detail "  GTBI_GENERATED_MIGRATED_CATEGORIES=${GTBI_GENERATED_MIGRATED_CATEGORIES:-<default>}"
     else
         echo "Feature flags:" >&2
-        echo "  ACFS_USE_GENERATED=${ACFS_USE_GENERATED:-1}" >&2
-        echo "  ACFS_GENERATED_MIGRATED_CATEGORIES=${ACFS_GENERATED_MIGRATED_CATEGORIES:-<default>}" >&2
+        echo "  GTBI_USE_GENERATED=${GTBI_USE_GENERATED:-1}" >&2
+        echo "  GTBI_GENERATED_MIGRATED_CATEGORIES=${GTBI_GENERATED_MIGRATED_CATEGORIES:-<default>}" >&2
     fi
 
     local cat=""
     for cat in "${categories[@]}"; do
         local upper_cat
-        upper_cat="$(_acfs_upper "$cat")"
-        local flag_name="ACFS_USE_GENERATED_${upper_cat}"
+        upper_cat="$(_gtbi_upper "$cat")"
+        local flag_name="GTBI_USE_GENERATED_${upper_cat}"
         local flag_value="${!flag_name:-}"
         if [[ -n "$flag_value" ]]; then
             if declare -f log_detail >/dev/null 2>&1; then
@@ -558,7 +558,7 @@ acfs_log_feature_flags() {
 # Legacy flag mapping (mjt.5.5)
 # Maps old-style --skip-* flags to SKIP_MODULES array
 # ------------------------------------------------------------
-acfs_apply_legacy_skips() {
+gtbi_apply_legacy_skips() {
     # Map legacy flags to module skips
     # These globals are set by parse_args in install.sh
 
@@ -580,10 +580,10 @@ acfs_apply_legacy_skips() {
 # ------------------------------------------------------------
 
 # Shell source for adding common user-installed tool paths at execution time.
-# HOME and ACFS_BIN_DIR are expanded by the target shell from env data, so
+# HOME and GTBI_BIN_DIR are expanded by the target shell from env data, so
 # poisoned values stay inert while home-relative paths resolve correctly.
-_acfs_user_path_export_source() {
-    printf '%s\n' '_acfs_primary_bin="${ACFS_BIN_DIR:-$HOME/.local/bin}"; export PATH="${_acfs_primary_bin}:$HOME/.local/bin:$HOME/.acfs/bin:$HOME/.cargo/bin:$HOME/.bun/bin:$HOME/.atuin/bin:$HOME/go/bin:$PATH"'
+_gtbi_user_path_export_source() {
+    printf '%s\n' '_gtbi_primary_bin="${GTBI_BIN_DIR:-$HOME/.local/bin}"; export PATH="${_gtbi_primary_bin}:$HOME/.local/bin:$HOME/.gtbi/bin:$HOME/.cargo/bin:$HOME/.bun/bin:$HOME/.atuin/bin:$HOME/go/bin:$PATH"'
 }
 
 _run_shell_with_strict_mode() {
@@ -591,22 +591,22 @@ _run_shell_with_strict_mode() {
     local path_export_source
     local env_bin=""
     local bash_bin=""
-    path_export_source="$(_acfs_user_path_export_source)"
+    path_export_source="$(_gtbi_user_path_export_source)"
 
-    env_bin="$(_acfs_system_binary_path env 2>/dev/null || true)"
+    env_bin="$(_gtbi_system_binary_path env 2>/dev/null || true)"
     [[ -n "$env_bin" ]] || {
         log_error "Unable to locate env for strict shell execution"
         return 1
     }
-    bash_bin="$(_acfs_system_binary_path bash 2>/dev/null || true)"
+    bash_bin="$(_gtbi_system_binary_path bash 2>/dev/null || true)"
     [[ -n "$bash_bin" ]] || {
         log_error "Unable to locate bash for strict shell execution"
         return 1
     }
 
     # Keep path values in env data. The fixed shell wrapper expands HOME and
-    # ACFS_BIN_DIR at runtime without re-parsing their contents.
-    local -a shell_env=("ACFS_BASH_BIN=$bash_bin" "UV_NO_CONFIG=1")
+    # GTBI_BIN_DIR at runtime without re-parsing their contents.
+    local -a shell_env=("GTBI_BASH_BIN=$bash_bin" "UV_NO_CONFIG=1")
 
     if [[ -n "$cmd" ]]; then
         # IMPORTANT: Avoid `bash -l` (login shell). Third-party installers can
@@ -616,25 +616,25 @@ _run_shell_with_strict_mode() {
     fi
 
     # stdin mode (supports heredocs/pipes)
-    "$env_bin" "${shell_env[@]}" "$bash_bin" -c "$path_export_source; set -euo pipefail; (printf \"%s\\n\" \"set -euo pipefail\"; cat) | \"\$ACFS_BASH_BIN\" -s"
+    "$env_bin" "${shell_env[@]}" "$bash_bin" -c "$path_export_source; set -euo pipefail; (printf \"%s\\n\" \"set -euo pipefail\"; cat) | \"\$GTBI_BASH_BIN\" -s"
 }
 
 # Resolve a target user's home via NSS/getent with safe fallbacks.
-if ! declare -f _acfs_valid_target_username >/dev/null 2>&1; then
-    _acfs_valid_target_username() {
+if ! declare -f _gtbi_valid_target_username >/dev/null 2>&1; then
+    _gtbi_valid_target_username() {
         local user="${1:-}"
         [[ -n "$user" ]] || return 1
         [[ "$user" =~ ^[a-z_][a-z0-9._-]*$ ]]
     }
 fi
 
-if ! declare -f _acfs_validate_target_user >/dev/null 2>&1; then
-    _acfs_validate_target_user() {
+if ! declare -f _gtbi_validate_target_user >/dev/null 2>&1; then
+    _gtbi_validate_target_user() {
         local user="${1:-${TARGET_USER:-}}"
         local label="${2:-TARGET_USER}"
         local display="${user:-<empty>}"
 
-        if _acfs_valid_target_username "$user"; then
+        if _gtbi_valid_target_username "$user"; then
             return 0
         fi
 
@@ -647,8 +647,8 @@ if ! declare -f _acfs_validate_target_user >/dev/null 2>&1; then
     }
 fi
 
-if ! declare -f _acfs_system_binary_path >/dev/null 2>&1; then
-    _acfs_system_binary_path() {
+if ! declare -f _gtbi_system_binary_path >/dev/null 2>&1; then
+    _gtbi_system_binary_path() {
         local name="${1:-}"
         local candidate=""
 
@@ -679,19 +679,19 @@ if ! declare -f _acfs_system_binary_path >/dev/null 2>&1; then
     }
 fi
 
-if ! declare -f _acfs_resolve_current_user >/dev/null 2>&1; then
-    _acfs_resolve_current_user() {
+if ! declare -f _gtbi_resolve_current_user >/dev/null 2>&1; then
+    _gtbi_resolve_current_user() {
         local current_user=""
         local id_bin=""
         local whoami_bin=""
 
-        id_bin="$(_acfs_system_binary_path id 2>/dev/null || true)"
+        id_bin="$(_gtbi_system_binary_path id 2>/dev/null || true)"
         if [[ -n "$id_bin" ]]; then
             current_user="$("$id_bin" -un 2>/dev/null || true)"
         fi
 
         if [[ -z "$current_user" ]]; then
-            whoami_bin="$(_acfs_system_binary_path whoami 2>/dev/null || true)"
+            whoami_bin="$(_gtbi_system_binary_path whoami 2>/dev/null || true)"
             if [[ -n "$whoami_bin" ]]; then
                 current_user="$("$whoami_bin" 2>/dev/null || true)"
             fi
@@ -702,15 +702,15 @@ if ! declare -f _acfs_resolve_current_user >/dev/null 2>&1; then
     }
 fi
 
-if ! declare -f _acfs_getent_passwd_entry >/dev/null 2>&1; then
-    _acfs_getent_passwd_entry() {
+if ! declare -f _gtbi_getent_passwd_entry >/dev/null 2>&1; then
+    _gtbi_getent_passwd_entry() {
         local user="${1:-}"
         local getent_bin=""
         local passwd_entry=""
         local passwd_line=""
 
         [[ -n "$user" ]] || return 1
-        getent_bin="$(_acfs_system_binary_path getent 2>/dev/null || true)"
+        getent_bin="$(_gtbi_system_binary_path getent 2>/dev/null || true)"
         if [[ -n "$getent_bin" ]]; then
             passwd_entry="$("$getent_bin" passwd "$user" 2>/dev/null || true)"
         fi
@@ -728,8 +728,8 @@ if ! declare -f _acfs_getent_passwd_entry >/dev/null 2>&1; then
     }
 fi
 
-if ! declare -f _acfs_passwd_home_from_entry >/dev/null 2>&1; then
-    _acfs_passwd_home_from_entry() {
+if ! declare -f _gtbi_passwd_home_from_entry >/dev/null 2>&1; then
+    _gtbi_passwd_home_from_entry() {
         local passwd_entry="${1:-}"
         local _passwd_user=""
         local _passwd_pw=""
@@ -748,8 +748,8 @@ if ! declare -f _acfs_passwd_home_from_entry >/dev/null 2>&1; then
     }
 fi
 
-if ! declare -f _acfs_resolve_target_home >/dev/null 2>&1; then
-    _acfs_resolve_target_home() {
+if ! declare -f _gtbi_resolve_target_home >/dev/null 2>&1; then
+    _gtbi_resolve_target_home() {
         local user="${1:-ubuntu}"
         local expected_home="${2:-}"
         local passwd_entry=""
@@ -767,16 +767,16 @@ if ! declare -f _acfs_resolve_target_home >/dev/null 2>&1; then
             return 0
         fi
 
-        passwd_entry="$(_acfs_getent_passwd_entry "$user" 2>/dev/null || true)"
+        passwd_entry="$(_gtbi_getent_passwd_entry "$user" 2>/dev/null || true)"
         if [[ -n "$passwd_entry" ]]; then
-            passwd_entry="$(_acfs_passwd_home_from_entry "$passwd_entry" 2>/dev/null || true)"
+            passwd_entry="$(_gtbi_passwd_home_from_entry "$passwd_entry" 2>/dev/null || true)"
             if [[ -n "$passwd_entry" ]]; then
                 printf '%s\n' "$passwd_entry"
                 return 0
             fi
         fi
 
-        current_user="$(_acfs_resolve_current_user 2>/dev/null || true)"
+        current_user="$(_gtbi_resolve_current_user 2>/dev/null || true)"
         if [[ "$current_user" == "$user" ]] && [[ -n "${HOME:-}" ]] && [[ "${HOME}" == /* ]] && [[ "${HOME}" != / ]]; then
             current_home="${HOME%/}"
             if [[ -z "$expected_home" ]] || [[ "$current_home" == "$expected_home" ]]; then
@@ -798,7 +798,7 @@ if ! declare -f run_as_target >/dev/null 2>&1; then
         local user_home=""
         local passwd_entry=""
         local primary_bin_dir=""
-        local acfs_home_for_target=""
+        local gtbi_home_for_target=""
         local env_bin=""
         local bash_bin=""
         local sh_bin=""
@@ -807,18 +807,18 @@ if ! declare -f run_as_target >/dev/null 2>&1; then
         local su_bin=""
         local -a command_argv=()
 
-        _acfs_validate_target_user "$user" "TARGET_USER" || return 1
-        env_bin="$(_acfs_system_binary_path env 2>/dev/null || true)"
+        _gtbi_validate_target_user "$user" "TARGET_USER" || return 1
+        env_bin="$(_gtbi_system_binary_path env 2>/dev/null || true)"
         [[ -n "$env_bin" ]] || {
             log_error "Unable to locate env for target-user command"
             return 1
         }
-        bash_bin="$(_acfs_system_binary_path bash 2>/dev/null || true)"
+        bash_bin="$(_gtbi_system_binary_path bash 2>/dev/null || true)"
         [[ -n "$bash_bin" ]] || {
             log_error "Unable to locate bash for target-user command"
             return 1
         }
-        sh_bin="$(_acfs_system_binary_path sh 2>/dev/null || true)"
+        sh_bin="$(_gtbi_system_binary_path sh 2>/dev/null || true)"
         [[ -n "$sh_bin" ]] || {
             log_error "Unable to locate sh for target-user command"
             return 1
@@ -827,9 +827,9 @@ if ! declare -f run_as_target >/dev/null 2>&1; then
         if [[ "$user" == "root" ]]; then
             user_home="/root"
         else
-            passwd_entry="$(_acfs_getent_passwd_entry "$user" 2>/dev/null || true)"
+            passwd_entry="$(_gtbi_getent_passwd_entry "$user" 2>/dev/null || true)"
             if [[ -n "$passwd_entry" ]]; then
-                user_home="$(_acfs_passwd_home_from_entry "$passwd_entry" 2>/dev/null || true)"
+                user_home="$(_gtbi_passwd_home_from_entry "$passwd_entry" 2>/dev/null || true)"
             fi
         fi
 
@@ -841,7 +841,7 @@ if ! declare -f run_as_target >/dev/null 2>&1; then
         fi
 
         if [[ -z "$user_home" ]]; then
-            user_home="$(_acfs_resolve_target_home "$user" "$explicit_user_home_for_repair" || true)"
+            user_home="$(_gtbi_resolve_target_home "$user" "$explicit_user_home_for_repair" || true)"
         fi
 
         if [[ -z "$user_home" ]] || [[ "$user_home" == "/" ]] || [[ "$user_home" != /* ]]; then
@@ -851,7 +851,7 @@ if ! declare -f run_as_target >/dev/null 2>&1; then
             return 1
         fi
 
-        primary_bin_dir="${ACFS_BIN_DIR:-$user_home/.local/bin}"
+        primary_bin_dir="${GTBI_BIN_DIR:-$user_home/.local/bin}"
         if [[ -n "$explicit_user_home_for_repair" ]] && [[ "$explicit_user_home_for_repair" != "$user_home" ]]; then
             case "$primary_bin_dir" in
                 "$explicit_user_home_for_repair"|"$explicit_user_home_for_repair"/*)
@@ -859,41 +859,41 @@ if ! declare -f run_as_target >/dev/null 2>&1; then
                     ;;
             esac
         fi
-        acfs_home_for_target="${ACFS_HOME:-}"
+        gtbi_home_for_target="${GTBI_HOME:-}"
         if [[ -n "$explicit_user_home_for_repair" ]] && [[ "$explicit_user_home_for_repair" != "$user_home" ]]; then
-            case "$acfs_home_for_target" in
+            case "$gtbi_home_for_target" in
                 "$explicit_user_home_for_repair"|"$explicit_user_home_for_repair"/*)
-                    acfs_home_for_target="$user_home/.acfs"
+                    gtbi_home_for_target="$user_home/.gtbi"
                     ;;
             esac
         fi
 
-        local target_path_prefix="$primary_bin_dir:$user_home/.local/bin:$user_home/.acfs/bin:$user_home/.cargo/bin:$user_home/.bun/bin:$user_home/.atuin/bin:$user_home/go/bin"
+        local target_path_prefix="$primary_bin_dir:$user_home/.local/bin:$user_home/.gtbi/bin:$user_home/.cargo/bin:$user_home/.bun/bin:$user_home/.atuin/bin:$user_home/go/bin"
         local current_path="${PATH:-/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin}"
 
         # UV_NO_CONFIG prevents uv from looking for config in /root when running via sudo/runuser.
         # HOME is set explicitly for consistent tool installs and path resolution.
-        # PATH must include user-local ACFS bins because we deliberately avoid
+        # PATH must include user-local GTBI bins because we deliberately avoid
         # login shells and therefore cannot depend on profile files.
         local -a env_args=("UV_NO_CONFIG=1" "HOME=$user_home" "PATH=$target_path_prefix:$current_path")
 
-        # Pass core ACFS variables to the target user environment
+        # Pass core GTBI variables to the target user environment
         env_args+=("TARGET_USER=$user" "TARGET_HOME=$user_home")
-        [[ -n "$acfs_home_for_target" ]] && env_args+=("ACFS_HOME=$acfs_home_for_target")
-        [[ -n "${ACFS_BIN_DIR:-}" ]] && env_args+=("ACFS_BIN_DIR=$primary_bin_dir")
+        [[ -n "$gtbi_home_for_target" ]] && env_args+=("GTBI_HOME=$gtbi_home_for_target")
+        [[ -n "${GTBI_BIN_DIR:-}" ]] && env_args+=("GTBI_BIN_DIR=$primary_bin_dir")
 
-        # Pass ACFS context variables to the target user environment when available.
-        [[ -n "${ACFS_BOOTSTRAP_DIR:-}" ]] && env_args+=("ACFS_BOOTSTRAP_DIR=$ACFS_BOOTSTRAP_DIR")
-        [[ -n "${ACFS_LIB_DIR:-}" ]] && env_args+=("ACFS_LIB_DIR=$ACFS_LIB_DIR")
-        [[ -n "${ACFS_GENERATED_DIR:-}" ]] && env_args+=("ACFS_GENERATED_DIR=$ACFS_GENERATED_DIR")
-        [[ -n "${ACFS_ASSETS_DIR:-}" ]] && env_args+=("ACFS_ASSETS_DIR=$ACFS_ASSETS_DIR")
-        [[ -n "${ACFS_CHECKSUMS_YAML:-}" ]] && env_args+=("ACFS_CHECKSUMS_YAML=$ACFS_CHECKSUMS_YAML")
-        [[ -n "${ACFS_MANIFEST_YAML:-}" ]] && env_args+=("ACFS_MANIFEST_YAML=$ACFS_MANIFEST_YAML")
+        # Pass GTBI context variables to the target user environment when available.
+        [[ -n "${GTBI_BOOTSTRAP_DIR:-}" ]] && env_args+=("GTBI_BOOTSTRAP_DIR=$GTBI_BOOTSTRAP_DIR")
+        [[ -n "${GTBI_LIB_DIR:-}" ]] && env_args+=("GTBI_LIB_DIR=$GTBI_LIB_DIR")
+        [[ -n "${GTBI_GENERATED_DIR:-}" ]] && env_args+=("GTBI_GENERATED_DIR=$GTBI_GENERATED_DIR")
+        [[ -n "${GTBI_ASSETS_DIR:-}" ]] && env_args+=("GTBI_ASSETS_DIR=$GTBI_ASSETS_DIR")
+        [[ -n "${GTBI_CHECKSUMS_YAML:-}" ]] && env_args+=("GTBI_CHECKSUMS_YAML=$GTBI_CHECKSUMS_YAML")
+        [[ -n "${GTBI_MANIFEST_YAML:-}" ]] && env_args+=("GTBI_MANIFEST_YAML=$GTBI_MANIFEST_YAML")
         [[ -n "${CHECKSUMS_FILE:-}" ]] && env_args+=("CHECKSUMS_FILE=$CHECKSUMS_FILE")
         [[ -n "${SCRIPT_DIR:-}" ]] && env_args+=("SCRIPT_DIR=$SCRIPT_DIR")
-        [[ -n "${ACFS_RAW:-}" ]] && env_args+=("ACFS_RAW=$ACFS_RAW")
-        [[ -n "${ACFS_VERSION:-}" ]] && env_args+=("ACFS_VERSION=$ACFS_VERSION")
-        [[ -n "${ACFS_REF:-}" ]] && env_args+=("ACFS_REF=$ACFS_REF")
+        [[ -n "${GTBI_RAW:-}" ]] && env_args+=("GTBI_RAW=$GTBI_RAW")
+        [[ -n "${GTBI_VERSION:-}" ]] && env_args+=("GTBI_VERSION=$GTBI_VERSION")
+        [[ -n "${GTBI_REF:-}" ]] && env_args+=("GTBI_REF=$GTBI_REF")
 
         command_argv=("$@")
         if [[ ${#command_argv[@]} -gt 0 ]]; then
@@ -923,7 +923,7 @@ if ! declare -f run_as_target >/dev/null 2>&1; then
         fi
 
         # Already the target user
-        if [[ "$(_acfs_resolve_current_user 2>/dev/null || true)" == "$user" ]]; then
+        if [[ "$(_gtbi_resolve_current_user 2>/dev/null || true)" == "$user" ]]; then
             # Use explicit home path to avoid ambiguity if $HOME was mutated.
             (
                 if ! cd "$user_home"; then
@@ -936,7 +936,7 @@ if ! declare -f run_as_target >/dev/null 2>&1; then
         fi
 
         # Prefer noninteractive sudo (non-login) when available.
-        sudo_bin="$(_acfs_system_binary_path sudo 2>/dev/null || true)"
+        sudo_bin="$(_gtbi_system_binary_path sudo 2>/dev/null || true)"
         if [[ -n "$sudo_bin" ]]; then
             # shellcheck disable=SC2016  # $HOME/$@ expand inside sh -c
             # Use sh -c to ensure the cd happens as the target user.
@@ -945,14 +945,14 @@ if ! declare -f run_as_target >/dev/null 2>&1; then
         fi
 
         # Root-only fallbacks.
-        runuser_bin="$(_acfs_system_binary_path runuser 2>/dev/null || true)"
+        runuser_bin="$(_gtbi_system_binary_path runuser 2>/dev/null || true)"
         if [[ -n "$runuser_bin" ]]; then
             # shellcheck disable=SC2016  # $HOME/$@ expand inside sh -c
             "$runuser_bin" -u "$user" -- "$env_bin" "${env_args[@]}" "$sh_bin" -c 'cd "$HOME" || exit 1; exec "$@"' _ "${command_argv[@]}"
             return $?
         fi
 
-        su_bin="$(_acfs_system_binary_path su 2>/dev/null || true)"
+        su_bin="$(_gtbi_system_binary_path su 2>/dev/null || true)"
         [[ -n "$su_bin" ]] || {
             log_error "Unable to locate sudo, runuser, or su for target-user command"
             return 1
@@ -973,21 +973,21 @@ if ! declare -f run_as_target >/dev/null 2>&1; then
     }
 fi
 
-acfs_validate_primary_bin_dir() {
-    local primary_bin_dir="${ACFS_BIN_DIR:-}"
+gtbi_validate_primary_bin_dir() {
+    local primary_bin_dir="${GTBI_BIN_DIR:-}"
 
     if [[ -z "$primary_bin_dir" ]] || [[ "$primary_bin_dir" == "/" ]] || [[ "$primary_bin_dir" != /* ]]; then
-        log_error "ACFS_BIN_DIR must be an absolute path and cannot be '/' (got: ${primary_bin_dir:-<empty>})"
+        log_error "GTBI_BIN_DIR must be an absolute path and cannot be '/' (got: ${primary_bin_dir:-<empty>})"
         return 1
     fi
 }
 
-acfs_primary_bin_dir_uses_root() {
-    acfs_validate_primary_bin_dir >/dev/null || return 1
-    [[ -n "${ACFS_BIN_DIR:-}" ]] || return 1
+gtbi_primary_bin_dir_uses_root() {
+    gtbi_validate_primary_bin_dir >/dev/null || return 1
+    [[ -n "${GTBI_BIN_DIR:-}" ]] || return 1
     [[ -n "${TARGET_HOME:-}" ]] || return 1
 
-    case "$ACFS_BIN_DIR" in
+    case "$GTBI_BIN_DIR" in
         "$TARGET_HOME"|"$TARGET_HOME"/*)
             return 1
             ;;
@@ -997,7 +997,7 @@ acfs_primary_bin_dir_uses_root() {
     esac
 }
 
-_acfs_run_root_bin_command() {
+_gtbi_run_root_bin_command() {
     local sudo_bin=""
 
     if [[ -z "${1:-}" || "${1:-}" != /* ]]; then
@@ -1010,21 +1010,21 @@ _acfs_run_root_bin_command() {
         return $?
     fi
 
-    sudo_bin="$(_acfs_system_binary_path sudo 2>/dev/null || true)"
+    sudo_bin="$(_gtbi_system_binary_path sudo 2>/dev/null || true)"
     if [[ -n "$sudo_bin" ]]; then
         "$sudo_bin" -n "$@"
         return $?
     fi
 
-    log_error "Primary bin dir requires root, but sudo is unavailable: ${ACFS_BIN_DIR:-<unset>}"
+    log_error "Primary bin dir requires root, but sudo is unavailable: ${GTBI_BIN_DIR:-<unset>}"
     return 1
 }
 
-_acfs_primary_bin_tool_path() {
+_gtbi_primary_bin_tool_path() {
     local name="${1:-}"
     local tool_path=""
 
-    tool_path="$(_acfs_system_binary_path "$name" 2>/dev/null || true)"
+    tool_path="$(_gtbi_system_binary_path "$name" 2>/dev/null || true)"
     if [[ -z "$tool_path" ]]; then
         log_error "Unable to locate trusted $name for primary bin operation"
         return 1
@@ -1033,50 +1033,50 @@ _acfs_primary_bin_tool_path() {
     printf '%s\n' "$tool_path"
 }
 
-acfs_ensure_primary_bin_dir() {
+gtbi_ensure_primary_bin_dir() {
     local mkdir_bin=""
 
-    acfs_validate_primary_bin_dir || return 1
-    mkdir_bin="$(_acfs_primary_bin_tool_path mkdir)" || return 1
+    gtbi_validate_primary_bin_dir || return 1
+    mkdir_bin="$(_gtbi_primary_bin_tool_path mkdir)" || return 1
 
-    if acfs_primary_bin_dir_uses_root; then
-        _acfs_run_root_bin_command "$mkdir_bin" -p "$ACFS_BIN_DIR"
+    if gtbi_primary_bin_dir_uses_root; then
+        _gtbi_run_root_bin_command "$mkdir_bin" -p "$GTBI_BIN_DIR"
         return $?
     fi
 
-    run_as_target "$mkdir_bin" -p "$ACFS_BIN_DIR"
+    run_as_target "$mkdir_bin" -p "$GTBI_BIN_DIR"
 }
 
-acfs_link_primary_bin_command() {
+gtbi_link_primary_bin_command() {
     local source_path="$1"
     local command_name="$2"
     local dest_path=""
     local ln_bin=""
 
-    acfs_ensure_primary_bin_dir || return 1
-    ln_bin="$(_acfs_primary_bin_tool_path ln)" || return 1
-    dest_path="$ACFS_BIN_DIR/$command_name"
+    gtbi_ensure_primary_bin_dir || return 1
+    ln_bin="$(_gtbi_primary_bin_tool_path ln)" || return 1
+    dest_path="$GTBI_BIN_DIR/$command_name"
 
-    if acfs_primary_bin_dir_uses_root; then
-        _acfs_run_root_bin_command "$ln_bin" -sf "$source_path" "$dest_path"
+    if gtbi_primary_bin_dir_uses_root; then
+        _gtbi_run_root_bin_command "$ln_bin" -sf "$source_path" "$dest_path"
         return $?
     fi
 
     run_as_target "$ln_bin" -sf "$source_path" "$dest_path"
 }
 
-acfs_install_executable_into_primary_bin() {
+gtbi_install_executable_into_primary_bin() {
     local src_path="$1"
     local command_name="$2"
     local dest_path=""
     local install_bin=""
 
-    acfs_ensure_primary_bin_dir || return 1
-    install_bin="$(_acfs_primary_bin_tool_path install)" || return 1
-    dest_path="$ACFS_BIN_DIR/$command_name"
+    gtbi_ensure_primary_bin_dir || return 1
+    install_bin="$(_gtbi_primary_bin_tool_path install)" || return 1
+    dest_path="$GTBI_BIN_DIR/$command_name"
 
-    if acfs_primary_bin_dir_uses_root; then
-        _acfs_run_root_bin_command "$install_bin" -m 0755 "$src_path" "$dest_path"
+    if gtbi_primary_bin_dir_uses_root; then
+        _gtbi_run_root_bin_command "$install_bin" -m 0755 "$src_path" "$dest_path"
         return $?
     fi
 
@@ -1089,26 +1089,26 @@ run_as_target_shell() {
     local path_export_source
     local env_bin=""
     local bash_bin=""
-    path_export_source="$(_acfs_user_path_export_source)"
+    path_export_source="$(_gtbi_user_path_export_source)"
 
     if ! declare -f run_as_target >/dev/null 2>&1; then
         log_error "run_as_target_shell requires run_as_target"
         return 1
     fi
-    env_bin="$(_acfs_system_binary_path env 2>/dev/null || true)"
+    env_bin="$(_gtbi_system_binary_path env 2>/dev/null || true)"
     [[ -n "$env_bin" ]] || {
         log_error "Unable to locate env for target-user shell command"
         return 1
     }
-    bash_bin="$(_acfs_system_binary_path bash 2>/dev/null || true)"
+    bash_bin="$(_gtbi_system_binary_path bash 2>/dev/null || true)"
     [[ -n "$bash_bin" ]] || {
         log_error "Unable to locate bash for target-user shell command"
         return 1
     }
 
     # Keep user-provided path values in env data. The fixed shell wrapper
-    # expands HOME/ACFS_BIN_DIR at runtime without re-parsing their contents.
-    local -a shell_env=("ACFS_BASH_BIN=$bash_bin" "UV_NO_CONFIG=1")
+    # expands HOME/GTBI_BIN_DIR at runtime without re-parsing their contents.
+    local -a shell_env=("GTBI_BASH_BIN=$bash_bin" "UV_NO_CONFIG=1")
 
     if [[ -n "$cmd" ]]; then
         # IMPORTANT: Avoid `bash -l` (login shell). Profile files are not a stable API.
@@ -1117,7 +1117,7 @@ run_as_target_shell() {
     fi
 
     # stdin mode
-    run_as_target "$env_bin" "${shell_env[@]}" "$bash_bin" -c "$path_export_source; set -euo pipefail; (printf \"%s\\n\" \"set -euo pipefail\"; cat) | \"\$ACFS_BASH_BIN\" -s"
+    run_as_target "$env_bin" "${shell_env[@]}" "$bash_bin" -c "$path_export_source; set -euo pipefail; (printf \"%s\\n\" \"set -euo pipefail\"; cat) | \"\$GTBI_BASH_BIN\" -s"
 }
 
 # Run a command as TARGET_USER while preserving stdin for the final runner.
@@ -1150,44 +1150,44 @@ run_as_root_shell() {
         _run_shell_with_strict_mode "$cmd"
         return $?
     fi
-    env_bin="$(_acfs_system_binary_path env 2>/dev/null || true)"
+    env_bin="$(_gtbi_system_binary_path env 2>/dev/null || true)"
     [[ -n "$env_bin" ]] || {
         log_error "Unable to locate env for root shell command"
         return 1
     }
-    bash_bin="$(_acfs_system_binary_path bash 2>/dev/null || true)"
+    bash_bin="$(_gtbi_system_binary_path bash 2>/dev/null || true)"
     [[ -n "$bash_bin" ]] || {
         log_error "Unable to locate bash for root shell command"
         return 1
     }
-    path_export_source="$(_acfs_user_path_export_source)"
+    path_export_source="$(_gtbi_user_path_export_source)"
 
     # Build env args for passing through sudo
     local -a env_cmd=()
     local -a env_args=()
     [[ -n "${TARGET_USER:-}" ]] && env_args+=("TARGET_USER=$TARGET_USER")
     [[ -n "${TARGET_HOME:-}" ]] && env_args+=("TARGET_HOME=$TARGET_HOME")
-    [[ -n "${ACFS_HOME:-}" ]] && env_args+=("ACFS_HOME=$ACFS_HOME")
-    [[ -n "${ACFS_BIN_DIR:-}" ]] && env_args+=("ACFS_BIN_DIR=$ACFS_BIN_DIR")
-    [[ -n "${ACFS_BOOTSTRAP_DIR:-}" ]] && env_args+=("ACFS_BOOTSTRAP_DIR=$ACFS_BOOTSTRAP_DIR")
-    [[ -n "${ACFS_LIB_DIR:-}" ]] && env_args+=("ACFS_LIB_DIR=$ACFS_LIB_DIR")
-    [[ -n "${ACFS_GENERATED_DIR:-}" ]] && env_args+=("ACFS_GENERATED_DIR=$ACFS_GENERATED_DIR")
-    [[ -n "${ACFS_ASSETS_DIR:-}" ]] && env_args+=("ACFS_ASSETS_DIR=$ACFS_ASSETS_DIR")
-    [[ -n "${ACFS_CHECKSUMS_YAML:-}" ]] && env_args+=("ACFS_CHECKSUMS_YAML=$ACFS_CHECKSUMS_YAML")
-    [[ -n "${ACFS_MANIFEST_YAML:-}" ]] && env_args+=("ACFS_MANIFEST_YAML=$ACFS_MANIFEST_YAML")
+    [[ -n "${GTBI_HOME:-}" ]] && env_args+=("GTBI_HOME=$GTBI_HOME")
+    [[ -n "${GTBI_BIN_DIR:-}" ]] && env_args+=("GTBI_BIN_DIR=$GTBI_BIN_DIR")
+    [[ -n "${GTBI_BOOTSTRAP_DIR:-}" ]] && env_args+=("GTBI_BOOTSTRAP_DIR=$GTBI_BOOTSTRAP_DIR")
+    [[ -n "${GTBI_LIB_DIR:-}" ]] && env_args+=("GTBI_LIB_DIR=$GTBI_LIB_DIR")
+    [[ -n "${GTBI_GENERATED_DIR:-}" ]] && env_args+=("GTBI_GENERATED_DIR=$GTBI_GENERATED_DIR")
+    [[ -n "${GTBI_ASSETS_DIR:-}" ]] && env_args+=("GTBI_ASSETS_DIR=$GTBI_ASSETS_DIR")
+    [[ -n "${GTBI_CHECKSUMS_YAML:-}" ]] && env_args+=("GTBI_CHECKSUMS_YAML=$GTBI_CHECKSUMS_YAML")
+    [[ -n "${GTBI_MANIFEST_YAML:-}" ]] && env_args+=("GTBI_MANIFEST_YAML=$GTBI_MANIFEST_YAML")
     [[ -n "${CHECKSUMS_FILE:-}" ]] && env_args+=("CHECKSUMS_FILE=$CHECKSUMS_FILE")
     [[ -n "${SCRIPT_DIR:-}" ]] && env_args+=("SCRIPT_DIR=$SCRIPT_DIR")
-    [[ -n "${ACFS_RAW:-}" ]] && env_args+=("ACFS_RAW=$ACFS_RAW")
-    [[ -n "${ACFS_VERSION:-}" ]] && env_args+=("ACFS_VERSION=$ACFS_VERSION")
-    [[ -n "${ACFS_REF:-}" ]] && env_args+=("ACFS_REF=$ACFS_REF")
+    [[ -n "${GTBI_RAW:-}" ]] && env_args+=("GTBI_RAW=$GTBI_RAW")
+    [[ -n "${GTBI_VERSION:-}" ]] && env_args+=("GTBI_VERSION=$GTBI_VERSION")
+    [[ -n "${GTBI_REF:-}" ]] && env_args+=("GTBI_REF=$GTBI_REF")
 
-    env_cmd=("$env_bin" "${env_args[@]}" "ACFS_BASH_BIN=$bash_bin" "UV_NO_CONFIG=1")
+    env_cmd=("$env_bin" "${env_args[@]}" "GTBI_BASH_BIN=$bash_bin" "UV_NO_CONFIG=1")
 
     if [[ -n "${SUDO:-}" ]]; then
         if [[ "$SUDO" == /* && -x "$SUDO" ]]; then
             sudo_bin="$SUDO"
         else
-            sudo_bin="$(_acfs_system_binary_path sudo 2>/dev/null || true)"
+            sudo_bin="$(_gtbi_system_binary_path sudo 2>/dev/null || true)"
         fi
         [[ -n "$sudo_bin" ]] || {
             log_error "run_as_root_shell requires root or sudo"
@@ -1197,17 +1197,17 @@ run_as_root_shell() {
             "$sudo_bin" -n "${env_cmd[@]}" "$bash_bin" -c "$path_export_source; set -euo pipefail; eval \"\$1\"" _ "$cmd"
             return $?
         fi
-        "$sudo_bin" -n "${env_cmd[@]}" "$bash_bin" -c "$path_export_source; set -euo pipefail; (printf \"%s\\n\" \"set -euo pipefail\"; cat) | \"\$ACFS_BASH_BIN\" -s"
+        "$sudo_bin" -n "${env_cmd[@]}" "$bash_bin" -c "$path_export_source; set -euo pipefail; (printf \"%s\\n\" \"set -euo pipefail\"; cat) | \"\$GTBI_BASH_BIN\" -s"
         return $?
     fi
 
-    sudo_bin="$(_acfs_system_binary_path sudo 2>/dev/null || true)"
+    sudo_bin="$(_gtbi_system_binary_path sudo 2>/dev/null || true)"
     if [[ -n "$sudo_bin" ]]; then
         if [[ -n "$cmd" ]]; then
             "$sudo_bin" -n "${env_cmd[@]}" "$bash_bin" -c "$path_export_source; set -euo pipefail; eval \"\$1\"" _ "$cmd"
             return $?
         fi
-        "$sudo_bin" -n "${env_cmd[@]}" "$bash_bin" -c "$path_export_source; set -euo pipefail; (printf \"%s\\n\" \"set -euo pipefail\"; cat) | \"\$ACFS_BASH_BIN\" -s"
+        "$sudo_bin" -n "${env_cmd[@]}" "$bash_bin" -c "$path_export_source; set -euo pipefail; (printf \"%s\\n\" \"set -euo pipefail\"; cat) | \"\$GTBI_BASH_BIN\" -s"
         return $?
     fi
 
@@ -1227,15 +1227,15 @@ run_as_current_shell() {
 # These functions check whether a module is already installed
 # using the installed_check field from the manifest.
 #
-# Set ACFS_FORCE_REINSTALL=true (or 1) to bypass these checks.
+# Set GTBI_FORCE_REINSTALL=true (or 1) to bypass these checks.
 # The install.sh --force-reinstall flag sets this.
 # ------------------------------------------------------------
 
-: "${ACFS_FORCE_REINSTALL:=false}"
+: "${GTBI_FORCE_REINSTALL:=false}"
 
 # Helper to check if force reinstall is enabled (handles true/1/yes)
-_acfs_force_reinstall_enabled() {
-    case "${ACFS_FORCE_REINSTALL:-false}" in
+_gtbi_force_reinstall_enabled() {
+    case "${GTBI_FORCE_REINSTALL:-false}" in
         true|1|yes|on) return 0 ;;
         *) return 1 ;;
     esac
@@ -1243,39 +1243,39 @@ _acfs_force_reinstall_enabled() {
 
 # Check if a module is already installed
 # Returns 0 (true) if installed, 1 (false) if not installed or check fails
-acfs_module_is_installed() {
+gtbi_module_is_installed() {
     local module_id="$1"
     local env_bin=""
     local bash_bin=""
 
     # If force reinstall is enabled, always return "not installed"
-    if _acfs_force_reinstall_enabled; then
+    if _gtbi_force_reinstall_enabled; then
         return 1
     fi
 
     # Check if manifest index is loaded
-    if [[ "${ACFS_MANIFEST_INDEX_LOADED:-false}" != "true" ]]; then
+    if [[ "${GTBI_MANIFEST_INDEX_LOADED:-false}" != "true" ]]; then
         return 1
     fi
 
     # Get the installed_check command for this module
-    local check_cmd="${ACFS_MODULE_INSTALLED_CHECK[$module_id]:-}"
+    local check_cmd="${GTBI_MODULE_INSTALLED_CHECK[$module_id]:-}"
     if [[ -z "$check_cmd" ]]; then
         # No check defined - assume not installed
         return 1
     fi
 
     # Get execution context (default: current)
-    local run_as="${ACFS_MODULE_INSTALLED_CHECK_RUN_AS[$module_id]:-current}"
+    local run_as="${GTBI_MODULE_INSTALLED_CHECK_RUN_AS[$module_id]:-current}"
 
     # Run the check in the appropriate context
     case "$run_as" in
         target_user|target)
             local path_export_source=""
-            path_export_source="$(_acfs_user_path_export_source)"
+            path_export_source="$(_gtbi_user_path_export_source)"
             if declare -f run_as_target >/dev/null 2>&1; then
-                env_bin="$(_acfs_system_binary_path env 2>/dev/null || true)"
-                bash_bin="$(_acfs_system_binary_path bash 2>/dev/null || true)"
+                env_bin="$(_gtbi_system_binary_path env 2>/dev/null || true)"
+                bash_bin="$(_gtbi_system_binary_path bash 2>/dev/null || true)"
                 [[ -n "$env_bin" && -n "$bash_bin" ]] || return 1
                 run_as_target "$env_bin" "$bash_bin" -c \
                     "$path_export_source; set -euo pipefail; eval \"\$1\"" \
@@ -1306,16 +1306,16 @@ acfs_module_is_installed() {
 
 # Check if a module should be skipped (already installed)
 # Returns 0 (true) if should skip, 1 (false) if should install
-acfs_should_skip_module() {
+gtbi_should_skip_module() {
     local module_id="$1"
 
     # If force reinstall, don't skip
-    if _acfs_force_reinstall_enabled; then
+    if _gtbi_force_reinstall_enabled; then
         return 1
     fi
 
     # Check if installed
-    if acfs_module_is_installed "$module_id"; then
+    if gtbi_module_is_installed "$module_id"; then
         return 0
     fi
 
@@ -1354,9 +1354,9 @@ command_exists_as_target() {
         return 1
     fi
 
-    path_export_source="$(_acfs_user_path_export_source)"
-    env_bin="$(_acfs_system_binary_path env 2>/dev/null || true)"
-    bash_bin="$(_acfs_system_binary_path bash 2>/dev/null || true)"
+    path_export_source="$(_gtbi_user_path_export_source)"
+    env_bin="$(_gtbi_system_binary_path env 2>/dev/null || true)"
+    bash_bin="$(_gtbi_system_binary_path bash 2>/dev/null || true)"
     [[ -n "$env_bin" && -n "$bash_bin" ]] || return 1
 
     # NOTE: We intentionally avoid embedding $cmd into the shell string.
@@ -1371,21 +1371,21 @@ command_exists_as_target() {
 
 # ------------------------------------------------------------
 # Alias for backwards compatibility with install.sh
-# The canonical implementation is acfs_use_generated_for_category() above.
+# The canonical implementation is gtbi_use_generated_for_category() above.
 # ------------------------------------------------------------
-acfs_use_generated_category() {
-    acfs_use_generated_for_category "$@"
+gtbi_use_generated_category() {
+    gtbi_use_generated_for_category "$@"
 }
 
-acfs_run_generated_category_phase() {
+gtbi_run_generated_category_phase() {
     local category="$1"
     local phase="$2"
 
-    if [[ "${ACFS_MANIFEST_INDEX_LOADED:-false}" != "true" ]]; then
+    if [[ "${GTBI_MANIFEST_INDEX_LOADED:-false}" != "true" ]]; then
         log_error "Manifest index not loaded; cannot run generated category: $category"
         return 1
     fi
-    if [[ "${ACFS_GENERATED_SOURCED:-false}" != "true" ]]; then
+    if [[ "${GTBI_GENERATED_SOURCED:-false}" != "true" ]]; then
         log_error "Generated installers not sourced; cannot run generated category: $category"
         return 1
     fi
@@ -1407,16 +1407,16 @@ acfs_run_generated_category_phase() {
         progress_init "$module_count"
     fi
 
-    for module in "${ACFS_EFFECTIVE_PLAN[@]}"; do
+    for module in "${GTBI_EFFECTIVE_PLAN[@]}"; do
         key="$module"
-        if [[ "${ACFS_MODULE_CATEGORY[$key]:-}" != "$category" ]]; then
+        if [[ "${GTBI_MODULE_CATEGORY[$key]:-}" != "$category" ]]; then
             continue
         fi
-        if [[ "${ACFS_MODULE_PHASE[$key]:-}" != "$phase" ]]; then
+        if [[ "${GTBI_MODULE_PHASE[$key]:-}" != "$phase" ]]; then
             continue
         fi
-        func="${ACFS_MODULE_FUNC[$key]:-}"
-        desc="${ACFS_MODULE_DESC[$key]:-$module}"
+        func="${GTBI_MODULE_FUNC[$key]:-}"
+        desc="${GTBI_MODULE_DESC[$key]:-$module}"
         if [[ -z "$func" ]]; then
             log_error "Missing generated function for $module"
             if declare -f progress_finish >/dev/null 2>&1; then progress_finish; fi
@@ -1429,7 +1429,7 @@ acfs_run_generated_category_phase() {
         fi
 
         # Skip-if-installed check (bd-1eop)
-        if acfs_should_skip_module "$module"; then
+        if gtbi_should_skip_module "$module"; then
             log_info "Skipping $module (already installed)"
             # Still update progress bar to show skip
             if declare -f progress_update >/dev/null 2>&1; then

@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # ============================================================
-# ACFS Auto-Fix for Version Manager Conflicts
+# GTBI Auto-Fix for Version Manager Conflicts
 #
 # Handles nvm and pyenv installations that conflict with
-# ACFS-managed versions.
+# GTBI-managed versions.
 #
 # Related beads:
 #   - bd-19y9.3.2: Implement auto-fix for nvm/pyenv conflicts
@@ -11,10 +11,10 @@
 # ============================================================
 
 # Prevent multiple sourcing
-if [[ -n "${_ACFS_AUTOFIX_VERSION_MANAGERS_SH_LOADED:-}" ]]; then
+if [[ -n "${_GTBI_AUTOFIX_VERSION_MANAGERS_SH_LOADED:-}" ]]; then
     return 0
 fi
-_ACFS_AUTOFIX_VERSION_MANAGERS_SH_LOADED=1
+_GTBI_AUTOFIX_VERSION_MANAGERS_SH_LOADED=1
 
 # Source the autofix base library
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

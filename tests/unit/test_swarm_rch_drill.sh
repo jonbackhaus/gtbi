@@ -10,7 +10,7 @@ SWARM_PLAN_SH="$REPO_ROOT/scripts/lib/swarm_plan.sh"
 
 TESTS_PASSED=0
 TESTS_FAILED=0
-ARTIFACT_DIR="${ACFS_SWARM_RCH_DRILL_ARTIFACTS_DIR:-${TMPDIR:-/tmp}/acfs-swarm-rch-drill-artifacts-$(date +%Y%m%d-%H%M%S)-$$}"
+ARTIFACT_DIR="${GTBI_SWARM_RCH_DRILL_ARTIFACTS_DIR:-${TMPDIR:-/tmp}/gtbi-swarm-rch-drill-artifacts-$(date +%Y%m%d-%H%M%S)-$$}"
 
 mkdir -p "$ARTIFACT_DIR"
 
@@ -88,7 +88,7 @@ run_plan_json() {
 
     capacity_script="$(write_capacity_script)"
     set +e
-    output="$(ACFS_SWARM_CAPACITY_SCRIPT="$capacity_script" bash "$SWARM_PLAN_SH" --json --status-file "$fixture" "$@" 2>&1)"
+    output="$(GTBI_SWARM_CAPACITY_SCRIPT="$capacity_script" bash "$SWARM_PLAN_SH" --json --status-file "$fixture" "$@" 2>&1)"
     status=$?
     set -e
 
@@ -105,7 +105,7 @@ run_plan_human() {
 
     capacity_script="$(write_capacity_script)"
     set +e
-    output="$(ACFS_SWARM_CAPACITY_SCRIPT="$capacity_script" bash "$SWARM_PLAN_SH" --status-file "$fixture" "$@" 2>&1)"
+    output="$(GTBI_SWARM_CAPACITY_SCRIPT="$capacity_script" bash "$SWARM_PLAN_SH" --status-file "$fixture" "$@" 2>&1)"
     status=$?
     set -e
 

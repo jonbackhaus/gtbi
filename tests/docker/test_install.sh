@@ -8,7 +8,7 @@
 # Runs INSIDE a Docker container. Mount the repo at /repo:
 #
 #   docker run --rm \
-#     -e ACFS_CI=true \
+#     -e GTBI_CI=true \
 #     -v /path/to/gtbi:/repo:rw \
 #     ubuntu:25.10 bash /repo/tests/docker/test_install.sh
 #
@@ -47,7 +47,7 @@ INSTALL_ARGS=(--yes --skip-preflight --skip-ubuntu-upgrade --mode "${TEST_MODE}"
 # ── Phase 1: Fresh Install ─────────────────────────────────────────────────────
 
 log "Phase 1: Fresh Install (mode=${TEST_MODE})"
-if ACFS_CI=true bash /repo/install.sh "${INSTALL_ARGS[@]}" > "${ARTIFACTS_DIR}/install.log" 2>&1; then
+if GTBI_CI=true bash /repo/install.sh "${INSTALL_ARGS[@]}" > "${ARTIFACTS_DIR}/install.log" 2>&1; then
     log "Install successful"
 else
     log "Install failed — last 50 lines:"
@@ -73,8 +73,8 @@ check() {
     fi
 }
 
-check "version_file"    "zsh -ic 'test -f ~/.acfs/VERSION'"
-check "doctor"          "ACFS_DOCTOR_CI=true zsh -ic 'acfs doctor'"
+check "version_file"    "zsh -ic 'test -f ~/.gtbi/VERSION'"
+check "doctor"          "GTBI_DOCTOR_CI=true zsh -ic 'gtbi doctor'"
 
 # System tools
 check "gh"       "zsh -ic 'gh --version >/dev/null'"
@@ -124,7 +124,7 @@ fi
 # ── Phase 3: Idempotency ───────────────────────────────────────────────────────
 
 log "Phase 3: Idempotency Check"
-if ACFS_CI=true bash /repo/install.sh "${INSTALL_ARGS[@]}" > "${ARTIFACTS_DIR}/idempotency.log" 2>&1; then
+if GTBI_CI=true bash /repo/install.sh "${INSTALL_ARGS[@]}" > "${ARTIFACTS_DIR}/idempotency.log" 2>&1; then
     log "Idempotency run successful"
 else
     log "Idempotency run failed — last 50 lines:"
@@ -132,7 +132,7 @@ else
     fail "Idempotency failed"
 fi
 
-if ! su - ubuntu -c "ACFS_DOCTOR_CI=true zsh -ic 'acfs doctor'" >/dev/null 2>&1; then
+if ! su - ubuntu -c "GTBI_DOCTOR_CI=true zsh -ic 'gtbi doctor'" >/dev/null 2>&1; then
     fail "Doctor failed after idempotency run"
 fi
 

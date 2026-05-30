@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # shellcheck disable=SC2034
 # ============================================================
-# AUTO-GENERATED FROM acfs.manifest.yaml - DO NOT EDIT
+# AUTO-GENERATED FROM gtbi.manifest.yaml - DO NOT EDIT
 # Regenerate: bun run generate (from packages/manifest)
 # ============================================================
 # Data-only manifest index. Safe to source.
 
-ACFS_MANIFEST_SHA256=""  # regenerate with: bun run generate
+GTBI_MANIFEST_SHA256=""  # regenerate with: bun run generate
 
-ACFS_MODULES_IN_ORDER=(
+GTBI_MODULES_IN_ORDER=(
   "base.system"
   "users.ubuntu"
   "base.filesystem"
@@ -38,14 +38,14 @@ ACFS_MODULES_IN_ORDER=(
   "cloud.vercel"
   "stack.dolt"
   "stack.bd"
-  "acfs.workspace"
-  "acfs.onboard"
-  "acfs.update"
-  "acfs.nightly"
-  "acfs.doctor"
+  "gtbi.workspace"
+  "gtbi.onboard"
+  "gtbi.update"
+  "gtbi.nightly"
+  "gtbi.doctor"
 )
 
-declare -gA ACFS_MODULE_PHASE=(
+declare -gA GTBI_MODULE_PHASE=(
   ['base.system']="1"
   ['users.ubuntu']="2"
   ['base.filesystem']="3"
@@ -110,14 +110,14 @@ declare -gA ACFS_MODULE_PHASE=(
   ['utils.caut']="9"
   ['stack.dolt']="9"
   ['stack.bd']="9"
-  ['acfs.workspace']="10"
-  ['acfs.onboard']="10"
-  ['acfs.update']="10"
-  ['acfs.nightly']="10"
-  ['acfs.doctor']="10"
+  ['gtbi.workspace']="10"
+  ['gtbi.onboard']="10"
+  ['gtbi.update']="10"
+  ['gtbi.nightly']="10"
+  ['gtbi.doctor']="10"
 )
 
-declare -gA ACFS_MODULE_DEPS=(
+declare -gA GTBI_MODULE_DEPS=(
   ['base.system']=""
   ['users.ubuntu']=""
   ['base.filesystem']="users.ubuntu"
@@ -181,14 +181,14 @@ declare -gA ACFS_MODULE_DEPS=(
   ['utils.aadc']="lang.rust"
   ['utils.caut']="lang.rust"
   ['stack.bd']="stack.dolt"
-  ['acfs.workspace']="agents.claude,agents.codex,agents.gemini,cli.modern"
-  ['acfs.onboard']=""
-  ['acfs.update']=""
-  ['acfs.nightly']="acfs.update"
-  ['acfs.doctor']=""
+  ['gtbi.workspace']="agents.claude,agents.codex,agents.gemini,cli.modern"
+  ['gtbi.onboard']=""
+  ['gtbi.update']=""
+  ['gtbi.nightly']="gtbi.update"
+  ['gtbi.doctor']=""
 )
 
-declare -gA ACFS_MODULE_FUNC=(
+declare -gA GTBI_MODULE_FUNC=(
   ['base.system']="install_base_system"
   ['users.ubuntu']="install_users_ubuntu"
   ['base.filesystem']="install_base_filesystem"
@@ -253,14 +253,14 @@ declare -gA ACFS_MODULE_FUNC=(
   ['utils.caut']="install_utils_caut"
   ['stack.dolt']="install_stack_dolt"
   ['stack.bd']="install_stack_bd"
-  ['acfs.workspace']="install_acfs_workspace"
-  ['acfs.onboard']="install_acfs_onboard"
-  ['acfs.update']="install_acfs_update"
-  ['acfs.nightly']="install_acfs_nightly"
-  ['acfs.doctor']="install_acfs_doctor"
+  ['gtbi.workspace']="install_gtbi_workspace"
+  ['gtbi.onboard']="install_gtbi_onboard"
+  ['gtbi.update']="install_gtbi_update"
+  ['gtbi.nightly']="install_gtbi_nightly"
+  ['gtbi.doctor']="install_gtbi_doctor"
 )
 
-declare -gA ACFS_MODULE_CATEGORY=(
+declare -gA GTBI_MODULE_CATEGORY=(
   ['base.system']="base"
   ['users.ubuntu']="users"
   ['base.filesystem']="filesystem"
@@ -323,14 +323,14 @@ declare -gA ACFS_MODULE_CATEGORY=(
   ['utils.rust_proxy']="tools"
   ['utils.aadc']="tools"
   ['utils.caut']="tools"
-  ['acfs.workspace']="acfs"
-  ['acfs.onboard']="acfs"
-  ['acfs.update']="acfs"
-  ['acfs.nightly']="acfs"
-  ['acfs.doctor']="acfs"
+  ['gtbi.workspace']="gtbi"
+  ['gtbi.onboard']="gtbi"
+  ['gtbi.update']="gtbi"
+  ['gtbi.nightly']="gtbi"
+  ['gtbi.doctor']="gtbi"
 )
 
-declare -gA ACFS_MODULE_TAGS=(
+declare -gA GTBI_MODULE_TAGS=(
   ['base.system']="critical"
   ['users.ubuntu']="orchestration,critical"
   ['base.filesystem']="critical"
@@ -395,14 +395,14 @@ declare -gA ACFS_MODULE_TAGS=(
   ['utils.caut']="utility,tracking"
   ['stack.dolt']="critical"
   ['stack.bd']="critical"
-  ['acfs.workspace']="workspace,agents"
-  ['acfs.onboard']="orchestration"
-  ['acfs.update']="orchestration"
-  ['acfs.nightly']="orchestration,maintenance"
-  ['acfs.doctor']="orchestration"
+  ['gtbi.workspace']="workspace,agents"
+  ['gtbi.onboard']="orchestration"
+  ['gtbi.update']="orchestration"
+  ['gtbi.nightly']="orchestration,maintenance"
+  ['gtbi.doctor']="orchestration"
 )
 
-declare -gA ACFS_MODULE_DEFAULT=(
+declare -gA GTBI_MODULE_DEFAULT=(
   ['base.system']="1"
   ['users.ubuntu']="1"
   ['base.filesystem']="1"
@@ -467,19 +467,19 @@ declare -gA ACFS_MODULE_DEFAULT=(
   ['utils.caut']="0"
   ['stack.dolt']="1"
   ['stack.bd']="1"
-  ['acfs.workspace']="1"
-  ['acfs.onboard']="1"
-  ['acfs.update']="1"
-  ['acfs.nightly']="1"
-  ['acfs.doctor']="1"
+  ['gtbi.workspace']="1"
+  ['gtbi.onboard']="1"
+  ['gtbi.update']="1"
+  ['gtbi.nightly']="1"
+  ['gtbi.doctor']="1"
 )
 
-declare -gA ACFS_MODULE_DESC=(
+declare -gA GTBI_MODULE_DESC=(
   ['base.system']="Base packages + sane defaults"
   ['users.ubuntu']="Ensure target user + passwordless sudo + ssh keys"
-  ['base.filesystem']="Create workspace and ACFS directories"
+  ['base.filesystem']="Create workspace and GTBI directories"
   ['shell.zsh']="Zsh shell package"
-  ['shell.omz']="Oh My Zsh + Powerlevel10k + plugins + ACFS config"
+  ['shell.omz']="Oh My Zsh + Powerlevel10k + plugins + GTBI config"
   ['cli.modern']="Modern CLI tools referenced by the zshrc intent"
   ['tools.lazygit']="Lazygit (apt or binary fallback)"
   ['tools.lazydocker']="Lazydocker (binary install)"
@@ -537,34 +537,34 @@ declare -gA ACFS_MODULE_DESC=(
   ['utils.rust_proxy']="rust_proxy - Transparent proxy routing for debugging network traffic"
   ['utils.aadc']="aadc - ASCII diagram corrector for fixing malformed ASCII art"
   ['utils.caut']="coding_agent_usage_tracker (caut) - LLM provider usage tracker"
-  ['acfs.workspace']="Agent workspace with tmux session and project folder"
-  ['acfs.onboard']="Onboarding TUI tutorial"
-  ['acfs.update']="ACFS update command wrapper"
-  ['acfs.nightly']="Nightly auto-update timer (systemd)"
-  ['acfs.doctor']="ACFS doctor command for health checks"
+  ['gtbi.workspace']="Agent workspace with tmux session and project folder"
+  ['gtbi.onboard']="Onboarding TUI tutorial"
+  ['gtbi.update']="GTBI update command wrapper"
+  ['gtbi.nightly']="Nightly auto-update timer (systemd)"
+  ['gtbi.doctor']="GTBI doctor command for health checks"
 )
 
-declare -gA ACFS_MODULE_INSTALLED_CHECK=(
+declare -gA GTBI_MODULE_INSTALLED_CHECK=(
   ['base.system']="command -v curl && command -v git && command -v jq"
-  ['base.filesystem']="test -d /data/projects && test -d ~/.acfs"
+  ['base.filesystem']="test -d /data/projects && test -d ~/.gtbi"
   ['shell.zsh']="command -v zsh"
-  ['shell.omz']="test -d ~/.oh-my-zsh && test -f ~/.acfs/zsh/acfs.zshrc"
+  ['shell.omz']="test -d ~/.oh-my-zsh && test -f ~/.gtbi/zsh/gtbi.zshrc"
   ['cli.modern']="command -v rg && command -v tmux && command -v fzf"
   ['tools.lazygit']="command -v lazygit"
   ['tools.lazydocker']="command -v lazydocker"
   ['network.tailscale']="command -v tailscale"
   ['network.ssh_keepalive']="# Check if ClientAliveInterval is configured (non-zero) grep -qE '^ClientAliveInterval[[:space:]]+[1-9]' /etc/ssh/sshd_config 2>/dev/null "
   ['lang.bun']="test -x ~/.bun/bin/bun"
-  ['lang.uv']="test -x \"\${ACFS_BIN_DIR:-\$HOME/.local/bin}/uv\" || test -x \"\$HOME/.local/bin/uv\""
+  ['lang.uv']="test -x \"\${GTBI_BIN_DIR:-\$HOME/.local/bin}/uv\" || test -x \"\$HOME/.local/bin/uv\""
   ['lang.rust']="test -x ~/.cargo/bin/cargo"
   ['lang.go']="command -v go"
   ['lang.nvm']="test -d ~/.nvm && ls ~/.nvm/versions/node/ 2>/dev/null | grep -q ."
   ['tools.atuin']="test -x ~/.atuin/bin/atuin"
   ['tools.zoxide']="command -v zoxide"
   ['tools.ast_grep']="command -v sg"
-  ['agents.claude']="test -x \"\${ACFS_BIN_DIR:-\$HOME/.local/bin}/claude\" || test -x \"\$HOME/.local/bin/claude\""
-  ['agents.codex']="test -x \"\${ACFS_BIN_DIR:-\$HOME/.local/bin}/codex\" || test -x \"\$HOME/.local/bin/codex\""
-  ['agents.gemini']="test -x \"\${ACFS_BIN_DIR:-\$HOME/.local/bin}/gemini\" || test -x \"\$HOME/.local/bin/gemini\""
+  ['agents.claude']="test -x \"\${GTBI_BIN_DIR:-\$HOME/.local/bin}/claude\" || test -x \"\$HOME/.local/bin/claude\""
+  ['agents.codex']="test -x \"\${GTBI_BIN_DIR:-\$HOME/.local/bin}/codex\" || test -x \"\$HOME/.local/bin/codex\""
+  ['agents.gemini']="test -x \"\${GTBI_BIN_DIR:-\$HOME/.local/bin}/gemini\" || test -x \"\$HOME/.local/bin/gemini\""
   ['agents.opencode']="command -v opencode"
   ['tools.vault']="command -v vault"
   ['db.postgres18']="command -v psql"
@@ -606,11 +606,11 @@ declare -gA ACFS_MODULE_INSTALLED_CHECK=(
   ['utils.rust_proxy']="command -v rust_proxy"
   ['utils.aadc']="command -v aadc"
   ['utils.caut']="command -v caut"
-  ['acfs.workspace']="test -d /data/projects/my_first_project"
-  ['acfs.nightly']="systemctl --user is-enabled acfs-nightly-update.timer 2>/dev/null"
+  ['gtbi.workspace']="test -d /data/projects/my_first_project"
+  ['gtbi.nightly']="systemctl --user is-enabled gtbi-nightly-update.timer 2>/dev/null"
 )
 
-declare -gA ACFS_MODULE_INSTALLED_CHECK_RUN_AS=(
+declare -gA GTBI_MODULE_INSTALLED_CHECK_RUN_AS=(
   ['base.system']="current"
   ['base.filesystem']="target_user"
   ['shell.zsh']="current"
@@ -672,8 +672,8 @@ declare -gA ACFS_MODULE_INSTALLED_CHECK_RUN_AS=(
   ['utils.rust_proxy']="target_user"
   ['utils.aadc']="target_user"
   ['utils.caut']="target_user"
-  ['acfs.workspace']="target_user"
-  ['acfs.nightly']="target_user"
+  ['gtbi.workspace']="target_user"
+  ['gtbi.nightly']="target_user"
 )
 
-ACFS_MANIFEST_INDEX_LOADED=true
+GTBI_MANIFEST_INDEX_LOADED=true

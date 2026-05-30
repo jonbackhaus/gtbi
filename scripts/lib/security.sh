@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # shellcheck disable=SC1091
 # ============================================================
-# ACFS Installer - Security Verification Library
+# GTBI Installer - Security Verification Library
 # Provides checksum verification and HTTPS enforcement
 #
 # NOTE: This file is intended to be *sourced* by other scripts. Do not enable
@@ -9,16 +9,16 @@
 # When executed directly, strict mode is enabled in the entrypoint below.
 # ============================================================
 
-_acfs_security_source="${BASH_SOURCE[0]}"
-_acfs_security_source_dir="."
-case "$_acfs_security_source" in
-    */*) _acfs_security_source_dir="${_acfs_security_source%/*}" ;;
+_gtbi_security_source="${BASH_SOURCE[0]}"
+_gtbi_security_source_dir="."
+case "$_gtbi_security_source" in
+    */*) _gtbi_security_source_dir="${_gtbi_security_source%/*}" ;;
 esac
-SECURITY_SCRIPT_DIR="$(cd "$_acfs_security_source_dir" && pwd -P)"
-unset _acfs_security_source _acfs_security_source_dir
+SECURITY_SCRIPT_DIR="$(cd "$_gtbi_security_source_dir" && pwd -P)"
+unset _gtbi_security_source _gtbi_security_source_dir
 
 # Ensure we have logging functions available
-if [[ -z "${ACFS_BLUE:-}" ]]; then
+if [[ -z "${GTBI_BLUE:-}" ]]; then
     # shellcheck source=logging.sh
     source "$SECURITY_SCRIPT_DIR/logging.sh" 2>/dev/null || true
 fi
@@ -35,25 +35,25 @@ if ! declare -f log_success &>/dev/null; then
 fi
 
 # Color aliases for backward compatibility (used by display functions below)
-# Respects NO_COLOR standard via logging.sh's ACFS_* variables.
+# Respects NO_COLOR standard via logging.sh's GTBI_* variables.
 # Use ${var-default} (not ${var:-default}) to preserve empty strings.
 # Related: bd-39ye
-CYAN="${ACFS_BLUE-\033[0;36m}"
-DIM="${ACFS_GRAY-\033[0;90m}"
-NC="${ACFS_NC-\033[0m}"
-RED="${ACFS_RED-\033[0;31m}"
-GREEN="${ACFS_GREEN-\033[0;32m}"
-YELLOW="${ACFS_YELLOW-\033[0;33m}"
+CYAN="${GTBI_BLUE-\033[0;36m}"
+DIM="${GTBI_GRAY-\033[0;90m}"
+NC="${GTBI_NC-\033[0m}"
+RED="${GTBI_RED-\033[0;31m}"
+GREEN="${GTBI_GREEN-\033[0;32m}"
+YELLOW="${GTBI_YELLOW-\033[0;33m}"
 
 # ============================================================
 # Configuration
 # ============================================================
 
-ACFS_REPO_OWNER="${ACFS_REPO_OWNER:-Dicklesworthstone}"
-ACFS_REPO_NAME="${ACFS_REPO_NAME:-agentic_coding_flywheel_setup}"
-ACFS_CHECKSUMS_REF="${ACFS_CHECKSUMS_REF:-main}"
+GTBI_REPO_OWNER="${GTBI_REPO_OWNER:-Dicklesworthstone}"
+GTBI_REPO_NAME="${GTBI_REPO_NAME:-gastown_batteries_included}"
+GTBI_CHECKSUMS_REF="${GTBI_CHECKSUMS_REF:-main}"
 
-acfs_security_system_binary_path() {
+gtbi_security_system_binary_path() {
     local name="${1:-}"
     local candidate=""
 
@@ -84,15 +84,15 @@ acfs_security_system_binary_path() {
     return 1
 }
 
-acfs_security_curl_binary_path() {
-    acfs_security_system_binary_path curl
+gtbi_security_curl_binary_path() {
+    gtbi_security_system_binary_path curl
 }
 
-acfs_security_required_binary_path() {
+gtbi_security_required_binary_path() {
     local name="${1:-}"
     local path=""
 
-    path="$(acfs_security_system_binary_path "$name" 2>/dev/null || true)"
+    path="$(gtbi_security_system_binary_path "$name" 2>/dev/null || true)"
     if [[ -z "$path" ]]; then
         log_error "No trusted $name binary available"
         return 127
@@ -101,17 +101,17 @@ acfs_security_required_binary_path() {
     printf '%s\n' "$path"
 }
 
-acfs_security_hash_tool() {
+gtbi_security_hash_tool() {
     local sha256sum_bin=""
     local shasum_bin=""
 
-    sha256sum_bin="$(acfs_security_system_binary_path sha256sum 2>/dev/null || true)"
+    sha256sum_bin="$(gtbi_security_system_binary_path sha256sum 2>/dev/null || true)"
     if [[ -n "$sha256sum_bin" ]]; then
         printf 'sha256sum:%s\n' "$sha256sum_bin"
         return 0
     fi
 
-    shasum_bin="$(acfs_security_system_binary_path shasum 2>/dev/null || true)"
+    shasum_bin="$(gtbi_security_system_binary_path shasum 2>/dev/null || true)"
     if [[ -n "$shasum_bin" ]]; then
         printf 'shasum:%s\n' "$shasum_bin"
         return 0
@@ -120,10 +120,10 @@ acfs_security_hash_tool() {
     return 1
 }
 
-acfs_security_mktemp() {
+gtbi_security_mktemp() {
     local mktemp_bin=""
 
-    mktemp_bin="$(acfs_security_required_binary_path mktemp)" || return $?
+    mktemp_bin="$(gtbi_security_required_binary_path mktemp)" || return $?
     if [[ "$#" -gt 0 ]]; then
         "$mktemp_bin" "$@"
     else
@@ -131,7 +131,7 @@ acfs_security_mktemp() {
     fi
 }
 
-acfs_security_cat_file() {
+gtbi_security_cat_file() {
     local cat_bin=""
     local file="${1:-}"
 
@@ -140,37 +140,37 @@ acfs_security_cat_file() {
         return 1
     }
 
-    cat_bin="$(acfs_security_required_binary_path cat)" || return $?
+    cat_bin="$(gtbi_security_required_binary_path cat)" || return $?
     "$cat_bin" "$file"
 }
 
-acfs_security_mkdir_p() {
+gtbi_security_mkdir_p() {
     local mkdir_bin=""
     local dir="${1:-}"
 
     [[ -n "$dir" ]] || return 1
-    mkdir_bin="$(acfs_security_required_binary_path mkdir)" || return $?
+    mkdir_bin="$(gtbi_security_required_binary_path mkdir)" || return $?
     "$mkdir_bin" -p "$dir"
 }
 
-acfs_security_sort_lines() {
+gtbi_security_sort_lines() {
     local sort_bin=""
 
-    sort_bin="$(acfs_security_required_binary_path sort)" || return $?
+    sort_bin="$(gtbi_security_required_binary_path sort)" || return $?
     "$sort_bin"
 }
 
-acfs_security_date() {
+gtbi_security_date() {
     local date_bin=""
 
-    date_bin="$(acfs_security_required_binary_path date)" || return $?
+    date_bin="$(gtbi_security_required_binary_path date)" || return $?
     "$date_bin" "$@"
 }
 
 # Check if running in interactive mode
 # Returns 0 if interactive, 1 if non-interactive
-_acfs_is_interactive() {
-    [[ "${ACFS_INTERACTIVE:-true}" == "true" ]] || return 1
+_gtbi_is_interactive() {
+    [[ "${GTBI_INTERACTIVE:-true}" == "true" ]] || return 1
 
     # Prefer /dev/tty so curl|bash (stdin is a pipe) can still prompt safely.
     if [[ -e /dev/tty ]] && (exec 3<>/dev/tty) 2>/dev/null; then
@@ -181,38 +181,38 @@ _acfs_is_interactive() {
 }
 
 # curl defaults: enforce HTTPS (including redirects) when supported
-ACFS_CURL_BIN=""
-ACFS_CURL_BASE_ARGS=()
+GTBI_CURL_BIN=""
+GTBI_CURL_BASE_ARGS=()
 
-acfs_security_configure_curl() {
+gtbi_security_configure_curl() {
     local curl_help=""
 
-    ACFS_CURL_BIN="$(acfs_security_curl_binary_path 2>/dev/null || true)"
-    ACFS_CURL_BASE_ARGS=(--connect-timeout 30 --max-time 300 -fsSL)
+    GTBI_CURL_BIN="$(gtbi_security_curl_binary_path 2>/dev/null || true)"
+    GTBI_CURL_BASE_ARGS=(--connect-timeout 30 --max-time 300 -fsSL)
 
-    if [[ -n "$ACFS_CURL_BIN" ]] && curl_help="$("$ACFS_CURL_BIN" --help all 2>/dev/null)" && [[ "$curl_help" == *"--proto"* ]]; then
-        ACFS_CURL_BASE_ARGS=(--proto '=https' --proto-redir '=https' --connect-timeout 30 --max-time 300 -fsSL)
+    if [[ -n "$GTBI_CURL_BIN" ]] && curl_help="$("$GTBI_CURL_BIN" --help all 2>/dev/null)" && [[ "$curl_help" == *"--proto"* ]]; then
+        GTBI_CURL_BASE_ARGS=(--proto '=https' --proto-redir '=https' --connect-timeout 30 --max-time 300 -fsSL)
     fi
 }
 
-acfs_security_configure_curl
+gtbi_security_configure_curl
 
-acfs_curl() {
-    if [[ -z "$ACFS_CURL_BIN" || ! -x "$ACFS_CURL_BIN" ]]; then
-        acfs_security_configure_curl
-        if [[ -z "$ACFS_CURL_BIN" || ! -x "$ACFS_CURL_BIN" ]]; then
+gtbi_curl() {
+    if [[ -z "$GTBI_CURL_BIN" || ! -x "$GTBI_CURL_BIN" ]]; then
+        gtbi_security_configure_curl
+        if [[ -z "$GTBI_CURL_BIN" || ! -x "$GTBI_CURL_BIN" ]]; then
             log_error "No trusted curl binary available"
             return 127
         fi
     fi
 
-    "$ACFS_CURL_BIN" "${ACFS_CURL_BASE_ARGS[@]}" "$@"
+    "$GTBI_CURL_BIN" "${GTBI_CURL_BASE_ARGS[@]}" "$@"
 }
 
 # Automatic retries for transient network errors (fast total budget).
-ACFS_CURL_RETRY_DELAYS=(0 5 15)
+GTBI_CURL_RETRY_DELAYS=(0 5 15)
 
-acfs_is_retryable_curl_exit_code() {
+gtbi_is_retryable_curl_exit_code() {
     local exit_code="${1:-0}"
     case "$exit_code" in
         6|7|28|35|52|56) return 0 ;; # DNS/connect/timeout/SSL/empty reply/recv error
@@ -229,7 +229,7 @@ acfs_is_retryable_curl_exit_code() {
 #
 # For GitHub URLs, uses github_fetch_with_backoff for rate limit handling.
 # Related: bd-1lug
-acfs_download_to_file() {
+gtbi_download_to_file() {
     local url="$1"
     local output_path="$2"
     local name="${3:-$url}"
@@ -242,7 +242,7 @@ acfs_download_to_file() {
     fi
 
     # Ensure parent dir exists
-    acfs_security_mkdir_p "$output_dir" || return $?
+    gtbi_security_mkdir_p "$output_dir" || return $?
 
     # Use GitHub-specific backoff for GitHub URLs (rate limit handling)
     if [[ "$url" == *"github.com"* || "$url" == *"githubusercontent.com"* ]]; then
@@ -263,17 +263,17 @@ acfs_download_to_file() {
     fi
 
     # Standard retry logic for non-GitHub URLs
-    local max_attempts="${#ACFS_CURL_RETRY_DELAYS[@]}"
+    local max_attempts="${#GTBI_CURL_RETRY_DELAYS[@]}"
     if (( max_attempts == 0 )); then
-        ACFS_CURL_RETRY_DELAYS=(0 5 15)
-        max_attempts="${#ACFS_CURL_RETRY_DELAYS[@]}"
+        GTBI_CURL_RETRY_DELAYS=(0 5 15)
+        max_attempts="${#GTBI_CURL_RETRY_DELAYS[@]}"
     fi
 
     local retries=$((max_attempts - 1))
     local attempt delay status=0
 
     for ((attempt=0; attempt<max_attempts; attempt++)); do
-        delay="${ACFS_CURL_RETRY_DELAYS[$attempt]}"
+        delay="${GTBI_CURL_RETRY_DELAYS[$attempt]}"
 
         if (( attempt > 0 )); then
             log_info "Retry ${attempt}/${retries} for fetching ${name} (waiting ${delay}s)..."
@@ -281,14 +281,14 @@ acfs_download_to_file() {
         fi
 
         # Use -o to save to file directly
-        if acfs_curl "$url" -o "$output_path"; then
+        if gtbi_curl "$url" -o "$output_path"; then
             (( attempt > 0 )) && log_info "Succeeded on retry ${attempt} for fetching ${name}"
             return 0
         else
             status=$?
         fi
 
-        if ! acfs_is_retryable_curl_exit_code "$status"; then
+        if ! gtbi_is_retryable_curl_exit_code "$status"; then
             return "$status"
         fi
     done
@@ -305,23 +305,23 @@ DEFAULT_CHECKSUMS_FILE="$SECURITY_SCRIPT_DIR/../../checksums.yaml"
 # Resolve to absolute path to prevent working directory manipulation
 if [[ -r "$DEFAULT_CHECKSUMS_FILE" ]]; then
     # Use trusted realpath if available, otherwise use cd/pwd to get absolute path.
-    _acfs_security_realpath_bin="$(acfs_security_system_binary_path realpath 2>/dev/null || true)"
-    if [[ -n "$_acfs_security_realpath_bin" ]]; then
-        DEFAULT_CHECKSUMS_FILE="$("$_acfs_security_realpath_bin" "$DEFAULT_CHECKSUMS_FILE")"
+    _gtbi_security_realpath_bin="$(gtbi_security_system_binary_path realpath 2>/dev/null || true)"
+    if [[ -n "$_gtbi_security_realpath_bin" ]]; then
+        DEFAULT_CHECKSUMS_FILE="$("$_gtbi_security_realpath_bin" "$DEFAULT_CHECKSUMS_FILE")"
     else
-        _acfs_security_checksums_dir="${DEFAULT_CHECKSUMS_FILE%/*}"
-        _acfs_security_checksums_base="${DEFAULT_CHECKSUMS_FILE##*/}"
-        DEFAULT_CHECKSUMS_FILE="$(cd "$_acfs_security_checksums_dir" && pwd -P)/$_acfs_security_checksums_base"
+        _gtbi_security_checksums_dir="${DEFAULT_CHECKSUMS_FILE%/*}"
+        _gtbi_security_checksums_base="${DEFAULT_CHECKSUMS_FILE##*/}"
+        DEFAULT_CHECKSUMS_FILE="$(cd "$_gtbi_security_checksums_dir" && pwd -P)/$_gtbi_security_checksums_base"
     fi
-    unset _acfs_security_realpath_bin _acfs_security_checksums_dir _acfs_security_checksums_base
+    unset _gtbi_security_realpath_bin _gtbi_security_checksums_dir _gtbi_security_checksums_base
     CHECKSUMS_FILE="${CHECKSUMS_FILE:-$DEFAULT_CHECKSUMS_FILE}"
 else
     # If default not found and CHECKSUMS_FILE not set, use absolute path to repo root
     # Never fall back to relative path as it could be manipulated
     if [[ -z "${CHECKSUMS_FILE:-}" ]]; then
-        # Try to find checksums.yaml relative to ACFS_REPO_ROOT if available
-        if [[ -n "${ACFS_REPO_ROOT:-}" && -r "${ACFS_REPO_ROOT}/checksums.yaml" ]]; then
-            CHECKSUMS_FILE="${ACFS_REPO_ROOT}/checksums.yaml"
+        # Try to find checksums.yaml relative to GTBI_REPO_ROOT if available
+        if [[ -n "${GTBI_REPO_ROOT:-}" && -r "${GTBI_REPO_ROOT}/checksums.yaml" ]]; then
+            CHECKSUMS_FILE="${GTBI_REPO_ROOT}/checksums.yaml"
         else
             # No checksums file found - will be handled at verification time
             CHECKSUMS_FILE=""
@@ -375,13 +375,13 @@ declare -gA KNOWN_INSTALLERS=(
     [asb]="https://raw.githubusercontent.com/Dicklesworthstone/agent_settings_backup_script/main/install.sh"
     [pcr]="https://raw.githubusercontent.com/Dicklesworthstone/post_compact_reminder/main/install-post-compact-reminder.sh"
 )
-declare -ga ACFS_SECURITY_REQUIRED_INSTALLERS=("${!KNOWN_INSTALLERS[@]}")
+declare -ga GTBI_SECURITY_REQUIRED_INSTALLERS=("${!KNOWN_INSTALLERS[@]}")
 
 # ============================================================
 # Checksum Verification Policy
 # ============================================================
 #
-# ACFS fails closed on checksum mismatch: scripts are NOT executed unless the
+# GTBI fails closed on checksum mismatch: scripts are NOT executed unless the
 # downloaded bytes match checksums.yaml exactly.
 
 # ============================================================
@@ -428,7 +428,7 @@ calculate_file_sha256() {
         return 1
     fi
 
-    if ! hash_tool="$(acfs_security_hash_tool)"; then
+    if ! hash_tool="$(gtbi_security_hash_tool)"; then
         log_error "No SHA256 tool available"
         return 1
     fi
@@ -463,7 +463,7 @@ calculate_sha256() {
     local output=""
     local hash=""
 
-    if ! hash_tool="$(acfs_security_hash_tool)"; then
+    if ! hash_tool="$(gtbi_security_hash_tool)"; then
         log_error "No SHA256 tool available"
         return 1
     fi
@@ -489,11 +489,11 @@ calculate_sha256() {
     printf '%s\n' "$hash"
 }
 
-_acfs_remove_temp_files() {
+_gtbi_remove_temp_files() {
     local path
     local rm_bin=""
 
-    rm_bin="$(acfs_security_system_binary_path rm 2>/dev/null || true)"
+    rm_bin="$(gtbi_security_system_binary_path rm 2>/dev/null || true)"
     [[ -n "$rm_bin" ]] || return 0
 
     for path in "$@"; do
@@ -501,31 +501,31 @@ _acfs_remove_temp_files() {
     done
 }
 
-acfs_security_file_size() {
+gtbi_security_file_size() {
     local file="${1:-}"
     local output=""
     local wc_bin=""
 
     [[ -r "$file" ]] || return 1
-    wc_bin="$(acfs_security_required_binary_path wc)" || return $?
+    wc_bin="$(gtbi_security_required_binary_path wc)" || return $?
     output="$("$wc_bin" -c < "$file")" || return 1
     output="${output//[[:space:]]/}"
     [[ -n "$output" ]] || return 1
     printf '%s\n' "$output"
 }
 
-acfs_offline_pack_requested() {
-    [[ -n "${ACFS_OFFLINE_PACK:-${ACFS_OFFLINE_ARTIFACT_PACK:-}}" ]]
+gtbi_offline_pack_requested() {
+    [[ -n "${GTBI_OFFLINE_PACK:-${GTBI_OFFLINE_ARTIFACT_PACK:-}}" ]]
 }
 
-acfs_offline_pack_fail_closed() {
-    local mode="${ACFS_OFFLINE_NETWORK_MODE:-offline}"
-    local required="${ACFS_OFFLINE_PACK_REQUIRED:-}"
+gtbi_offline_pack_fail_closed() {
+    local mode="${GTBI_OFFLINE_NETWORK_MODE:-offline}"
+    local required="${GTBI_OFFLINE_PACK_REQUIRED:-}"
 
     [[ "$mode" == "offline" || "$mode" == "disabled" || "$required" == "true" || "$required" == "1" ]]
 }
 
-acfs_offline_pack_error() {
+gtbi_offline_pack_error() {
     local code="$1"
     local name="$2"
     local detail="$3"
@@ -534,15 +534,15 @@ acfs_offline_pack_error() {
     printf "  Detail: %s\n" "$detail" >&2
 }
 
-acfs_offline_pack_jq_bin() {
-    acfs_security_required_binary_path jq
+gtbi_offline_pack_jq_bin() {
+    gtbi_security_required_binary_path jq
 }
 
-acfs_offline_pack_current_arch() {
+gtbi_offline_pack_current_arch() {
     local raw_arch=""
     local uname_bin=""
 
-    uname_bin="$(acfs_security_required_binary_path uname)" || return $?
+    uname_bin="$(gtbi_security_required_binary_path uname)" || return $?
     raw_arch="$("$uname_bin" -m)" || return 1
 
     case "$raw_arch" in
@@ -552,9 +552,9 @@ acfs_offline_pack_current_arch() {
     esac
 }
 
-acfs_offline_pack_current_manifest_file() {
-    local manifest_file="${ACFS_MANIFEST_YAML:-}"
-    local default_manifest="$SECURITY_SCRIPT_DIR/../../acfs.manifest.yaml"
+gtbi_offline_pack_current_manifest_file() {
+    local manifest_file="${GTBI_MANIFEST_YAML:-}"
+    local default_manifest="$SECURITY_SCRIPT_DIR/../../gtbi.manifest.yaml"
 
     if [[ -n "$manifest_file" && -r "$manifest_file" ]]; then
         printf '%s\n' "$manifest_file"
@@ -568,13 +568,13 @@ acfs_offline_pack_current_manifest_file() {
     return 1
 }
 
-acfs_offline_pack_locate() {
-    local configured="${ACFS_OFFLINE_PACK:-${ACFS_OFFLINE_ARTIFACT_PACK:-}}"
+gtbi_offline_pack_locate() {
+    local configured="${GTBI_OFFLINE_PACK:-${GTBI_OFFLINE_ARTIFACT_PACK:-}}"
     local name="$1"
     local pack_root=""
 
     if [[ -z "$configured" ]]; then
-        acfs_offline_pack_error "pack_missing_manifest" "$name" "ACFS_OFFLINE_PACK is empty"
+        gtbi_offline_pack_error "pack_missing_manifest" "$name" "GTBI_OFFLINE_PACK is empty"
         return 1
     fi
 
@@ -584,21 +584,21 @@ acfs_offline_pack_locate() {
     esac
     configured="${configured%/}"
 
-    if [[ -d "$configured/acfs-offline-pack" ]]; then
-        pack_root="$configured/acfs-offline-pack"
+    if [[ -d "$configured/gtbi-offline-pack" ]]; then
+        pack_root="$configured/gtbi-offline-pack"
     else
         pack_root="$configured"
     fi
 
     if [[ ! -r "$pack_root/manifest.json" ]]; then
-        acfs_offline_pack_error "pack_missing_manifest" "$name" "manifest.json is absent under $pack_root"
+        gtbi_offline_pack_error "pack_missing_manifest" "$name" "manifest.json is absent under $pack_root"
         return 1
     fi
 
     printf '%s\t%s\n' "$pack_root" "$pack_root/manifest.json"
 }
 
-acfs_offline_pack_path_is_safe() {
+gtbi_offline_pack_path_is_safe() {
     local rel_path="${1:-}"
 
     case "$rel_path" in
@@ -610,7 +610,7 @@ acfs_offline_pack_path_is_safe() {
     return 0
 }
 
-acfs_offline_pack_resolve_existing_path() {
+gtbi_offline_pack_resolve_existing_path() {
     local path="${1:-}"
     local realpath_bin=""
     local dir=""
@@ -618,7 +618,7 @@ acfs_offline_pack_resolve_existing_path() {
 
     [[ -n "$path" && -e "$path" ]] || return 1
 
-    realpath_bin="$(acfs_security_system_binary_path realpath 2>/dev/null || true)"
+    realpath_bin="$(gtbi_security_system_binary_path realpath 2>/dev/null || true)"
     if [[ -n "$realpath_bin" ]]; then
         "$realpath_bin" -e -- "$path"
         return $?
@@ -643,21 +643,21 @@ acfs_offline_pack_resolve_existing_path() {
     (cd "$dir" 2>/dev/null && printf '%s/%s\n' "$(pwd -P)" "$base")
 }
 
-acfs_offline_pack_artifact_is_contained() {
+gtbi_offline_pack_artifact_is_contained() {
     local pack_root="${1:-}"
     local artifact_file="${2:-}"
     local pack_root_real=""
     local artifact_real=""
 
-    pack_root_real="$(acfs_offline_pack_resolve_existing_path "$pack_root" 2>/dev/null || true)"
-    artifact_real="$(acfs_offline_pack_resolve_existing_path "$artifact_file" 2>/dev/null || true)"
+    pack_root_real="$(gtbi_offline_pack_resolve_existing_path "$pack_root" 2>/dev/null || true)"
+    artifact_real="$(gtbi_offline_pack_resolve_existing_path "$artifact_file" 2>/dev/null || true)"
 
     [[ -n "$pack_root_real" && "$pack_root_real" != "/" ]] || return 1
     [[ -n "$artifact_real" ]] || return 1
     [[ "$artifact_real" == "$pack_root_real/"* ]]
 }
 
-acfs_offline_pack_validate_manifest() {
+gtbi_offline_pack_validate_manifest() {
     local pack_root="$1"
     local manifest_file="$2"
     local name="$3"
@@ -678,96 +678,96 @@ acfs_offline_pack_validate_manifest() {
     local manifest_actual=""
     local current_manifest=""
 
-    jq_bin="$(acfs_offline_pack_jq_bin)" || {
-        acfs_offline_pack_error "pack_malformed_manifest" "$name" "jq is required to read manifest.json"
+    jq_bin="$(gtbi_offline_pack_jq_bin)" || {
+        gtbi_offline_pack_error "pack_malformed_manifest" "$name" "jq is required to read manifest.json"
         return 1
     }
 
     if ! "$jq_bin" -e . "$manifest_file" >/dev/null 2>&1; then
-        acfs_offline_pack_error "pack_malformed_manifest" "$name" "manifest.json is not valid JSON"
+        gtbi_offline_pack_error "pack_malformed_manifest" "$name" "manifest.json is not valid JSON"
         return 1
     fi
 
     schema="$("$jq_bin" -r '.schema // empty' "$manifest_file")"
     schema_version="$("$jq_bin" -r '.schemaVersion // empty' "$manifest_file")"
-    if [[ "$schema" != "acfs.offline-artifact-pack.v1" || "$schema_version" != "1" ]]; then
-        acfs_offline_pack_error "pack_schema_unsupported" "$name" "unsupported schema=${schema:-missing} schemaVersion=${schema_version:-missing}"
+    if [[ "$schema" != "gtbi.offline-artifact-pack.v1" || "$schema_version" != "1" ]]; then
+        gtbi_offline_pack_error "pack_schema_unsupported" "$name" "unsupported schema=${schema:-missing} schemaVersion=${schema_version:-missing}"
         return 1
     fi
 
     pack_mode="$("$jq_bin" -r '.packMode // "complete"' "$manifest_file")"
     if [[ "$pack_mode" != "complete" ]]; then
-        acfs_offline_pack_error "pack_unbundled_required_module" "$name" "packMode=$pack_mode cannot satisfy a verified offline install"
+        gtbi_offline_pack_error "pack_unbundled_required_module" "$name" "packMode=$pack_mode cannot satisfy a verified offline install"
         return 1
     fi
 
     policy="$("$jq_bin" -r '.policy.verifiedInstallerPolicy // empty' "$manifest_file")"
     if [[ "$policy" != "must_match_checksums_yaml" ]]; then
-        acfs_offline_pack_error "pack_checksums_mismatch" "$name" "verifiedInstallerPolicy must be must_match_checksums_yaml"
+        gtbi_offline_pack_error "pack_checksums_mismatch" "$name" "verifiedInstallerPolicy must be must_match_checksums_yaml"
         return 1
     fi
 
     network_mode="$("$jq_bin" -r '.policy.networkMode // "offline"' "$manifest_file")"
     if [[ "$network_mode" != "offline" ]]; then
-        acfs_offline_pack_error "pack_unbundled_required_module" "$name" "policy.networkMode=$network_mode does not provide offline guarantees"
+        gtbi_offline_pack_error "pack_unbundled_required_module" "$name" "policy.networkMode=$network_mode does not provide offline guarantees"
         return 1
     fi
 
     expires_at="$("$jq_bin" -r '.expiresAt // empty' "$manifest_file")"
-    expires_epoch="$(acfs_security_date -u -d "$expires_at" +%s 2>/dev/null || true)"
-    now_epoch="$(acfs_security_date -u +%s 2>/dev/null || true)"
+    expires_epoch="$(gtbi_security_date -u -d "$expires_at" +%s 2>/dev/null || true)"
+    now_epoch="$(gtbi_security_date -u +%s 2>/dev/null || true)"
     if [[ -z "$expires_at" || -z "$expires_epoch" || -z "$now_epoch" || "$now_epoch" -gt "$expires_epoch" ]]; then
-        acfs_offline_pack_error "pack_expired" "$name" "expiresAt=${expires_at:-missing}"
+        gtbi_offline_pack_error "pack_expired" "$name" "expiresAt=${expires_at:-missing}"
         return 1
     fi
 
-    arch="$(acfs_offline_pack_current_arch)" || {
-        acfs_offline_pack_error "pack_arch_unsupported" "$name" "unable to determine current architecture"
+    arch="$(gtbi_offline_pack_current_arch)" || {
+        gtbi_offline_pack_error "pack_arch_unsupported" "$name" "unable to determine current architecture"
         return 1
     }
     if ! "$jq_bin" -e --arg arch "$arch" '
         any(.targets[]?; ((.os // "ubuntu") == "ubuntu") and (((.architecture // .arch // "") == $arch) or ((.architectures // []) | index($arch))))
     ' "$manifest_file" >/dev/null; then
-        acfs_offline_pack_error "pack_arch_unsupported" "$name" "current architecture $arch is not listed in targets[]"
+        gtbi_offline_pack_error "pack_arch_unsupported" "$name" "current architecture $arch is not listed in targets[]"
         return 1
     fi
 
-    checksums_declared="$("$jq_bin" -r '.acfs.checksumsYamlSha256 // .acfs.checksumsSha256 // empty' "$manifest_file")"
+    checksums_declared="$("$jq_bin" -r '.gtbi.checksumsYamlSha256 // .gtbi.checksumsSha256 // empty' "$manifest_file")"
     if [[ -z "$checksums_declared" || -z "${CHECKSUMS_FILE:-}" || ! -r "${CHECKSUMS_FILE:-}" ]]; then
-        acfs_offline_pack_error "pack_checksums_mismatch" "$name" "current checksums.yaml is unavailable for pack comparison"
+        gtbi_offline_pack_error "pack_checksums_mismatch" "$name" "current checksums.yaml is unavailable for pack comparison"
         return 1
     fi
     checksums_actual="$(calculate_file_sha256 "$CHECKSUMS_FILE")" || {
-        acfs_offline_pack_error "pack_checksums_mismatch" "$name" "failed to checksum current checksums.yaml"
+        gtbi_offline_pack_error "pack_checksums_mismatch" "$name" "failed to checksum current checksums.yaml"
         return 1
     }
     if [[ "$checksums_actual" != "$checksums_declared" ]]; then
-        acfs_offline_pack_error "pack_checksums_mismatch" "$name" "pack was built with a different checksums.yaml"
+        gtbi_offline_pack_error "pack_checksums_mismatch" "$name" "pack was built with a different checksums.yaml"
         return 1
     fi
     if [[ ! -r "$pack_root/checksums.yaml" ]]; then
-        acfs_offline_pack_error "pack_checksums_mismatch" "$name" "pack copy of checksums.yaml is missing"
+        gtbi_offline_pack_error "pack_checksums_mismatch" "$name" "pack copy of checksums.yaml is missing"
         return 1
     fi
     pack_checksums_actual="$(calculate_file_sha256 "$pack_root/checksums.yaml")" || return 1
     if [[ "$pack_checksums_actual" != "$checksums_declared" ]]; then
-        acfs_offline_pack_error "pack_checksums_mismatch" "$name" "pack copy of checksums.yaml does not match manifest"
+        gtbi_offline_pack_error "pack_checksums_mismatch" "$name" "pack copy of checksums.yaml does not match manifest"
         return 1
     fi
 
-    manifest_declared="$("$jq_bin" -r '.acfs.manifestSha256 // empty' "$manifest_file")"
+    manifest_declared="$("$jq_bin" -r '.gtbi.manifestSha256 // empty' "$manifest_file")"
     if [[ -n "$manifest_declared" ]]; then
-        current_manifest="$(acfs_offline_pack_current_manifest_file 2>/dev/null || true)"
+        current_manifest="$(gtbi_offline_pack_current_manifest_file 2>/dev/null || true)"
         if [[ -z "$current_manifest" ]]; then
-            acfs_offline_pack_error "pack_malformed_manifest" "$name" "current acfs.manifest.yaml is unavailable for pack comparison"
+            gtbi_offline_pack_error "pack_malformed_manifest" "$name" "current gtbi.manifest.yaml is unavailable for pack comparison"
             return 1
         fi
         manifest_actual="$(calculate_file_sha256 "$current_manifest")" || {
-            acfs_offline_pack_error "pack_malformed_manifest" "$name" "failed to checksum current acfs.manifest.yaml"
+            gtbi_offline_pack_error "pack_malformed_manifest" "$name" "failed to checksum current gtbi.manifest.yaml"
             return 1
         }
         if [[ "$manifest_actual" != "$manifest_declared" ]]; then
-            acfs_offline_pack_error "pack_malformed_manifest" "$name" "pack was built with a different acfs.manifest.yaml"
+            gtbi_offline_pack_error "pack_malformed_manifest" "$name" "pack was built with a different gtbi.manifest.yaml"
             return 1
         fi
     fi
@@ -775,7 +775,7 @@ acfs_offline_pack_validate_manifest() {
     return 0
 }
 
-acfs_offline_pack_verify_artifact() {
+gtbi_offline_pack_verify_artifact() {
     local url="$1"
     local expected_sha256="$2"
     local name="$3"
@@ -794,14 +794,14 @@ acfs_offline_pack_verify_artifact() {
     local actual_sha=""
     local actual_size=""
 
-    pack_info="$(acfs_offline_pack_locate "$name")" || return 1
+    pack_info="$(gtbi_offline_pack_locate "$name")" || return 1
     pack_root="${pack_info%%$'\t'*}"
     manifest_file="${pack_info#*$'\t'}"
 
-    acfs_offline_pack_validate_manifest "$pack_root" "$manifest_file" "$name" || return 1
+    gtbi_offline_pack_validate_manifest "$pack_root" "$manifest_file" "$name" || return 1
 
-    jq_bin="$(acfs_offline_pack_jq_bin)" || return 1
-    arch="$(acfs_offline_pack_current_arch)" || return 1
+    jq_bin="$(gtbi_offline_pack_jq_bin)" || return 1
+    arch="$(gtbi_offline_pack_current_arch)" || return 1
     artifact_tsv="$("$jq_bin" -r --arg key "$name" --arg url "$url" --arg sha "$expected_sha256" --arg arch "$arch" '
         def artifact_arch: (.architecture // .platform.arch // "");
         [
@@ -818,9 +818,9 @@ acfs_offline_pack_verify_artifact() {
     if [[ -z "$artifact_tsv" ]]; then
         key_count="$("$jq_bin" -r --arg key "$name" '[.artifacts[]? | select(.verifiedInstallerKey == $key)] | length' "$manifest_file")"
         if [[ "$key_count" == "0" ]]; then
-            acfs_offline_pack_error "pack_unbundled_required_module" "$name" "no bundled artifact has verifiedInstallerKey=$name"
+            gtbi_offline_pack_error "pack_unbundled_required_module" "$name" "no bundled artifact has verifiedInstallerKey=$name"
         else
-            acfs_offline_pack_error "pack_checksums_mismatch" "$name" "no artifact matches the requested URL, sha256, and architecture"
+            gtbi_offline_pack_error "pack_checksums_mismatch" "$name" "no artifact matches the requested URL, sha256, and architecture"
         fi
         return 1
     fi
@@ -829,56 +829,56 @@ acfs_offline_pack_verify_artifact() {
     if ! "$jq_bin" -e --arg moduleId "$module_id" --arg key "$name" '
         any(.modules[]?; .id == $moduleId and (.bundlingPolicy // "") == "bundled" and (.verifiedInstallerKey // "") == $key)
     ' "$manifest_file" >/dev/null; then
-        acfs_offline_pack_error "pack_unbundled_required_module" "$name" "module $module_id is not marked bundled for verifiedInstallerKey=$name"
+        gtbi_offline_pack_error "pack_unbundled_required_module" "$name" "module $module_id is not marked bundled for verifiedInstallerKey=$name"
         return 1
     fi
 
-    if ! acfs_offline_pack_path_is_safe "$rel_path"; then
-        acfs_offline_pack_error "pack_path_escape" "$name" "artifact path is unsafe: $rel_path"
+    if ! gtbi_offline_pack_path_is_safe "$rel_path"; then
+        gtbi_offline_pack_error "pack_path_escape" "$name" "artifact path is unsafe: $rel_path"
         return 1
     fi
 
     artifact_file="$pack_root/$rel_path"
     if [[ ! -f "$artifact_file" ]]; then
-        acfs_offline_pack_error "pack_unbundled_required_module" "$name" "artifact file is missing or unsafe: $rel_path"
+        gtbi_offline_pack_error "pack_unbundled_required_module" "$name" "artifact file is missing or unsafe: $rel_path"
         return 1
     fi
-    if ! acfs_offline_pack_artifact_is_contained "$pack_root" "$artifact_file"; then
-        acfs_offline_pack_error "pack_path_escape" "$name" "artifact path resolves outside the pack: $rel_path"
+    if ! gtbi_offline_pack_artifact_is_contained "$pack_root" "$artifact_file"; then
+        gtbi_offline_pack_error "pack_path_escape" "$name" "artifact path resolves outside the pack: $rel_path"
         return 1
     fi
     if [[ -L "$artifact_file" ]]; then
-        acfs_offline_pack_error "pack_unbundled_required_module" "$name" "artifact file is missing or unsafe: $rel_path"
+        gtbi_offline_pack_error "pack_unbundled_required_module" "$name" "artifact file is missing or unsafe: $rel_path"
         return 1
     fi
 
     actual_sha="$(calculate_file_sha256 "$artifact_file")" || {
-        acfs_offline_pack_error "pack_hash_mismatch" "$name" "failed to checksum artifact $rel_path"
+        gtbi_offline_pack_error "pack_hash_mismatch" "$name" "failed to checksum artifact $rel_path"
         return 1
     }
     if [[ "$artifact_sha" != "$expected_sha256" ]]; then
-        acfs_offline_pack_error "pack_checksums_mismatch" "$name" "manifest sha256 for $rel_path does not match checksums.yaml"
+        gtbi_offline_pack_error "pack_checksums_mismatch" "$name" "manifest sha256 for $rel_path does not match checksums.yaml"
         return 1
     fi
     if [[ "$actual_sha" != "$expected_sha256" ]]; then
-        acfs_offline_pack_error "pack_hash_mismatch" "$name" "artifact $rel_path does not match expected sha256"
+        gtbi_offline_pack_error "pack_hash_mismatch" "$name" "artifact $rel_path does not match expected sha256"
         return 1
     fi
 
     if [[ -n "$size_bytes" && "$size_bytes" != "null" ]]; then
-        actual_size="$(acfs_security_file_size "$artifact_file")" || {
-            acfs_offline_pack_error "pack_hash_mismatch" "$name" "failed to measure artifact $rel_path"
+        actual_size="$(gtbi_security_file_size "$artifact_file")" || {
+            gtbi_offline_pack_error "pack_hash_mismatch" "$name" "failed to measure artifact $rel_path"
             return 1
         }
         if [[ "$actual_size" != "$size_bytes" ]]; then
-            acfs_offline_pack_error "pack_hash_mismatch" "$name" "artifact $rel_path does not match declared size"
+            gtbi_offline_pack_error "pack_hash_mismatch" "$name" "artifact $rel_path does not match declared size"
             return 1
         fi
     fi
 
     log_detail "offline_pack_hit tool=$name module=$module_id artifact=$rel_path"
     log_success "Verified offline artifact: $name"
-    acfs_security_cat_file "$artifact_file"
+    gtbi_security_cat_file "$artifact_file"
 }
 
 # Fetch content and calculate checksum (using temp file)
@@ -891,7 +891,7 @@ fetch_checksum() {
 
     # Create safe temp file
     local tmp_file
-    tmp_file="$(acfs_security_mktemp "${TMPDIR:-/tmp}/acfs-fetch.XXXXXX")" || {
+    tmp_file="$(gtbi_security_mktemp "${TMPDIR:-/tmp}/gtbi-fetch.XXXXXX")" || {
         log_error "Failed to create temp file"
         return 1
     }
@@ -899,7 +899,7 @@ fetch_checksum() {
     local status=0
     local file_sha256=""
 
-    if ! acfs_download_to_file "$url" "$tmp_file" "$url"; then
+    if ! gtbi_download_to_file "$url" "$tmp_file" "$url"; then
         log_error "Failed to fetch $url"
         status=1
     elif ! file_sha256=$(calculate_file_sha256 "$tmp_file"); then
@@ -909,7 +909,7 @@ fetch_checksum() {
         printf '%s\n' "$file_sha256"
     fi
 
-    _acfs_remove_temp_files "$tmp_file"
+    _gtbi_remove_temp_files "$tmp_file"
     return "$status"
 }
 
@@ -933,13 +933,13 @@ verify_checksum() {
         return 1
     fi
 
-    if acfs_offline_pack_requested; then
+    if gtbi_offline_pack_requested; then
         local offline_status=0
-        acfs_offline_pack_verify_artifact "$url" "$expected_sha256" "$name" || offline_status=$?
+        gtbi_offline_pack_verify_artifact "$url" "$expected_sha256" "$name" || offline_status=$?
         if [[ "$offline_status" -eq 0 ]]; then
             return 0
         fi
-        if acfs_offline_pack_fail_closed; then
+        if gtbi_offline_pack_fail_closed; then
             return "$offline_status"
         fi
         log_warn "offline_pack_live_fallback tool=$name url=$url"
@@ -947,7 +947,7 @@ verify_checksum() {
 
     # Create safe temp file
     local tmp_file
-    tmp_file="$(acfs_security_mktemp "${TMPDIR:-/tmp}/acfs-verify.XXXXXX")" || {
+    tmp_file="$(gtbi_security_mktemp "${TMPDIR:-/tmp}/gtbi-verify.XXXXXX")" || {
         log_error "Failed to create temp file for $name"
         return 1
     }
@@ -955,7 +955,7 @@ verify_checksum() {
     local status=0
     local verified_file=""
 
-    if ! acfs_download_to_file "$url" "$tmp_file" "$name"; then
+    if ! gtbi_download_to_file "$url" "$tmp_file" "$name"; then
         log_error "Security Error: Failed to fetch $name"
         status=1
     fi
@@ -971,7 +971,7 @@ verify_checksum() {
         local refreshed_url="$url"
         local refreshed_actual_sha256=""
 
-        if acfs_refresh_loaded_checksums_from_remote; then
+        if gtbi_refresh_loaded_checksums_from_remote; then
             refreshed_expected_sha256="$(get_checksum "$name")"
             refreshed_url="${KNOWN_INSTALLERS[$name]:-$url}"
 
@@ -982,8 +982,8 @@ verify_checksum() {
                 fi
 
                 if [[ -z "$verified_file" ]]; then
-                    fresh_tmp_file="$(acfs_security_mktemp "${TMPDIR:-/tmp}/acfs-verify.XXXXXX" 2>/dev/null)" || fresh_tmp_file=""
-                    if [[ -n "$fresh_tmp_file" ]] && acfs_download_to_file "$refreshed_url" "$fresh_tmp_file" "$name"; then
+                    fresh_tmp_file="$(gtbi_security_mktemp "${TMPDIR:-/tmp}/gtbi-verify.XXXXXX" 2>/dev/null)" || fresh_tmp_file=""
+                    if [[ -n "$fresh_tmp_file" ]] && gtbi_download_to_file "$refreshed_url" "$fresh_tmp_file" "$name"; then
                         refreshed_actual_sha256="$(calculate_file_sha256 "$fresh_tmp_file")" || refreshed_actual_sha256=""
                         if [[ -n "$refreshed_actual_sha256" && "$refreshed_actual_sha256" == "$refreshed_expected_sha256" ]]; then
                             log_success "Verified with refreshed checksums: $name"
@@ -1009,7 +1009,7 @@ verify_checksum() {
             printf "  URL: %s\n" "$url" >&2
             printf "  Refusing to execute unverified installer script.\n" >&2
             printf "  Fix:\n" >&2
-            printf "    - End users: update ACFS to refresh checksums.yaml (re-run install.sh / update scripts)\n" >&2
+            printf "    - End users: update GTBI to refresh checksums.yaml (re-run install.sh / update scripts)\n" >&2
             printf "    - Maintainers: regenerate checksums.yaml with:\n" >&2
             printf "        ./scripts/lib/security.sh --update-checksums > checksums.yaml\n" >&2
             status=1
@@ -1021,11 +1021,11 @@ verify_checksum() {
 
     if [[ "$status" -eq 0 ]]; then
         # Return the verified content (verbatim bytes) on stdout.
-        acfs_security_cat_file "$verified_file"
+        gtbi_security_cat_file "$verified_file"
         status=$?
     fi
 
-    _acfs_remove_temp_files "$tmp_file" "$fresh_tmp_file"
+    _gtbi_remove_temp_files "$tmp_file" "$fresh_tmp_file"
     return "$status"
 }
 
@@ -1047,13 +1047,13 @@ fetch_and_run() {
         printf "  URL: %s\n" "$url" >&2
         printf "  Refusing to execute unverified installer script.\n" >&2
         printf "  Fix:\n" >&2
-        printf "    - End users: update ACFS to refresh checksums.yaml (re-run install.sh / update scripts)\n" >&2
+        printf "    - End users: update GTBI to refresh checksums.yaml (re-run install.sh / update scripts)\n" >&2
         printf "    - Maintainers: regenerate checksums.yaml with:\n" >&2
         printf "        ./scripts/lib/security.sh --update-checksums > checksums.yaml\n" >&2
         return 1
     fi
 
-    bash_bin="$(acfs_security_required_binary_path bash)" || return $?
+    bash_bin="$(gtbi_security_required_binary_path bash)" || return $?
 
     (
         set -o pipefail
@@ -1081,8 +1081,8 @@ fetch_and_run() {
 #   $@ - Additional args to pass to the installer
 #
 # Environment:
-#   ACFS_INTERACTIVE - "true" for prompts, "false" for auto-handling
-#   ACFS_BATCH_CHECKSUMS - "true" to defer to batch handler
+#   GTBI_INTERACTIVE - "true" for prompts, "false" for auto-handling
+#   GTBI_BATCH_CHECKSUMS - "true" to defer to batch handler
 #
 # Returns:
 #   0 - Success (installed or skipped)
@@ -1105,17 +1105,17 @@ fetch_and_run_with_recovery() {
         printf "  URL: %s\n" "$url" >&2
         printf "  Refusing to execute unverified installer script.\n" >&2
         printf "  Fix:\n" >&2
-        printf "    - End users: update ACFS to refresh checksums.yaml (re-run install.sh / update scripts)\n" >&2
+        printf "    - End users: update GTBI to refresh checksums.yaml (re-run install.sh / update scripts)\n" >&2
         printf "    - Maintainers: regenerate checksums.yaml with:\n" >&2
         printf "        ./scripts/lib/security.sh --update-checksums > checksums.yaml\n" >&2
         return 1
     fi
 
-    bash_bin="$(acfs_security_required_binary_path bash)" || return $?
+    bash_bin="$(gtbi_security_required_binary_path bash)" || return $?
 
     # Create safe temp file
     local tmp_file
-    tmp_file="$(acfs_security_mktemp "${TMPDIR:-/tmp}/acfs-recovery.XXXXXX")" || {
+    tmp_file="$(gtbi_security_mktemp "${TMPDIR:-/tmp}/gtbi-recovery.XXXXXX")" || {
         log_error "Failed to create temp file for $name"
         return 1
     }
@@ -1123,7 +1123,7 @@ fetch_and_run_with_recovery() {
     local status=0
 
     # Fetch content to file with retries
-    if ! acfs_download_to_file "$url" "$tmp_file" "$name"; then
+    if ! gtbi_download_to_file "$url" "$tmp_file" "$name"; then
         log_error "Error: Failed to fetch $name"
         status=1
     fi
@@ -1163,7 +1163,7 @@ fetch_and_run_with_recovery() {
         status=$?
     fi
 
-    _acfs_remove_temp_files "$tmp_file"
+    _gtbi_remove_temp_files "$tmp_file"
     return "$status"
 }
 
@@ -1183,7 +1183,7 @@ print_upstream_urls() {
     for name in "${!KNOWN_INSTALLERS[@]}"; do
         local url="${KNOWN_INSTALLERS[$name]}"
         printf "  %-20s %s\n" "$name:" "$url"
-    done | acfs_security_sort_lines
+    done | gtbi_security_sort_lines
 
     echo ""
     printf "${DIM}All URLs use HTTPS for secure transport.${NC}\n"
@@ -1195,7 +1195,7 @@ print_current_checksums() {
     local had_failure=false
     local tmp_output=""
 
-    tmp_output="$(acfs_security_mktemp "${TMPDIR:-/tmp}/acfs-checksums-out.XXXXXX" 2>/dev/null)" || tmp_output=""
+    tmp_output="$(gtbi_security_mktemp "${TMPDIR:-/tmp}/gtbi-checksums-out.XXXXXX" 2>/dev/null)" || tmp_output=""
 
     if [[ -z "$tmp_output" ]]; then
         echo "ERROR: unable to create temp file for checksums output" >&2
@@ -1209,7 +1209,7 @@ print_current_checksums() {
 
     {
         # YAML output to stdout
-        echo "# checksums.yaml - Auto-generated $(acfs_security_date -Iseconds)"
+        echo "# checksums.yaml - Auto-generated $(gtbi_security_date -Iseconds)"
         echo "# Run: ./scripts/lib/security.sh --update-checksums"
         echo ""
         echo "installers:"
@@ -1221,7 +1221,7 @@ print_current_checksums() {
         installer_names+=("$name")
     done
     if [[ ${#installer_names[@]} -gt 0 ]]; then
-        mapfile -t installer_names < <(printf '%s\n' "${installer_names[@]}" | acfs_security_sort_lines)
+        mapfile -t installer_names < <(printf '%s\n' "${installer_names[@]}" | gtbi_security_sort_lines)
     fi
 
     local wrote_entry=false
@@ -1255,13 +1255,13 @@ print_current_checksums() {
     done
 
     if [[ "$had_failure" == "true" ]]; then
-        _acfs_remove_temp_files "$tmp_output"
+        _gtbi_remove_temp_files "$tmp_output"
         echo "ERROR: one or more installer checksums failed to fetch; refusing to emit incomplete checksums.yaml" >&2
         return 1
     fi
 
-    acfs_security_cat_file "$tmp_output"
-    _acfs_remove_temp_files "$tmp_output"
+    gtbi_security_cat_file "$tmp_output"
+    _gtbi_remove_temp_files "$tmp_output"
 }
 
 # ============================================================
@@ -1279,9 +1279,9 @@ load_checksums() {
     local tool=""
     local -A parsed_checksums=()
     local -A parsed_installers=()
-    # Use ACFS colors if available, preserving empty-string NO_COLOR behavior.
-    local warn_color="${ACFS_YELLOW-\033[0;33m}"
-    local nc_color="${ACFS_NC-\033[0m}"
+    # Use GTBI colors if available, preserving empty-string NO_COLOR behavior.
+    local warn_color="${GTBI_YELLOW-\033[0;33m}"
+    local nc_color="${GTBI_NC-\033[0m}"
 
     if [[ ! -r "$file" ]]; then
         printf "${warn_color}Warning:${nc_color} Checksums file not found: %s\n" "$file" >&2
@@ -1401,9 +1401,9 @@ get_checksum() {
 
 # Associative array to store loaded checksums
 declare -gA LOADED_CHECKSUMS=()
-declare -g ACFS_CHECKSUMS_REMOTE_REFRESHED=false
+declare -g GTBI_CHECKSUMS_REMOTE_REFRESHED=false
 
-acfs_checksums_file_looks_valid() {
+gtbi_checksums_file_looks_valid() {
     local file="$1"
     local line=""
     local current_tool=""
@@ -1487,7 +1487,7 @@ acfs_checksums_file_looks_valid() {
         fi
     done < "$file"
 
-    for tool in "${ACFS_SECURITY_REQUIRED_INSTALLERS[@]}"; do
+    for tool in "${GTBI_SECURITY_REQUIRED_INSTALLERS[@]}"; do
         if [[ -z "${parsed_installers[$tool]:-}" ]] || [[ -z "${parsed_checksums[$tool]:-}" ]]; then
             return 1
         fi
@@ -1496,24 +1496,24 @@ acfs_checksums_file_looks_valid() {
     return 0
 }
 
-acfs_fetch_fresh_checksums_to_file() {
+gtbi_fetch_fresh_checksums_to_file() {
     local dest="$1"
     local cache_buster=""
-    local api_url="https://api.github.com/repos/${ACFS_REPO_OWNER}/${ACFS_REPO_NAME}/contents/checksums.yaml?ref=${ACFS_CHECKSUMS_REF}"
-    cache_buster="$(acfs_security_date +%s 2>/dev/null || printf '0')"
-    local raw_url="https://raw.githubusercontent.com/${ACFS_REPO_OWNER}/${ACFS_REPO_NAME}/${ACFS_CHECKSUMS_REF}/checksums.yaml?cb=${cache_buster}"
+    local api_url="https://api.github.com/repos/${GTBI_REPO_OWNER}/${GTBI_REPO_NAME}/contents/checksums.yaml?ref=${GTBI_CHECKSUMS_REF}"
+    cache_buster="$(gtbi_security_date +%s 2>/dev/null || printf '0')"
+    local raw_url="https://raw.githubusercontent.com/${GTBI_REPO_OWNER}/${GTBI_REPO_NAME}/${GTBI_CHECKSUMS_REF}/checksums.yaml?cb=${cache_buster}"
 
     : > "$dest" 2>/dev/null || {
         log_detail "Unable to initialize temporary checksums file: $dest"
         return 1
     }
 
-    if acfs_curl \
+    if gtbi_curl \
         -H "Accept: application/vnd.github.raw" \
         -H "X-GitHub-Api-Version: 2022-11-28" \
         "$api_url" \
         -o "$dest" 2>/dev/null; then
-        if acfs_checksums_file_looks_valid "$dest"; then
+        if gtbi_checksums_file_looks_valid "$dest"; then
             return 0
         fi
         log_detail "GitHub API returned unexpected checksums.yaml content"
@@ -1521,8 +1521,8 @@ acfs_fetch_fresh_checksums_to_file() {
         log_detail "GitHub API fetch for checksums.yaml failed"
     fi
 
-    if acfs_download_to_file "$raw_url" "$dest" "checksums.yaml"; then
-        if acfs_checksums_file_looks_valid "$dest"; then
+    if gtbi_download_to_file "$raw_url" "$dest" "checksums.yaml"; then
+        if gtbi_checksums_file_looks_valid "$dest"; then
             return 0
         fi
         log_detail "Raw checksums.yaml fetch returned unexpected content"
@@ -1533,36 +1533,36 @@ acfs_fetch_fresh_checksums_to_file() {
     return 1
 }
 
-acfs_refresh_loaded_checksums_from_remote() {
-    if [[ "$ACFS_CHECKSUMS_REMOTE_REFRESHED" == "true" ]]; then
+gtbi_refresh_loaded_checksums_from_remote() {
+    if [[ "$GTBI_CHECKSUMS_REMOTE_REFRESHED" == "true" ]]; then
         return 0
     fi
 
     local refreshed_file=""
-    refreshed_file="$(acfs_security_mktemp "${TMPDIR:-/tmp}/acfs-checksums-refresh.XXXXXX" 2>/dev/null)" || refreshed_file=""
+    refreshed_file="$(gtbi_security_mktemp "${TMPDIR:-/tmp}/gtbi-checksums-refresh.XXXXXX" 2>/dev/null)" || refreshed_file=""
     if [[ -z "$refreshed_file" ]]; then
         log_detail "Unable to create temp file for refreshed checksums"
         return 1
     fi
 
-    if ! acfs_fetch_fresh_checksums_to_file "$refreshed_file"; then
-        _acfs_remove_temp_files "$refreshed_file"
+    if ! gtbi_fetch_fresh_checksums_to_file "$refreshed_file"; then
+        _gtbi_remove_temp_files "$refreshed_file"
         return 1
     fi
 
     if ! load_checksums "$refreshed_file"; then
-        _acfs_remove_temp_files "$refreshed_file"
+        _gtbi_remove_temp_files "$refreshed_file"
         return 1
     fi
 
-    ACFS_CHECKSUMS_REMOTE_REFRESHED=true
-    _acfs_remove_temp_files "$refreshed_file"
+    GTBI_CHECKSUMS_REMOTE_REFRESHED=true
+    _gtbi_remove_temp_files "$refreshed_file"
     return 0
 }
 
 # ============================================================
 # Checksum Mismatch Batching
-# Related: agentic_coding_flywheel_setup-4jr
+# Related: gastown_batteries_included-4jr
 # ============================================================
 
 # Array to collect checksum mismatches during verification phase
@@ -1609,8 +1609,8 @@ has_checksum_mismatches() {
 #   3. Handles non-interactive mode based on tool classification
 #
 # Environment:
-#   ACFS_INTERACTIVE - "true" for interactive, "false" for non-interactive
-#   ACFS_STRICT_MODE - "true" treats all mismatches as critical
+#   GTBI_INTERACTIVE - "true" for interactive, "false" for non-interactive
+#   GTBI_STRICT_MODE - "true" treats all mismatches as critical
 #
 # Returns:
 #   0 - User chose to skip mismatched tools (or no mismatches)
@@ -1624,7 +1624,7 @@ handle_all_checksum_mismatches() {
     local mismatch_count
     mismatch_count="$(count_checksum_mismatches)"
 
-    if [[ "${ACFS_STRICT_MODE:-false}" == "true" ]]; then
+    if [[ "${GTBI_STRICT_MODE:-false}" == "true" ]]; then
         echo "" >&2
         printf "${RED}Security Error:${NC} Checksum mismatches detected (strict mode). Aborting.\n" >&2
         echo "" >&2
@@ -1647,7 +1647,7 @@ handle_all_checksum_mismatches() {
     fi
 
     # Non-interactive mode handling
-    if ! _acfs_is_interactive; then
+    if ! _gtbi_is_interactive; then
         _handle_mismatches_noninteractive
         return $?
     fi
@@ -1697,8 +1697,8 @@ handle_all_checksum_mismatches() {
 
     if [[ "$has_critical" == "true" ]]; then
         printf "${RED}ABORTING: %s CRITICAL tool(s) have checksum mismatches.${NC}\n" "${#critical_tools[@]}" >&2
-        printf "ACFS will not run unverified CRITICAL installers.\n" >&2
-        printf "Fix: update ACFS/checksums.yaml (or pin ACFS_REF to a known-good version) and re-run.\n" >&2
+        printf "GTBI will not run unverified CRITICAL installers.\n" >&2
+        printf "Fix: update GTBI/checksums.yaml (or pin GTBI_REF to a known-good version) and re-run.\n" >&2
         return 1
     fi
 
@@ -1759,7 +1759,7 @@ _handle_mismatches_noninteractive() {
         IFS="|" read -r tool url expected actual <<< "$entry"
 
         local is_crit=false
-        if [[ "${ACFS_STRICT_MODE:-false}" == "true" ]]; then
+        if [[ "${GTBI_STRICT_MODE:-false}" == "true" ]]; then
             is_crit=true
         elif declare -f is_critical_tool &>/dev/null && is_critical_tool "$tool"; then
             is_crit=true
@@ -1794,7 +1794,7 @@ _handle_mismatches_noninteractive() {
 
 # ============================================================
 # Per-Tool Checksum Mismatch Handler
-# Related: agentic_coding_flywheel_setup-anq
+# Related: gastown_batteries_included-anq
 # ============================================================
 
 # Handle a single checksum mismatch with skip/abort options
@@ -1809,8 +1809,8 @@ _handle_mismatches_noninteractive() {
 #   $4 - URL
 #
 # Environment:
-#   ACFS_INTERACTIVE - "true" for interactive, "false" for non-interactive
-#   ACFS_BATCH_CHECKSUMS - "true" to record for batch handling instead
+#   GTBI_INTERACTIVE - "true" for interactive, "false" for non-interactive
+#   GTBI_BATCH_CHECKSUMS - "true" to record for batch handling instead
 #
 # Returns:
 #   0 - Skip this tool, continue installation
@@ -1822,7 +1822,7 @@ handle_checksum_mismatch() {
     local actual="$3"
     local url="$4"
 
-    if [[ "${ACFS_STRICT_MODE:-false}" == "true" ]]; then
+    if [[ "${GTBI_STRICT_MODE:-false}" == "true" ]]; then
         printf "${RED}Security Error:${NC} Checksum mismatch for %s (strict mode)\n" "$tool" >&2
         printf "  Expected: %s\n" "$expected" >&2
         printf "  Actual:   %s\n" "$actual" >&2
@@ -1831,7 +1831,7 @@ handle_checksum_mismatch() {
     fi
 
     # If batch mode is enabled, record and skip (fail closed)
-    if [[ "${ACFS_BATCH_CHECKSUMS:-false}" == "true" ]]; then
+    if [[ "${GTBI_BATCH_CHECKSUMS:-false}" == "true" ]]; then
         record_checksum_mismatch "$tool" "$url" "$expected" "$actual"
         return 0
     fi
@@ -1849,7 +1849,7 @@ handle_checksum_mismatch() {
     fi
 
     # Non-interactive mode
-    if ! _acfs_is_interactive; then
+    if ! _gtbi_is_interactive; then
         if [[ "$is_critical" == "true" ]]; then
             echo -e "${RED}CRITICAL tool $tool has checksum mismatch - aborting${NC}" >&2
             return 1  # Abort
@@ -1886,7 +1886,7 @@ handle_checksum_mismatch() {
 
     if [[ "$is_critical" == "true" ]]; then
         printf "${RED}ABORTING:${NC} %s is CRITICAL and its installer checksum changed.\n" "$tool" >&2
-        printf "Update ACFS/checksums.yaml and re-run to proceed safely.\n" >&2
+        printf "Update GTBI/checksums.yaml and re-run to proceed safely.\n" >&2
         return 1
     fi
 
@@ -2033,7 +2033,7 @@ verify_all_installers() {
 # Output: JSON object with matches, mismatches, and errors arrays
 verify_all_installers_json() {
     local timestamp
-    timestamp="$(acfs_security_date -u +"%Y-%m-%dT%H:%M:%SZ")"
+    timestamp="$(gtbi_security_date -u +"%Y-%m-%dT%H:%M:%SZ")"
 
     # Arrays to collect results
     local matches=()
@@ -2072,7 +2072,7 @@ verify_all_installers_json() {
 
         # Create temp file for stderr capture. If this fails, do not use a
         # predictable fallback path; lose stderr detail instead.
-        tmp_err="$(acfs_security_mktemp 2>/dev/null)" || tmp_err=""
+        tmp_err="$(gtbi_security_mktemp 2>/dev/null)" || tmp_err=""
 
         # Capture stdout to variable, stderr to file (if tmp_err exists)
         if [[ -n "$tmp_err" ]]; then
@@ -2081,10 +2081,10 @@ verify_all_installers_json() {
                 :
             else
                 # Failure
-                fetch_error="$(acfs_security_cat_file "$tmp_err")"
+                fetch_error="$(gtbi_security_cat_file "$tmp_err")"
                 [[ -z "$fetch_error" ]] && fetch_error="Unknown error fetching checksum"
             fi
-            _acfs_remove_temp_files "$tmp_err"
+            _gtbi_remove_temp_files "$tmp_err"
         else
             # Fallback: capture combined output or lose stderr if we can't separate them safely
             # without a temp file. Here we prioritize safety over error details.
@@ -2182,7 +2182,7 @@ verify_all_installers_json() {
 
 usage() {
     cat << 'EOF'
-security.sh - ACFS Installer Security Verification
+security.sh - GTBI Installer Security Verification
 
 Usage:
   security.sh [command] [options]

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-# ACFS Swarm Plan - queue-aware launch advisor
+# GTBI Swarm Plan - queue-aware launch advisor
 #
 # Reads current swarm status and capacity JSON, then emits a read-only
 # launch recommendation. This script never starts agents, mutates Beads,
@@ -15,12 +15,12 @@ SWARM_PLAN_PROFILE="balanced"
 SWARM_PLAN_WORKLOAD="standard"
 SWARM_PLAN_STATUS_FILE=""
 SWARM_PLAN_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SWARM_STATUS_SCRIPT="${ACFS_SWARM_STATUS_SCRIPT:-$SWARM_PLAN_SCRIPT_DIR/swarm_status.sh}"
-SWARM_CAPACITY_SCRIPT="${ACFS_SWARM_CAPACITY_SCRIPT:-$SWARM_PLAN_SCRIPT_DIR/capacity.sh}"
+SWARM_STATUS_SCRIPT="${GTBI_SWARM_STATUS_SCRIPT:-$SWARM_PLAN_SCRIPT_DIR/swarm_status.sh}"
+SWARM_CAPACITY_SCRIPT="${GTBI_SWARM_CAPACITY_SCRIPT:-$SWARM_PLAN_SCRIPT_DIR/capacity.sh}"
 
 swarm_plan_usage() {
     cat <<'EOF'
-Usage: acfs swarm plan --agents N [OPTIONS]
+Usage: gtbi swarm plan --agents N [OPTIONS]
 
 Options:
   --json              Emit machine-readable JSON
@@ -83,7 +83,7 @@ swarm_plan_parse_args() {
                 ;;
             *)
                 echo "Error: unknown option: $1" >&2
-                echo "Run 'acfs swarm plan --help' for usage." >&2
+                echo "Run 'gtbi swarm plan --help' for usage." >&2
                 return 2
                 ;;
         esac
@@ -267,7 +267,7 @@ $status as $s
        elif (($c.profile_check.status // "pass") == "warn" or ($capacity_recommended > 0 and $requested_agents > $capacity_recommended)) then "Requested count exceeds the conservative recommendation"
        else "Requested count is within the capacity recommendation" end);
       ($c.recommendations // []);
-      ["acfs capacity --json --profile " + ($requested_agents | tostring) + "-agents --recommend-ntm"]
+      ["gtbi capacity --json --profile " + ($requested_agents | tostring) + "-agents --recommend-ntm"]
     ),
     check(
       "host_pressure";
@@ -280,7 +280,7 @@ $status as $s
         if ($host_cpu_count > 0 and $host_load_ratio >= 1.25) then "load_1m=" + ($host_load_1m | tostring) + " cpu_count=" + ($host_cpu_count | tostring) else empty end,
         if ($host_mem_available_kb > 0 and $host_mem_available_kb < 4194304) then "mem_available_kb=" + ($host_mem_available_kb | tostring) else empty end
       ]);
-      ["acfs swarm status --json", "acfs capacity --json --recommend-ntm"]
+      ["gtbi swarm status --json", "gtbi capacity --json --recommend-ntm"]
     ),
     check(
       "rch_pressure";
@@ -332,14 +332,14 @@ $status as $s
        elif n($beads.in_progress_count) > 0 then "There is active in-progress Beads work; inspect before adding agents"
        else "No in-progress Beads work reported" end);
       (if $stale_work_count > 0 then ["stale_work_count=" + ($stale_work_count | tostring)] else [] end);
-      ["br list --status in_progress --json", "acfs swarm status --json", "acfs swarm doctor --stale-hours 12"]
+      ["br list --status in_progress --json", "gtbi swarm status --json", "gtbi swarm doctor --stale-hours 12"]
     ),
     check(
       "active_sessions";
       (if n($ntm.tmux_session_count) >= $requested_agents and $requested_agents > 1 then "warn" else "pass" end);
       (if n($ntm.tmux_session_count) >= $requested_agents and $requested_agents > 1 then "Existing tmux session count is already at or above the requested agent count" else "Existing tmux activity does not block planning" end);
       [];
-      ["ntm --robot-status", "acfs swarm status --json"]
+      ["ntm --robot-status", "gtbi swarm status --json"]
     )
   ] as $checks
 | (if any($checks[]; .status == "fail") then "fail" elif any($checks[]; .status == "warn") then "warn" else "pass" end) as $plan_status
@@ -469,7 +469,7 @@ swarm_plan_jq_error_report() {
                     status: "fail",
                     summary: $message,
                     details: [],
-                    commands: ["acfs swarm status --json", "acfs capacity --json --recommend-ntm"]
+                    commands: ["gtbi swarm status --json", "gtbi capacity --json --recommend-ntm"]
                 }
             ],
             launch_profile: {recommended: false, not_executed: true, agent_count: null, label: null, mix: null, command: null},
@@ -481,7 +481,7 @@ swarm_plan_jq_error_report() {
                 does_not: ["kill sessions", "delete files", "release reservations", "mutate Beads"]
             },
             warnings: [$message],
-            next_commands: ["acfs swarm status --json", "acfs capacity --json --recommend-ntm"],
+            next_commands: ["gtbi swarm status --json", "gtbi capacity --json --recommend-ntm"],
             examples: []
         }'
 }
@@ -532,7 +532,7 @@ swarm_plan_emit_human() {
     local jq_bin="$2"
     local launch_command=""
 
-    echo "ACFS Swarm Plan"
+    echo "GTBI Swarm Plan"
     echo "Status: $("${jq_bin}" -r '.status' <<<"$report")"
     echo "Requested: $("${jq_bin}" -r '.requested_agents // "unknown"' <<<"$report") agents"
     echo "Recommended: $("${jq_bin}" -r '.recommended_agents // "none"' <<<"$report") agents"

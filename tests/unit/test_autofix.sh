@@ -51,26 +51,26 @@ run_test() {
 setup_test_env() {
     # Use unique directory for each test to avoid interference
     local test_id="${FUNCNAME[1]:-$$}_$(date +%s%N)"
-    export ACFS_STATE_DIR="/tmp/test_autofix_${test_id}"
-    export ACFS_CHANGES_FILE="$ACFS_STATE_DIR/changes.jsonl"
-    export ACFS_UNDOS_FILE="$ACFS_STATE_DIR/undos.jsonl"
-    export ACFS_BACKUPS_DIR="$ACFS_STATE_DIR/backups"
-    export ACFS_LOCK_FILE="$ACFS_STATE_DIR/.lock"
-    export ACFS_INTEGRITY_FILE="$ACFS_STATE_DIR/.integrity"
+    export GTBI_STATE_DIR="/tmp/test_autofix_${test_id}"
+    export GTBI_CHANGES_FILE="$GTBI_STATE_DIR/changes.jsonl"
+    export GTBI_UNDOS_FILE="$GTBI_STATE_DIR/undos.jsonl"
+    export GTBI_BACKUPS_DIR="$GTBI_STATE_DIR/backups"
+    export GTBI_LOCK_FILE="$GTBI_STATE_DIR/.lock"
+    export GTBI_INTEGRITY_FILE="$GTBI_STATE_DIR/.integrity"
 
     # Reset in-memory state
-    ACFS_CHANGE_RECORDS=()
-    ACFS_CHANGE_ORDER=()
-    ACFS_AUTOFIX_INITIALIZED=false
+    GTBI_CHANGE_RECORDS=()
+    GTBI_CHANGE_ORDER=()
+    GTBI_AUTOFIX_INITIALIZED=false
 
     # Clean start
-    rm -rf "$ACFS_STATE_DIR"
-    mkdir -p "$ACFS_STATE_DIR"
-    mkdir -p "$ACFS_BACKUPS_DIR"
+    rm -rf "$GTBI_STATE_DIR"
+    mkdir -p "$GTBI_STATE_DIR"
+    mkdir -p "$GTBI_BACKUPS_DIR"
 
     # Create empty files
-    : > "$ACFS_CHANGES_FILE"
-    : > "$ACFS_UNDOS_FILE"
+    : > "$GTBI_CHANGES_FILE"
+    : > "$GTBI_UNDOS_FILE"
 }
 
 # Cleanup test environment
@@ -219,7 +219,7 @@ test_backup_creation() {
     local test_file="/tmp/test_backup_orig_$$"
     echo "original content" > "$test_file"
 
-    ACFS_SESSION_ID="test_sess"
+    GTBI_SESSION_ID="test_sess"
 
     local backup_json
     backup_json=$(create_backup "$test_file" "test")
@@ -260,7 +260,7 @@ test_backup_creation_uses_unique_paths_per_session() {
     local test_file="/tmp/test_backup_repeat_$$"
     printf 'first version\n' > "$test_file"
 
-    ACFS_SESSION_ID="test_sess"
+    GTBI_SESSION_ID="test_sess"
 
     local backup_json_1 backup_json_2 backup_path_1 backup_path_2
     backup_json_1=$(create_backup "$test_file" "test")
@@ -307,7 +307,7 @@ test_backup_creation_preserves_symlink_type() {
     printf 'original target\n' > "$test_target"
     ln -s "$test_target" "$test_link"
 
-    ACFS_SESSION_ID="test_sess"
+    GTBI_SESSION_ID="test_sess"
 
     local backup_json backup_path backup_type
     backup_json=$(create_backup "$test_link" "test")
@@ -359,7 +359,7 @@ test_backup_creation_preserves_broken_symlink_type() {
     mkdir -p "$test_dir"
     ln -s "$missing_target" "$test_link"
 
-    ACFS_SESSION_ID="test_sess"
+    GTBI_SESSION_ID="test_sess"
 
     local backup_json backup_path backup_type
     backup_json=$(create_backup "$test_link" "test")
@@ -406,7 +406,7 @@ test_backup_creation_fsyncs_broken_symlink_parent_directory() {
     local test_dir="/tmp/test_backup_broken_symlink_fsync_${$}"
     local missing_target="$test_dir/missing-target"
     local test_link="$test_dir/link"
-    local fsync_log="$ACFS_STATE_DIR/fsync.log"
+    local fsync_log="$GTBI_STATE_DIR/fsync.log"
     local original_fsync_file original_fsync_directory
     mkdir -p "$test_dir"
     ln -s "$missing_target" "$test_link"
@@ -422,7 +422,7 @@ test_backup_creation_fsyncs_broken_symlink_parent_directory() {
         return 0
     }
 
-    ACFS_SESSION_ID="test_sess"
+    GTBI_SESSION_ID="test_sess"
 
     local backup_json backup_path backup_parent
     backup_json=$(create_backup "$test_link" "test")
@@ -456,7 +456,7 @@ test_backup_creation_fsyncs_file_parent_directory() {
     setup_test_env
 
     local test_file="/tmp/test_backup_file_fsync_${$}"
-    local fsync_log="$ACFS_STATE_DIR/fsync.log"
+    local fsync_log="$GTBI_STATE_DIR/fsync.log"
     local original_fsync_file original_fsync_directory
     printf 'content\n' > "$test_file"
 
@@ -471,7 +471,7 @@ test_backup_creation_fsyncs_file_parent_directory() {
         return 0
     }
 
-    ACFS_SESSION_ID="test_sess"
+    GTBI_SESSION_ID="test_sess"
 
     local backup_json backup_path backup_parent
     backup_json=$(create_backup "$test_file" "test")
@@ -505,7 +505,7 @@ test_backup_creation_cleans_up_after_sync_failure() {
     setup_test_env
 
     local test_file="/tmp/test_backup_sync_fail_${$}"
-    local fsync_log="$ACFS_STATE_DIR/fsync.log"
+    local fsync_log="$GTBI_STATE_DIR/fsync.log"
     local original_sync_helper original_fsync_directory
     printf 'content\n' > "$test_file"
 
@@ -519,7 +519,7 @@ test_backup_creation_cleans_up_after_sync_failure() {
         return 0
     }
 
-    ACFS_SESSION_ID="test_sess"
+    GTBI_SESSION_ID="test_sess"
 
     local backup_result exit_code=0
     backup_result=$(create_backup "$test_file" "test" 2>/dev/null) || exit_code=$?
@@ -534,14 +534,14 @@ test_backup_creation_cleans_up_after_sync_failure() {
         return 1
     fi
 
-    if find "$ACFS_BACKUPS_DIR" -mindepth 1 -print -quit | grep -q .; then
+    if find "$GTBI_BACKUPS_DIR" -mindepth 1 -print -quit | grep -q .; then
         echo "  Incomplete backup path was not cleaned up after sync failure"
         rm -f "$test_file"
         cleanup_test_env
         return 1
     fi
 
-    if ! grep -Fx "dir:$ACFS_BACKUPS_DIR" "$fsync_log" >/dev/null 2>&1; then
+    if ! grep -Fx "dir:$GTBI_BACKUPS_DIR" "$fsync_log" >/dev/null 2>&1; then
         echo "  Backup parent dir was not fsynced after sync-failure cleanup"
         rm -f "$test_file"
         cleanup_test_env
@@ -563,13 +563,13 @@ test_backup_creation_cleans_up_after_checksum_failure() {
 
     original_checksum_helper="$(declare -f calculate_backup_checksum)"
     calculate_backup_checksum() {
-        if [[ "$1" == "$ACFS_BACKUPS_DIR/"* ]]; then
+        if [[ "$1" == "$GTBI_BACKUPS_DIR/"* ]]; then
             return 1
         fi
         sha256sum "$1" | cut -d' ' -f1
     }
 
-    ACFS_SESSION_ID="test_sess"
+    GTBI_SESSION_ID="test_sess"
 
     local backup_result exit_code=0
     backup_result=$(create_backup "$test_file" "test" 2>/dev/null) || exit_code=$?
@@ -583,7 +583,7 @@ test_backup_creation_cleans_up_after_checksum_failure() {
         return 1
     fi
 
-    if find "$ACFS_BACKUPS_DIR" -mindepth 1 -print -quit | grep -q .; then
+    if find "$GTBI_BACKUPS_DIR" -mindepth 1 -print -quit | grep -q .; then
         echo "  Incomplete backup path was not cleaned up after checksum failure"
         rm -f "$test_file"
         cleanup_test_env
@@ -600,7 +600,7 @@ test_backup_creation_cleans_up_after_copy_failure() {
     setup_test_env
 
     local test_file="/tmp/test_backup_copy_fail_${$}"
-    local fsync_log="$ACFS_STATE_DIR/fsync.log"
+    local fsync_log="$GTBI_STATE_DIR/fsync.log"
     local original_cp original_fsync_directory
     printf 'content\n' > "$test_file"
 
@@ -608,7 +608,7 @@ test_backup_creation_cleans_up_after_copy_failure() {
     original_fsync_directory="$(declare -f fsync_directory)"
     cp() {
         local last="${!#}"
-        if [[ "$last" == "$ACFS_BACKUPS_DIR/"* ]]; then
+        if [[ "$last" == "$GTBI_BACKUPS_DIR/"* ]]; then
             : > "$last"
             return 1
         fi
@@ -619,7 +619,7 @@ test_backup_creation_cleans_up_after_copy_failure() {
         return 0
     }
 
-    ACFS_SESSION_ID="test_sess"
+    GTBI_SESSION_ID="test_sess"
 
     local backup_result exit_code=0
     backup_result=$(create_backup "$test_file" "test" 2>/dev/null) || exit_code=$?
@@ -638,14 +638,14 @@ test_backup_creation_cleans_up_after_copy_failure() {
         return 1
     fi
 
-    if find "$ACFS_BACKUPS_DIR" -mindepth 1 -print -quit | grep -q .; then
+    if find "$GTBI_BACKUPS_DIR" -mindepth 1 -print -quit | grep -q .; then
         echo "  Incomplete backup path was not cleaned up after copy failure"
         rm -f "$test_file"
         cleanup_test_env
         return 1
     fi
 
-    if ! grep -Fx "dir:$ACFS_BACKUPS_DIR" "$fsync_log" >/dev/null 2>&1; then
+    if ! grep -Fx "dir:$GTBI_BACKUPS_DIR" "$fsync_log" >/dev/null 2>&1; then
         echo "  Backup parent dir was not fsynced after copy-failure cleanup"
         rm -f "$test_file"
         cleanup_test_env
@@ -667,11 +667,11 @@ test_state_integrity_accepts_broken_symlink_backup() {
     mkdir -p "$test_dir"
     ln -s "$missing_target" "$test_link"
 
-    ACFS_SESSION_ID="test_sess"
+    GTBI_SESSION_ID="test_sess"
 
     local backup_json
     backup_json=$(create_backup "$test_link" "test")
-    printf '{"id":"chg_001","description":"broken symlink backup","backups":[%s]}\n' "$backup_json" > "$ACFS_CHANGES_FILE"
+    printf '{"id":"chg_001","description":"broken symlink backup","backups":[%s]}\n' "$backup_json" > "$GTBI_CHANGES_FILE"
 
     if ! verify_state_integrity >/dev/null 2>&1; then
         echo "  Broken symlink backup was rejected by state integrity"
@@ -695,7 +695,7 @@ test_state_integrity_detects_type_drifted_symlink_backup() {
     mkdir -p "$test_dir"
     ln -s "$missing_target" "$test_link"
 
-    ACFS_SESSION_ID="test_sess"
+    GTBI_SESSION_ID="test_sess"
 
     local backup_json backup_path
     backup_json=$(create_backup "$test_link" "test")
@@ -703,7 +703,7 @@ test_state_integrity_detects_type_drifted_symlink_backup() {
 
     rm -f "$backup_path"
     printf 'symlink:%s' "$missing_target" > "$backup_path"
-    printf '{"id":"chg_001","description":"drifted symlink backup","backups":[%s]}\n' "$backup_json" > "$ACFS_CHANGES_FILE"
+    printf '{"id":"chg_001","description":"drifted symlink backup","backups":[%s]}\n' "$backup_json" > "$GTBI_CHANGES_FILE"
 
     if verify_state_integrity >/dev/null 2>&1; then
         echo "  Type-drifted symlink backup passed integrity verification"
@@ -725,14 +725,14 @@ test_state_integrity_detects_corrupt_directory_backup() {
     mkdir -p "$test_dir"
     printf 'original\n' > "$test_dir/file.txt"
 
-    ACFS_SESSION_ID="test_sess"
+    GTBI_SESSION_ID="test_sess"
 
     local backup_json backup_path
     backup_json=$(create_backup "$test_dir" "test")
     backup_path=$(echo "$backup_json" | jq -r '.backup')
 
     printf 'corrupted\n' > "$backup_path/file.txt"
-    printf '{"id":"chg_001","description":"dir backup","backups":[%s]}\n' "$backup_json" > "$ACFS_CHANGES_FILE"
+    printf '{"id":"chg_001","description":"dir backup","backups":[%s]}\n' "$backup_json" > "$GTBI_CHANGES_FILE"
 
     if verify_state_integrity >/dev/null 2>&1; then
         echo "  Corrupt directory backup was accepted"
@@ -753,14 +753,14 @@ test_state_integrity_ignores_missing_backup_for_undone_change() {
     local test_file="/tmp/test_backup_undone_$$"
     printf 'original\n' > "$test_file"
 
-    ACFS_SESSION_ID="test_sess"
+    GTBI_SESSION_ID="test_sess"
 
     local backup_json backup_path
     backup_json=$(create_backup "$test_file" "test")
     backup_path=$(echo "$backup_json" | jq -r '.backup')
 
-    printf '{"id":"chg_001","description":"undone backup","backups":[%s]}\n' "$backup_json" > "$ACFS_CHANGES_FILE"
-    printf '{"undone":"chg_001","timestamp":"2026-04-15T00:00:00Z","exit_code":0}\n' > "$ACFS_UNDOS_FILE"
+    printf '{"id":"chg_001","description":"undone backup","backups":[%s]}\n' "$backup_json" > "$GTBI_CHANGES_FILE"
+    printf '{"undone":"chg_001","timestamp":"2026-04-15T00:00:00Z","exit_code":0}\n' > "$GTBI_UNDOS_FILE"
     rm -f "$backup_path"
 
     if ! verify_state_integrity >/dev/null 2>&1; then
@@ -784,7 +784,7 @@ test_state_integrity_checks_all_active_backups() {
     printf 'alpha\n' > "$file_a"
     printf 'beta\n' > "$file_b"
 
-    ACFS_SESSION_ID="test_sess"
+    GTBI_SESSION_ID="test_sess"
 
     local backup_json_a backup_json_b backup_path_b
     backup_json_a=$(create_backup "$file_a" "test")
@@ -792,7 +792,7 @@ test_state_integrity_checks_all_active_backups() {
     backup_path_b=$(echo "$backup_json_b" | jq -r '.backup')
 
     printf 'corrupted\n' > "$backup_path_b"
-    printf '{"id":"chg_001","description":"multi backup","backups":[%s,%s]}\n' "$backup_json_a" "$backup_json_b" > "$ACFS_CHANGES_FILE"
+    printf '{"id":"chg_001","description":"multi backup","backups":[%s,%s]}\n' "$backup_json_a" "$backup_json_b" > "$GTBI_CHANGES_FILE"
 
     if verify_state_integrity >/dev/null 2>&1; then
         echo "  Corruption in second active backup was not detected"
@@ -809,7 +809,7 @@ test_state_integrity_checks_all_active_backups() {
 # Test: Backup of non-existent file
 test_backup_nonexistent_file() {
     setup_test_env
-    ACFS_SESSION_ID="test_sess"
+    GTBI_SESSION_ID="test_sess"
 
     local backup_json
     backup_json=$(create_backup "/tmp/this_file_does_not_exist_$$" "test")
@@ -860,8 +860,8 @@ test_state_integrity() {
     setup_test_env
 
     # Create valid records
-    echo '{"id":"chg_001","description":"test1"}' > "$ACFS_CHANGES_FILE"
-    echo '{"id":"chg_002","description":"test2"}' >> "$ACFS_CHANGES_FILE"
+    echo '{"id":"chg_001","description":"test1"}' > "$GTBI_CHANGES_FILE"
+    echo '{"id":"chg_002","description":"test2"}' >> "$GTBI_CHANGES_FILE"
 
     if ! verify_state_integrity 2>/dev/null; then
         echo "  Valid state rejected"
@@ -870,7 +870,7 @@ test_state_integrity() {
     fi
 
     # Add invalid JSON
-    echo 'not valid json' >> "$ACFS_CHANGES_FILE"
+    echo 'not valid json' >> "$GTBI_CHANGES_FILE"
 
     if verify_state_integrity 2>/dev/null; then
         echo "  Invalid state accepted"
@@ -887,9 +887,9 @@ test_state_repair() {
     setup_test_env
 
     # Create file with mix of valid and invalid lines
-    echo '{"id":"chg_001","description":"test1"}' > "$ACFS_CHANGES_FILE"
-    echo 'invalid json line' >> "$ACFS_CHANGES_FILE"
-    echo '{"id":"chg_002","description":"test2"}' >> "$ACFS_CHANGES_FILE"
+    echo '{"id":"chg_001","description":"test1"}' > "$GTBI_CHANGES_FILE"
+    echo 'invalid json line' >> "$GTBI_CHANGES_FILE"
+    echo '{"id":"chg_002","description":"test2"}' >> "$GTBI_CHANGES_FILE"
 
     # Repair should succeed
     repair_state_files 2>/dev/null
@@ -903,7 +903,7 @@ test_state_repair() {
 
     # Should have exactly 2 lines
     local line_count
-    line_count=$(wc -l < "$ACFS_CHANGES_FILE")
+    line_count=$(wc -l < "$GTBI_CHANGES_FILE")
     if [[ "$line_count" -ne 2 ]]; then
         echo "  Expected 2 lines after repair, got $line_count"
         cleanup_test_env
@@ -926,9 +926,9 @@ test_state_repair_preserves_all_valid_checksummed_records() {
     checksum2=$(compute_record_checksum "$record2")
     record2=$(echo "$record2" | jq -c --arg checksum "$checksum2" '.record_checksum = $checksum')
 
-    printf '%s\n' "$record1" > "$ACFS_CHANGES_FILE"
-    printf '%s\n' 'invalid json line' >> "$ACFS_CHANGES_FILE"
-    printf '%s\n' "$record2" >> "$ACFS_CHANGES_FILE"
+    printf '%s\n' "$record1" > "$GTBI_CHANGES_FILE"
+    printf '%s\n' 'invalid json line' >> "$GTBI_CHANGES_FILE"
+    printf '%s\n' "$record2" >> "$GTBI_CHANGES_FILE"
 
     if ! repair_state_files 2>/dev/null; then
         echo "  State repair failed for valid checksummed records"
@@ -936,14 +936,14 @@ test_state_repair_preserves_all_valid_checksummed_records() {
         return 1
     fi
 
-    line_count=$(wc -l < "$ACFS_CHANGES_FILE")
+    line_count=$(wc -l < "$GTBI_CHANGES_FILE")
     if [[ "$line_count" -ne 2 ]]; then
         echo "  Expected 2 checksummed records after repair, got $line_count"
         cleanup_test_env
         return 1
     fi
 
-    if ! grep -F "$record1" "$ACFS_CHANGES_FILE" >/dev/null || ! grep -F "$record2" "$ACFS_CHANGES_FILE" >/dev/null; then
+    if ! grep -F "$record1" "$GTBI_CHANGES_FILE" >/dev/null || ! grep -F "$record2" "$GTBI_CHANGES_FILE" >/dev/null; then
         echo "  State repair lost a valid checksummed record"
         cleanup_test_env
         return 1
@@ -957,11 +957,11 @@ test_state_repair_preserves_all_valid_checksummed_records() {
 test_state_repair_fails_when_changes_rewrite_cannot_replace_file() {
     setup_test_env
 
-    echo 'invalid json line' > "$ACFS_CHANGES_FILE"
+    echo 'invalid json line' > "$GTBI_CHANGES_FILE"
 
     mv() {
         local last="${!#}"
-        if [[ "$last" == "$ACFS_CHANGES_FILE" ]]; then
+        if [[ "$last" == "$GTBI_CHANGES_FILE" ]]; then
             return 1
         fi
         command mv "$@"
@@ -976,7 +976,7 @@ test_state_repair_fails_when_changes_rewrite_cannot_replace_file() {
 
     unset -f mv
 
-    if ! grep -qx 'invalid json line' "$ACFS_CHANGES_FILE"; then
+    if ! grep -qx 'invalid json line' "$GTBI_CHANGES_FILE"; then
         echo "  Original corrupt changes journal was not preserved after failed repair"
         cleanup_test_env
         return 1
@@ -992,7 +992,7 @@ test_autofix_globals_are_initialized_under_set_u() {
     if ! output="$(bash -c '
         set -u
         source "$1"
-        printf "records=%s order=%s\n" "${#ACFS_CHANGE_RECORDS[@]}" "${#ACFS_CHANGE_ORDER[@]}"
+        printf "records=%s order=%s\n" "${#GTBI_CHANGE_RECORDS[@]}" "${#GTBI_CHANGE_ORDER[@]}"
     ' _ "$REPO_ROOT/scripts/lib/autofix.sh" 2>&1)"; then
         echo "  Sourcing autofix.sh under set -u failed: $output"
         return 1
@@ -1015,21 +1015,21 @@ test_autofix_refresh_state_paths_falls_back_to_tmp_when_runtime_home_unresolved(
         source "$1"
         autofix_resolve_current_user() { return 1; }
         autofix_home_for_user() { return 1; }
-        unset ACFS_STATE_DIR ACFS_CHANGES_FILE ACFS_UNDOS_FILE ACFS_BACKUPS_DIR ACFS_LOCK_FILE ACFS_INTEGRITY_FILE TARGET_HOME
+        unset GTBI_STATE_DIR GTBI_CHANGES_FILE GTBI_UNDOS_FILE GTBI_BACKUPS_DIR GTBI_LOCK_FILE GTBI_INTEGRITY_FILE TARGET_HOME
         HOME="relative-home"
         TARGET_USER="tester"
         SUDO_USER=""
         autofix_refresh_state_paths
         printf "%s
-" "${ACFS_STATE_DIR:-unset}"
+" "${GTBI_STATE_DIR:-unset}"
     ' _ "$REPO_ROOT/scripts/lib/autofix.sh" 2>&1)"; then
         echo "  Recomputing autofix state paths with unresolved runtime home failed: $output"
         return 1
     fi
 
-    expected="/tmp/acfs-autofix.$(id -u 2>/dev/null || echo unknown)"
+    expected="/tmp/gtbi-autofix.$(id -u 2>/dev/null || echo unknown)"
     if [[ "$output" != "$expected" ]]; then
-        echo "  Expected ACFS_STATE_DIR fallback '$expected', got: $output"
+        echo "  Expected GTBI_STATE_DIR fallback '$expected', got: $output"
         return 1
     fi
 
@@ -1105,21 +1105,21 @@ test_init_autofix_state_fails_when_repair_fails() {
 
     if init_autofix_state >/dev/null 2>&1; then
         echo "  init_autofix_state unexpectedly succeeded despite failed repair"
-        unset _ACFS_AUTOFIX_SOURCED
+        unset _GTBI_AUTOFIX_SOURCED
         source "$REPO_ROOT/scripts/lib/autofix.sh"
         cleanup_test_env
         return 1
     fi
 
-    if [[ "$ACFS_AUTOFIX_INITIALIZED" == "true" ]]; then
-        echo "  init_autofix_state left ACFS_AUTOFIX_INITIALIZED=true after failed repair"
-        unset _ACFS_AUTOFIX_SOURCED
+    if [[ "$GTBI_AUTOFIX_INITIALIZED" == "true" ]]; then
+        echo "  init_autofix_state left GTBI_AUTOFIX_INITIALIZED=true after failed repair"
+        unset _GTBI_AUTOFIX_SOURCED
         source "$REPO_ROOT/scripts/lib/autofix.sh"
         cleanup_test_env
         return 1
     fi
 
-    unset _ACFS_AUTOFIX_SOURCED
+    unset _GTBI_AUTOFIX_SOURCED
     source "$REPO_ROOT/scripts/lib/autofix.sh"
     cleanup_test_env
     return 0
@@ -1135,14 +1135,14 @@ test_session_management() {
         return 1
     fi
 
-    if [[ -z "$ACFS_SESSION_ID" ]]; then
+    if [[ -z "$GTBI_SESSION_ID" ]]; then
         echo "  Session ID not set"
         end_autofix_session 2>/dev/null || true
         cleanup_test_env
         return 1
     fi
 
-    if [[ ! -f "$ACFS_STATE_DIR/.session" ]]; then
+    if [[ ! -f "$GTBI_STATE_DIR/.session" ]]; then
         echo "  Session marker not created"
         end_autofix_session 2>/dev/null || true
         cleanup_test_env
@@ -1151,7 +1151,7 @@ test_session_management() {
 
     end_autofix_session 2>/dev/null || true
 
-    if [[ -f "$ACFS_STATE_DIR/.session" ]]; then
+    if [[ -f "$GTBI_STATE_DIR/.session" ]]; then
         echo "  Session marker not removed"
         cleanup_test_env
         return 1
@@ -1169,22 +1169,22 @@ test_start_autofix_session_releases_lock_when_session_marker_write_fails() {
 
     if start_autofix_session >/dev/null 2>&1; then
         echo "  start_autofix_session unexpectedly succeeded when session marker write failed"
-        unset _ACFS_AUTOFIX_SOURCED
+        unset _GTBI_AUTOFIX_SOURCED
         source "$REPO_ROOT/scripts/lib/autofix.sh"
         cleanup_test_env
         return 1
     fi
 
-    unset _ACFS_AUTOFIX_SOURCED
+    unset _GTBI_AUTOFIX_SOURCED
     source "$REPO_ROOT/scripts/lib/autofix.sh"
 
-    if [[ -f "$ACFS_STATE_DIR/.session" ]]; then
+    if [[ -f "$GTBI_STATE_DIR/.session" ]]; then
         echo "  Failed start left behind a session marker"
         cleanup_test_env
         return 1
     fi
 
-    exec 201>"$ACFS_LOCK_FILE" || {
+    exec 201>"$GTBI_LOCK_FILE" || {
         echo "  Failed to open autofix lock file after failed session start"
         cleanup_test_env
         return 1
@@ -1206,7 +1206,7 @@ test_start_autofix_session_releases_lock_when_session_marker_write_fails() {
 test_start_autofix_session_rejects_preexisting_session_marker() {
     setup_test_env
 
-    printf '{"id":"stale","start":"2026-01-01T00:00:00Z","pid":123}\n' > "$ACFS_STATE_DIR/.session"
+    printf '{"id":"stale","start":"2026-01-01T00:00:00Z","pid":123}\n' > "$GTBI_STATE_DIR/.session"
 
     if start_autofix_session >/dev/null 2>&1; then
         echo "  start_autofix_session unexpectedly succeeded with a preexisting session marker"
@@ -1214,19 +1214,19 @@ test_start_autofix_session_rejects_preexisting_session_marker() {
         return 1
     fi
 
-    if [[ -n "${ACFS_SESSION_ID:-}" ]]; then
+    if [[ -n "${GTBI_SESSION_ID:-}" ]]; then
         echo "  Failed start left a transient session ID behind"
         cleanup_test_env
         return 1
     fi
 
-    if ! grep -q '"id":"stale"' "$ACFS_STATE_DIR/.session"; then
+    if ! grep -q '"id":"stale"' "$GTBI_STATE_DIR/.session"; then
         echo "  Failed start replaced the unresolved session marker"
         cleanup_test_env
         return 1
     fi
 
-    exec 201>"$ACFS_LOCK_FILE" || {
+    exec 201>"$GTBI_LOCK_FILE" || {
         echo "  Failed to open autofix lock file after rejecting unresolved session marker"
         cleanup_test_env
         return 1
@@ -1248,7 +1248,7 @@ test_start_autofix_session_rejects_preexisting_session_marker() {
 test_start_autofix_session_clears_session_id_when_lock_is_held() {
     setup_test_env
 
-    exec 201>"$ACFS_LOCK_FILE" || {
+    exec 201>"$GTBI_LOCK_FILE" || {
         echo "  Failed to open autofix lock file for pre-lock test"
         cleanup_test_env
         return 1
@@ -1271,13 +1271,13 @@ test_start_autofix_session_clears_session_id_when_lock_is_held() {
     flock -u 201 2>/dev/null || true
     eval "exec 201>&-"
 
-    if [[ -n "${ACFS_SESSION_ID:-}" ]]; then
+    if [[ -n "${GTBI_SESSION_ID:-}" ]]; then
         echo "  Failed start left a transient session ID behind"
         cleanup_test_env
         return 1
     fi
 
-    if [[ -f "$ACFS_STATE_DIR/.session" ]]; then
+    if [[ -f "$GTBI_STATE_DIR/.session" ]]; then
         echo "  Failed lock acquisition left behind a session marker"
         cleanup_test_env
         return 1
@@ -1301,22 +1301,22 @@ test_end_autofix_session_preserves_marker_when_integrity_update_fails() {
 
     if end_autofix_session >/dev/null 2>&1; then
         echo "  end_autofix_session unexpectedly succeeded when integrity update failed"
-        unset _ACFS_AUTOFIX_SOURCED
+        unset _GTBI_AUTOFIX_SOURCED
         source "$REPO_ROOT/scripts/lib/autofix.sh"
         cleanup_test_env
         return 1
     fi
 
-    unset _ACFS_AUTOFIX_SOURCED
+    unset _GTBI_AUTOFIX_SOURCED
     source "$REPO_ROOT/scripts/lib/autofix.sh"
 
-    if [[ ! -f "$ACFS_STATE_DIR/.session" ]]; then
+    if [[ ! -f "$GTBI_STATE_DIR/.session" ]]; then
         echo "  Failed session finalization removed the session marker"
         cleanup_test_env
         return 1
     fi
 
-    exec 201>"$ACFS_LOCK_FILE" || {
+    exec 201>"$GTBI_LOCK_FILE" || {
         echo "  Failed to open autofix lock file after failed session finalization"
         cleanup_test_env
         return 1
@@ -1362,7 +1362,7 @@ test_record_change() {
     fi
 
     # Verify persisted (note: in-memory state is lost due to subshell from command substitution)
-    if [[ ! -s "$ACFS_CHANGES_FILE" ]]; then
+    if [[ ! -s "$GTBI_CHANGES_FILE" ]]; then
         echo "  Changes file is empty"
         end_autofix_session 2>/dev/null || true
         cleanup_test_env
@@ -1371,7 +1371,7 @@ test_record_change() {
 
     # Verify the persisted change has the correct ID
     local persisted_id
-    persisted_id=$(jq -r '.id' "$ACFS_CHANGES_FILE" | tail -1)
+    persisted_id=$(jq -r '.id' "$GTBI_CHANGES_FILE" | tail -1)
     if [[ "$persisted_id" != "$change_id" ]]; then
         echo "  Persisted ID mismatch: expected '$change_id', got '$persisted_id'"
         end_autofix_session 2>/dev/null || true
@@ -1387,7 +1387,7 @@ test_record_change() {
 test_record_change_requires_active_session() {
     setup_test_env
 
-    local output_file="$ACFS_STATE_DIR/record_change_no_session.out"
+    local output_file="$GTBI_STATE_DIR/record_change_no_session.out"
     local status=0
 
     if record_change "test" "No session" "echo undo" "false" "info" '[]' '[]' '[]' >"$output_file" 2>/dev/null; then
@@ -1408,13 +1408,13 @@ test_record_change_requires_active_session() {
         return 1
     fi
 
-    if [[ -s "$ACFS_CHANGES_FILE" ]]; then
+    if [[ -s "$GTBI_CHANGES_FILE" ]]; then
         echo "  changes.jsonl was modified without an active session"
         cleanup_test_env
         return 1
     fi
 
-    if [[ ${#ACFS_CHANGE_ORDER[@]} -ne 0 ]] || [[ ${#ACFS_CHANGE_RECORDS[@]} -ne 0 ]]; then
+    if [[ ${#GTBI_CHANGE_ORDER[@]} -ne 0 ]] || [[ ${#GTBI_CHANGE_RECORDS[@]} -ne 0 ]]; then
         echo "  In-memory change state mutated without an active session"
         cleanup_test_env
         return 1
@@ -1435,7 +1435,7 @@ test_record_change_fails_when_append_atomic_fails() {
 
     local original_append_atomic output_file status=0
     original_append_atomic="$(declare -f append_atomic)"
-    output_file="$ACFS_STATE_DIR/record_change.out"
+    output_file="$GTBI_STATE_DIR/record_change.out"
     append_atomic() { return 1; }
 
     if record_change "test" "Broken persist" "echo undo" "false" "info" '[]' '[]' '[]' >"$output_file" 2>/dev/null; then
@@ -1460,14 +1460,14 @@ test_record_change_fails_when_append_atomic_fails() {
         return 1
     fi
 
-    if [[ -s "$ACFS_CHANGES_FILE" ]]; then
+    if [[ -s "$GTBI_CHANGES_FILE" ]]; then
         echo "  changes.jsonl was modified despite persist failure"
         end_autofix_session 2>/dev/null || true
         cleanup_test_env
         return 1
     fi
 
-    if [[ ${#ACFS_CHANGE_ORDER[@]} -ne 0 ]] || [[ ${#ACFS_CHANGE_RECORDS[@]} -ne 0 ]]; then
+    if [[ ${#GTBI_CHANGE_ORDER[@]} -ne 0 ]] || [[ ${#GTBI_CHANGE_RECORDS[@]} -ne 0 ]]; then
         echo "  In-memory change state mutated despite persist failure"
         end_autofix_session 2>/dev/null || true
         cleanup_test_env
@@ -1480,7 +1480,7 @@ test_record_change_fails_when_append_atomic_fails() {
 }
 
 test_autofix_files_json_escapes_special_paths() {
-    local tricky_path='/tmp/acfs "quoted" path\bin'
+    local tricky_path='/tmp/gtbi "quoted" path\bin'
     local files_json=""
     local decoded=""
 
@@ -1520,9 +1520,9 @@ test_record_change_normalizes_single_backup_object() {
     expected_backup_path=$(echo "$backup_json" | jq -r '.backup')
 
     change_id=$(record_change "test" "Normalized backup" "rm -f '$test_file'" "false" "info" "$(autofix_files_json "$test_file")" "$backup_json" "[]" 2>/dev/null)
-    backup_type=$(jq -r --arg id "$change_id" 'select(.id == $id) | (.backups | type)' "$ACFS_CHANGES_FILE")
-    backup_len=$(jq -r --arg id "$change_id" 'select(.id == $id) | (.backups | length)' "$ACFS_CHANGES_FILE")
-    stored_backup_path=$(jq -r --arg id "$change_id" 'select(.id == $id) | .backups[0].backup' "$ACFS_CHANGES_FILE")
+    backup_type=$(jq -r --arg id "$change_id" 'select(.id == $id) | (.backups | type)' "$GTBI_CHANGES_FILE")
+    backup_len=$(jq -r --arg id "$change_id" 'select(.id == $id) | (.backups | length)' "$GTBI_CHANGES_FILE")
+    stored_backup_path=$(jq -r --arg id "$change_id" 'select(.id == $id) | .backups[0].backup' "$GTBI_CHANGES_FILE")
 
     if [[ "$backup_type" != "array" ]] || [[ "$backup_len" != "1" ]] || [[ "$stored_backup_path" != "$expected_backup_path" ]]; then
         echo "  Backup normalization failed: type=$backup_type len=$backup_len path=$stored_backup_path"
@@ -1555,7 +1555,7 @@ test_multiple_changes_order() {
 
     # Check we got 3 changes in the file
     local file_count
-    file_count=$(wc -l < "$ACFS_CHANGES_FILE")
+    file_count=$(wc -l < "$GTBI_CHANGES_FILE")
     if [[ "$file_count" -ne 3 ]]; then
         echo "  Expected 3 changes in file, got $file_count"
         end_autofix_session 2>/dev/null || true
@@ -1573,8 +1573,8 @@ test_multiple_changes_order() {
 
     # Check order in file
     local first_id last_id
-    first_id=$(head -1 "$ACFS_CHANGES_FILE" | jq -r '.id')
-    last_id=$(tail -1 "$ACFS_CHANGES_FILE" | jq -r '.id')
+    first_id=$(head -1 "$GTBI_CHANGES_FILE" | jq -r '.id')
+    last_id=$(tail -1 "$GTBI_CHANGES_FILE" | jq -r '.id')
     if [[ "$first_id" != "chg_0001" ]] || [[ "$last_id" != "chg_0003" ]]; then
         echo "  File order incorrect: first=$first_id, last=$last_id"
         end_autofix_session 2>/dev/null || true
@@ -1636,8 +1636,8 @@ test_undo_change_fails_when_append_atomic_fails() {
         return 1
     fi
 
-    local marker_file="$ACFS_STATE_DIR/pending_precheck_marker"
-    local output_file="$ACFS_STATE_DIR/change_id.out"
+    local marker_file="$GTBI_STATE_DIR/pending_precheck_marker"
+    local output_file="$GTBI_STATE_DIR/change_id.out"
     touch "$marker_file"
     if ! record_change "test" "Undo persist failure" "rm -f '$marker_file'" "false" "info" '[]' '[]' '[]' >"$output_file" 2>/dev/null; then
         echo "  Failed to seed change for undo test"
@@ -1651,7 +1651,7 @@ test_undo_change_fails_when_append_atomic_fails() {
     original_append_atomic="$(declare -f append_atomic)"
     eval "${original_append_atomic/append_atomic/original_append_atomic}"
     append_atomic() {
-        if [[ "$1" == "$ACFS_UNDOS_FILE" ]]; then
+        if [[ "$1" == "$GTBI_UNDOS_FILE" ]]; then
             return 1
         fi
         original_append_atomic "$@"
@@ -1679,14 +1679,14 @@ test_undo_change_fails_when_append_atomic_fails() {
         return 1
     fi
 
-    if [[ -s "$ACFS_UNDOS_FILE" ]]; then
+    if [[ -s "$GTBI_UNDOS_FILE" ]]; then
         echo "  undos.jsonl was modified despite persist failure"
         end_autofix_session 2>/dev/null || true
         cleanup_test_env
         return 1
     fi
 
-    undone_flag="$(printf '%s' "${ACFS_CHANGE_RECORDS["$change_id"]}" | jq -r '.undone')"
+    undone_flag="$(printf '%s' "${GTBI_CHANGE_RECORDS["$change_id"]}" | jq -r '.undone')"
     if [[ "$undone_flag" != "false" ]]; then
         echo "  In-memory undo state mutated despite persist failure"
         end_autofix_session 2>/dev/null || true
@@ -1708,9 +1708,9 @@ test_undo_change_leaves_pending_state_when_completion_persist_fails() {
         return 1
     fi
 
-    local marker_file="$ACFS_STATE_DIR/completion_pending_marker"
-    local exec_log="$ACFS_STATE_DIR/completion_pending_exec.log"
-    local output_file="$ACFS_STATE_DIR/change_id.out"
+    local marker_file="$GTBI_STATE_DIR/completion_pending_marker"
+    local exec_log="$GTBI_STATE_DIR/completion_pending_exec.log"
+    local output_file="$GTBI_STATE_DIR/change_id.out"
     touch "$marker_file"
 
     if ! record_change "test" "Undo completion persist failure" "printf x >> '$exec_log'; rm -f '$marker_file'" "false" "info" '[]' '[]' '[]' >"$output_file" 2>/dev/null; then
@@ -1725,7 +1725,7 @@ test_undo_change_leaves_pending_state_when_completion_persist_fails() {
     original_append_atomic="$(declare -f append_atomic)"
     eval "${original_append_atomic/append_atomic/original_append_atomic}"
     append_atomic() {
-        if [[ "$1" == "$ACFS_UNDOS_FILE" ]]; then
+        if [[ "$1" == "$GTBI_UNDOS_FILE" ]]; then
             undo_append_calls=$((undo_append_calls + 1))
             if [[ $undo_append_calls -eq 2 ]]; then
                 return 1
@@ -1764,11 +1764,11 @@ test_undo_change_leaves_pending_state_when_completion_persist_fails() {
         return 1
     fi
 
-    undo_line_count=$(wc -l < "$ACFS_UNDOS_FILE")
+    undo_line_count=$(wc -l < "$GTBI_UNDOS_FILE")
     undo_status="$(autofix_change_undo_status "$change_id" 2>/dev/null || true)"
-    if [[ "$undo_line_count" -ne 1 ]] || [[ "$undo_status" != "pending" ]] || [[ "$(jq -r '.status' "$ACFS_UNDOS_FILE")" != "pending" ]]; then
+    if [[ "$undo_line_count" -ne 1 ]] || [[ "$undo_status" != "pending" ]] || [[ "$(jq -r '.status' "$GTBI_UNDOS_FILE")" != "pending" ]]; then
         echo "  Pending undo state was not preserved after completion persist failure"
-        echo "  lines=$undo_line_count status=$undo_status file=$(cat "$ACFS_UNDOS_FILE" 2>/dev/null || true)"
+        echo "  lines=$undo_line_count status=$undo_status file=$(cat "$GTBI_UNDOS_FILE" 2>/dev/null || true)"
         end_autofix_session 2>/dev/null || true
         cleanup_test_env
         return 1
@@ -1810,7 +1810,7 @@ test_undo_change_marks_failed_when_executor_missing_after_pending() {
         return 1
     fi
 
-    local output_file="$ACFS_STATE_DIR/change_id.out"
+    local output_file="$GTBI_STATE_DIR/change_id.out"
     if ! record_change "test" "Undo executor missing" "true" "false" "info" '[]' '[]' '[]' >"$output_file" 2>/dev/null; then
         echo "  Failed to seed change for missing-executor test"
         end_autofix_session 2>/dev/null || true
@@ -1840,19 +1840,19 @@ test_undo_change_marks_failed_when_executor_missing_after_pending() {
         return 1
     fi
 
-    undo_line_count=$(wc -l < "$ACFS_UNDOS_FILE")
+    undo_line_count=$(wc -l < "$GTBI_UNDOS_FILE")
     undo_status="$(autofix_change_undo_status "$change_id" 2>/dev/null || true)"
     if [[ "$undo_line_count" -ne 2 ]] || [[ "$undo_status" != "failed" ]]; then
         echo "  Missing executor should leave failed undo state, not pending"
-        echo "  lines=$undo_line_count status=$undo_status file=$(cat "$ACFS_UNDOS_FILE" 2>/dev/null || true)"
+        echo "  lines=$undo_line_count status=$undo_status file=$(cat "$GTBI_UNDOS_FILE" 2>/dev/null || true)"
         end_autofix_session 2>/dev/null || true
         cleanup_test_env
         return 1
     fi
 
-    if ! jq -e '.[0].status == "pending" and .[1].status == "failed" and .[1].exit_code == 127' < <(jq -s . "$ACFS_UNDOS_FILE") >/dev/null; then
+    if ! jq -e '.[0].status == "pending" and .[1].status == "failed" and .[1].exit_code == 127' < <(jq -s . "$GTBI_UNDOS_FILE") >/dev/null; then
         echo "  Undo journal did not record pending then failed executor state"
-        cat "$ACFS_UNDOS_FILE"
+        cat "$GTBI_UNDOS_FILE"
         end_autofix_session 2>/dev/null || true
         cleanup_test_env
         return 1
@@ -1875,7 +1875,7 @@ test_undo_change_rejects_manual_non_reversible_change() {
 
     local change_id output="" list_output="" reversible=""
     change_id=$(record_change "test" "Manual change" "# Restore from backup manually" "false" "warning" '[]' '[]' '[]' 2>/dev/null)
-    reversible=$(jq -r --arg id "$change_id" 'select(.id == $id) | .reversible' "$ACFS_CHANGES_FILE")
+    reversible=$(jq -r --arg id "$change_id" 'select(.id == $id) | .reversible' "$GTBI_CHANGES_FILE")
 
     output=$(undo_change "$change_id" true true 2>&1)
     if [[ $? -eq 0 ]]; then
@@ -1886,9 +1886,9 @@ test_undo_change_rejects_manual_non_reversible_change() {
     fi
 
     end_autofix_session 2>/dev/null || true
-    list_output=$(acfs_undo_command --list 2>&1)
+    list_output=$(gtbi_undo_command --list 2>&1)
 
-    if [[ "$reversible" != "false" ]] || [[ -s "$ACFS_UNDOS_FILE" ]] || [[ "$output" != *"Manual undo instructions: Restore from backup manually"* ]] || [[ "$list_output" != *"$change_id"* ]] || [[ "$list_output" != *"manual"* ]]; then
+    if [[ "$reversible" != "false" ]] || [[ -s "$GTBI_UNDOS_FILE" ]] || [[ "$output" != *"Manual undo instructions: Restore from backup manually"* ]] || [[ "$list_output" != *"$change_id"* ]] || [[ "$list_output" != *"manual"* ]]; then
         echo "  Manual undo handling failed"
         echo "  reversible=$reversible"
         echo "  undo output=$output"
@@ -1902,7 +1902,7 @@ test_undo_change_rejects_manual_non_reversible_change() {
 }
 
 # Test: Undo category filtering handles quoted category values safely
-test_acfs_undo_command_category_handles_quotes() {
+test_gtbi_undo_command_category_handles_quotes() {
     setup_test_env
 
     if ! start_autofix_session 2>/dev/null; then
@@ -1916,7 +1916,7 @@ test_acfs_undo_command_category_handles_quotes() {
     end_autofix_session 2>/dev/null || true
 
     local output=""
-    output=$(acfs_undo_command --dry-run --category 'quote"cat' 2>&1)
+    output=$(gtbi_undo_command --dry-run --category 'quote"cat' 2>&1)
 
     if [[ "$output" != *"$change_id"* ]] || [[ "$output" == *"jq:"* ]]; then
         echo "  Quoted category filter failed: $output"
@@ -1929,7 +1929,7 @@ test_acfs_undo_command_category_handles_quotes() {
 }
 
 # Test: --all skips already-undone changes instead of reprocessing them
-test_acfs_undo_command_all_skips_undone_changes() {
+test_gtbi_undo_command_all_skips_undone_changes() {
     setup_test_env
 
     if ! start_autofix_session 2>/dev/null; then
@@ -1947,10 +1947,10 @@ test_acfs_undo_command_all_skips_undone_changes() {
     active_id=$(record_change "test" "Still active" "rm -f '$active_marker'" "false" "info" '[]' '[]' '[]' 2>/dev/null)
     end_autofix_session 2>/dev/null || true
 
-    printf '{"undone":"%s","timestamp":"2026-04-15T00:00:00Z","exit_code":0}\n' "$done_id" > "$ACFS_UNDOS_FILE"
+    printf '{"undone":"%s","timestamp":"2026-04-15T00:00:00Z","exit_code":0}\n' "$done_id" > "$GTBI_UNDOS_FILE"
 
     local output=""
-    output=$(acfs_undo_command --all 2>&1)
+    output=$(gtbi_undo_command --all 2>&1)
 
     if [[ -f "$active_marker" ]]; then
         echo "  Active change was not undone"
@@ -1978,7 +1978,7 @@ test_acfs_undo_command_all_skips_undone_changes() {
     return 0
 }
 
-test_acfs_undo_command_list_marks_pending_changes() {
+test_gtbi_undo_command_list_marks_pending_changes() {
     setup_test_env
 
     if ! start_autofix_session 2>/dev/null; then
@@ -1991,10 +1991,10 @@ test_acfs_undo_command_list_marks_pending_changes() {
     change_id=$(record_change "test" "Pending undo change" "echo pending" "false" "info" '[]' '[]' '[]' 2>/dev/null)
     end_autofix_session 2>/dev/null || true
 
-    printf '{"undone":"%s","timestamp":"2026-04-15T00:00:00Z","status":"pending"}\n' "$change_id" > "$ACFS_UNDOS_FILE"
+    printf '{"undone":"%s","timestamp":"2026-04-15T00:00:00Z","status":"pending"}\n' "$change_id" > "$GTBI_UNDOS_FILE"
 
     local output=""
-    output=$(acfs_undo_command --list 2>&1)
+    output=$(gtbi_undo_command --list 2>&1)
 
     if [[ "$output" != *"$change_id"* ]] || [[ "$output" != *"pending"* ]]; then
         echo "  --list did not mark pending change correctly: $output"
@@ -2097,7 +2097,7 @@ test_init_autofix_state() {
     setup_test_env
 
     # Remove the directories we just created to test init
-    rm -rf "$ACFS_STATE_DIR"
+    rm -rf "$GTBI_STATE_DIR"
 
     if ! init_autofix_state 2>/dev/null; then
         echo "  init_autofix_state failed"
@@ -2105,13 +2105,13 @@ test_init_autofix_state() {
         return 1
     fi
 
-    if [[ ! -d "$ACFS_STATE_DIR" ]]; then
+    if [[ ! -d "$GTBI_STATE_DIR" ]]; then
         echo "  State directory not created"
         cleanup_test_env
         return 1
     fi
 
-    if [[ ! -d "$ACFS_BACKUPS_DIR" ]]; then
+    if [[ ! -d "$GTBI_BACKUPS_DIR" ]]; then
         echo "  Backups directory not created"
         cleanup_test_env
         return 1
@@ -2151,18 +2151,18 @@ test_print_undo_summary() {
 test_update_integrity_file() {
     setup_test_env
 
-    echo '{"id":"chg_001"}' > "$ACFS_CHANGES_FILE"
+    echo '{"id":"chg_001"}' > "$GTBI_CHANGES_FILE"
 
     update_integrity_file 2>/dev/null
 
-    if [[ ! -f "$ACFS_INTEGRITY_FILE" ]]; then
+    if [[ ! -f "$GTBI_INTEGRITY_FILE" ]]; then
         echo "  Integrity file not created"
         cleanup_test_env
         return 1
     fi
 
     # Verify it's valid JSON
-    if ! jq -e . "$ACFS_INTEGRITY_FILE" >/dev/null 2>&1; then
+    if ! jq -e . "$GTBI_INTEGRITY_FILE" >/dev/null 2>&1; then
         echo "  Integrity file is not valid JSON"
         cleanup_test_env
         return 1
@@ -2176,8 +2176,8 @@ test_update_integrity_file() {
 test_cleanup_old_backups_removes_directory_entries() {
     setup_test_env
 
-    local old_backup_dir="$ACFS_BACKUPS_DIR/old-backup-dir"
-    local old_backup_file="$ACFS_BACKUPS_DIR/old-backup-file.backup"
+    local old_backup_dir="$GTBI_BACKUPS_DIR/old-backup-dir"
+    local old_backup_file="$GTBI_BACKUPS_DIR/old-backup-file.backup"
     mkdir -p "$old_backup_dir"
     printf 'nested\n' > "$old_backup_dir/file.txt"
     printf 'flat\n' > "$old_backup_file"
@@ -2204,12 +2204,12 @@ test_cleanup_old_backups_preserves_active_referenced_backups() {
     local test_file="/tmp/test_backup_active_$$"
     printf 'active\n' > "$test_file"
 
-    ACFS_SESSION_ID="test_sess"
+    GTBI_SESSION_ID="test_sess"
 
     local backup_json backup_path
     backup_json=$(create_backup "$test_file" "test")
     backup_path=$(echo "$backup_json" | jq -r '.backup')
-    printf '{"id":"chg_001","description":"active backup","backups":[%s]}\n' "$backup_json" > "$ACFS_CHANGES_FILE"
+    printf '{"id":"chg_001","description":"active backup","backups":[%s]}\n' "$backup_json" > "$GTBI_CHANGES_FILE"
     touch -d '40 days ago' "$backup_path"
 
     cleanup_old_backups 30 >/dev/null 2>&1
@@ -2228,33 +2228,33 @@ test_cleanup_old_backups_preserves_active_referenced_backups() {
 
 # ============================================================
 # Regression tests for handle_existing_installation session management
-# (ACFS #264 — https://github.com/Dicklesworthstone/agentic_coding_flywheel_setup/issues/264)
+# (GTBI #264 — https://github.com/jonbackhaus/gtbi/issues/264)
 # ============================================================
 
-_acfs_264_setup_installation() {
+_gtbi_264_setup_installation() {
     local target_home="$1"
     local installed_version="${2:-0.6.0}"
-    mkdir -p "$target_home/.acfs"
-    printf '%s\n' "$installed_version" > "$target_home/.acfs/version"
+    mkdir -p "$target_home/.gtbi"
+    printf '%s\n' "$installed_version" > "$target_home/.gtbi/version"
 }
 
 test_handle_existing_installation_manages_session_for_upgrade() {
     setup_test_env
-    local target_home="/tmp/test_acfs264_upgrade_$$"
+    local target_home="/tmp/test_gtbi264_upgrade_$$"
     rm -rf "$target_home"
-    _acfs_264_setup_installation "$target_home" "0.6.0"
+    _gtbi_264_setup_installation "$target_home" "0.6.0"
 
     local output
     output=$(HOME="$target_home" TARGET_HOME="$target_home" \
-        ACFS_STATE_DIR="$ACFS_STATE_DIR" \
-        ACFS_CHANGES_FILE="$ACFS_CHANGES_FILE" \
-        ACFS_UNDOS_FILE="$ACFS_UNDOS_FILE" \
-        ACFS_BACKUPS_DIR="$ACFS_BACKUPS_DIR" \
-        ACFS_LOCK_FILE="$ACFS_LOCK_FILE" \
-        ACFS_INTEGRITY_FILE="$ACFS_INTEGRITY_FILE" \
+        GTBI_STATE_DIR="$GTBI_STATE_DIR" \
+        GTBI_CHANGES_FILE="$GTBI_CHANGES_FILE" \
+        GTBI_UNDOS_FILE="$GTBI_UNDOS_FILE" \
+        GTBI_BACKUPS_DIR="$GTBI_BACKUPS_DIR" \
+        GTBI_LOCK_FILE="$GTBI_LOCK_FILE" \
+        GTBI_INTEGRITY_FILE="$GTBI_INTEGRITY_FILE" \
         bash -c '
             set -u
-            unset _ACFS_AUTOFIX_SOURCED _ACFS_AUTOFIX_EXISTING_SOURCED
+            unset _GTBI_AUTOFIX_SOURCED _GTBI_AUTOFIX_EXISTING_SOURCED
             source "$1"
             source "$2"
             update_path_entries() { return 0; }
@@ -2288,21 +2288,21 @@ test_handle_existing_installation_manages_session_for_upgrade() {
 
 test_handle_existing_installation_preserves_outer_session() {
     setup_test_env
-    local target_home="/tmp/test_acfs264_nested_$$"
+    local target_home="/tmp/test_gtbi264_nested_$$"
     rm -rf "$target_home"
-    _acfs_264_setup_installation "$target_home" "0.6.0"
+    _gtbi_264_setup_installation "$target_home" "0.6.0"
 
     local output
     output=$(HOME="$target_home" TARGET_HOME="$target_home" \
-        ACFS_STATE_DIR="$ACFS_STATE_DIR" \
-        ACFS_CHANGES_FILE="$ACFS_CHANGES_FILE" \
-        ACFS_UNDOS_FILE="$ACFS_UNDOS_FILE" \
-        ACFS_BACKUPS_DIR="$ACFS_BACKUPS_DIR" \
-        ACFS_LOCK_FILE="$ACFS_LOCK_FILE" \
-        ACFS_INTEGRITY_FILE="$ACFS_INTEGRITY_FILE" \
+        GTBI_STATE_DIR="$GTBI_STATE_DIR" \
+        GTBI_CHANGES_FILE="$GTBI_CHANGES_FILE" \
+        GTBI_UNDOS_FILE="$GTBI_UNDOS_FILE" \
+        GTBI_BACKUPS_DIR="$GTBI_BACKUPS_DIR" \
+        GTBI_LOCK_FILE="$GTBI_LOCK_FILE" \
+        GTBI_INTEGRITY_FILE="$GTBI_INTEGRITY_FILE" \
         bash -c '
             set -u
-            unset _ACFS_AUTOFIX_SOURCED _ACFS_AUTOFIX_EXISTING_SOURCED
+            unset _GTBI_AUTOFIX_SOURCED _GTBI_AUTOFIX_EXISTING_SOURCED
             source "$1"
             source "$2"
             update_path_entries() { return 0; }
@@ -2311,13 +2311,13 @@ test_handle_existing_installation_preserves_outer_session() {
                 echo "outer-start-failed"
                 exit 2
             fi
-            outer_sid="$ACFS_SESSION_ID"
+            outer_sid="$GTBI_SESSION_ID"
             handle_existing_installation "0.7.0" "upgrade" >/dev/null 2>&1 || true
             if ! autofix_session_active; then
                 echo "outer-session-lost"
                 exit 3
             fi
-            if [[ "$ACFS_SESSION_ID" != "$outer_sid" ]]; then
+            if [[ "$GTBI_SESSION_ID" != "$outer_sid" ]]; then
                 echo "session-id-changed"
                 exit 4
             fi
@@ -2395,9 +2395,9 @@ main() {
     run_test test_undo_change_leaves_pending_state_when_completion_persist_fails
     run_test test_undo_change_marks_failed_when_executor_missing_after_pending
     run_test test_undo_change_rejects_manual_non_reversible_change
-    run_test test_acfs_undo_command_category_handles_quotes
-    run_test test_acfs_undo_command_all_skips_undone_changes
-    run_test test_acfs_undo_command_list_marks_pending_changes
+    run_test test_gtbi_undo_command_category_handles_quotes
+    run_test test_gtbi_undo_command_all_skips_undone_changes
+    run_test test_gtbi_undo_command_list_marks_pending_changes
     run_test test_print_undo_summary
     run_test test_update_integrity_file
     run_test test_cleanup_old_backups_removes_directory_entries

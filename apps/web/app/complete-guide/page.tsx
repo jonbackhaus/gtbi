@@ -1152,9 +1152,9 @@ And you can't do this sort of thing using regex or a script, you MUST manually r
                 ]}
               />
 
-              <P>Use <code>acfs newproj</code> to bootstrap a project with full tooling:</P>
+              <P>Use <code>gtbi newproj</code> to bootstrap a project with full tooling:</P>
 
-              <CodeBlock language="bash" code={`acfs newproj myproject --interactive
+              <CodeBlock language="bash" code={`gtbi newproj myproject --interactive
 
 # Creates:
 # myproject/
@@ -1219,8 +1219,8 @@ And you can't do this sort of thing using regex or a script, you MUST manually r
                   ["AGENTS.md", "Per-project configuration teaching agents about tools and rules"],
                   ["Best practices guides", "Referenced in AGENTS.md, kept current"],
                   ["Markdown plan files", "Source-of-truth planning documents"],
-                  ["acfs newproj", "Bootstraps projects with full tooling (.git, .beads, .claude, AGENTS.md)"],
-                  ["acfs doctor", "Single command to verify entire installation"],
+                  ["gtbi newproj", "Bootstraps projects with full tooling (.git, .beads, .claude, AGENTS.md)"],
+                  ["gtbi doctor", "Single command to verify entire installation"],
                   ["NTM command palette", "Battle-tested prompt library accessible via ntm palette"],
                   ["Claude Code Skills", "Each tool has a dedicated skill for automated workflows"],
                 ]}
@@ -1629,14 +1629,14 @@ curl -fsSL https://agent-flywheel.com/install.sh | bash
 onboard
 
 # 4. Create your first project
-acfs newproj my-first-project --interactive
+gtbi newproj my-first-project --interactive
 
 # 5. Spawn agents and start building
 ntm spawn my-first-project --cc=2 --cod=1 --gmi=1`} />
 
               <P>You don&apos;t even need to know much at all about computers; you just need the desire to learn and some grit and determination. And about $500/month for the subscriptions, plus another $50 or so for the cloud server.</P>
 
-              <P>Once you get Claude Code up and running on the cloud server, you basically have an ultra competent friend who can help you with any other problems you encounter. And Jeffrey will personally answer your questions if you reach out on <a href="https://x.com/doodlestein" target="_blank" rel="noopener noreferrer" className="text-[#FF5500] hover:text-[#FFBD2E] underline underline-offset-4 decoration-[#FF5500]/30 hover:decoration-[#FFBD2E]/50 transition-colors">X</a> or on <a href="https://github.com/Dicklesworthstone/agentic_coding_flywheel_setup/issues" target="_blank" rel="noopener noreferrer" className="text-[#FF5500] hover:text-[#FFBD2E] underline underline-offset-4 decoration-[#FF5500]/30 hover:decoration-[#FFBD2E]/50 transition-colors">GitHub issues</a>.</P>
+              <P>Once you get Claude Code up and running on the cloud server, you basically have an ultra competent friend who can help you with any other problems you encounter. And Jeffrey will personally answer your questions if you reach out on <a href="https://x.com/doodlestein" target="_blank" rel="noopener noreferrer" className="text-[#FF5500] hover:text-[#FFBD2E] underline underline-offset-4 decoration-[#FF5500]/30 hover:decoration-[#FFBD2E]/50 transition-colors">X</a> or on <a href="https://github.com/jonbackhaus/gtbi/issues" target="_blank" rel="noopener noreferrer" className="text-[#FF5500] hover:text-[#FFBD2E] underline underline-offset-4 decoration-[#FF5500]/30 hover:decoration-[#FFBD2E]/50 transition-colors">GitHub issues</a>.</P>
 
               <P highlight>If you want to change the entire direction of your life, it has truly never been easier. If you think you might want to do it, I really recommend just immersing yourself.</P>
             </SubSection>

@@ -37,7 +37,7 @@ export function ModernCliLesson() {
         delay={0.1}
       >
         <Paragraph>
-          ACFS installs a curated set of modern CLI replacements. These tools are
+          GTBI installs a curated set of modern CLI replacements. These tools are
           drop-in replacements that feel familiar but do more &mdash; better
           output, smarter defaults, and features you didn&apos;t know you were
           missing.
@@ -187,7 +187,7 @@ atuin import auto`}
           <CodeBlock
             code={`# Jump to a directory by partial name
 z project     # → /home/ubuntu/projects/my-project
-z web         # → /data/projects/acfs/apps/web
+z web         # → /data/projects/gtbi/apps/web
 z api         # → /data/projects/my-api
 
 # Interactive selection when ambiguous
@@ -303,7 +303,7 @@ lsd -la                       # Long format with hidden files
 lsd --tree                    # Tree view
 lsd --tree --depth 2          # Tree with depth limit
 
-# ACFS aliases (already configured):
+# GTBI aliases (already configured):
 # cat → bat (automatic)
 # ls  → lsd (automatic)
 # ll  → lsd -la

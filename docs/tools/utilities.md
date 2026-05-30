@@ -1,6 +1,6 @@
-# ACFS Utility Tools
+# GTBI Utility Tools
 
-This document covers the utility tools included in ACFS. These are optional but useful tools from the Dicklesworthstone ecosystem.
+This document covers the utility tools included in GTBI. These are optional but useful tools from the Dicklesworthstone ecosystem.
 
 ## Tool Overview
 
@@ -314,7 +314,7 @@ caut alert set --daily-limit 100000
 
 ## Installation
 
-All utilities are installed via ACFS as optional tools. They can be installed individually via cargo:
+All utilities are installed via GTBI as optional tools. They can be installed individually via cargo:
 
 ```bash
 cargo install toon_rust
@@ -330,11 +330,11 @@ cargo install coding_agent_usage_tracker
 
 ## Health Checks
 
-ACFS doctor includes checks for all utilities:
+GTBI doctor includes checks for all utilities:
 
 ```bash
 # Check utility installation status
-acfs doctor --json | jq '.checks | map(select(.id | startswith("util.")))'
+gtbi doctor --json | jq '.checks | map(select(.id | startswith("util.")))'
 ```
 
 ## Troubleshooting

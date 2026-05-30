@@ -123,7 +123,7 @@ tmux a`}
         delay={0.2}
       >
         <TipBox variant="info">
-          In ACFS, the prefix key is <InlineCode>Ctrl+a</InlineCode> (not the
+          In GTBI, the prefix key is <InlineCode>Ctrl+a</InlineCode> (not the
           default <InlineCode>Ctrl+b</InlineCode>). All tmux commands start with
           the prefix.
         </TipBox>

@@ -17,16 +17,16 @@ import {
 } from "./commandBuilder";
 
 describe("buildRootKeyRepairCommand", () => {
-  test("copies the ACFS public key through root without appending duplicates", () => {
+  test("copies the GTBI public key through root without appending duplicates", () => {
     const command = buildRootKeyRepairCommand("dev-user", "203.0.113.42");
 
-    expect(command).toContain("cat ~/.ssh/acfs_ed25519.pub | ssh root@203.0.113.42");
-    expect(command).toContain("read -r acfs_pubkey");
+    expect(command).toContain("cat ~/.ssh/gtbi_ed25519.pub | ssh root@203.0.113.42");
+    expect(command).toContain("read -r gtbi_pubkey");
     expect(command).toContain("test ! -L /home/dev-user/.ssh");
     expect(command).toContain("tail -c 1 /home/dev-user/.ssh/authorized_keys");
     expect(command).toContain("grep -qw 10");
-    expect(command).toContain('if ! grep -qxF \\"\\$acfs_pubkey\\" /home/dev-user/.ssh/authorized_keys; then');
-    expect(command).toContain('printf \'%s\\n\' \\"\\$acfs_pubkey\\" >> /home/dev-user/.ssh/authorized_keys');
+    expect(command).toContain('if ! grep -qxF \\"\\$gtbi_pubkey\\" /home/dev-user/.ssh/authorized_keys; then');
+    expect(command).toContain('printf \'%s\\n\' \\"\\$gtbi_pubkey\\" >> /home/dev-user/.ssh/authorized_keys');
     expect(command).not.toContain("cat >> /home/dev-user/.ssh/authorized_keys");
   });
 
@@ -34,7 +34,7 @@ describe("buildRootKeyRepairCommand", () => {
     const command = buildRootKeyRepairCommand("ubuntu", "203.0.113.42");
     const result = Bun.spawnSync({
       cmd: ["bash", "-lc", `ssh() { printf '%s\\n' "$2"; }\n${command}`],
-      env: { ...process.env, HOME: "/tmp/acfs-missing-home-for-test" },
+      env: { ...process.env, HOME: "/tmp/gtbi-missing-home-for-test" },
       stderr: "pipe",
       stdout: "pipe",
     });
@@ -42,10 +42,10 @@ describe("buildRootKeyRepairCommand", () => {
     expect(result.exitCode).toBe(0);
 
     const remoteCommand = new TextDecoder().decode(result.stdout);
-    expect(remoteCommand).toContain('grep -qxF "$acfs_pubkey" /home/ubuntu/.ssh/authorized_keys');
-    expect(remoteCommand).toContain('printf \'%s\\n\' "$acfs_pubkey" >> /home/ubuntu/.ssh/authorized_keys');
-    expect(remoteCommand).not.toContain("grep -qxF $acfs_pubkey");
-    expect(remoteCommand).not.toContain("printf '%s\\n' $acfs_pubkey");
+    expect(remoteCommand).toContain('grep -qxF "$gtbi_pubkey" /home/ubuntu/.ssh/authorized_keys');
+    expect(remoteCommand).toContain('printf \'%s\\n\' "$gtbi_pubkey" >> /home/ubuntu/.ssh/authorized_keys');
+    expect(remoteCommand).not.toContain("grep -qxF $gtbi_pubkey");
+    expect(remoteCommand).not.toContain("printf '%s\\n' $gtbi_pubkey");
   });
 
   test("falls back to ubuntu for usernames the installer would reject", () => {
@@ -56,7 +56,7 @@ describe("buildRootKeyRepairCommand", () => {
     expect(command).not.toContain("Bad User");
   });
 
-  test("treats root as the bootstrap account, not the ACFS target user", () => {
+  test("treats root as the bootstrap account, not the GTBI target user", () => {
     const command = buildRootKeyRepairCommand("root", "203.0.113.42");
 
     expect(command).toContain("ssh root@203.0.113.42");
@@ -66,16 +66,16 @@ describe("buildRootKeyRepairCommand", () => {
 });
 
 describe("buildUserKeyRepairCommand", () => {
-  test("copies the ACFS public key through the configured user without root", () => {
+  test("copies the GTBI public key through the configured user without root", () => {
     const command = buildUserKeyRepairCommand("dev-user", "203.0.113.42");
 
-    expect(command).toContain("cat ~/.ssh/acfs_ed25519.pub | ssh dev-user@203.0.113.42");
-    expect(command).toContain("read -r acfs_pubkey");
+    expect(command).toContain("cat ~/.ssh/gtbi_ed25519.pub | ssh dev-user@203.0.113.42");
+    expect(command).toContain("read -r gtbi_pubkey");
     expect(command).toContain("test ! -L ~/.ssh");
     expect(command).toContain("install -d -m 700 ~/.ssh");
     expect(command).toContain("tail -c 1 ~/.ssh/authorized_keys");
-    expect(command).toContain('if ! grep -qxF \\"\\$acfs_pubkey\\" ~/.ssh/authorized_keys; then');
-    expect(command).toContain('printf \'%s\\n\' \\"\\$acfs_pubkey\\" >> ~/.ssh/authorized_keys');
+    expect(command).toContain('if ! grep -qxF \\"\\$gtbi_pubkey\\" ~/.ssh/authorized_keys; then');
+    expect(command).toContain('printf \'%s\\n\' \\"\\$gtbi_pubkey\\" >> ~/.ssh/authorized_keys');
     expect(command).not.toContain("ssh root@");
     expect(command).not.toContain("sudo");
     expect(command).not.toContain("cat >> ~/.ssh/authorized_keys");
@@ -85,7 +85,7 @@ describe("buildUserKeyRepairCommand", () => {
     const command = buildUserKeyRepairCommand("ubuntu", "203.0.113.42");
     const result = Bun.spawnSync({
       cmd: ["bash", "-lc", `ssh() { printf '%s\\n' "$2"; }\n${command}`],
-      env: { ...process.env, HOME: "/tmp/acfs-missing-home-for-test" },
+      env: { ...process.env, HOME: "/tmp/gtbi-missing-home-for-test" },
       stderr: "pipe",
       stdout: "pipe",
     });
@@ -93,10 +93,10 @@ describe("buildUserKeyRepairCommand", () => {
     expect(result.exitCode).toBe(0);
 
     const remoteCommand = new TextDecoder().decode(result.stdout);
-    expect(remoteCommand).toContain('grep -qxF "$acfs_pubkey" ~/.ssh/authorized_keys');
-    expect(remoteCommand).toContain('printf \'%s\\n\' "$acfs_pubkey" >> ~/.ssh/authorized_keys');
-    expect(remoteCommand).not.toContain("grep -qxF $acfs_pubkey");
-    expect(remoteCommand).not.toContain("printf '%s\\n' $acfs_pubkey");
+    expect(remoteCommand).toContain('grep -qxF "$gtbi_pubkey" ~/.ssh/authorized_keys');
+    expect(remoteCommand).toContain('printf \'%s\\n\' "$gtbi_pubkey" >> ~/.ssh/authorized_keys');
+    expect(remoteCommand).not.toContain("grep -qxF $gtbi_pubkey");
+    expect(remoteCommand).not.toContain("printf '%s\\n' $gtbi_pubkey");
   });
 
   test("falls back to ubuntu for usernames the installer would reject", () => {
@@ -182,7 +182,7 @@ describe("buildCommands", () => {
 
     expect(installer?.command).toContain('TARGET_USER="admin"');
     expect(sshUser?.command).toContain("admin@10.20.30.40");
-    expect(sshUser?.windowsCommand).toBe("ssh -i $HOME\\.ssh\\acfs_ed25519 admin@10.20.30.40");
+    expect(sshUser?.windowsCommand).toBe("ssh -i $HOME\\.ssh\\gtbi_ed25519 admin@10.20.30.40");
   });
 
   test("falls back to ubuntu when the username input is invalid", () => {
@@ -275,7 +275,7 @@ describe("buildHandoffRunbook", () => {
 
     const json = serializeHandoffRunbookJson(runbook);
 
-    expect(runbook.schema).toBe("acfs.handoff-runbook.v1");
+    expect(runbook.schema).toBe("gtbi.handoff-runbook.v1");
     expect(runbook.install.command).toContain('TARGET_USER="dev-user"');
     expect(runbook.install.command).toContain('--ref "v1.2.3"');
     expect(runbook.install.command).toContain("/v1.2.3/install.sh");
@@ -328,13 +328,13 @@ describe("buildHandoffRunbook", () => {
 
     const markdown = formatHandoffRunbookMarkdown(runbook);
 
-    expect(markdown).toContain("# ACFS Wizard Handoff Runbook");
-    expect(markdown).toContain("Schema: `acfs.handoff-runbook.v1`");
+    expect(markdown).toContain("# GTBI Wizard Handoff Runbook");
+    expect(markdown).toContain("Schema: `gtbi.handoff-runbook.v1`");
     expect(markdown).toContain("Host kind: ipv6");
     expect(markdown).toContain("ssh root@<ipv6-target-host>");
-    expect(markdown).toContain("Copy the ACFS public key through the root fallback");
+    expect(markdown).toContain("Copy the GTBI public key through the root fallback");
     expect(markdown).toContain("/home/ubuntu/.ssh/authorized_keys");
-    expect(markdown).toContain("acfs support-bundle");
+    expect(markdown).toContain("gtbi support-bundle");
     expect(markdown).not.toContain("2001:db8::42");
   });
 
@@ -378,9 +378,9 @@ describe("buildHandoffRunbook", () => {
       expect(runbook.targetHost.value).not.toBe(scenario.rawHost);
       expect(runbook.wizardSelections.sourceRef).toBe(scenario.expectedSourceRef);
       expect(runbook.install.command).toContain(`/${scenario.expectedSourceRef}/install.sh`);
-      expect(runbook.support.bundleCommand).toBe("acfs support-bundle");
+      expect(runbook.support.bundleCommand).toBe("gtbi support-bundle");
       expect(runbook.support.reviewArtifacts).toEqual(["support-report.md", "manifest.json"]);
-      expect(runbook.recoveryCommands.map((command) => command.command)).toContain("acfs support-bundle");
+      expect(runbook.recoveryCommands.map((command) => command.command)).toContain("gtbi support-bundle");
 
       expectSafeHandoffArtifacts([json, markdown, ...runbook.recoveryCommands.map((command) => command.command)], scenario.rawHost);
     }
@@ -413,9 +413,9 @@ describe("buildTeamProfile", () => {
     const json = serializeTeamProfileJson(profile);
     const review = formatTeamProfileReviewMarkdown(profile);
 
-    expect(profile.schema).toBe("acfs.team-profile.v1");
+    expect(profile.schema).toBe("gtbi.team-profile.v1");
     expect(profile.schemaVersion).toBe(1);
-    expect(profile.profileId).toBe("contabo-safe-v1.2.3-acfs");
+    expect(profile.profileId).toBe("contabo-safe-v1.2.3-gtbi");
     expect(profile.providerDefaults).toMatchObject({
       provider: "contabo",
       region: "us",
@@ -434,7 +434,7 @@ describe("buildTeamProfile", () => {
     expect(profile.install.modulePlan.warnings).toContain(
       "Selected cloud modules may require live provider or CLI authentication after install.",
     );
-    expect(review).toContain("# ACFS Team Profile Review");
+    expect(review).toContain("# GTBI Team Profile Review");
     expect(review).toContain('--only "cloud.wrangler"');
     expect(json).not.toContain("203.0.113.42");
     expect(review).not.toContain("203.0.113.42");
@@ -452,7 +452,7 @@ describe("buildTeamProfile", () => {
     });
     const json = serializeTeamProfileJson(profile);
 
-    expect(profile.profileId).toBe("other-vibe-main-acfs");
+    expect(profile.profileId).toBe("other-vibe-main-gtbi");
     expect(profile.providerDefaults.provider).toBe("other");
     expect(profile.providerDefaults.region).toBe("not-listed");
     expect(profile.providerDefaults.planClass).toBe("custom plan");
@@ -533,13 +533,13 @@ describe("buildTeamProfile", () => {
       generatedAt,
     });
 
-    expect(profile.schema).toBe("acfs.team-profile.v1");
+    expect(profile.schema).toBe("gtbi.team-profile.v1");
     expect(profile.schemaVersion).toBe(1);
     expect(profile.provenance.source.manifestSha256).toMatch(/^[a-f0-9]{64}$/);
     expect(profile.provenance.source.checksumsYamlSha256).toMatch(/^[a-f0-9]{64}$/);
     expect(profile.redaction.allowSecretValues).toBe(false);
     expect(profile.redaction.secretSlotsRequired).toBe(true);
-    expect(profile.serviceAccounts.every((account) => account.secretSlot.startsWith("secret://acfs/team/"))).toBe(true);
+    expect(profile.serviceAccounts.every((account) => account.secretSlot.startsWith("secret://gtbi/team/"))).toBe(true);
   });
 });
 
@@ -583,13 +583,13 @@ describe("buildTeamProfileImportDiff", () => {
     const json = serializeTeamProfileImportDiffJson(diff);
     const markdown = formatTeamProfileImportDiffMarkdown(diff);
 
-    expect(diff.schema).toBe("acfs.team-profile-import-diff.v1");
+    expect(diff.schema).toBe("gtbi.team-profile-import-diff.v1");
     expect(diff.dryRun).toBe(true);
     expect(diff.ok).toBe(true);
     expect(diff.safeDefaults.changes.map((change) => change.field)).toContain("providerDefaults.provider");
     expect(diff.installerCommand.command).toContain('--ref "v1.2.3"');
     expect(diff.installerCommand.command).toContain('--only "cloud.wrangler"');
-    expect(diff.secretSlots.required).toEqual(["secret://acfs/team/github-auth"]);
+    expect(diff.secretSlots.required).toEqual(["secret://gtbi/team/github-auth"]);
     expect(json).toContain("\"dryRun\": true");
     expect(markdown).toContain("Status: ready");
     expect(markdown).toContain("## Installer Command");
@@ -649,7 +649,7 @@ describe("buildTeamProfileImportDiff", () => {
   });
 
   test("rejects invalid import refs before building a command preview", () => {
-    const malformedRef = "feature/test;touch /tmp/acfs";
+    const malformedRef = "feature/test;touch /tmp/gtbi";
     const profile = {
       ...sampleProfile(),
       install: {
@@ -773,8 +773,8 @@ describe("buildShareURL", () => {
     Object.defineProperty(globalThis, "window", {
       value: {
         location: {
-          href: "https://acfs.dev/wizard/launch-onboarding?utm_source=share",
-          origin: "https://acfs.dev",
+          href: "https://gtbi.dev/wizard/launch-onboarding?utm_source=share",
+          origin: "https://gtbi.dev",
           pathname: "/wizard/launch-onboarding",
         },
       },
@@ -790,7 +790,7 @@ describe("buildShareURL", () => {
         ref: null,
       });
 
-      expect(shareURL).toBe("https://acfs.dev/wizard/launch-onboarding?ip=10.20.30.40&os=mac&mode=vibe");
+      expect(shareURL).toBe("https://gtbi.dev/wizard/launch-onboarding?ip=10.20.30.40&os=mac&mode=vibe");
       expect(shareURL).not.toContain("utm_source=");
     } finally {
       Object.defineProperty(globalThis, "window", {
@@ -806,8 +806,8 @@ describe("buildShareURL", () => {
     Object.defineProperty(globalThis, "window", {
       value: {
         location: {
-          href: "https://acfs.dev/wizard/launch-onboarding",
-          origin: "https://acfs.dev",
+          href: "https://gtbi.dev/wizard/launch-onboarding",
+          origin: "https://gtbi.dev",
           pathname: "/wizard/launch-onboarding",
         },
       },
@@ -823,7 +823,7 @@ describe("buildShareURL", () => {
         ref: null,
       });
 
-      expect(shareURL).toBe("https://acfs.dev/wizard/launch-onboarding?ip=10.20.30.40&os=linux&mode=safe");
+      expect(shareURL).toBe("https://gtbi.dev/wizard/launch-onboarding?ip=10.20.30.40&os=linux&mode=safe");
     } finally {
       Object.defineProperty(globalThis, "window", {
         value: originalWindow,

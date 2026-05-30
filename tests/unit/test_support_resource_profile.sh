@@ -10,7 +10,7 @@ SUPPORT_SH="$REPO_ROOT/scripts/lib/support.sh"
 
 TESTS_PASSED=0
 TESTS_FAILED=0
-ARTIFACT_DIR="${ACFS_SUPPORT_RESOURCE_PROFILE_TEST_ARTIFACTS_DIR:-${TMPDIR:-/tmp}/acfs-support-resource-profile-test-artifacts-$(date +%Y%m%d-%H%M%S)-$$}"
+ARTIFACT_DIR="${GTBI_SUPPORT_RESOURCE_PROFILE_TEST_ARTIFACTS_DIR:-${TMPDIR:-/tmp}/gtbi-support-resource-profile-test-artifacts-$(date +%Y%m%d-%H%M%S)-$$}"
 
 mkdir -p "$ARTIFACT_DIR"
 
@@ -35,7 +35,7 @@ test_support_capture_resource_profile_sanitizes_paths() {
 
     output="$(env \
         HOME="$home_dir" \
-        ACFS_RESOURCE_PROFILE_HOME="$profile_home" \
+        GTBI_RESOURCE_PROFILE_HOME="$profile_home" \
         SUPPORT_SH="$SUPPORT_SH" \
         REPO_ROOT="$REPO_ROOT" \
         BUNDLE_DIR="$bundle_dir" \
@@ -49,7 +49,7 @@ test_support_capture_resource_profile_sanitizes_paths() {
             log_error() { :; }
             # shellcheck source=../../scripts/lib/support.sh
             source "$SUPPORT_SH"
-            _SUPPORT_ACFS_HOME=""
+            _SUPPORT_GTBI_HOME=""
             _SUPPORT_SCRIPT_DIR="$REPO_ROOT/scripts/lib"
             SUPPORT_TARGET_HOME="$HOME"
             RESOURCE_PROFILE_TIMEOUT=5
@@ -69,12 +69,12 @@ test_support_capture_resource_profile_sanitizes_paths() {
       .mode == "dry-run" and
       .status == "pass" and
       .capture.status == "pass" and
-      .safety.limited_to_acfs_owned_files == true and
+      .safety.limited_to_gtbi_owned_files == true and
       .redaction.paths_redacted == true and
       .redaction.raw_paths_collected == false and
       .redaction.secrets_collected == false and
       (.managed_file_count | type == "number") and
-      (.wrappers[] | select(.name == "acfs-scope" and .command_present == false)) and
+      (.wrappers[] | select(.name == "gtbi-scope" and .command_present == false)) and
       (.wrappers[] | select(.name == "ccs" and .command_present == true))
     ' "$bundle_dir/resource_profile.json" >/dev/null || return 1
 
@@ -148,11 +148,11 @@ JSON
 }
 
 test_support_capture_swarm_inventory_redacts_raw_hosts() {
-    local home_dir acfs_home bundle_dir inventory_path output
+    local home_dir gtbi_home bundle_dir inventory_path output
     home_dir="$ARTIFACT_DIR/inventory-home"
-    acfs_home="$home_dir/.acfs"
+    gtbi_home="$home_dir/.gtbi"
     bundle_dir="$ARTIFACT_DIR/inventory-bundle"
-    inventory_path="$acfs_home/swarm/hosts.inventory.json"
+    inventory_path="$gtbi_home/swarm/hosts.inventory.json"
     mkdir -p "$home_dir" "$bundle_dir"
     write_inventory_fixture "$inventory_path"
 
@@ -161,7 +161,7 @@ test_support_capture_swarm_inventory_redacts_raw_hosts() {
         SUPPORT_SH="$SUPPORT_SH" \
         REPO_ROOT="$REPO_ROOT" \
         BUNDLE_DIR="$bundle_dir" \
-        ACFS_HOME="$acfs_home" \
+        GTBI_HOME="$gtbi_home" \
         bash -lc '
             set -euo pipefail
             log_step() { :; }
@@ -172,7 +172,7 @@ test_support_capture_swarm_inventory_redacts_raw_hosts() {
             log_error() { :; }
             # shellcheck source=../../scripts/lib/support.sh
             source "$SUPPORT_SH"
-            _SUPPORT_ACFS_HOME="$ACFS_HOME"
+            _SUPPORT_GTBI_HOME="$GTBI_HOME"
             _SUPPORT_SCRIPT_DIR="$REPO_ROOT/scripts/lib"
             SUPPORT_TARGET_HOME="$HOME"
             SWARM_INVENTORY_TIMEOUT=5
@@ -228,18 +228,18 @@ test_support_capture_swarm_inventory_redacts_raw_hosts() {
 }
 
 test_support_capture_swarm_inventory_absent_is_structured() {
-    local home_dir acfs_home bundle_dir
+    local home_dir gtbi_home bundle_dir
     home_dir="$ARTIFACT_DIR/inventory-absent-home"
-    acfs_home="$home_dir/.acfs"
+    gtbi_home="$home_dir/.gtbi"
     bundle_dir="$ARTIFACT_DIR/inventory-absent-bundle"
-    mkdir -p "$acfs_home" "$bundle_dir"
+    mkdir -p "$gtbi_home" "$bundle_dir"
 
     env \
         HOME="$home_dir" \
         SUPPORT_SH="$SUPPORT_SH" \
         REPO_ROOT="$REPO_ROOT" \
         BUNDLE_DIR="$bundle_dir" \
-        ACFS_HOME="$acfs_home" \
+        GTBI_HOME="$gtbi_home" \
         bash -lc '
             set -euo pipefail
             log_step() { :; }
@@ -250,7 +250,7 @@ test_support_capture_swarm_inventory_absent_is_structured() {
             log_error() { :; }
             # shellcheck source=../../scripts/lib/support.sh
             source "$SUPPORT_SH"
-            _SUPPORT_ACFS_HOME="$ACFS_HOME"
+            _SUPPORT_GTBI_HOME="$GTBI_HOME"
             _SUPPORT_SCRIPT_DIR="$REPO_ROOT/scripts/lib"
             SUPPORT_TARGET_HOME="$HOME"
             BUNDLE_FILES=()
@@ -275,11 +275,11 @@ test_support_capture_swarm_inventory_absent_is_structured() {
 }
 
 test_support_capture_swarm_inventory_malformed_is_sanitized() {
-    local home_dir acfs_home bundle_dir inventory_path
+    local home_dir gtbi_home bundle_dir inventory_path
     home_dir="$ARTIFACT_DIR/inventory-malformed-home"
-    acfs_home="$home_dir/.acfs"
+    gtbi_home="$home_dir/.gtbi"
     bundle_dir="$ARTIFACT_DIR/inventory-malformed-bundle"
-    inventory_path="$acfs_home/swarm/hosts.inventory.json"
+    inventory_path="$gtbi_home/swarm/hosts.inventory.json"
     mkdir -p "$(dirname "$inventory_path")" "$bundle_dir"
     printf '{not valid json in %s\n' "$inventory_path" > "$inventory_path"
 
@@ -288,7 +288,7 @@ test_support_capture_swarm_inventory_malformed_is_sanitized() {
         SUPPORT_SH="$SUPPORT_SH" \
         REPO_ROOT="$REPO_ROOT" \
         BUNDLE_DIR="$bundle_dir" \
-        ACFS_HOME="$acfs_home" \
+        GTBI_HOME="$gtbi_home" \
         bash -lc '
             set -euo pipefail
             log_step() { :; }
@@ -299,7 +299,7 @@ test_support_capture_swarm_inventory_malformed_is_sanitized() {
             log_error() { :; }
             # shellcheck source=../../scripts/lib/support.sh
             source "$SUPPORT_SH"
-            _SUPPORT_ACFS_HOME="$ACFS_HOME"
+            _SUPPORT_GTBI_HOME="$GTBI_HOME"
             _SUPPORT_SCRIPT_DIR="$REPO_ROOT/scripts/lib"
             SUPPORT_TARGET_HOME="$HOME"
             BUNDLE_FILES=()

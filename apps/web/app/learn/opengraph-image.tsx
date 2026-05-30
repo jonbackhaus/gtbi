@@ -3,7 +3,7 @@ import { getStaticRouteSocialData } from "@/lib/social-image-routes";
 
 export const runtime = "edge";
 
-export const alt = "ACFS Learning Hub";
+export const alt = "GTBI Learning Hub";
 export const size = {
   width: 1200,
   height: 630,

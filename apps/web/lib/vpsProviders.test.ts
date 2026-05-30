@@ -23,7 +23,7 @@ type ProviderReadinessScenario = {
 };
 
 describe("VPS capacity sizing", () => {
-  test("keeps the wizard calculator aligned with the standard ACFS profile", () => {
+  test("keeps the wizard calculator aligned with the standard GTBI profile", () => {
     const standard = getWorkloadProfile("standard");
     const heavy = getWorkloadProfile("heavy");
 

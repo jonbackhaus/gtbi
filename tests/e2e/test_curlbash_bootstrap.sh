@@ -13,7 +13,7 @@
 # Strategy:
 #   1. Create a tar.gz archive from the current checkout
 #   2. Serve install.sh via python3 -m http.server
-#   3. Run curl | bash -s -- --yes --dry-run with ACFS_TEST_ARCHIVE
+#   3. Run curl | bash -s -- --yes --dry-run with GTBI_TEST_ARCHIVE
 #   4. Verify bootstrap succeeds and dry-run completes
 #
 # Related bugs: #85-#90
@@ -64,16 +64,16 @@ ARCHIVE_DIR="$WORK_DIR/serve"
 mkdir -p "$ARCHIVE_DIR"
 
 # Create the archive mimicking GitHub's format: repo-ref/ prefix
-ARCHIVE_PREFIX="agentic_coding_flywheel_setup-test"
+ARCHIVE_PREFIX="gastown_batteries_included-test"
 STAGING="$WORK_DIR/$ARCHIVE_PREFIX"
 mkdir -p "$STAGING"
 
 # Copy the files that bootstrap_repo_archive extracts
 cp "$REPO_ROOT/install.sh" "$STAGING/"
 cp -r "$REPO_ROOT/scripts" "$STAGING/"
-cp -r "$REPO_ROOT/acfs" "$STAGING/" 2>/dev/null || mkdir -p "$STAGING/acfs"
+cp -r "$REPO_ROOT/gtbi" "$STAGING/" 2>/dev/null || mkdir -p "$STAGING/gtbi"
 cp "$REPO_ROOT/checksums.yaml" "$STAGING/" 2>/dev/null || echo "{}" > "$STAGING/checksums.yaml"
-cp "$REPO_ROOT/acfs.manifest.yaml" "$STAGING/" 2>/dev/null || echo "{}" > "$STAGING/acfs.manifest.yaml"
+cp "$REPO_ROOT/gtbi.manifest.yaml" "$STAGING/" 2>/dev/null || echo "{}" > "$STAGING/gtbi.manifest.yaml"
 cp "$REPO_ROOT/VERSION" "$STAGING/" 2>/dev/null || echo "0.0.0-test" > "$STAGING/VERSION"
 
 # Create tar.gz with the expected structure
@@ -128,7 +128,7 @@ LOG_FILE="$WORK_DIR/install.log"
 set +e
 timeout 90s bash -c '
     set -euo pipefail
-    curl -sf "$1" | ACFS_TEST_MODE=1 ACFS_TEST_ARCHIVE="$2" ACFS_CI=true bash -s -- --yes --dry-run --skip-preflight --skip-ubuntu-upgrade
+    curl -sf "$1" | GTBI_TEST_MODE=1 GTBI_TEST_ARCHIVE="$2" GTBI_CI=true bash -s -- --yes --dry-run --skip-preflight --skip-ubuntu-upgrade
 ' _ "http://localhost:$PORT/install.sh" "$ARCHIVE_DIR/test.tar.gz" > "$LOG_FILE" 2>&1
 INSTALL_STATUS=$?
 set -e
@@ -183,12 +183,12 @@ else
     ((PASS++)) || true
 fi
 
-# The dry-run output should mention ACFS version
-if grep -qE "ACFS|acfs|Agentic Coding" "$LOG_FILE" 2>/dev/null; then
-    echo "  PASS: ACFS banner/version present in output"
+# The dry-run output should mention GTBI version
+if grep -qE "GTBI|gtbi|Agentic Coding" "$LOG_FILE" 2>/dev/null; then
+    echo "  PASS: GTBI banner/version present in output"
     ((PASS++)) || true
 else
-    echo "  WARN: ACFS banner not found (may be OK in dry-run mode)"
+    echo "  WARN: GTBI banner not found (may be OK in dry-run mode)"
     ((PASS++)) || true
 fi
 

@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # ============================================================
-# ACFS newproj TUI Wizard - Directory Screen
+# GTBI newproj TUI Wizard - Directory Screen
 # Collects and validates the project directory path
 # ============================================================
 
 # Prevent multiple sourcing
-if [[ -n "${_ACFS_SCREEN_DIRECTORY_LOADED:-}" ]]; then
+if [[ -n "${_GTBI_SCREEN_DIRECTORY_LOADED:-}" ]]; then
     return 0
 fi
-_ACFS_SCREEN_DIRECTORY_LOADED=1
+_GTBI_SCREEN_DIRECTORY_LOADED=1
 
 # ============================================================
 # Screen: Directory
@@ -23,10 +23,10 @@ SCREEN_DIRECTORY_PREV="project_name"
 
 # Get the default projects directory
 get_default_projects_dir() {
-    # Configurable default: ACFS_PROJECTS_DIR env var, then check common locations
+    # Configurable default: GTBI_PROJECTS_DIR env var, then check common locations
     # Priority: env var > /data/projects > ~/projects > ~/Projects > $HOME
-    if [[ -n "${ACFS_PROJECTS_DIR:-}" ]] && [[ -d "$ACFS_PROJECTS_DIR" ]]; then
-        echo "$ACFS_PROJECTS_DIR"
+    if [[ -n "${GTBI_PROJECTS_DIR:-}" ]] && [[ -d "$GTBI_PROJECTS_DIR" ]]; then
+        echo "$GTBI_PROJECTS_DIR"
     elif [[ -d "/data/projects" ]]; then
         echo "/data/projects"
     elif [[ -d "$HOME/projects" ]]; then
@@ -34,7 +34,7 @@ get_default_projects_dir() {
     elif [[ -d "$HOME/Projects" ]]; then
         echo "$HOME/Projects"
     else
-        # Fall back to /data/projects (ACFS canonical default) even if it doesn't
+        # Fall back to /data/projects (GTBI canonical default) even if it doesn't
         # exist yet -- the installer creates it. This unifies NTM, newproj, and docs.
         echo "/data/projects"
     fi

@@ -182,7 +182,7 @@ function writeRealFile(path: string, content: string, executableFile = false): v
 }
 
 function createCliFixture() {
-  const root = mkdtempSync(join(tmpdir(), 'acfs-agent-readiness-'));
+  const root = mkdtempSync(join(tmpdir(), 'gtbi-agent-readiness-'));
   const home = join(root, 'home');
   const bin = join(root, 'bin');
   const secret = `${REDACTION_SAMPLE}-cli`;
@@ -295,7 +295,7 @@ describe('agent readiness audit', () => {
     });
 
     expect(humanRun.status).toBe(0);
-    expect(humanRun.stdout).toContain('ACFS agent readiness audit');
+    expect(humanRun.stdout).toContain('GTBI agent readiness audit');
     expect(humanRun.stdout).toContain('Summary: pass=4 warn=0 unknown=0 fail=0');
     expect(humanRun.stdout).toContain('[PASS] Claude Code (claude)');
     expect(humanRun.stdout).toContain('[PASS] Codex CLI (codex)');
@@ -303,7 +303,7 @@ describe('agent readiness audit', () => {
     expect(humanRun.stdout).toContain('[PASS] Coding Agent Account Manager (caam)');
     expect(humanRun.stdout).not.toContain(fixture.secret);
     expect(humanRun.stdout).not.toContain(envSecret);
-    expect(fixture.root).toContain('acfs-agent-readiness-');
+    expect(fixture.root).toContain('gtbi-agent-readiness-');
   });
 
   test('warns when a CLI is present but auth is missing', () => {
@@ -343,7 +343,7 @@ describe('agent readiness audit', () => {
     expect(gemini?.cli.detail).toContain('gemini was not found');
   });
 
-  test('does not treat system binaries as ACFS command aliases', () => {
+  test('does not treat system binaries as GTBI command aliases', () => {
     const entries = {
       ...baseEntries(),
       '/usr/bin/cc': executable('/usr/bin/cc'),

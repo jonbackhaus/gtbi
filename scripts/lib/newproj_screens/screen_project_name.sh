@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # ============================================================
-# ACFS newproj TUI Wizard - Project Name Screen
+# GTBI newproj TUI Wizard - Project Name Screen
 # Collects and validates the project name
 # ============================================================
 
 # Prevent multiple sourcing
-if [[ -n "${_ACFS_SCREEN_PROJECT_NAME_LOADED:-}" ]]; then
+if [[ -n "${_GTBI_SCREEN_PROJECT_NAME_LOADED:-}" ]]; then
     return 0
 fi
-_ACFS_SCREEN_PROJECT_NAME_LOADED=1
+_GTBI_SCREEN_PROJECT_NAME_LOADED=1
 
 # ============================================================
 # Screen: Project Name

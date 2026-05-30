@@ -3,7 +3,7 @@
  * GA4 Configuration Script
  *
  * Configures Google Analytics 4 with custom dimensions, conversions, and audiences
- * tailored for the ACFS wizard funnel and learning hub tracking.
+ * tailored for the GTBI wizard funnel and learning hub tracking.
  *
  * Usage: bun run scripts/configure-ga4.ts
  *
@@ -460,7 +460,7 @@ https://analytics.google.com/analytics/web/#/p${PROPERTY_ID}/reports/intelligent
 
 async function main() {
   console.log('═'.repeat(60));
-  console.log('🔧 ACFS GA4 Configuration Script');
+  console.log('🔧 GTBI GA4 Configuration Script');
   console.log('═'.repeat(60));
   console.log(`\nConfiguring GA4 Property: ${PROPERTY_ID}\n`);
 

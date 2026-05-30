@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # shellcheck disable=SC1091
 # ============================================================
-# ACFS Post-Install Services Setup
+# GTBI Post-Install Services Setup
 # Interactive wizard to configure AI agents and cloud services
-# Run after main installer completes: acfs services-setup
+# Run after main installer completes: gtbi services-setup
 # ============================================================
 
 set -euo pipefail
@@ -167,10 +167,10 @@ if [[ -n "$_SERVICES_SETUP_CURRENT_HOME" ]]; then
     export HOME
 fi
 
-ACFS_HOME="$(services_setup_sanitize_abs_nonroot_path "${ACFS_HOME:-}" 2>/dev/null || true)"
+GTBI_HOME="$(services_setup_sanitize_abs_nonroot_path "${GTBI_HOME:-}" 2>/dev/null || true)"
 TARGET_HOME="$(services_setup_sanitize_abs_nonroot_path "${TARGET_HOME:-}" 2>/dev/null || true)"
-ACFS_BIN_DIR="$(services_setup_sanitize_abs_nonroot_path "${ACFS_BIN_DIR:-}" 2>/dev/null || true)"
-export ACFS_HOME TARGET_HOME ACFS_BIN_DIR
+GTBI_BIN_DIR="$(services_setup_sanitize_abs_nonroot_path "${GTBI_BIN_DIR:-}" 2>/dev/null || true)"
+export GTBI_HOME TARGET_HOME GTBI_BIN_DIR
 
 resolve_script_lib_dir() {
     local -a candidates=()
@@ -178,16 +178,16 @@ resolve_script_lib_dir() {
 
     candidates+=("$SCRIPT_DIR/lib")
 
-    if [[ -n "${ACFS_HOME:-}" ]] && [[ "${ACFS_HOME}" == /* ]]; then
-        candidates+=("${ACFS_HOME%/}/scripts/lib")
+    if [[ -n "${GTBI_HOME:-}" ]] && [[ "${GTBI_HOME}" == /* ]]; then
+        candidates+=("${GTBI_HOME%/}/scripts/lib")
     fi
 
     if [[ -n "${TARGET_HOME:-}" ]] && [[ "${TARGET_HOME}" == /* ]]; then
-        candidates+=("${TARGET_HOME%/}/.acfs/scripts/lib")
+        candidates+=("${TARGET_HOME%/}/.gtbi/scripts/lib")
     fi
 
     if [[ -n "${_SERVICES_SETUP_CURRENT_HOME:-}" ]]; then
-        candidates+=("${_SERVICES_SETUP_CURRENT_HOME}/.acfs/scripts/lib")
+        candidates+=("${_SERVICES_SETUP_CURRENT_HOME}/.gtbi/scripts/lib")
     fi
 
     for candidate in "${candidates[@]}"; do
@@ -200,16 +200,16 @@ resolve_script_lib_dir() {
     return 1
 }
 
-ACFS_LIB_DIR="$(resolve_script_lib_dir || true)"
+GTBI_LIB_DIR="$(resolve_script_lib_dir || true)"
 
-# Source libraries from the script-adjacent install first, then explicit ACFS
+# Source libraries from the script-adjacent install first, then explicit GTBI
 # and target-home hints, and only finally the caller HOME fallback.
-if [[ -n "$ACFS_LIB_DIR" ]]; then
-    source "$ACFS_LIB_DIR/logging.sh"
-    source "$ACFS_LIB_DIR/gum_ui.sh"
+if [[ -n "$GTBI_LIB_DIR" ]]; then
+    source "$GTBI_LIB_DIR/logging.sh"
+    source "$GTBI_LIB_DIR/gum_ui.sh"
 else
-    echo "Error: Cannot find ACFS script libraries"
-    echo "Expected at: $SCRIPT_DIR/lib/ or ${ACFS_HOME:-<acfs-home>}/scripts/lib/ or ${TARGET_HOME:-<target-home>}/.acfs/scripts/lib/ or ${_SERVICES_SETUP_CURRENT_HOME:-<home>}/.acfs/scripts/lib/"
+    echo "Error: Cannot find GTBI script libraries"
+    echo "Expected at: $SCRIPT_DIR/lib/ or ${GTBI_HOME:-<gtbi-home>}/scripts/lib/ or ${TARGET_HOME:-<target-home>}/.gtbi/scripts/lib/ or ${_SERVICES_SETUP_CURRENT_HOME:-<home>}/.gtbi/scripts/lib/"
     exit 1
 fi
 
@@ -255,8 +255,8 @@ resolve_home_dir() {
         current_home="$(services_setup_sanitize_abs_nonroot_path "${HOME:-}" 2>/dev/null || true)"
         initial_env_home="$(services_setup_sanitize_abs_nonroot_path "${_SERVICES_SETUP_ENV_HOME:-}" 2>/dev/null || true)"
         if [[ "$current_home" != "$expected_home" ]] && [[ "$initial_env_home" != "$expected_home" ]] && {
-            { declare -F services_setup_target_home_has_acfs_data >/dev/null 2>&1 && services_setup_target_home_has_acfs_data "$expected_home"; } \
-                || [[ -n "${ACFS_BIN_DIR:-}" ]]
+            { declare -F services_setup_target_home_has_gtbi_data >/dev/null 2>&1 && services_setup_target_home_has_gtbi_data "$expected_home"; } \
+                || [[ -n "${GTBI_BIN_DIR:-}" ]]
         }; then
             printf '%s' "$expected_home"
             return 0
@@ -306,7 +306,7 @@ services_setup_validate_bin_dir_for_home() {
 
     case "$bin_dir" in
         */.local/bin) hinted_home="${bin_dir%/.local/bin}" ;;
-        */.acfs/bin) hinted_home="${bin_dir%/.acfs/bin}" ;;
+        */.gtbi/bin) hinted_home="${bin_dir%/.gtbi/bin}" ;;
         */.bun/bin) hinted_home="${bin_dir%/.bun/bin}" ;;
         */.cargo/bin) hinted_home="${bin_dir%/.cargo/bin}" ;;
         */.atuin/bin) hinted_home="${bin_dir%/.atuin/bin}" ;;
@@ -330,16 +330,16 @@ services_setup_validate_bin_dir_for_home() {
     printf '%s\n' "$bin_dir"
 }
 
-services_setup_target_home_has_acfs_data() {
+services_setup_target_home_has_gtbi_data() {
     local home_dir="${1:-}"
 
     home_dir="$(services_setup_sanitize_abs_nonroot_path "$home_dir" 2>/dev/null || true)"
     [[ -n "$home_dir" ]] || return 1
 
-    [[ -f "$home_dir/.acfs/state.json" ]] \
-        || [[ -f "$home_dir/.acfs/VERSION" ]] \
-        || [[ -f "$home_dir/.acfs/version" ]] \
-        || { [[ -f "$home_dir/.acfs/scripts/services-setup.sh" ]] && [[ -d "$home_dir/.acfs/scripts/lib" ]]; }
+    [[ -f "$home_dir/.gtbi/state.json" ]] \
+        || [[ -f "$home_dir/.gtbi/VERSION" ]] \
+        || [[ -f "$home_dir/.gtbi/version" ]] \
+        || { [[ -f "$home_dir/.gtbi/scripts/services-setup.sh" ]] && [[ -d "$home_dir/.gtbi/scripts/lib" ]]; }
 }
 
 BUN_BIN="${BUN_BIN:-}"
@@ -370,18 +370,18 @@ init_target_context() {
     fi
     export TARGET_HOME
 
-    ACFS_HOME="$(services_setup_sanitize_abs_nonroot_path "${ACFS_HOME:-}" 2>/dev/null || true)"
+    GTBI_HOME="$(services_setup_sanitize_abs_nonroot_path "${GTBI_HOME:-}" 2>/dev/null || true)"
     if [[ -n "$explicit_target_home" ]] && [[ "$explicit_target_home" != "$TARGET_HOME" ]]; then
-        case "$ACFS_HOME" in
+        case "$GTBI_HOME" in
             "$explicit_target_home"|"$explicit_target_home"/*)
-                ACFS_HOME="$TARGET_HOME/.acfs"
+                GTBI_HOME="$TARGET_HOME/.gtbi"
                 ;;
         esac
     fi
-    export ACFS_HOME
+    export GTBI_HOME
 
-    ACFS_BIN_DIR="$(services_setup_validate_bin_dir_for_home "${ACFS_BIN_DIR:-}" "$TARGET_HOME" 2>/dev/null || true)"
-    export ACFS_BIN_DIR
+    GTBI_BIN_DIR="$(services_setup_validate_bin_dir_for_home "${GTBI_BIN_DIR:-}" "$TARGET_HOME" 2>/dev/null || true)"
+    export GTBI_BIN_DIR
 
     if [[ -n "${BUN_BIN:-}" && -x "${BUN_BIN:-}" ]]; then
         bun_bin_dir="$(services_setup_validate_bin_dir_for_home "${BUN_BIN%/*}" "$TARGET_HOME" 2>/dev/null || true)"
@@ -431,7 +431,7 @@ run_as_user() {
         return 1
     }
 
-    primary_bin_dir="$(services_setup_validate_bin_dir_for_home "${ACFS_BIN_DIR:-}" "${TARGET_HOME:-}" 2>/dev/null || true)"
+    primary_bin_dir="$(services_setup_validate_bin_dir_for_home "${GTBI_BIN_DIR:-}" "${TARGET_HOME:-}" 2>/dev/null || true)"
     if [[ -z "$primary_bin_dir" ]] && [[ -n "${TARGET_HOME:-}" ]]; then
         primary_bin_dir="$TARGET_HOME/.local/bin"
     fi
@@ -439,8 +439,8 @@ run_as_user() {
 
     env_cmd=("$env_bin" "TARGET_USER=$TARGET_USER")
     [[ -n "${TARGET_HOME:-}" ]] && env_cmd+=("TARGET_HOME=$TARGET_HOME" "HOME=$TARGET_HOME")
-    [[ -n "${ACFS_HOME:-}" ]] && env_cmd+=("ACFS_HOME=$ACFS_HOME")
-    [[ -n "$primary_bin_dir" ]] && env_cmd+=("ACFS_BIN_DIR=$primary_bin_dir")
+    [[ -n "${GTBI_HOME:-}" ]] && env_cmd+=("GTBI_HOME=$GTBI_HOME")
+    [[ -n "$primary_bin_dir" ]] && env_cmd+=("GTBI_BIN_DIR=$primary_bin_dir")
 
     command_argv=("$@")
     if [[ ${#command_argv[@]} -gt 0 ]]; then
@@ -544,7 +544,7 @@ run_as_user_shell() {
         return 1
     fi
 
-    primary_bin_dir="$(services_setup_validate_bin_dir_for_home "${ACFS_BIN_DIR:-}" "${TARGET_HOME:-}" 2>/dev/null || true)"
+    primary_bin_dir="$(services_setup_validate_bin_dir_for_home "${GTBI_BIN_DIR:-}" "${TARGET_HOME:-}" 2>/dev/null || true)"
     if [[ -z "$primary_bin_dir" ]] && [[ -n "${TARGET_HOME:-}" ]]; then
         primary_bin_dir="$TARGET_HOME/.local/bin"
     fi
@@ -552,8 +552,8 @@ run_as_user_shell() {
 
     env_cmd=("$env_bin" "TARGET_USER=$TARGET_USER")
     [[ -n "${TARGET_HOME:-}" ]] && env_cmd+=("TARGET_HOME=$TARGET_HOME" "HOME=$TARGET_HOME")
-    [[ -n "${ACFS_HOME:-}" ]] && env_cmd+=("ACFS_HOME=$ACFS_HOME")
-    [[ -n "$primary_bin_dir" ]] && env_cmd+=("ACFS_BIN_DIR=$primary_bin_dir")
+    [[ -n "${GTBI_HOME:-}" ]] && env_cmd+=("GTBI_HOME=$GTBI_HOME")
+    [[ -n "$primary_bin_dir" ]] && env_cmd+=("GTBI_BIN_DIR=$primary_bin_dir")
 
     if [[ "$(services_setup_resolve_current_user 2>/dev/null || true)" == "$TARGET_USER" ]]; then
         if [[ -n "$target_home_for_cd" ]]; then
@@ -613,15 +613,15 @@ user_command_exists() {
         *[!A-Za-z0-9._+-]*) return 1 ;;
     esac
 
-    primary_bin_dir="${ACFS_BIN_DIR:-$TARGET_HOME/.local/bin}"
+    primary_bin_dir="${GTBI_BIN_DIR:-$TARGET_HOME/.local/bin}"
     primary_bin_dir="$(services_setup_validate_bin_dir_for_home "$primary_bin_dir" "$TARGET_HOME" 2>/dev/null || true)"
     [[ -n "$primary_bin_dir" ]] || primary_bin_dir="$TARGET_HOME/.local/bin"
-    local target_path_prefix="$primary_bin_dir:$TARGET_HOME/.local/bin:$TARGET_HOME/.acfs/bin:$TARGET_HOME/.cargo/bin:$TARGET_HOME/.bun/bin:$TARGET_HOME/.atuin/bin:$TARGET_HOME/go/bin"
+    local target_path_prefix="$primary_bin_dir:$TARGET_HOME/.local/bin:$TARGET_HOME/.gtbi/bin:$TARGET_HOME/.cargo/bin:$TARGET_HOME/.bun/bin:$TARGET_HOME/.atuin/bin:$TARGET_HOME/go/bin"
     # Include common user install locations (bun/cargo/etc) even when running
     # via sudo, which may otherwise provide a restricted PATH.
     # shellcheck disable=SC2016  # $HOME/$PATH expand inside the target user's bash -c
-    run_as_user env ACFS_TARGET_PATH_PREFIX="$target_path_prefix" bash -c \
-        'export PATH="$ACFS_TARGET_PATH_PREFIX:$PATH"; command -v -- "$1" >/dev/null 2>&1' \
+    run_as_user env GTBI_TARGET_PATH_PREFIX="$target_path_prefix" bash -c \
+        'export PATH="$GTBI_TARGET_PATH_PREFIX:$PATH"; command -v -- "$1" >/dev/null 2>&1' \
         _ "$cmd"
 }
 
@@ -770,14 +770,14 @@ find_user_bin() {
         *[!A-Za-z0-9._+-]*) return 1 ;;
     esac
 
-    primary_bin_dir="${ACFS_BIN_DIR:-$TARGET_HOME/.local/bin}"
+    primary_bin_dir="${GTBI_BIN_DIR:-$TARGET_HOME/.local/bin}"
     primary_bin_dir="$(services_setup_validate_bin_dir_for_home "$primary_bin_dir" "$TARGET_HOME" 2>/dev/null || true)"
     [[ -n "$primary_bin_dir" ]] || primary_bin_dir="$TARGET_HOME/.local/bin"
 
     local candidates=(
         "$primary_bin_dir/$name"
         "$TARGET_HOME/.local/bin/$name"
-        "$TARGET_HOME/.acfs/bin/$name"
+        "$TARGET_HOME/.gtbi/bin/$name"
         "$TARGET_HOME/.cargo/bin/$name"
         "$TARGET_HOME/.bun/bin/$name"
         "$TARGET_HOME/.atuin/bin/$name"
@@ -828,14 +828,14 @@ select_dcg_packs() {
         if [[ -r /dev/tty ]]; then
             selected_lines=$(gum choose --no-limit \
                 --header "Select additional DCG packs (space to toggle, enter to confirm)" \
-                --cursor.foreground "$ACFS_ACCENT" \
-                --selected.foreground "$ACFS_SUCCESS" \
+                --cursor.foreground "$GTBI_ACCENT" \
+                --selected.foreground "$GTBI_SUCCESS" \
                 "${options[@]}" < /dev/tty) || true
         elif [[ -t 0 ]]; then
             selected_lines=$(gum choose --no-limit \
                 --header "Select additional DCG packs (space to toggle, enter to confirm)" \
-                --cursor.foreground "$ACFS_ACCENT" \
-                --selected.foreground "$ACFS_SUCCESS" \
+                --cursor.foreground "$GTBI_ACCENT" \
+                --selected.foreground "$GTBI_SUCCESS" \
                 "${options[@]}") || true
         else
             echo "ERROR: --yes is required when no TTY is available" >&2
@@ -913,7 +913,7 @@ remove_dcg_hook_from_settings() {
     settings_dir="$("$dirname_bin" "$settings_file")"
 
     local tmp
-    tmp="$(run_as_user "$mktemp_bin" "${settings_dir}/.acfs_dcg_cleanup.XXXXXX" 2>/dev/null || true)"
+    tmp="$(run_as_user "$mktemp_bin" "${settings_dir}/.gtbi_dcg_cleanup.XXXXXX" 2>/dev/null || true)"
     if [[ -z "$tmp" ]]; then
         gum_warn "Could not update $settings_file (mktemp failed)"
         return 1
@@ -1187,10 +1187,10 @@ get_status_icon() {
 get_status_color() {
     local status="$1"
     case "$status" in
-        configured) echo "$ACFS_SUCCESS" ;;
-        running)    echo "$ACFS_WARNING" ;;
-        installed)  echo "$ACFS_WARNING" ;;
-        *)          echo "$ACFS_ERROR" ;;
+        configured) echo "$GTBI_SUCCESS" ;;
+        running)    echo "$GTBI_WARNING" ;;
+        installed)  echo "$GTBI_WARNING" ;;
+        *)          echo "$GTBI_ERROR" ;;
     esac
 }
 
@@ -1236,8 +1236,8 @@ print_status_table() {
         table_data+="$dcg_icon DCG (Destructive Command Guard),Safety,$dcg_status,$dcg_action\n"
 
         printf "%b\n" "$table_data" | gum table \
-            --border.foreground "$ACFS_MUTED" \
-            --header.foreground "$ACFS_PRIMARY"
+            --border.foreground "$GTBI_MUTED" \
+            --header.foreground "$GTBI_PRIMARY"
     else
         # Fallback to simple display
         for i in "${!services[@]}"; do
@@ -1343,7 +1343,7 @@ configure_dcg() {
 
     if [[ -z "$dcg_bin" || ! -x "$dcg_bin" ]]; then
         gum_error "DCG not installed. Run the main installer first."
-        gum_detail "Then run: dcg install (or re-run acfs services-setup)"
+        gum_detail "Then run: dcg install (or re-run gtbi services-setup)"
         return 1
     fi
 
@@ -1462,10 +1462,10 @@ It also supports optional protection packs (database, Kubernetes, cloud)."
 
 print_cli_help() {
     cat << 'EOF'
-ACFS services-setup
+GTBI services-setup
 
 Interactive:
-  acfs services-setup
+  gtbi services-setup
 
 Options:
   --yes, -y    Non-interactive mode
@@ -1708,12 +1708,12 @@ setup_postgres() {
             fi
             if ! "${sudo_cmd[@]}" "$systemctl_bin" start postgresql; then
                 gum_error "Could not start PostgreSQL without prompting for sudo"
-                gum_detail "Run acfs services-setup from a root shell, or re-run the main installer in vibe mode to enable passwordless sudo."
+                gum_detail "Run gtbi services-setup from a root shell, or re-run the main installer in vibe mode to enable passwordless sudo."
                 return 1
             fi
             if ! "${sudo_cmd[@]}" "$systemctl_bin" enable postgresql; then
                 gum_error "Could not enable PostgreSQL without prompting for sudo"
-                gum_detail "Run acfs services-setup from a root shell, or re-run the main installer in vibe mode to enable passwordless sudo."
+                gum_detail "Run gtbi services-setup from a root shell, or re-run the main installer in vibe mode to enable passwordless sudo."
                 return 1
             fi
             gum_success "PostgreSQL service started and enabled"
@@ -1768,12 +1768,12 @@ show_menu() {
         items+=("👋 Exit")
 
         # Use gum filter for fuzzy search
-        gum style --foreground "$ACFS_PRIMARY" --bold "What would you like to configure?"
+        gum style --foreground "$GTBI_PRIMARY" --bold "What would you like to configure?"
         echo ""
         local choice
         choice=$(printf '%s\n' "${items[@]}" | gum filter \
-            --indicator.foreground "$ACFS_ACCENT" \
-            --match.foreground "$ACFS_SUCCESS" \
+            --indicator.foreground "$GTBI_ACCENT" \
+            --match.foreground "$GTBI_SUCCESS" \
             --placeholder "Type to filter services..." \
             --height 12)
 
@@ -1842,7 +1842,7 @@ setup_all_unconfigured() {
     if [[ $needs_setup -eq 0 ]]; then
         if [[ "$HAS_GUM" == "true" ]]; then
             gum style \
-                --foreground "$ACFS_SUCCESS" \
+                --foreground "$GTBI_SUCCESS" \
                 --bold \
                 "✓ All services are already configured!"
         else
@@ -1867,21 +1867,21 @@ setup_all_unconfigured() {
                 local dots=""
                 for ((j = 1; j <= needs_setup; j++)); do
                     if [[ $j -lt $current ]]; then
-                        dots+="$(gum style --foreground "$ACFS_SUCCESS" "●") "
+                        dots+="$(gum style --foreground "$GTBI_SUCCESS" "●") "
                     elif [[ $j -eq $current ]]; then
-                        dots+="$(gum style --foreground "$ACFS_PRIMARY" --bold "●") "
+                        dots+="$(gum style --foreground "$GTBI_PRIMARY" --bold "●") "
                     else
-                        dots+="$(gum style --foreground "$ACFS_MUTED" "○") "
+                        dots+="$(gum style --foreground "$GTBI_MUTED" "○") "
                     fi
                 done
 
                 gum style \
                     --border rounded \
-                    --border-foreground "$ACFS_PRIMARY" \
+                    --border-foreground "$GTBI_PRIMARY" \
                     --padding "0 2" \
                     --margin "0 0 1 0" \
-                    "$(gum style --foreground "$ACFS_ACCENT" "Service $current of $needs_setup") $dots
-$(gum style --foreground "$ACFS_PINK" --bold "Setting up $label...")"
+                    "$(gum style --foreground "$GTBI_ACCENT" "Service $current of $needs_setup") $dots
+$(gum style --foreground "$GTBI_PINK" --bold "Setting up $label...")"
             else
                 gum_step "$current" "$needs_setup" "Setting up $label..."
             fi
@@ -1893,7 +1893,7 @@ $(gum style --foreground "$ACFS_PINK" --bold "Setting up $label...")"
     # Always check postgres
     echo ""
     if [[ "$HAS_GUM" == "true" ]]; then
-        gum style --foreground "$ACFS_MUTED" "Checking PostgreSQL status..."
+        gum style --foreground "$GTBI_MUTED" "Checking PostgreSQL status..."
     fi
     setup_postgres
 
@@ -1907,12 +1907,12 @@ $(gum style --foreground "$ACFS_PINK" --bold "Setting up $label...")"
     if [[ "$HAS_GUM" == "true" ]]; then
         gum style \
             --border double \
-            --border-foreground "$ACFS_SUCCESS" \
+            --border-foreground "$GTBI_SUCCESS" \
             --padding "1 2" \
             --margin "1 0" \
             --align center \
-            "$(gum style --foreground "$ACFS_SUCCESS" --bold '✓ Setup Complete!')
-$(gum style --foreground "$ACFS_TEAL" "All available services have been configured")"
+            "$(gum style --foreground "$GTBI_SUCCESS" --bold '✓ Setup Complete!')
+$(gum style --foreground "$GTBI_TEAL" "All available services have been configured")"
     else
         gum_success "Setup complete!"
     fi
@@ -1928,13 +1928,13 @@ main() {
         echo ""
         gum style \
             --border double \
-            --border-foreground "$ACFS_ACCENT" \
+            --border-foreground "$GTBI_ACCENT" \
             --padding "1 3" \
             --margin "0 0 1 0" \
-            "$(gum style --foreground "$ACFS_PINK" --bold '⚙️  ACFS Services Setup')
-$(gum style --foreground "$ACFS_MUTED" "Configure AI agents and cloud services")"
+            "$(gum style --foreground "$GTBI_PINK" --bold '⚙️  GTBI Services Setup')
+$(gum style --foreground "$GTBI_MUTED" "Configure AI agents and cloud services")"
 
-        gum style --foreground "$ACFS_TEAL" "  User: $TARGET_USER"
+        gum style --foreground "$GTBI_TEAL" "  User: $TARGET_USER"
     else
         print_compact_banner
         echo ""
@@ -1950,13 +1950,13 @@ $(gum style --foreground "$ACFS_MUTED" "Configure AI agents and cloud services")
     if [[ ! -x "$BUN_BIN" ]]; then
         if [[ "$HAS_GUM" == "true" ]]; then
             gum style \
-                --foreground "$ACFS_ERROR" \
+                --foreground "$GTBI_ERROR" \
                 --bold \
                 "✖ Bun not found at $BUN_BIN"
-            gum style --foreground "$ACFS_ERROR" "  Run the main ACFS installer first!"
+            gum style --foreground "$GTBI_ERROR" "  Run the main GTBI installer first!"
         else
             gum_error "Bun not found at $BUN_BIN"
-            gum_error "Run the main ACFS installer first!"
+            gum_error "Run the main GTBI installer first!"
         fi
         exit 1
     fi
@@ -1967,8 +1967,8 @@ $(gum style --foreground "$ACFS_MUTED" "Configure AI agents and cloud services")
         echo ""
         if [[ "$HAS_GUM" == "true" ]]; then
             if ! gum confirm \
-                --prompt.foreground "$ACFS_PRIMARY" \
-                --selected.foreground "$ACFS_SUCCESS" \
+                --prompt.foreground "$GTBI_PRIMARY" \
+                --selected.foreground "$GTBI_SUCCESS" \
                 "Configure more services?"; then
                 break
             fi
@@ -1986,22 +1986,22 @@ $(gum style --foreground "$ACFS_MUTED" "Configure AI agents and cloud services")
     if [[ "$HAS_GUM" == "true" ]]; then
         gum style \
             --border double \
-            --border-foreground "$ACFS_SUCCESS" \
+            --border-foreground "$GTBI_SUCCESS" \
             --padding "1 3" \
             --margin "1 0" \
             --align center \
-            "$(gum style --foreground "$ACFS_SUCCESS" --bold '🎉 Services Setup Complete!')
+            "$(gum style --foreground "$GTBI_SUCCESS" --bold '🎉 Services Setup Complete!')
 
-$(gum style --foreground "$ACFS_TEAL" 'Your ACFS environment is configured!')
+$(gum style --foreground "$GTBI_TEAL" 'Your GTBI environment is configured!')
 
-$(gum style --foreground "$ACFS_MUTED" 'Next steps:')
-$(gum style --foreground "$ACFS_PRIMARY" '  • Start coding with:') $(gum style --foreground "$ACFS_ACCENT" 'cc') $(gum style --foreground "$ACFS_MUTED" '(Claude Code)')
-$(gum style --foreground "$ACFS_PRIMARY" '  • Create a project:') $(gum style --foreground "$ACFS_ACCENT" 'ntm new myproject')
-$(gum style --foreground "$ACFS_PRIMARY" '  • Run the onboarding:') $(gum style --foreground "$ACFS_ACCENT" 'onboard')
+$(gum style --foreground "$GTBI_MUTED" 'Next steps:')
+$(gum style --foreground "$GTBI_PRIMARY" '  • Start coding with:') $(gum style --foreground "$GTBI_ACCENT" 'cc') $(gum style --foreground "$GTBI_MUTED" '(Claude Code)')
+$(gum style --foreground "$GTBI_PRIMARY" '  • Create a project:') $(gum style --foreground "$GTBI_ACCENT" 'ntm new myproject')
+$(gum style --foreground "$GTBI_PRIMARY" '  • Run the onboarding:') $(gum style --foreground "$GTBI_ACCENT" 'onboard')
 
-$(gum style --foreground "$ACFS_PINK" --bold '  Happy coding! 🚀')"
+$(gum style --foreground "$GTBI_PINK" --bold '  Happy coding! 🚀')"
     else
-        gum_completion "Services Setup Complete" "Your ACFS environment is configured!
+        gum_completion "Services Setup Complete" "Your GTBI environment is configured!
 
 Next steps:
   • Start coding with: cc (Claude Code)

@@ -22,7 +22,7 @@ teardown() {
     skip_without_expect
 
     run expect "$E2E_DIR/expect/navigation.exp" \
-        "$ACFS_LIB_DIR/newproj.sh" \
+        "$GTBI_LIB_DIR/newproj.sh" \
         "back_navigation"
 
     assert_success
@@ -33,7 +33,7 @@ teardown() {
     skip_without_expect
 
     run expect "$E2E_DIR/expect/navigation.exp" \
-        "$ACFS_LIB_DIR/newproj.sh" \
+        "$GTBI_LIB_DIR/newproj.sh" \
         "edit_from_confirm"
 
     assert_success
@@ -44,7 +44,7 @@ teardown() {
     skip_without_expect
 
     run expect "$E2E_DIR/expect/navigation.exp" \
-        "$ACFS_LIB_DIR/newproj.sh" \
+        "$GTBI_LIB_DIR/newproj.sh" \
         "escape_cancel"
 
     # Should exit cleanly - either with cancel message or clean exit
@@ -62,7 +62,7 @@ teardown() {
     skip_without_expect
 
     run expect "$E2E_DIR/expect/error_handling.exp" \
-        "$ACFS_LIB_DIR/newproj.sh" \
+        "$GTBI_LIB_DIR/newproj.sh" \
         "invalid_name"
 
     # Should handle gracefully
@@ -77,7 +77,7 @@ teardown() {
     mkdir -p "$existing_dir"
 
     run expect "$E2E_DIR/expect/error_handling.exp" \
-        "$ACFS_LIB_DIR/newproj.sh" \
+        "$GTBI_LIB_DIR/newproj.sh" \
         "existing_dir" \
         "$existing_dir"
 
@@ -89,7 +89,7 @@ teardown() {
     skip_without_expect
 
     run expect "$E2E_DIR/expect/error_handling.exp" \
-        "$ACFS_LIB_DIR/newproj.sh" \
+        "$GTBI_LIB_DIR/newproj.sh" \
         "validation_recovery"
 
     assert_success
@@ -101,14 +101,14 @@ teardown() {
 # ============================================================
 
 @test "CLI rejects empty project name" {
-    run bash "$ACFS_LIB_DIR/newproj.sh" ""
+    run bash "$GTBI_LIB_DIR/newproj.sh" ""
 
     assert_failure
     [[ "$output" == *"name"* ]] || [[ "$output" == *"required"* ]] || [[ "$output" == *"Usage"* ]]
 }
 
 @test "CLI rejects invalid directory path" {
-    run bash "$ACFS_LIB_DIR/newproj.sh" "test-project" "/nonexistent/deeply/nested/path/that/cant/exist"
+    run bash "$GTBI_LIB_DIR/newproj.sh" "test-project" "/nonexistent/deeply/nested/path/that/cant/exist"
 
     assert_failure
 }
@@ -118,7 +118,7 @@ teardown() {
     mkdir -p "$existing_dir"
     echo "existing" > "$existing_dir/README.md"
 
-    run bash "$ACFS_LIB_DIR/newproj.sh" "existing-cli-project" "$existing_dir"
+    run bash "$GTBI_LIB_DIR/newproj.sh" "existing-cli-project" "$existing_dir"
 
     assert_failure
     [[ "$output" == *"not empty"* ]]
@@ -128,14 +128,14 @@ teardown() {
     local project_name='test-project_123'
     local project_dir="$E2E_TEST_DIR/$project_name"
 
-    run bash "$ACFS_LIB_DIR/newproj.sh" "$project_name" "$project_dir"
+    run bash "$GTBI_LIB_DIR/newproj.sh" "$project_name" "$project_dir"
 
     assert_success
     [[ -d "$project_dir" ]]
 }
 
 @test "CLI rejects project name with slashes" {
-    run bash "$ACFS_LIB_DIR/newproj.sh" "test/project" "$E2E_TEST_DIR/slash-test"
+    run bash "$GTBI_LIB_DIR/newproj.sh" "test/project" "$E2E_TEST_DIR/slash-test"
 
     # Slashes in project names should be rejected (invalid characters)
     # OR the project should be created with the slash escaped/replaced
@@ -153,31 +153,31 @@ teardown() {
 # ============================================================
 
 @test "Unknown flag shows error" {
-    run bash "$ACFS_LIB_DIR/newproj.sh" --unknown-flag
+    run bash "$GTBI_LIB_DIR/newproj.sh" --unknown-flag
 
     assert_failure
     [[ "$output" == *"Unknown"* ]] || [[ "$output" == *"option"* ]] || [[ "$output" == *"flag"* ]]
 }
 
 @test "Help flag shows usage" {
-    run bash "$ACFS_LIB_DIR/newproj.sh" --help
+    run bash "$GTBI_LIB_DIR/newproj.sh" --help
 
     assert_success
     [[ "$output" == *"Usage"* ]] || [[ "$output" == *"newproj"* ]]
 }
 
 @test "Version flag shows version" {
-    run bash "$ACFS_LIB_DIR/newproj.sh" --version 2>&1 || true
+    run bash "$GTBI_LIB_DIR/newproj.sh" --version 2>&1 || true
 
     # Version flag may or may not be implemented
-    [[ "$output" == *"version"* ]] || [[ "$output" == *"ACFS"* ]] || skip "Version flag not implemented"
+    [[ "$output" == *"version"* ]] || [[ "$output" == *"GTBI"* ]] || skip "Version flag not implemented"
 }
 
 @test "Multiple feature flags work together" {
     local project_name="multi-flag-test"
     local project_dir="$E2E_TEST_DIR/$project_name"
 
-    run bash "$ACFS_LIB_DIR/newproj.sh" "$project_name" "$project_dir" --no-br --no-agents
+    run bash "$GTBI_LIB_DIR/newproj.sh" "$project_name" "$project_dir" --no-br --no-agents
 
     assert_success
     [[ -d "$project_dir" ]]
@@ -195,7 +195,7 @@ teardown() {
     local project_name="tech-stack-test"
     local project_dir="$E2E_TEST_DIR/$project_name"
 
-    run bash "$ACFS_LIB_DIR/newproj.sh" "$project_name" "$project_dir"
+    run bash "$GTBI_LIB_DIR/newproj.sh" "$project_name" "$project_dir"
 
     assert_success
     [[ -d "$project_dir" ]]
@@ -217,7 +217,7 @@ teardown() {
     # Create a file where the directory should be (to cause failure)
     echo "blocker" > "$project_dir"
 
-    run bash "$ACFS_LIB_DIR/newproj.sh" "$project_name" "$project_dir"
+    run bash "$GTBI_LIB_DIR/newproj.sh" "$project_name" "$project_dir"
 
     assert_failure
 
@@ -234,10 +234,10 @@ teardown() {
     local project2="$E2E_TEST_DIR/concurrent-2"
 
     # Run two instances in parallel
-    bash "$ACFS_LIB_DIR/newproj.sh" "concurrent-1" "$project1" &
+    bash "$GTBI_LIB_DIR/newproj.sh" "concurrent-1" "$project1" &
     local pid1=$!
 
-    bash "$ACFS_LIB_DIR/newproj.sh" "concurrent-2" "$project2" &
+    bash "$GTBI_LIB_DIR/newproj.sh" "concurrent-2" "$project2" &
     local pid2=$!
 
     # Wait for both
@@ -262,7 +262,7 @@ teardown() {
     local project_dir="$E2E_TEST_DIR/$project_name"
 
     # Start the command and send SIGINT after a short delay
-    bash "$ACFS_LIB_DIR/newproj.sh" "$project_name" "$project_dir" &
+    bash "$GTBI_LIB_DIR/newproj.sh" "$project_name" "$project_dir" &
     local pid=$!
 
     sleep 0.1

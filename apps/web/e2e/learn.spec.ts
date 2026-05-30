@@ -84,7 +84,7 @@ test.describe.serial("Learning Hub", () => {
     await page.keyboard.press("c");
 
     const storedLessons = await page.evaluate(() =>
-      localStorage.getItem("acfs-learning-hub-completed-lessons")
+      localStorage.getItem("gtbi-learning-hub-completed-lessons")
     );
     expect(storedLessons).toBeNull();
   });
@@ -96,7 +96,7 @@ test.describe.serial("Learning Hub", () => {
         configurable: true,
         writable: true,
         value(key: string, value: string) {
-          if (key === "acfs-learning-hub-completed-lessons") {
+          if (key === "gtbi-learning-hub-completed-lessons") {
             throw new Error("storage blocked");
           }
           return originalSetItem.call(this, key, value);
@@ -117,7 +117,7 @@ test.describe.serial("Learning Hub", () => {
     await expect(page).toHaveURL(/\/learn\/welcome$/);
 
     const storedLessons = await page.evaluate(() =>
-      localStorage.getItem("acfs-learning-hub-completed-lessons")
+      localStorage.getItem("gtbi-learning-hub-completed-lessons")
     );
     expect(storedLessons).toBeNull();
   });
@@ -162,7 +162,7 @@ test.describe.serial("Learning Hub", () => {
     expect(errors).toEqual([]);
   });
 
-  test("generated command docs prefer internal ACFS tool lessons when available", async ({ page }) => {
+  test("generated command docs prefer internal GTBI tool lessons when available", async ({ page }) => {
     await page.goto("/learn/commands");
     await page.waitForLoadState("networkidle");
 
@@ -202,7 +202,7 @@ test.describe.serial("Learning Hub", () => {
   test("dashboard shortcuts do not override focused interactive controls", async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem(
-        "acfs-learning-hub-completed-lessons",
+        "gtbi-learning-hub-completed-lessons",
         JSON.stringify([0, 1])
       );
     });
@@ -224,7 +224,7 @@ test.describe.serial("Learning Hub", () => {
     const unlockedLessons = JSON.stringify(Array.from({ length: 10 }, (_, index) => index));
 
     await page.addInitScript((lessons) => {
-      localStorage.setItem("acfs-learning-hub-completed-lessons", lessons);
+      localStorage.setItem("gtbi-learning-hub-completed-lessons", lessons);
     }, unlockedLessons);
 
     await page.goto("/learn/keeping-updated");
@@ -233,7 +233,7 @@ test.describe.serial("Learning Hub", () => {
     await page.keyboard.press("ControlOrMeta+c");
 
     const storedLessons = await page.evaluate(() =>
-      localStorage.getItem("acfs-learning-hub-completed-lessons")
+      localStorage.getItem("gtbi-learning-hub-completed-lessons")
     );
     expect(storedLessons).toBe(unlockedLessons);
   });

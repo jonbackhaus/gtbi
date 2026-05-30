@@ -11,9 +11,9 @@ setup() {
 
     # Create temp directory for log files
     TEST_LOG_DIR=$(create_temp_dir)
-    export ACFS_LOG_DIR="$TEST_LOG_DIR"
+    export GTBI_LOG_DIR="$TEST_LOG_DIR"
     # Set DEBUG level (0) before sourcing so it doesn't default to INFO
-    export ACFS_LOG_LEVEL=0
+    export GTBI_LOG_LEVEL=0
 
     # Source the logging module
     source_lib "newproj_logging"
@@ -31,50 +31,50 @@ teardown() {
     init_logging
 
     # Verify log file was created
-    [[ -f "$ACFS_SESSION_LOG" ]]
+    [[ -f "$GTBI_SESSION_LOG" ]]
 }
 
 @test "init_logging writes session header" {
     init_logging
 
     # Check for expected header content
-    grep -q "ACFS newproj TUI Wizard Session Log" "$ACFS_SESSION_LOG"
-    grep -q "Started:" "$ACFS_SESSION_LOG"
-    grep -q "User:" "$ACFS_SESSION_LOG"
-    grep -q "Terminal:" "$ACFS_SESSION_LOG"
+    grep -q "GTBI newproj TUI Wizard Session Log" "$GTBI_SESSION_LOG"
+    grep -q "Started:" "$GTBI_SESSION_LOG"
+    grep -q "User:" "$GTBI_SESSION_LOG"
+    grep -q "Terminal:" "$GTBI_SESSION_LOG"
 }
 
 @test "init_logging with --verbose enables DEBUG level" {
     init_logging --verbose
 
-    [[ "$ACFS_LOG_LEVEL" -eq "$ACFS_LOG_DEBUG" ]]
-    grep -q "Verbose mode enabled" "$ACFS_SESSION_LOG"
+    [[ "$GTBI_LOG_LEVEL" -eq "$GTBI_LOG_DEBUG" ]]
+    grep -q "Verbose mode enabled" "$GTBI_SESSION_LOG"
 }
 
 @test "init_logging handles missing directory gracefully" {
-    export ACFS_LOG_DIR="/nonexistent/path/that/should/not/exist"
+    export GTBI_LOG_DIR="/nonexistent/path/that/should/not/exist"
 
     # Should fall back to /tmp and still create a log
     init_logging
 
     # The log dir should have been reset to /tmp
-    [[ "$ACFS_LOG_DIR" == "/tmp" ]]
+    [[ "$GTBI_LOG_DIR" == "/tmp" ]]
     # And the log file should exist
-    [[ -f "$ACFS_SESSION_LOG" ]]
+    [[ -f "$GTBI_SESSION_LOG" ]]
 }
 
 @test "newproj_logging sources and initializes under set -u without HOME" {
     run env -i PATH="/usr/bin:/bin" TMPDIR="$TEST_LOG_DIR" bash -c '
         set -euo pipefail
         source "$1"
-        printf "dir=%s\n" "$ACFS_LOG_DIR"
+        printf "dir=%s\n" "$GTBI_LOG_DIR"
         init_logging
-        grep -q "Home: <unset>" "$ACFS_SESSION_LOG"
+        grep -q "Home: <unset>" "$GTBI_SESSION_LOG"
         log_env_snapshot
     ' _ "$PROJECT_ROOT/scripts/lib/newproj_logging.sh"
 
     assert_success
-    assert_output --partial "$TEST_LOG_DIR/acfs-state/acfs/logs"
+    assert_output --partial "$TEST_LOG_DIR/gtbi-state/gtbi/logs"
     refute_output --partial "unbound variable"
 }
 
@@ -87,8 +87,8 @@ teardown() {
 
     log_debug "Test debug message"
 
-    grep -q "\[DEBUG\]" "$ACFS_SESSION_LOG"
-    grep -q "Test debug message" "$ACFS_SESSION_LOG"
+    grep -q "\[DEBUG\]" "$GTBI_SESSION_LOG"
+    grep -q "Test debug message" "$GTBI_SESSION_LOG"
 }
 
 @test "log_info writes INFO level messages" {
@@ -96,8 +96,8 @@ teardown() {
 
     log_info "Test info message"
 
-    grep -q "\[INFO \]" "$ACFS_SESSION_LOG"
-    grep -q "Test info message" "$ACFS_SESSION_LOG"
+    grep -q "\[INFO \]" "$GTBI_SESSION_LOG"
+    grep -q "Test info message" "$GTBI_SESSION_LOG"
 }
 
 @test "log_warn writes WARN level messages" {
@@ -105,8 +105,8 @@ teardown() {
 
     log_warn "Test warning message"
 
-    grep -q "\[WARN \]" "$ACFS_SESSION_LOG"
-    grep -q "Test warning message" "$ACFS_SESSION_LOG"
+    grep -q "\[WARN \]" "$GTBI_SESSION_LOG"
+    grep -q "Test warning message" "$GTBI_SESSION_LOG"
 }
 
 @test "log_error writes ERROR level messages" {
@@ -114,12 +114,12 @@ teardown() {
 
     log_error "Test error message"
 
-    grep -q "\[ERROR\]" "$ACFS_SESSION_LOG"
-    grep -q "Test error message" "$ACFS_SESSION_LOG"
+    grep -q "\[ERROR\]" "$GTBI_SESSION_LOG"
+    grep -q "Test error message" "$GTBI_SESSION_LOG"
 }
 
-@test "log level filtering respects ACFS_LOG_LEVEL" {
-    export ACFS_LOG_LEVEL=$ACFS_LOG_WARN
+@test "log level filtering respects GTBI_LOG_LEVEL" {
+    export GTBI_LOG_LEVEL=$GTBI_LOG_WARN
     init_logging
 
     log_debug "Should not appear"
@@ -127,10 +127,10 @@ teardown() {
     log_warn "Should appear"
     log_error "Should also appear"
 
-    run grep -q "Should not appear" "$ACFS_SESSION_LOG"
+    run grep -q "Should not appear" "$GTBI_SESSION_LOG"
     assert_failure
-    grep -q "Should appear" "$ACFS_SESSION_LOG"
-    grep -q "Should also appear" "$ACFS_SESSION_LOG"
+    grep -q "Should appear" "$GTBI_SESSION_LOG"
+    grep -q "Should also appear" "$GTBI_SESSION_LOG"
 }
 
 # ============================================================
@@ -142,9 +142,9 @@ teardown() {
 
     log_state "project_name" "" "my-project"
 
-    grep -q "\[STATE\]" "$ACFS_SESSION_LOG"
-    grep -q "project_name:" "$ACFS_SESSION_LOG"
-    grep -q "'' -> 'my-project'" "$ACFS_SESSION_LOG"
+    grep -q "\[STATE\]" "$GTBI_SESSION_LOG"
+    grep -q "project_name:" "$GTBI_SESSION_LOG"
+    grep -q "'' -> 'my-project'" "$GTBI_SESSION_LOG"
 }
 
 @test "log_screen tracks screen transitions" {
@@ -154,8 +154,8 @@ teardown() {
     log_screen "RENDER" "welcome"
     log_screen "EXIT" "welcome"
 
-    [[ $(grep -c "\[SCRN \]" "$ACFS_SESSION_LOG") -eq 3 ]]
-    grep -q "ENTER: welcome" "$ACFS_SESSION_LOG"
+    [[ $(grep -c "\[SCRN \]" "$GTBI_SESSION_LOG") -eq 3 ]]
+    grep -q "ENTER: welcome" "$GTBI_SESSION_LOG"
 }
 
 @test "log_input sanitizes long inputs" {
@@ -165,8 +165,8 @@ teardown() {
     local long_input=$(printf 'x%.0s' {1..150})
     log_input "test_field" "$long_input"
 
-    grep -q "\[INPUT\]" "$ACFS_SESSION_LOG"
-    grep -q "truncated" "$ACFS_SESSION_LOG"
+    grep -q "\[INPUT\]" "$GTBI_SESSION_LOG"
+    grep -q "truncated" "$GTBI_SESSION_LOG"
 }
 
 @test "log_input masks sensitive data" {
@@ -174,8 +174,8 @@ teardown() {
 
     log_input "api_key" "sk-1234567890abcdef"
 
-    grep -q "sk-\*\*\*" "$ACFS_SESSION_LOG"
-    run grep -q "1234567890abcdef" "$ACFS_SESSION_LOG"
+    grep -q "sk-\*\*\*" "$GTBI_SESSION_LOG"
+    run grep -q "1234567890abcdef" "$GTBI_SESSION_LOG"
     assert_failure
 }
 
@@ -186,7 +186,7 @@ teardown() {
     log_key "ESC"
     log_key "a"
 
-    [[ $(grep -c "\[KEY  \]" "$ACFS_SESSION_LOG") -eq 3 ]]
+    [[ $(grep -c "\[KEY  \]" "$GTBI_SESSION_LOG") -eq 3 ]]
 }
 
 @test "log_validation tracks validation results" {
@@ -195,10 +195,10 @@ teardown() {
     log_validation "project_name" "good-name" "PASS"
     log_validation "project_name" "bad name!" "FAIL" "Contains spaces"
 
-    grep -q "\[VALID\]" "$ACFS_SESSION_LOG"
-    grep -q "PASS" "$ACFS_SESSION_LOG"
-    grep -q "FAIL" "$ACFS_SESSION_LOG"
-    grep -q "Contains spaces" "$ACFS_SESSION_LOG"
+    grep -q "\[VALID\]" "$GTBI_SESSION_LOG"
+    grep -q "PASS" "$GTBI_SESSION_LOG"
+    grep -q "FAIL" "$GTBI_SESSION_LOG"
+    grep -q "Contains spaces" "$GTBI_SESSION_LOG"
 }
 
 @test "log_file_op tracks file operations" {
@@ -208,7 +208,7 @@ teardown() {
     log_file_op "MKDIR" "/tmp/test" "OK"
     log_file_op "WRITE" "/tmp/test/.gitignore" "FAIL"
 
-    [[ $(grep -c "\[FILE \]" "$ACFS_SESSION_LOG") -eq 3 ]]
+    [[ $(grep -c "\[FILE \]" "$GTBI_SESSION_LOG") -eq 3 ]]
 }
 
 @test "log_cmd tracks command execution" {
@@ -217,8 +217,8 @@ teardown() {
     log_cmd "git init" 0
     log_cmd "invalid_command" 127
 
-    [[ $(grep -c "\[CMD  \]" "$ACFS_SESSION_LOG") -eq 2 ]]
-    grep -q "FAIL(exit=127)" "$ACFS_SESSION_LOG"
+    [[ $(grep -c "\[CMD  \]" "$GTBI_SESSION_LOG") -eq 2 ]]
+    grep -q "FAIL(exit=127)" "$GTBI_SESSION_LOG"
 }
 
 @test "log_tech_detect logs technology detection" {
@@ -227,8 +227,8 @@ teardown() {
     log_tech_detect "nodejs" "package.json" "high"
     log_tech_detect "typescript" "tsconfig.json" "high"
 
-    [[ $(grep -c "\[TECH \]" "$ACFS_SESSION_LOG") -eq 2 ]]
-    grep -q "Detected: nodejs" "$ACFS_SESSION_LOG"
+    [[ $(grep -c "\[TECH \]" "$GTBI_SESSION_LOG") -eq 2 ]]
+    grep -q "Detected: nodejs" "$GTBI_SESSION_LOG"
 }
 
 @test "log_nav tracks navigation actions" {
@@ -238,7 +238,7 @@ teardown() {
     log_nav "BACK" "project_name" "welcome"
     log_nav "CANCEL"
 
-    [[ $(grep -c "\[NAV  \]" "$ACFS_SESSION_LOG") -eq 3 ]]
+    [[ $(grep -c "\[NAV  \]" "$GTBI_SESSION_LOG") -eq 3 ]]
 }
 
 @test "log_json logs structured data" {
@@ -246,9 +246,9 @@ teardown() {
 
     log_json "wizard_state" '{"project_name": "test", "enabled": true}'
 
-    grep -q "\[JSON \]" "$ACFS_SESSION_LOG"
-    grep -q "wizard_state:" "$ACFS_SESSION_LOG"
-    grep -q "project_name" "$ACFS_SESSION_LOG"
+    grep -q "\[JSON \]" "$GTBI_SESSION_LOG"
+    grep -q "wizard_state:" "$GTBI_SESSION_LOG"
+    grep -q "project_name" "$GTBI_SESSION_LOG"
 }
 
 # ============================================================
@@ -259,8 +259,8 @@ teardown() {
     init_logging
     finalize_logging 0
 
-    grep -q "Session completed:" "$ACFS_SESSION_LOG"
-    grep -q "Exit code: 0" "$ACFS_SESSION_LOG"
+    grep -q "Session completed:" "$GTBI_SESSION_LOG"
+    grep -q "Exit code: 0" "$GTBI_SESSION_LOG"
 }
 
 @test "finalize_logging shows log location on error" {
@@ -300,9 +300,9 @@ teardown() {
 
     log_env_snapshot
 
-    grep -q "\[ENV  \]" "$ACFS_SESSION_LOG"
-    grep -q "PATH=" "$ACFS_SESSION_LOG"
-    grep -q "TERM=" "$ACFS_SESSION_LOG"
+    grep -q "\[ENV  \]" "$GTBI_SESSION_LOG"
+    grep -q "PATH=" "$GTBI_SESSION_LOG"
+    grep -q "TERM=" "$GTBI_SESSION_LOG"
 }
 
 @test "log_checkpoint tracks timing" {
@@ -312,8 +312,8 @@ teardown() {
     sleep 1
     log_checkpoint "end"
 
-    [[ $(grep -c "\[TIME \]" "$ACFS_SESSION_LOG") -eq 2 ]]
-    grep -q "Checkpoint: start" "$ACFS_SESSION_LOG"
+    [[ $(grep -c "\[TIME \]" "$GTBI_SESSION_LOG") -eq 2 ]]
+    grep -q "Checkpoint: start" "$GTBI_SESSION_LOG"
 }
 
 @test "log_dump_state dumps associative array" {
@@ -326,8 +326,8 @@ teardown() {
 
     log_dump_state TEST_STATE
 
-    grep -q "\[DUMP \]" "$ACFS_SESSION_LOG"
-    grep -q "project_name" "$ACFS_SESSION_LOG"
+    grep -q "\[DUMP \]" "$GTBI_SESSION_LOG"
+    grep -q "project_name" "$GTBI_SESSION_LOG"
 }
 
 # ============================================================
@@ -335,23 +335,23 @@ teardown() {
 # ============================================================
 
 @test "enable_verbose sets DEBUG level" {
-    export ACFS_LOG_LEVEL=$ACFS_LOG_INFO
+    export GTBI_LOG_LEVEL=$GTBI_LOG_INFO
     init_logging
 
     enable_verbose
 
-    [[ "$ACFS_LOG_LEVEL" -eq "$ACFS_LOG_DEBUG" ]]
+    [[ "$GTBI_LOG_LEVEL" -eq "$GTBI_LOG_DEBUG" ]]
 }
 
 @test "is_verbose returns true when DEBUG level" {
-    export ACFS_LOG_LEVEL=$ACFS_LOG_DEBUG
+    export GTBI_LOG_LEVEL=$GTBI_LOG_DEBUG
     init_logging
 
     is_verbose
 }
 
 @test "is_verbose returns false when not DEBUG level" {
-    export ACFS_LOG_LEVEL=$ACFS_LOG_INFO
+    export GTBI_LOG_LEVEL=$GTBI_LOG_INFO
     init_logging
 
     run is_verbose
@@ -364,12 +364,12 @@ teardown() {
 
 @test "multiple sessions create separate log files" {
     init_logging
-    local first_log="$ACFS_SESSION_LOG"
+    local first_log="$GTBI_SESSION_LOG"
 
     sleep 1  # Ensure different timestamp
 
     init_logging
-    local second_log="$ACFS_SESSION_LOG"
+    local second_log="$GTBI_SESSION_LOG"
 
     [[ "$first_log" != "$second_log" ]]
     [[ -f "$first_log" ]]
@@ -378,7 +378,7 @@ teardown() {
 
 @test "logging works without session log initialized" {
     # Don't call init_logging
-    ACFS_SESSION_LOG=""
+    GTBI_SESSION_LOG=""
 
     # These should not error
     run log_debug "No log file"
@@ -395,6 +395,6 @@ teardown() {
     log_info "Test message"
 
     # Check format: [HH:MM:SS.mmm] [LEVEL] [caller:line] message
-    grep -E "^\[[0-9]{2}:[0-9]{2}:[0-9]{2}" "$ACFS_SESSION_LOG"
-    grep -E "\[INFO \]" "$ACFS_SESSION_LOG"
+    grep -E "^\[[0-9]{2}:[0-9]{2}:[0-9]{2}" "$GTBI_SESSION_LOG"
+    grep -E "\[INFO \]" "$GTBI_SESSION_LOG"
 }

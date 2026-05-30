@@ -6,14 +6,14 @@ on:
     paths:
       - 'apps/web/**'
       - 'packages/manifest/**'
-      - 'acfs.manifest.yaml'
+      - 'gtbi.manifest.yaml'
       - '.github/workflows/website.yml'
   pull_request:
     branches: [main]
     paths:
       - 'apps/web/**'
       - 'packages/manifest/**'
-      - 'acfs.manifest.yaml'
+      - 'gtbi.manifest.yaml'
       - '.github/workflows/website.yml'
 
 jobs:
@@ -44,7 +44,7 @@ jobs:
       - name: Verify generated files match manifest
         working-directory: packages/manifest
         run: |
-          echo "Checking if generated files are in sync with acfs.manifest.yaml..."
+          echo "Checking if generated files are in sync with gtbi.manifest.yaml..."
           bun run generate:diff
           echo "✓ Generated files are up to date"
 

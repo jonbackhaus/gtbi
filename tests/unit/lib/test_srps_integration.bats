@@ -36,8 +36,8 @@ teardown() {
 }
 
 @test "Next.js build succeeds with SRPS additions (optional)" {
-    if [[ -z "${ACFS_RUN_BUILD_TESTS:-}" ]]; then
-        skip "Build tests disabled (set ACFS_RUN_BUILD_TESTS=1 to enable)"
+    if [[ -z "${GTBI_RUN_BUILD_TESTS:-}" ]]; then
+        skip "Build tests disabled (set GTBI_RUN_BUILD_TESTS=1 to enable)"
     fi
 
     if ! command -v bun &>/dev/null; then
@@ -147,7 +147,7 @@ teardown() {
 @test "23_srps.md lesson file exists" {
     log_info "Checking for markdown lesson file..."
 
-    [ -f "$PROJECT_ROOT/acfs/onboard/lessons/23_srps.md" ]
+    [ -f "$PROJECT_ROOT/gtbi/onboard/lessons/23_srps.md" ]
 
     log_pass "23_srps.md exists"
 }
@@ -155,7 +155,7 @@ teardown() {
 @test "23_srps.md has expected content structure" {
     log_info "Checking lesson content structure..."
 
-    local lesson="$PROJECT_ROOT/acfs/onboard/lessons/23_srps.md"
+    local lesson="$PROJECT_ROOT/gtbi/onboard/lessons/23_srps.md"
 
     # Check for title
     grep -q "^# " "$lesson" || {

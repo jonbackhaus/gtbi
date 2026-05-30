@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-# Unit tests for acfs landing-plane closeout assistant
+# Unit tests for gtbi landing-plane closeout assistant
 # ============================================================
 
 set -euo pipefail
@@ -10,7 +10,7 @@ LANDING_PLANE_SH="$REPO_ROOT/scripts/lib/landing_plane.sh"
 
 TESTS_PASSED=0
 TESTS_FAILED=0
-ARTIFACT_DIR="${ACFS_LANDING_PLANE_TEST_ARTIFACTS_DIR:-${TMPDIR:-/tmp}/acfs-landing-plane-test-artifacts-$(date +%Y%m%d-%H%M%S)-$$}"
+ARTIFACT_DIR="${GTBI_LANDING_PLANE_TEST_ARTIFACTS_DIR:-${TMPDIR:-/tmp}/gtbi-landing-plane-test-artifacts-$(date +%Y%m%d-%H%M%S)-$$}"
 
 mkdir -p "$ARTIFACT_DIR"
 
@@ -43,13 +43,13 @@ run_landing_json() {
     local gates_passed="$5"
 
     env \
-        ACFS_LAND_GIT_STATUS_FILE="$status_file" \
-        ACFS_LAND_IN_PROGRESS_JSON="$in_progress_json" \
-        ACFS_LAND_RESERVATIONS_JSON="$reservations_json" \
-        ACFS_LAND_MAIL_SENT="$mail_sent" \
-        ACFS_LAND_GATES_PASSED="$gates_passed" \
-        ACFS_LAND_AGENT_NAME="SilentPeak" \
-        ACFS_LAND_PROJECT_KEY="/data/projects/agentic_coding_flywheel_setup" \
+        GTBI_LAND_GIT_STATUS_FILE="$status_file" \
+        GTBI_LAND_IN_PROGRESS_JSON="$in_progress_json" \
+        GTBI_LAND_RESERVATIONS_JSON="$reservations_json" \
+        GTBI_LAND_MAIL_SENT="$mail_sent" \
+        GTBI_LAND_GATES_PASSED="$gates_passed" \
+        GTBI_LAND_AGENT_NAME="SilentPeak" \
+        GTBI_LAND_PROJECT_KEY="/data/projects/gastown_batteries_included" \
         bash "$LANDING_PLANE_SH" --json
 }
 

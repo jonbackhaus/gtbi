@@ -234,7 +234,7 @@ Create a simple diagram if helpful.`}
         <div className="mt-6">
           <CodeBlock
             code={`# Location of custom prompts
-~/.acfs/palette/custom/`}
+~/.gtbi/palette/custom/`}
           />
         </div>
 

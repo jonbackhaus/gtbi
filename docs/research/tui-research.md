@@ -6,7 +6,7 @@
 
 ## Executive Summary
 
-The existing `packages/onboard/onboard.sh` provides an excellent, production-ready TUI implementation that we should model the newproj wizard after. Key decision: **Use gum with pure bash fallback**, consistent with existing ACFS patterns.
+The existing `packages/onboard/onboard.sh` provides an excellent, production-ready TUI implementation that we should model the newproj wizard after. Key decision: **Use gum with pure bash fallback**, consistent with existing GTBI patterns.
 
 ---
 
@@ -14,8 +14,8 @@ The existing `packages/onboard/onboard.sh` provides an excellent, production-rea
 
 ### Structure
 - **Location**: `packages/onboard/onboard.sh` (~1350 lines)
-- **State file**: `$HOME/.acfs/onboard_progress.json`
-- **Lessons dir**: `$HOME/.acfs/onboard/lessons/`
+- **State file**: `$HOME/.gtbi/onboard_progress.json`
+- **Lessons dir**: `$HOME/.gtbi/onboard/lessons/`
 
 ### TUI Library Used
 - **Primary**: [gum](https://github.com/charmbracelet/gum) (Charmbracelet)
@@ -53,15 +53,15 @@ reset_progress()     # Clear all progress with backup
 
 ### Color Scheme (Catppuccin Mocha)
 ```bash
-ACFS_PRIMARY="#89b4fa"    # Blue - primary actions
-ACFS_SECONDARY="#74c7ec"  # Teal - secondary
-ACFS_SUCCESS="#a6e3a1"    # Green - success states
-ACFS_WARNING="#f9e2af"    # Yellow - warnings
-ACFS_ERROR="#f38ba8"      # Red - errors
-ACFS_MUTED="#6c7086"      # Gray - muted text
-ACFS_ACCENT="#cba6f7"     # Purple - accents
-ACFS_PINK="#f5c2e7"       # Pink - headings
-ACFS_TEAL="#94e2d5"       # Teal - highlights
+GTBI_PRIMARY="#89b4fa"    # Blue - primary actions
+GTBI_SECONDARY="#74c7ec"  # Teal - secondary
+GTBI_SUCCESS="#a6e3a1"    # Green - success states
+GTBI_WARNING="#f9e2af"    # Yellow - warnings
+GTBI_ERROR="#f38ba8"      # Red - errors
+GTBI_MUTED="#6c7086"      # Gray - muted text
+GTBI_ACCENT="#cba6f7"     # Purple - accents
+GTBI_PINK="#f5c2e7"       # Pink - headings
+GTBI_TEAL="#94e2d5"       # Teal - highlights
 ```
 
 ---
@@ -72,7 +72,7 @@ ACFS_TEAL="#94e2d5"       # Teal - highlights
 
 **Rationale:**
 1. Already used in onboard.sh - consistent UX
-2. ACFS installer already has gum in manifest (can be installed)
+2. GTBI installer already has gum in manifest (can be installed)
 3. `scripts/lib/gum_ui.sh` provides reusable themed components
 4. Fallback to bash ensures wizard works even without gum
 
@@ -119,7 +119,7 @@ WIZARD_CURRENT_SCREEN=""
 
 ---
 
-## Reusable Components from ACFS
+## Reusable Components from GTBI
 
 ### From gum_ui.sh (scripts/lib/gum_ui.sh)
 
@@ -134,7 +134,7 @@ WIZARD_CURRENT_SCREEN=""
 | `gum_choose()` | Selection menu | Feature toggles |
 | `gum_spin()` | Spinner for operations | Creating project |
 | `gum_section()` | Section header | Screen titles |
-| `print_banner()` | ACFS ASCII banner | Welcome screen |
+| `print_banner()` | GTBI ASCII banner | Welcome screen |
 | `print_compact_banner()` | Smaller banner | Screen headers |
 
 ### From onboard.sh (patterns to adapt)
@@ -182,7 +182,7 @@ WIZARD_CURRENT_SCREEN=""
 ### Decision 1: TUI Library
 - **Choice**: gum with pure bash fallback
 - **Rationale**: Consistent with onboard.sh, gum_ui.sh exists, beautiful output
-- **Alternative rejected**: dialog/whiptail (dated look, not consistent with ACFS)
+- **Alternative rejected**: dialog/whiptail (dated look, not consistent with GTBI)
 
 ### Decision 2: State Management
 - **Choice**: Bash associative array + history stack
@@ -196,7 +196,7 @@ WIZARD_CURRENT_SCREEN=""
 
 ### Decision 4: Color Scheme
 - **Choice**: Reuse Catppuccin Mocha from gum_ui.sh
-- **Rationale**: Consistent with ACFS installer and onboard
+- **Rationale**: Consistent with GTBI installer and onboard
 - **Import**: Source gum_ui.sh at start of newproj_tui.sh
 
 ### Decision 5: Fallback Strategy
@@ -223,8 +223,8 @@ read_project_name() {
         gum input \
             --placeholder "my-awesome-project" \
             --prompt "> " \
-            --prompt.foreground "$ACFS_PRIMARY" \
-            --cursor.foreground "$ACFS_ACCENT"
+            --prompt.foreground "$GTBI_PRIMARY" \
+            --cursor.foreground "$GTBI_ACCENT"
     else
         read -rp "> " input
         echo "$input"
@@ -237,8 +237,8 @@ read_project_name() {
 select_features() {
     if [[ "$HAS_GUM" == "true" ]]; then
         gum choose --no-limit \
-            --cursor.foreground "$ACFS_ACCENT" \
-            --selected.foreground "$ACFS_SUCCESS" \
+            --cursor.foreground "$GTBI_ACCENT" \
+            --selected.foreground "$GTBI_SUCCESS" \
             "Beads issue tracking (br)" \
             "Claude Code settings" \
             "AGENTS.md template" \

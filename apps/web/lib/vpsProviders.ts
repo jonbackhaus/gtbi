@@ -157,8 +157,8 @@ const STORAGE_TIERS = [250, 400, 640, 800, 1000];
 const READINESS_SUMMARIES: Record<VPSReadinessStatus, string> = {
   supported: "Ready for the selected target.",
   borderline: "Workable, but verify the warning before purchase.",
-  unsupported: "Do not choose this combination for ACFS.",
-  unknown: "Not in the ACFS provider table; compare the specs manually.",
+  unsupported: "Do not choose this combination for GTBI.",
+  unknown: "Not in the GTBI provider table; compare the specs manually.",
 };
 
 export const VPS_PROVIDERS: VPSProvider[] = [
@@ -419,7 +419,7 @@ export function validateVPSReadiness(
       label: "Provider",
       status: "unknown",
       message:
-        "This provider is not in the ACFS table. Use the calculator specs and verify Ubuntu support, SSH access, and region manually.",
+        "This provider is not in the GTBI table. Use the calculator specs and verify Ubuntu support, SSH access, and region manually.",
     });
     checks.push({
       id: "plan",
@@ -454,7 +454,7 @@ export function validateVPSReadiness(
     id: "provider",
     label: "Provider",
     status: "supported",
-    message: `${provider.name} is in the ACFS guidance table.`,
+    message: `${provider.name} is in the GTBI guidance table.`,
   });
 
   const plan = getProviderPlan(provider, input.planName);
@@ -463,7 +463,7 @@ export function validateVPSReadiness(
       id: "plan",
       label: "Plan",
       status: "unknown",
-      message: `${provider.name} ${input.planName || "plan"} is not in the ACFS table. Compare its RAM, vCPU, and NVMe storage manually.`,
+      message: `${provider.name} ${input.planName || "plan"} is not in the GTBI table. Compare its RAM, vCPU, and NVMe storage manually.`,
     });
   } else {
     const capacity = evaluatePlan(plan, workload, targetAgents);
@@ -506,7 +506,7 @@ export function validateVPSReadiness(
       id: "os",
       label: "Ubuntu image",
       status: "unsupported",
-      message: `Ubuntu ${input.ubuntuVersion} is below the ACFS minimum of ${provider.readiness.minimumUbuntu}.`,
+      message: `Ubuntu ${input.ubuntuVersion} is below the GTBI minimum of ${provider.readiness.minimumUbuntu}.`,
     });
   } else if (cautionComparison !== null && cautionComparison < 0) {
     checks.push({
@@ -520,14 +520,14 @@ export function validateVPSReadiness(
       id: "os",
       label: "Ubuntu image",
       status: "supported",
-      message: `Ubuntu ${input.ubuntuVersion} is a preferred ACFS image.`,
+      message: `Ubuntu ${input.ubuntuVersion} is a preferred GTBI image.`,
     });
   } else {
     checks.push({
       id: "os",
       label: "Ubuntu image",
       status: "supported",
-      message: `Ubuntu ${input.ubuntuVersion} is new enough for ACFS.`,
+      message: `Ubuntu ${input.ubuntuVersion} is new enough for GTBI.`,
     });
   }
 
@@ -542,7 +542,7 @@ export function validateVPSReadiness(
       id: "region",
       label: "Region",
       status: "borderline",
-      message: "This region is not in the ACFS table. Prefer a nearby US, Canada, or EU region when available.",
+      message: "This region is not in the GTBI table. Prefer a nearby US, Canada, or EU region when available.",
     });
   } else {
     checks.push({

@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
 # shellcheck disable=SC1091
 # ============================================================
-# AUTO-GENERATED FROM acfs.manifest.yaml - DO NOT EDIT
+# AUTO-GENERATED FROM gtbi.manifest.yaml - DO NOT EDIT
 # Regenerate: bun run generate (from packages/manifest)
 # ============================================================
 
 set -euo pipefail
 
 # Resolve relative helper paths first.
-ACFS_GENERATED_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+GTBI_GENERATED_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Ensure logging functions available
-if [[ -f "$ACFS_GENERATED_SCRIPT_DIR/../lib/logging.sh" ]]; then
-    source "$ACFS_GENERATED_SCRIPT_DIR/../lib/logging.sh"
+if [[ -f "$GTBI_GENERATED_SCRIPT_DIR/../lib/logging.sh" ]]; then
+    source "$GTBI_GENERATED_SCRIPT_DIR/../lib/logging.sh"
 else
     # Fallback logging functions if logging.sh not found
     # Progress/status output should go to stderr so stdout stays clean for piping.
@@ -25,11 +25,11 @@ else
 fi
 
 # Source install helpers (run_as_*_shell, selection helpers)
-if [[ -f "$ACFS_GENERATED_SCRIPT_DIR/../lib/install_helpers.sh" ]]; then
-    source "$ACFS_GENERATED_SCRIPT_DIR/../lib/install_helpers.sh"
+if [[ -f "$GTBI_GENERATED_SCRIPT_DIR/../lib/install_helpers.sh" ]]; then
+    source "$GTBI_GENERATED_SCRIPT_DIR/../lib/install_helpers.sh"
 fi
 
-acfs_generated_system_binary_path() {
+gtbi_generated_system_binary_path() {
     local name="${1:-}"
     local candidate=""
 
@@ -59,18 +59,18 @@ acfs_generated_system_binary_path() {
     return 1
 }
 
-acfs_generated_resolve_current_user() {
+gtbi_generated_resolve_current_user() {
     local current_user=""
     local id_bin=""
     local whoami_bin=""
 
-    id_bin="$(acfs_generated_system_binary_path id 2>/dev/null || true)"
+    id_bin="$(gtbi_generated_system_binary_path id 2>/dev/null || true)"
     if [[ -n "$id_bin" ]]; then
         current_user="$("$id_bin" -un 2>/dev/null || true)"
     fi
 
     if [[ -z "$current_user" ]]; then
-        whoami_bin="$(acfs_generated_system_binary_path whoami 2>/dev/null || true)"
+        whoami_bin="$(gtbi_generated_system_binary_path whoami 2>/dev/null || true)"
         if [[ -n "$whoami_bin" ]]; then
             current_user="$("$whoami_bin" 2>/dev/null || true)"
         fi
@@ -80,14 +80,14 @@ acfs_generated_resolve_current_user() {
     printf '%s\n' "$current_user"
 }
 
-acfs_generated_getent_passwd_entry() {
+gtbi_generated_getent_passwd_entry() {
     local user="${1-}"
     local getent_bin=""
     local passwd_entry=""
     local passwd_line=""
     local printed_any=false
 
-    getent_bin="$(acfs_generated_system_binary_path getent 2>/dev/null || true)"
+    getent_bin="$(gtbi_generated_system_binary_path getent 2>/dev/null || true)"
     if [[ -z "$user" ]]; then
         if [[ -n "$getent_bin" ]]; then
             while IFS= read -r passwd_line; do
@@ -122,7 +122,7 @@ acfs_generated_getent_passwd_entry() {
     printf '%s\n' "$passwd_entry"
 }
 
-acfs_generated_passwd_home_from_entry() {
+gtbi_generated_passwd_home_from_entry() {
     local passwd_entry="${1:-}"
     local passwd_home=""
 
@@ -136,17 +136,17 @@ acfs_generated_passwd_home_from_entry() {
     return 1
 }
 
-acfs_generated_target_user_exists() {
+gtbi_generated_target_user_exists() {
     local user="${1:-}"
     local id_bin=""
 
     [[ -n "$user" ]] || return 1
-    id_bin="$(acfs_generated_system_binary_path id 2>/dev/null || true)"
+    id_bin="$(gtbi_generated_system_binary_path id 2>/dev/null || true)"
     [[ -n "$id_bin" ]] || return 1
     "$id_bin" "$user" >/dev/null 2>&1
 }
 
-acfs_generated_default_home_for_new_user() {
+gtbi_generated_default_home_for_new_user() {
     local user="${1:-}"
 
     [[ -n "$user" ]] || return 1
@@ -161,29 +161,29 @@ acfs_generated_default_home_for_new_user() {
 }
 
 # When running a generated installer directly (not sourced by install.sh),
-# set sane defaults and derive ACFS paths from the script location so
+# set sane defaults and derive GTBI paths from the script location so
 # contract validation passes and local assets are discoverable.
 if [[ "${BASH_SOURCE[0]}" = "${0}" ]]; then
     # Match install.sh defaults
     if [[ -z "${TARGET_USER:-}" ]]; then
         if [[ $EUID -eq 0 ]] && [[ -z "${SUDO_USER:-}" ]]; then
-            _ACFS_DETECTED_USER="ubuntu"
+            _GTBI_DETECTED_USER="ubuntu"
         else
-            _ACFS_DETECTED_USER="${SUDO_USER:-}"
-            if [[ -z "$_ACFS_DETECTED_USER" ]]; then
-                _ACFS_DETECTED_USER="$(acfs_generated_resolve_current_user 2>/dev/null || true)"
+            _GTBI_DETECTED_USER="${SUDO_USER:-}"
+            if [[ -z "$_GTBI_DETECTED_USER" ]]; then
+                _GTBI_DETECTED_USER="$(gtbi_generated_resolve_current_user 2>/dev/null || true)"
             fi
-            if [[ -z "$_ACFS_DETECTED_USER" ]]; then
+            if [[ -z "$_GTBI_DETECTED_USER" ]]; then
                 log_error "Unable to resolve the current user for TARGET_USER"
                 exit 1
             fi
         fi
-        TARGET_USER="$_ACFS_DETECTED_USER"
+        TARGET_USER="$_GTBI_DETECTED_USER"
     fi
-    unset _ACFS_DETECTED_USER
+    unset _GTBI_DETECTED_USER
 
-    if declare -f _acfs_validate_target_user >/dev/null 2>&1; then
-        _acfs_validate_target_user "${TARGET_USER}" "TARGET_USER" || exit 1
+    if declare -f _gtbi_validate_target_user >/dev/null 2>&1; then
+        _gtbi_validate_target_user "${TARGET_USER}" "TARGET_USER" || exit 1
     elif [[ -z "${TARGET_USER:-}" ]] || [[ ! "${TARGET_USER}" =~ ^[a-z_][a-z0-9._-]*$ ]]; then
         log_error "Invalid TARGET_USER '${TARGET_USER:-<empty>}' (expected: lowercase user name like 'ubuntu')"
         exit 1
@@ -191,45 +191,45 @@ if [[ "${BASH_SOURCE[0]}" = "${0}" ]]; then
 
     MODE="${MODE:-vibe}"
 
-    _ACFS_EXPLICIT_TARGET_HOME="${TARGET_HOME:-}"
-    if [[ -n "$_ACFS_EXPLICIT_TARGET_HOME" ]]; then
-        _ACFS_EXPLICIT_TARGET_HOME="${_ACFS_EXPLICIT_TARGET_HOME%/}"
+    _GTBI_EXPLICIT_TARGET_HOME="${TARGET_HOME:-}"
+    if [[ -n "$_GTBI_EXPLICIT_TARGET_HOME" ]]; then
+        _GTBI_EXPLICIT_TARGET_HOME="${_GTBI_EXPLICIT_TARGET_HOME%/}"
     fi
-    _ACFS_RESOLVED_TARGET_HOME=""
-    if declare -f _acfs_resolve_target_home >/dev/null 2>&1; then
-        _ACFS_RESOLVED_TARGET_HOME="$(_acfs_resolve_target_home "${TARGET_USER}" "$_ACFS_EXPLICIT_TARGET_HOME" || true)"
+    _GTBI_RESOLVED_TARGET_HOME=""
+    if declare -f _gtbi_resolve_target_home >/dev/null 2>&1; then
+        _GTBI_RESOLVED_TARGET_HOME="$(_gtbi_resolve_target_home "${TARGET_USER}" "$_GTBI_EXPLICIT_TARGET_HOME" || true)"
     else
         if [[ "${TARGET_USER}" == "root" ]]; then
-            _ACFS_RESOLVED_TARGET_HOME="/root"
+            _GTBI_RESOLVED_TARGET_HOME="/root"
         else
-            _acfs_passwd_entry="$(acfs_generated_getent_passwd_entry "${TARGET_USER}" 2>/dev/null || true)"
-            if [[ -n "$_acfs_passwd_entry" ]]; then
-                _ACFS_RESOLVED_TARGET_HOME="$(acfs_generated_passwd_home_from_entry "$_acfs_passwd_entry" 2>/dev/null || true)"
+            _gtbi_passwd_entry="$(gtbi_generated_getent_passwd_entry "${TARGET_USER}" 2>/dev/null || true)"
+            if [[ -n "$_gtbi_passwd_entry" ]]; then
+                _GTBI_RESOLVED_TARGET_HOME="$(gtbi_generated_passwd_home_from_entry "$_gtbi_passwd_entry" 2>/dev/null || true)"
             else
-                _acfs_current_user="$(acfs_generated_resolve_current_user 2>/dev/null || true)"
-                _acfs_current_home="${HOME:-}"
-                if [[ -n "$_acfs_current_home" ]]; then
-                    _acfs_current_home="${_acfs_current_home%/}"
+                _gtbi_current_user="$(gtbi_generated_resolve_current_user 2>/dev/null || true)"
+                _gtbi_current_home="${HOME:-}"
+                if [[ -n "$_gtbi_current_home" ]]; then
+                    _gtbi_current_home="${_gtbi_current_home%/}"
                 fi
-                if [[ "${_acfs_current_user:-}" == "${TARGET_USER}" ]] && [[ -n "$_acfs_current_home" ]] && [[ "$_acfs_current_home" == /* ]] && [[ "$_acfs_current_home" != "/" ]] && { [[ -z "$_ACFS_EXPLICIT_TARGET_HOME" ]] || [[ "$_acfs_current_home" == "$_ACFS_EXPLICIT_TARGET_HOME" ]]; }; then
-                    _ACFS_RESOLVED_TARGET_HOME="$_acfs_current_home"
+                if [[ "${_gtbi_current_user:-}" == "${TARGET_USER}" ]] && [[ -n "$_gtbi_current_home" ]] && [[ "$_gtbi_current_home" == /* ]] && [[ "$_gtbi_current_home" != "/" ]] && { [[ -z "$_GTBI_EXPLICIT_TARGET_HOME" ]] || [[ "$_gtbi_current_home" == "$_GTBI_EXPLICIT_TARGET_HOME" ]]; }; then
+                    _GTBI_RESOLVED_TARGET_HOME="$_gtbi_current_home"
                 fi
-                unset _acfs_current_user _acfs_current_home
+                unset _gtbi_current_user _gtbi_current_home
             fi
-            unset _acfs_passwd_entry
+            unset _gtbi_passwd_entry
         fi
     fi
-    if [[ -z "$_ACFS_RESOLVED_TARGET_HOME" ]] && [[ $EUID -eq 0 ]] && ! acfs_generated_target_user_exists "${TARGET_USER}"; then
-        if [[ -n "$_ACFS_EXPLICIT_TARGET_HOME" ]] && [[ "$_ACFS_EXPLICIT_TARGET_HOME" == /* ]] && [[ "$_ACFS_EXPLICIT_TARGET_HOME" != "/" ]]; then
-            _ACFS_RESOLVED_TARGET_HOME="$_ACFS_EXPLICIT_TARGET_HOME"
+    if [[ -z "$_GTBI_RESOLVED_TARGET_HOME" ]] && [[ $EUID -eq 0 ]] && ! gtbi_generated_target_user_exists "${TARGET_USER}"; then
+        if [[ -n "$_GTBI_EXPLICIT_TARGET_HOME" ]] && [[ "$_GTBI_EXPLICIT_TARGET_HOME" == /* ]] && [[ "$_GTBI_EXPLICIT_TARGET_HOME" != "/" ]]; then
+            _GTBI_RESOLVED_TARGET_HOME="$_GTBI_EXPLICIT_TARGET_HOME"
         else
-            _ACFS_RESOLVED_TARGET_HOME="$(acfs_generated_default_home_for_new_user "${TARGET_USER}" 2>/dev/null || true)"
+            _GTBI_RESOLVED_TARGET_HOME="$(gtbi_generated_default_home_for_new_user "${TARGET_USER}" 2>/dev/null || true)"
         fi
     fi
-    if [[ -n "$_ACFS_RESOLVED_TARGET_HOME" ]]; then
-        TARGET_HOME="${_ACFS_RESOLVED_TARGET_HOME%/}"
+    if [[ -n "$_GTBI_RESOLVED_TARGET_HOME" ]]; then
+        TARGET_HOME="${_GTBI_RESOLVED_TARGET_HOME%/}"
     fi
-    unset _ACFS_EXPLICIT_TARGET_HOME _ACFS_RESOLVED_TARGET_HOME
+    unset _GTBI_EXPLICIT_TARGET_HOME _GTBI_RESOLVED_TARGET_HOME
 
     if [[ -z "${TARGET_HOME:-}" ]] || [[ "${TARGET_HOME}" == "/" ]] || [[ "${TARGET_HOME}" != /* ]]; then
         log_error "Invalid TARGET_HOME for '${TARGET_USER}': ${TARGET_HOME:-<empty>} (must be an absolute path and cannot be '/')"
@@ -237,54 +237,54 @@ if [[ "${BASH_SOURCE[0]}" = "${0}" ]]; then
     fi
 
     # Derive "bootstrap" paths from the repo layout (scripts/generated/.. -> repo root).
-    if [[ -z "${ACFS_BOOTSTRAP_DIR:-}" ]]; then
-        ACFS_BOOTSTRAP_DIR="$(cd "$ACFS_GENERATED_SCRIPT_DIR/../.." && pwd)"
+    if [[ -z "${GTBI_BOOTSTRAP_DIR:-}" ]]; then
+        GTBI_BOOTSTRAP_DIR="$(cd "$GTBI_GENERATED_SCRIPT_DIR/../.." && pwd)"
     fi
 
-    ACFS_BIN_DIR="${ACFS_BIN_DIR:-$TARGET_HOME/.local/bin}"
-    if [[ -z "${ACFS_BIN_DIR:-}" ]] || [[ "${ACFS_BIN_DIR}" == "/" ]] || [[ "${ACFS_BIN_DIR}" != /* ]]; then
-        log_error "ACFS_BIN_DIR must be an absolute path and cannot be '/' (got: ${ACFS_BIN_DIR:-<empty>})"
+    GTBI_BIN_DIR="${GTBI_BIN_DIR:-$TARGET_HOME/.local/bin}"
+    if [[ -z "${GTBI_BIN_DIR:-}" ]] || [[ "${GTBI_BIN_DIR}" == "/" ]] || [[ "${GTBI_BIN_DIR}" != /* ]]; then
+        log_error "GTBI_BIN_DIR must be an absolute path and cannot be '/' (got: ${GTBI_BIN_DIR:-<empty>})"
         exit 1
     fi
-    ACFS_LIB_DIR="${ACFS_LIB_DIR:-$ACFS_BOOTSTRAP_DIR/scripts/lib}"
-    ACFS_GENERATED_DIR="${ACFS_GENERATED_DIR:-$ACFS_BOOTSTRAP_DIR/scripts/generated}"
-    ACFS_ASSETS_DIR="${ACFS_ASSETS_DIR:-$ACFS_BOOTSTRAP_DIR/acfs}"
-    ACFS_CHECKSUMS_YAML="${ACFS_CHECKSUMS_YAML:-$ACFS_BOOTSTRAP_DIR/checksums.yaml}"
-    ACFS_MANIFEST_YAML="${ACFS_MANIFEST_YAML:-$ACFS_BOOTSTRAP_DIR/acfs.manifest.yaml}"
+    GTBI_LIB_DIR="${GTBI_LIB_DIR:-$GTBI_BOOTSTRAP_DIR/scripts/lib}"
+    GTBI_GENERATED_DIR="${GTBI_GENERATED_DIR:-$GTBI_BOOTSTRAP_DIR/scripts/generated}"
+    GTBI_ASSETS_DIR="${GTBI_ASSETS_DIR:-$GTBI_BOOTSTRAP_DIR/gtbi}"
+    GTBI_CHECKSUMS_YAML="${GTBI_CHECKSUMS_YAML:-$GTBI_BOOTSTRAP_DIR/checksums.yaml}"
+    GTBI_MANIFEST_YAML="${GTBI_MANIFEST_YAML:-$GTBI_BOOTSTRAP_DIR/gtbi.manifest.yaml}"
 
-    export TARGET_USER TARGET_HOME MODE ACFS_BIN_DIR
-    export ACFS_BOOTSTRAP_DIR ACFS_LIB_DIR ACFS_GENERATED_DIR ACFS_ASSETS_DIR ACFS_CHECKSUMS_YAML ACFS_MANIFEST_YAML
+    export TARGET_USER TARGET_HOME MODE GTBI_BIN_DIR
+    export GTBI_BOOTSTRAP_DIR GTBI_LIB_DIR GTBI_GENERATED_DIR GTBI_ASSETS_DIR GTBI_CHECKSUMS_YAML GTBI_MANIFEST_YAML
 fi
 
 # Source contract validation
-if [[ -f "$ACFS_GENERATED_SCRIPT_DIR/../lib/contract.sh" ]]; then
-    source "$ACFS_GENERATED_SCRIPT_DIR/../lib/contract.sh"
+if [[ -f "$GTBI_GENERATED_SCRIPT_DIR/../lib/contract.sh" ]]; then
+    source "$GTBI_GENERATED_SCRIPT_DIR/../lib/contract.sh"
 fi
 
 # Optional security verification for upstream installer scripts.
-# Scripts that need it should call: acfs_security_init
-ACFS_SECURITY_READY=false
-acfs_security_init() {
-    if [[ "${ACFS_SECURITY_READY}" = "true" ]]; then
+# Scripts that need it should call: gtbi_security_init
+GTBI_SECURITY_READY=false
+gtbi_security_init() {
+    if [[ "${GTBI_SECURITY_READY}" = "true" ]]; then
         return 0
     fi
 
-    local security_lib="$ACFS_GENERATED_SCRIPT_DIR/../lib/security.sh"
+    local security_lib="$GTBI_GENERATED_SCRIPT_DIR/../lib/security.sh"
     if [[ ! -f "$security_lib" ]]; then
         log_error "Security library not found: $security_lib"
         return 1
     fi
 
-    # Use ACFS_CHECKSUMS_YAML if set by install.sh bootstrap (overrides security.sh default)
-    if [[ -n "${ACFS_CHECKSUMS_YAML:-}" ]]; then
-        export CHECKSUMS_FILE="${ACFS_CHECKSUMS_YAML}"
+    # Use GTBI_CHECKSUMS_YAML if set by install.sh bootstrap (overrides security.sh default)
+    if [[ -n "${GTBI_CHECKSUMS_YAML:-}" ]]; then
+        export CHECKSUMS_FILE="${GTBI_CHECKSUMS_YAML}"
     fi
 
     # shellcheck source=../lib/security.sh
     # shellcheck disable=SC1091  # runtime relative source
     source "$security_lib"
     load_checksums || { log_error "Failed to load checksums.yaml"; return 1; }
-    ACFS_SECURITY_READY=true
+    GTBI_SECURITY_READY=true
     return 0
 }
 
@@ -294,7 +294,7 @@ acfs_security_init() {
 # Claude Code
 install_agents_claude() {
     local module_id="agents.claude"
-    acfs_require_contract "module:${module_id}" || return 1
+    gtbi_require_contract "module:${module_id}" || return 1
     log_step "Installing agents.claude"
 
     if [[ "${DRY_RUN:-false}" = "true" ]]; then
@@ -304,7 +304,7 @@ install_agents_claude() {
             # Try security-verified install (no unverified fallback; fail closed)
             local install_success=false
 
-            if acfs_security_init; then
+            if gtbi_security_init; then
                 local known_installers_decl=""
                 # Check if KNOWN_INSTALLERS is available as an associative array (declare -A)
                 known_installers_decl="$(declare -p KNOWN_INSTALLERS 2>/dev/null || true)"
@@ -338,7 +338,7 @@ install_agents_claude() {
                     log_error "agents.claude: KNOWN_INSTALLERS array not available"
                 fi
             else
-                log_error "agents.claude: acfs_security_init failed - check security.sh and checksums.yaml"
+                log_error "agents.claude: gtbi_security_init failed - check security.sh and checksums.yaml"
             fi
 
             # Verified install is required - no fallback
@@ -358,7 +358,7 @@ install_agents_claude() {
     else
         if ! run_as_target_shell <<'INSTALL_AGENTS_CLAUDE'
 # Generated helper functions used by this child shell.
-acfs_generated_system_binary_path() {
+gtbi_generated_system_binary_path() {
     local name="${1:-}"
     local candidate=""
 
@@ -389,7 +389,7 @@ acfs_generated_system_binary_path() {
 }
 
 # Primary-bin helper functions used by this child shell.
-acfs_child_log_error() {
+gtbi_child_log_error() {
     if declare -f log_error >/dev/null 2>&1; then
         log_error "$@"
     else
@@ -397,27 +397,27 @@ acfs_child_log_error() {
     fi
 }
 
-acfs_child_primary_bin_dir() {
-    local primary_bin_dir="${ACFS_BIN_DIR:-}"
+gtbi_child_primary_bin_dir() {
+    local primary_bin_dir="${GTBI_BIN_DIR:-}"
     local fallback_home="${HOME:-}"
 
     if [[ -z "$primary_bin_dir" ]]; then
         if [[ -z "$fallback_home" ]] || [[ "$fallback_home" == "/" ]] || [[ "$fallback_home" != /* ]]; then
-            acfs_child_log_error "ACFS_BIN_DIR is unset and HOME is not a usable absolute path"
+            gtbi_child_log_error "GTBI_BIN_DIR is unset and HOME is not a usable absolute path"
             return 1
         fi
         primary_bin_dir="$fallback_home/.local/bin"
     fi
 
     if [[ -z "$primary_bin_dir" ]] || [[ "$primary_bin_dir" == "/" ]] || [[ "$primary_bin_dir" != /* ]]; then
-        acfs_child_log_error "ACFS_BIN_DIR must be an absolute path and cannot be '/' (got: ${primary_bin_dir:-<empty>})"
+        gtbi_child_log_error "GTBI_BIN_DIR must be an absolute path and cannot be '/' (got: ${primary_bin_dir:-<empty>})"
         return 1
     fi
 
     printf '%s\n' "$primary_bin_dir"
 }
 
-acfs_child_primary_bin_requires_root() {
+gtbi_child_primary_bin_requires_root() {
     local primary_bin_dir="$1"
     local target_home="${TARGET_HOME:-${HOME:-}}"
 
@@ -428,9 +428,9 @@ acfs_child_primary_bin_requires_root() {
     esac
 }
 
-acfs_child_run_root_bin_command() {
+gtbi_child_run_root_bin_command() {
     if [[ -z "${1:-}" || "${1:-}" != /* ]]; then
-        acfs_child_log_error "Root primary bin command must be an absolute trusted path (got: ${1:-<empty>})"
+        gtbi_child_log_error "Root primary bin command must be an absolute trusted path (got: ${1:-<empty>})"
         return 1
     fi
 
@@ -440,77 +440,77 @@ acfs_child_run_root_bin_command() {
     fi
 
     local sudo_bin=""
-    sudo_bin="$(acfs_generated_system_binary_path sudo 2>/dev/null || true)"
+    sudo_bin="$(gtbi_generated_system_binary_path sudo 2>/dev/null || true)"
     if [[ -n "$sudo_bin" ]]; then
         "$sudo_bin" -n "$@"
         return $?
     fi
 
-    acfs_child_log_error "Primary bin dir requires root, but sudo is unavailable: ${ACFS_BIN_DIR:-<unset>}"
+    gtbi_child_log_error "Primary bin dir requires root, but sudo is unavailable: ${GTBI_BIN_DIR:-<unset>}"
     return 1
 }
 
-acfs_child_primary_bin_tool_path() {
+gtbi_child_primary_bin_tool_path() {
     local name="${1:-}"
     local tool_path=""
 
-    tool_path="$(acfs_generated_system_binary_path "$name" 2>/dev/null || true)"
+    tool_path="$(gtbi_generated_system_binary_path "$name" 2>/dev/null || true)"
     if [[ -z "$tool_path" ]]; then
-        acfs_child_log_error "Unable to locate trusted $name for primary bin operation"
+        gtbi_child_log_error "Unable to locate trusted $name for primary bin operation"
         return 1
     fi
 
     printf '%s\n' "$tool_path"
 }
 
-acfs_child_ensure_primary_bin_dir() {
+gtbi_child_ensure_primary_bin_dir() {
     local primary_bin_dir="$1"
     local mkdir_bin=""
 
-    mkdir_bin="$(acfs_child_primary_bin_tool_path mkdir)" || return 1
+    mkdir_bin="$(gtbi_child_primary_bin_tool_path mkdir)" || return 1
 
-    if acfs_child_primary_bin_requires_root "$primary_bin_dir"; then
-        acfs_child_run_root_bin_command "$mkdir_bin" -p "$primary_bin_dir"
+    if gtbi_child_primary_bin_requires_root "$primary_bin_dir"; then
+        gtbi_child_run_root_bin_command "$mkdir_bin" -p "$primary_bin_dir"
         return $?
     fi
 
     "$mkdir_bin" -p "$primary_bin_dir"
 }
 
-acfs_link_primary_bin_command() {
+gtbi_link_primary_bin_command() {
     local source_path="$1"
     local command_name="$2"
     local primary_bin_dir=""
     local dest_path=""
     local ln_bin=""
 
-    primary_bin_dir="$(acfs_child_primary_bin_dir)" || return 1
+    primary_bin_dir="$(gtbi_child_primary_bin_dir)" || return 1
     dest_path="$primary_bin_dir/$command_name"
-    acfs_child_ensure_primary_bin_dir "$primary_bin_dir" || return 1
-    ln_bin="$(acfs_child_primary_bin_tool_path ln)" || return 1
+    gtbi_child_ensure_primary_bin_dir "$primary_bin_dir" || return 1
+    ln_bin="$(gtbi_child_primary_bin_tool_path ln)" || return 1
 
-    if acfs_child_primary_bin_requires_root "$primary_bin_dir"; then
-        acfs_child_run_root_bin_command "$ln_bin" -sf "$source_path" "$dest_path"
+    if gtbi_child_primary_bin_requires_root "$primary_bin_dir"; then
+        gtbi_child_run_root_bin_command "$ln_bin" -sf "$source_path" "$dest_path"
         return $?
     fi
 
     "$ln_bin" -sf "$source_path" "$dest_path"
 }
 
-acfs_install_executable_into_primary_bin() {
+gtbi_install_executable_into_primary_bin() {
     local src_path="$1"
     local command_name="$2"
     local primary_bin_dir=""
     local dest_path=""
     local install_bin=""
 
-    primary_bin_dir="$(acfs_child_primary_bin_dir)" || return 1
+    primary_bin_dir="$(gtbi_child_primary_bin_dir)" || return 1
     dest_path="$primary_bin_dir/$command_name"
-    acfs_child_ensure_primary_bin_dir "$primary_bin_dir" || return 1
-    install_bin="$(acfs_child_primary_bin_tool_path install)" || return 1
+    gtbi_child_ensure_primary_bin_dir "$primary_bin_dir" || return 1
+    install_bin="$(gtbi_child_primary_bin_tool_path install)" || return 1
 
-    if acfs_child_primary_bin_requires_root "$primary_bin_dir"; then
-        acfs_child_run_root_bin_command "$install_bin" -m 0755 "$src_path" "$dest_path"
+    if gtbi_child_primary_bin_requires_root "$primary_bin_dir"; then
+        gtbi_child_run_root_bin_command "$install_bin" -m 0755 "$src_path" "$dest_path"
         return $?
     fi
 
@@ -531,7 +531,7 @@ if [[ -z "$claude_candidate" ]] || [[ ! -x "$claude_candidate" ]]; then
   echo "Claude Code: installed but no runnable claude binary found" >&2
   exit 1
 fi
-acfs_link_primary_bin_command "$claude_candidate" "claude"
+gtbi_link_primary_bin_command "$claude_candidate" "claude"
 INSTALL_AGENTS_CLAUDE
         then
             log_error "agents.claude: install command failed: for candidate in \"\$HOME/.claude/bin/claude\" \"\$HOME/.claude/local/bin/claude\" \"\$HOME/.bun/bin/claude\"; do"
@@ -544,7 +544,7 @@ INSTALL_AGENTS_CLAUDE
         log_info "dry-run: verify: \"\$target_bin/claude\" --version || \"\$target_bin/claude\" --help (target_user)"
     else
         if ! run_as_target_shell <<'INSTALL_AGENTS_CLAUDE'
-target_bin="${ACFS_BIN_DIR:-$HOME/.local/bin}"
+target_bin="${GTBI_BIN_DIR:-$HOME/.local/bin}"
 "$target_bin/claude" --version || "$target_bin/claude" --help
 INSTALL_AGENTS_CLAUDE
         then
@@ -559,7 +559,7 @@ INSTALL_AGENTS_CLAUDE
 # OpenAI Codex CLI
 install_agents_codex() {
     local module_id="agents.codex"
-    acfs_require_contract "module:${module_id}" || return 1
+    gtbi_require_contract "module:${module_id}" || return 1
     log_step "Installing agents.codex"
 
     if [[ "${DRY_RUN:-false}" = "true" ]]; then
@@ -581,7 +581,7 @@ INSTALL_AGENTS_CODEX
     else
         if ! run_as_target_shell <<'INSTALL_AGENTS_CODEX'
 # Generated helper functions used by this child shell.
-acfs_generated_system_binary_path() {
+gtbi_generated_system_binary_path() {
     local name="${1:-}"
     local candidate=""
 
@@ -612,7 +612,7 @@ acfs_generated_system_binary_path() {
 }
 
 # Primary-bin helper functions used by this child shell.
-acfs_child_log_error() {
+gtbi_child_log_error() {
     if declare -f log_error >/dev/null 2>&1; then
         log_error "$@"
     else
@@ -620,27 +620,27 @@ acfs_child_log_error() {
     fi
 }
 
-acfs_child_primary_bin_dir() {
-    local primary_bin_dir="${ACFS_BIN_DIR:-}"
+gtbi_child_primary_bin_dir() {
+    local primary_bin_dir="${GTBI_BIN_DIR:-}"
     local fallback_home="${HOME:-}"
 
     if [[ -z "$primary_bin_dir" ]]; then
         if [[ -z "$fallback_home" ]] || [[ "$fallback_home" == "/" ]] || [[ "$fallback_home" != /* ]]; then
-            acfs_child_log_error "ACFS_BIN_DIR is unset and HOME is not a usable absolute path"
+            gtbi_child_log_error "GTBI_BIN_DIR is unset and HOME is not a usable absolute path"
             return 1
         fi
         primary_bin_dir="$fallback_home/.local/bin"
     fi
 
     if [[ -z "$primary_bin_dir" ]] || [[ "$primary_bin_dir" == "/" ]] || [[ "$primary_bin_dir" != /* ]]; then
-        acfs_child_log_error "ACFS_BIN_DIR must be an absolute path and cannot be '/' (got: ${primary_bin_dir:-<empty>})"
+        gtbi_child_log_error "GTBI_BIN_DIR must be an absolute path and cannot be '/' (got: ${primary_bin_dir:-<empty>})"
         return 1
     fi
 
     printf '%s\n' "$primary_bin_dir"
 }
 
-acfs_child_primary_bin_requires_root() {
+gtbi_child_primary_bin_requires_root() {
     local primary_bin_dir="$1"
     local target_home="${TARGET_HOME:-${HOME:-}}"
 
@@ -651,9 +651,9 @@ acfs_child_primary_bin_requires_root() {
     esac
 }
 
-acfs_child_run_root_bin_command() {
+gtbi_child_run_root_bin_command() {
     if [[ -z "${1:-}" || "${1:-}" != /* ]]; then
-        acfs_child_log_error "Root primary bin command must be an absolute trusted path (got: ${1:-<empty>})"
+        gtbi_child_log_error "Root primary bin command must be an absolute trusted path (got: ${1:-<empty>})"
         return 1
     fi
 
@@ -663,91 +663,91 @@ acfs_child_run_root_bin_command() {
     fi
 
     local sudo_bin=""
-    sudo_bin="$(acfs_generated_system_binary_path sudo 2>/dev/null || true)"
+    sudo_bin="$(gtbi_generated_system_binary_path sudo 2>/dev/null || true)"
     if [[ -n "$sudo_bin" ]]; then
         "$sudo_bin" -n "$@"
         return $?
     fi
 
-    acfs_child_log_error "Primary bin dir requires root, but sudo is unavailable: ${ACFS_BIN_DIR:-<unset>}"
+    gtbi_child_log_error "Primary bin dir requires root, but sudo is unavailable: ${GTBI_BIN_DIR:-<unset>}"
     return 1
 }
 
-acfs_child_primary_bin_tool_path() {
+gtbi_child_primary_bin_tool_path() {
     local name="${1:-}"
     local tool_path=""
 
-    tool_path="$(acfs_generated_system_binary_path "$name" 2>/dev/null || true)"
+    tool_path="$(gtbi_generated_system_binary_path "$name" 2>/dev/null || true)"
     if [[ -z "$tool_path" ]]; then
-        acfs_child_log_error "Unable to locate trusted $name for primary bin operation"
+        gtbi_child_log_error "Unable to locate trusted $name for primary bin operation"
         return 1
     fi
 
     printf '%s\n' "$tool_path"
 }
 
-acfs_child_ensure_primary_bin_dir() {
+gtbi_child_ensure_primary_bin_dir() {
     local primary_bin_dir="$1"
     local mkdir_bin=""
 
-    mkdir_bin="$(acfs_child_primary_bin_tool_path mkdir)" || return 1
+    mkdir_bin="$(gtbi_child_primary_bin_tool_path mkdir)" || return 1
 
-    if acfs_child_primary_bin_requires_root "$primary_bin_dir"; then
-        acfs_child_run_root_bin_command "$mkdir_bin" -p "$primary_bin_dir"
+    if gtbi_child_primary_bin_requires_root "$primary_bin_dir"; then
+        gtbi_child_run_root_bin_command "$mkdir_bin" -p "$primary_bin_dir"
         return $?
     fi
 
     "$mkdir_bin" -p "$primary_bin_dir"
 }
 
-acfs_link_primary_bin_command() {
+gtbi_link_primary_bin_command() {
     local source_path="$1"
     local command_name="$2"
     local primary_bin_dir=""
     local dest_path=""
     local ln_bin=""
 
-    primary_bin_dir="$(acfs_child_primary_bin_dir)" || return 1
+    primary_bin_dir="$(gtbi_child_primary_bin_dir)" || return 1
     dest_path="$primary_bin_dir/$command_name"
-    acfs_child_ensure_primary_bin_dir "$primary_bin_dir" || return 1
-    ln_bin="$(acfs_child_primary_bin_tool_path ln)" || return 1
+    gtbi_child_ensure_primary_bin_dir "$primary_bin_dir" || return 1
+    ln_bin="$(gtbi_child_primary_bin_tool_path ln)" || return 1
 
-    if acfs_child_primary_bin_requires_root "$primary_bin_dir"; then
-        acfs_child_run_root_bin_command "$ln_bin" -sf "$source_path" "$dest_path"
+    if gtbi_child_primary_bin_requires_root "$primary_bin_dir"; then
+        gtbi_child_run_root_bin_command "$ln_bin" -sf "$source_path" "$dest_path"
         return $?
     fi
 
     "$ln_bin" -sf "$source_path" "$dest_path"
 }
 
-acfs_install_executable_into_primary_bin() {
+gtbi_install_executable_into_primary_bin() {
     local src_path="$1"
     local command_name="$2"
     local primary_bin_dir=""
     local dest_path=""
     local install_bin=""
 
-    primary_bin_dir="$(acfs_child_primary_bin_dir)" || return 1
+    primary_bin_dir="$(gtbi_child_primary_bin_dir)" || return 1
     dest_path="$primary_bin_dir/$command_name"
-    acfs_child_ensure_primary_bin_dir "$primary_bin_dir" || return 1
-    install_bin="$(acfs_child_primary_bin_tool_path install)" || return 1
+    gtbi_child_ensure_primary_bin_dir "$primary_bin_dir" || return 1
+    install_bin="$(gtbi_child_primary_bin_tool_path install)" || return 1
 
-    if acfs_child_primary_bin_requires_root "$primary_bin_dir"; then
-        acfs_child_run_root_bin_command "$install_bin" -m 0755 "$src_path" "$dest_path"
+    if gtbi_child_primary_bin_requires_root "$primary_bin_dir"; then
+        gtbi_child_run_root_bin_command "$install_bin" -m 0755 "$src_path" "$dest_path"
         return $?
     fi
 
     "$install_bin" -m 0755 "$src_path" "$dest_path"
 }
 
-wrapper_tmp="$(mktemp "${TMPDIR:-/tmp}/acfs-codex-wrapper.XXXXXX")"
+wrapper_tmp="$(mktemp "${TMPDIR:-/tmp}/gtbi-codex-wrapper.XXXXXX")"
 trap 'rm -f "$wrapper_tmp"' EXIT
 cat > "$wrapper_tmp" << 'WRAPPER'
 #!/bin/bash
 exec "$HOME/.bun/bin/bun" "$HOME/.bun/bin/codex" "$@"
 WRAPPER
 chmod 0755 "$wrapper_tmp"
-acfs_install_executable_into_primary_bin "$wrapper_tmp" "codex"
+gtbi_install_executable_into_primary_bin "$wrapper_tmp" "codex"
 INSTALL_AGENTS_CODEX
         then
             log_error "agents.codex: install command failed: trap 'rm -f \"\$wrapper_tmp\"' EXIT"
@@ -760,7 +760,7 @@ INSTALL_AGENTS_CODEX
         log_info "dry-run: verify: \"\$target_bin/codex\" --version || \"\$target_bin/codex\" --help (target_user)"
     else
         if ! run_as_target_shell <<'INSTALL_AGENTS_CODEX'
-target_bin="${ACFS_BIN_DIR:-$HOME/.local/bin}"
+target_bin="${GTBI_BIN_DIR:-$HOME/.local/bin}"
 "$target_bin/codex" --version || "$target_bin/codex" --help
 INSTALL_AGENTS_CODEX
         then
@@ -775,7 +775,7 @@ INSTALL_AGENTS_CODEX
 # Google Gemini CLI
 install_agents_gemini() {
     local module_id="agents.gemini"
-    acfs_require_contract "module:${module_id}" || return 1
+    gtbi_require_contract "module:${module_id}" || return 1
     log_step "Installing agents.gemini"
 
     if [[ "${DRY_RUN:-false}" = "true" ]]; then
@@ -794,7 +794,7 @@ INSTALL_AGENTS_GEMINI
     else
         if ! run_as_target_shell <<'INSTALL_AGENTS_GEMINI'
 # Generated helper functions used by this child shell.
-acfs_generated_system_binary_path() {
+gtbi_generated_system_binary_path() {
     local name="${1:-}"
     local candidate=""
 
@@ -825,7 +825,7 @@ acfs_generated_system_binary_path() {
 }
 
 # Primary-bin helper functions used by this child shell.
-acfs_child_log_error() {
+gtbi_child_log_error() {
     if declare -f log_error >/dev/null 2>&1; then
         log_error "$@"
     else
@@ -833,27 +833,27 @@ acfs_child_log_error() {
     fi
 }
 
-acfs_child_primary_bin_dir() {
-    local primary_bin_dir="${ACFS_BIN_DIR:-}"
+gtbi_child_primary_bin_dir() {
+    local primary_bin_dir="${GTBI_BIN_DIR:-}"
     local fallback_home="${HOME:-}"
 
     if [[ -z "$primary_bin_dir" ]]; then
         if [[ -z "$fallback_home" ]] || [[ "$fallback_home" == "/" ]] || [[ "$fallback_home" != /* ]]; then
-            acfs_child_log_error "ACFS_BIN_DIR is unset and HOME is not a usable absolute path"
+            gtbi_child_log_error "GTBI_BIN_DIR is unset and HOME is not a usable absolute path"
             return 1
         fi
         primary_bin_dir="$fallback_home/.local/bin"
     fi
 
     if [[ -z "$primary_bin_dir" ]] || [[ "$primary_bin_dir" == "/" ]] || [[ "$primary_bin_dir" != /* ]]; then
-        acfs_child_log_error "ACFS_BIN_DIR must be an absolute path and cannot be '/' (got: ${primary_bin_dir:-<empty>})"
+        gtbi_child_log_error "GTBI_BIN_DIR must be an absolute path and cannot be '/' (got: ${primary_bin_dir:-<empty>})"
         return 1
     fi
 
     printf '%s\n' "$primary_bin_dir"
 }
 
-acfs_child_primary_bin_requires_root() {
+gtbi_child_primary_bin_requires_root() {
     local primary_bin_dir="$1"
     local target_home="${TARGET_HOME:-${HOME:-}}"
 
@@ -864,9 +864,9 @@ acfs_child_primary_bin_requires_root() {
     esac
 }
 
-acfs_child_run_root_bin_command() {
+gtbi_child_run_root_bin_command() {
     if [[ -z "${1:-}" || "${1:-}" != /* ]]; then
-        acfs_child_log_error "Root primary bin command must be an absolute trusted path (got: ${1:-<empty>})"
+        gtbi_child_log_error "Root primary bin command must be an absolute trusted path (got: ${1:-<empty>})"
         return 1
     fi
 
@@ -876,91 +876,91 @@ acfs_child_run_root_bin_command() {
     fi
 
     local sudo_bin=""
-    sudo_bin="$(acfs_generated_system_binary_path sudo 2>/dev/null || true)"
+    sudo_bin="$(gtbi_generated_system_binary_path sudo 2>/dev/null || true)"
     if [[ -n "$sudo_bin" ]]; then
         "$sudo_bin" -n "$@"
         return $?
     fi
 
-    acfs_child_log_error "Primary bin dir requires root, but sudo is unavailable: ${ACFS_BIN_DIR:-<unset>}"
+    gtbi_child_log_error "Primary bin dir requires root, but sudo is unavailable: ${GTBI_BIN_DIR:-<unset>}"
     return 1
 }
 
-acfs_child_primary_bin_tool_path() {
+gtbi_child_primary_bin_tool_path() {
     local name="${1:-}"
     local tool_path=""
 
-    tool_path="$(acfs_generated_system_binary_path "$name" 2>/dev/null || true)"
+    tool_path="$(gtbi_generated_system_binary_path "$name" 2>/dev/null || true)"
     if [[ -z "$tool_path" ]]; then
-        acfs_child_log_error "Unable to locate trusted $name for primary bin operation"
+        gtbi_child_log_error "Unable to locate trusted $name for primary bin operation"
         return 1
     fi
 
     printf '%s\n' "$tool_path"
 }
 
-acfs_child_ensure_primary_bin_dir() {
+gtbi_child_ensure_primary_bin_dir() {
     local primary_bin_dir="$1"
     local mkdir_bin=""
 
-    mkdir_bin="$(acfs_child_primary_bin_tool_path mkdir)" || return 1
+    mkdir_bin="$(gtbi_child_primary_bin_tool_path mkdir)" || return 1
 
-    if acfs_child_primary_bin_requires_root "$primary_bin_dir"; then
-        acfs_child_run_root_bin_command "$mkdir_bin" -p "$primary_bin_dir"
+    if gtbi_child_primary_bin_requires_root "$primary_bin_dir"; then
+        gtbi_child_run_root_bin_command "$mkdir_bin" -p "$primary_bin_dir"
         return $?
     fi
 
     "$mkdir_bin" -p "$primary_bin_dir"
 }
 
-acfs_link_primary_bin_command() {
+gtbi_link_primary_bin_command() {
     local source_path="$1"
     local command_name="$2"
     local primary_bin_dir=""
     local dest_path=""
     local ln_bin=""
 
-    primary_bin_dir="$(acfs_child_primary_bin_dir)" || return 1
+    primary_bin_dir="$(gtbi_child_primary_bin_dir)" || return 1
     dest_path="$primary_bin_dir/$command_name"
-    acfs_child_ensure_primary_bin_dir "$primary_bin_dir" || return 1
-    ln_bin="$(acfs_child_primary_bin_tool_path ln)" || return 1
+    gtbi_child_ensure_primary_bin_dir "$primary_bin_dir" || return 1
+    ln_bin="$(gtbi_child_primary_bin_tool_path ln)" || return 1
 
-    if acfs_child_primary_bin_requires_root "$primary_bin_dir"; then
-        acfs_child_run_root_bin_command "$ln_bin" -sf "$source_path" "$dest_path"
+    if gtbi_child_primary_bin_requires_root "$primary_bin_dir"; then
+        gtbi_child_run_root_bin_command "$ln_bin" -sf "$source_path" "$dest_path"
         return $?
     fi
 
     "$ln_bin" -sf "$source_path" "$dest_path"
 }
 
-acfs_install_executable_into_primary_bin() {
+gtbi_install_executable_into_primary_bin() {
     local src_path="$1"
     local command_name="$2"
     local primary_bin_dir=""
     local dest_path=""
     local install_bin=""
 
-    primary_bin_dir="$(acfs_child_primary_bin_dir)" || return 1
+    primary_bin_dir="$(gtbi_child_primary_bin_dir)" || return 1
     dest_path="$primary_bin_dir/$command_name"
-    acfs_child_ensure_primary_bin_dir "$primary_bin_dir" || return 1
-    install_bin="$(acfs_child_primary_bin_tool_path install)" || return 1
+    gtbi_child_ensure_primary_bin_dir "$primary_bin_dir" || return 1
+    install_bin="$(gtbi_child_primary_bin_tool_path install)" || return 1
 
-    if acfs_child_primary_bin_requires_root "$primary_bin_dir"; then
-        acfs_child_run_root_bin_command "$install_bin" -m 0755 "$src_path" "$dest_path"
+    if gtbi_child_primary_bin_requires_root "$primary_bin_dir"; then
+        gtbi_child_run_root_bin_command "$install_bin" -m 0755 "$src_path" "$dest_path"
         return $?
     fi
 
     "$install_bin" -m 0755 "$src_path" "$dest_path"
 }
 
-wrapper_tmp="$(mktemp "${TMPDIR:-/tmp}/acfs-gemini-wrapper.XXXXXX")"
+wrapper_tmp="$(mktemp "${TMPDIR:-/tmp}/gtbi-gemini-wrapper.XXXXXX")"
 trap 'rm -f "$wrapper_tmp"' EXIT
 cat > "$wrapper_tmp" << 'WRAPPER'
 #!/bin/bash
 exec "$HOME/.bun/bin/bun" "$HOME/.bun/bin/gemini" "$@"
 WRAPPER
 chmod 0755 "$wrapper_tmp"
-acfs_install_executable_into_primary_bin "$wrapper_tmp" "gemini"
+gtbi_install_executable_into_primary_bin "$wrapper_tmp" "gemini"
 INSTALL_AGENTS_GEMINI
         then
             log_error "agents.gemini: install command failed: trap 'rm -f \"\$wrapper_tmp\"' EXIT"
@@ -971,13 +971,13 @@ INSTALL_AGENTS_GEMINI
         log_info "dry-run: install: if [[ ! -f \"\$security_lib\" ]]; then (target_user)"
     else
         if ! run_as_target_shell <<'INSTALL_AGENTS_GEMINI'
-security_lib="${ACFS_LIB_DIR:-$HOME/.acfs/scripts/lib}/security.sh"
+security_lib="${GTBI_LIB_DIR:-$HOME/.gtbi/scripts/lib}/security.sh"
 if [[ ! -f "$security_lib" ]]; then
   echo "agents.gemini: security library not found at $security_lib; skipping Gemini patch" >&2
   exit 0
 fi
-if [[ -n "${ACFS_CHECKSUMS_YAML:-}" ]]; then
-  export CHECKSUMS_FILE="$ACFS_CHECKSUMS_YAML"
+if [[ -n "${GTBI_CHECKSUMS_YAML:-}" ]]; then
+  export CHECKSUMS_FILE="$GTBI_CHECKSUMS_YAML"
 fi
 # shellcheck disable=SC1090,SC1091
 source "$security_lib"
@@ -1049,7 +1049,7 @@ INSTALL_AGENTS_GEMINI
         log_info "dry-run: verify: \"\$target_bin/gemini\" --version || \"\$target_bin/gemini\" --help (target_user)"
     else
         if ! run_as_target_shell <<'INSTALL_AGENTS_GEMINI'
-target_bin="${ACFS_BIN_DIR:-$HOME/.local/bin}"
+target_bin="${GTBI_BIN_DIR:-$HOME/.local/bin}"
 "$target_bin/gemini" --version || "$target_bin/gemini" --help
 INSTALL_AGENTS_GEMINI
         then
@@ -1064,7 +1064,7 @@ INSTALL_AGENTS_GEMINI
 # OpenCode (multi-provider agent harness)
 install_agents_opencode() {
     local module_id="agents.opencode"
-    acfs_require_contract "module:${module_id}" || return 1
+    gtbi_require_contract "module:${module_id}" || return 1
     log_step "Installing agents.opencode"
 
     if [[ "${DRY_RUN:-false}" = "true" ]]; then
@@ -1074,7 +1074,7 @@ install_agents_opencode() {
             # Try security-verified install (no unverified fallback; fail closed)
             local install_success=false
 
-            if acfs_security_init; then
+            if gtbi_security_init; then
                 local known_installers_decl=""
                 # Check if KNOWN_INSTALLERS is available as an associative array (declare -A)
                 known_installers_decl="$(declare -p KNOWN_INSTALLERS 2>/dev/null || true)"
@@ -1108,7 +1108,7 @@ install_agents_opencode() {
                     log_error "agents.opencode: KNOWN_INSTALLERS array not available"
                 fi
             else
-                log_error "agents.opencode: acfs_security_init failed - check security.sh and checksums.yaml"
+                log_error "agents.opencode: gtbi_security_init failed - check security.sh and checksums.yaml"
             fi
 
             # Verified install is required - no fallback

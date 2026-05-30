@@ -4,7 +4,7 @@ import { getLessonBySlug } from "@/lib/lessons";
 
 export const runtime = "edge";
 
-export const alt = "ACFS Lesson";
+export const alt = "GTBI Lesson";
 export const size = {
   width: 1200,
   height: 600,
@@ -26,7 +26,7 @@ export default async function Image({ params }: { params: Promise<{ slug: string
       description: lesson.description,
       path: `/learn/${lesson.slug}`,
       theme: "learn",
-      tags: [lesson.duration, "Learning Hub", "ACFS"],
+      tags: [lesson.duration, "Learning Hub", "GTBI"],
     },
     "twitter"
   );

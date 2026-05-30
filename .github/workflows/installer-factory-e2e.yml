@@ -14,7 +14,7 @@ on:
           - qemu
           - real-host
       ref:
-        description: "ACFS ref to install"
+        description: "GTBI ref to install"
         default: "main"
         required: true
       mode:
@@ -52,12 +52,12 @@ on:
         default: "14400"
         required: true
       runner:
-        description: "Optional runner label override. Leave blank to use ACFS_FACTORY_RUNNER or ubuntu-latest."
+        description: "Optional runner label override. Leave blank to use GTBI_FACTORY_RUNNER or ubuntu-latest."
         default: ""
         required: false
   repository_dispatch:
     types:
-      - acfs-factory-host-ready
+      - gtbi-factory-host-ready
   workflow_call:
     inputs:
       backend:
@@ -66,7 +66,7 @@ on:
         required: false
         type: string
       ref:
-        description: "ACFS ref to install"
+        description: "GTBI ref to install"
         default: "main"
         required: false
         type: string
@@ -106,24 +106,24 @@ on:
         required: false
         type: string
       runner:
-        description: "Optional runner label override. Leave blank to use ACFS_FACTORY_RUNNER or ubuntu-latest."
+        description: "Optional runner label override. Leave blank to use GTBI_FACTORY_RUNNER or ubuntu-latest."
         default: ""
         required: false
         type: string
     secrets:
-      ACFS_FACTORY_SSH_TARGET:
+      GTBI_FACTORY_SSH_TARGET:
         required: false
-      ACFS_FACTORY_SSH_PRIVATE_KEY:
+      GTBI_FACTORY_SSH_PRIVATE_KEY:
         required: false
-      ACFS_FACTORY_SSH_PORT:
+      GTBI_FACTORY_SSH_PORT:
         required: false
-      ACFS_FACTORY_PUBLIC_KEY:
+      GTBI_FACTORY_PUBLIC_KEY:
         required: false
 
 jobs:
   factory-e2e:
     name: Fresh Ubuntu ${{ inputs.expect_ubuntu || github.event.client_payload.expect_ubuntu || '25.10' }} factory install
-    runs-on: ${{ inputs.runner || github.event.client_payload.runner || vars.ACFS_FACTORY_RUNNER || 'ubuntu-latest' }}
+    runs-on: ${{ inputs.runner || github.event.client_payload.runner || vars.GTBI_FACTORY_RUNNER || 'ubuntu-latest' }}
     timeout-minutes: 360
     permissions:
       contents: read
@@ -138,8 +138,8 @@ jobs:
           INPUT_BACKEND: ${{ inputs.backend || '' }}
           DISPATCH_BACKEND: ${{ github.event.client_payload.backend || '' }}
           DISPATCH_SSH_TARGET: ${{ github.event.client_payload.ssh_target || '' }}
-          SSH_TARGET: ${{ secrets.ACFS_FACTORY_SSH_TARGET }}
-          SSH_PRIVATE_KEY: ${{ secrets.ACFS_FACTORY_SSH_PRIVATE_KEY }}
+          SSH_TARGET: ${{ secrets.GTBI_FACTORY_SSH_TARGET }}
+          SSH_PRIVATE_KEY: ${{ secrets.GTBI_FACTORY_SSH_PRIVATE_KEY }}
         run: |
           backend="${INPUT_BACKEND:-}"
           effective_ssh_target="${DISPATCH_SSH_TARGET:-${SSH_TARGET:-}}"
@@ -165,21 +165,21 @@ jobs:
           echo "enabled=true" >> "$GITHUB_OUTPUT"
 
           if [[ "$backend" == "real-host" && ( -z "${effective_ssh_target:-}" || -z "${SSH_PRIVATE_KEY:-}" ) ]]; then
-            echo "::error::real-host factory E2E requires client_payload.ssh_target or ACFS_FACTORY_SSH_TARGET, plus ACFS_FACTORY_SSH_PRIVATE_KEY."
+            echo "::error::real-host factory E2E requires client_payload.ssh_target or GTBI_FACTORY_SSH_TARGET, plus GTBI_FACTORY_SSH_PRIVATE_KEY."
             exit 1
           fi
 
       - name: Prepare SSH material
         if: steps.config.outputs.enabled == 'true' && steps.config.outputs.backend == 'real-host'
         env:
-          SSH_PRIVATE_KEY: ${{ secrets.ACFS_FACTORY_SSH_PRIVATE_KEY }}
-          PUBLIC_KEY: ${{ secrets.ACFS_FACTORY_PUBLIC_KEY }}
+          SSH_PRIVATE_KEY: ${{ secrets.GTBI_FACTORY_SSH_PRIVATE_KEY }}
+          PUBLIC_KEY: ${{ secrets.GTBI_FACTORY_PUBLIC_KEY }}
         run: |
-          mkdir -p "$RUNNER_TEMP/acfs-factory-e2e"
-          printf '%s\n' "$SSH_PRIVATE_KEY" > "$RUNNER_TEMP/acfs-factory-e2e/id"
-          chmod 600 "$RUNNER_TEMP/acfs-factory-e2e/id"
+          mkdir -p "$RUNNER_TEMP/gtbi-factory-e2e"
+          printf '%s\n' "$SSH_PRIVATE_KEY" > "$RUNNER_TEMP/gtbi-factory-e2e/id"
+          chmod 600 "$RUNNER_TEMP/gtbi-factory-e2e/id"
           if [[ -n "${PUBLIC_KEY:-}" ]]; then
-            printf '%s\n' "$PUBLIC_KEY" > "$RUNNER_TEMP/acfs-factory-e2e/id.pub"
+            printf '%s\n' "$PUBLIC_KEY" > "$RUNNER_TEMP/gtbi-factory-e2e/id.pub"
           fi
 
       - name: Install QEMU dependencies
@@ -202,7 +202,7 @@ jobs:
         if: steps.config.outputs.enabled == 'true' && steps.config.outputs.backend == 'qemu'
         run: |
           if [[ ! -e /dev/kvm ]]; then
-            echo "::error::QEMU backend requires /dev/kvm. Set repository variable ACFS_FACTORY_RUNNER, workflow input runner, or client_payload.runner to a KVM-capable larger/self-hosted runner; otherwise use backend=real-host."
+            echo "::error::QEMU backend requires /dev/kvm. Set repository variable GTBI_FACTORY_RUNNER, workflow input runner, or client_payload.runner to a KVM-capable larger/self-hosted runner; otherwise use backend=real-host."
             exit 1
           fi
           if [[ ! -r /dev/kvm || ! -w /dev/kvm ]]; then
@@ -240,8 +240,8 @@ jobs:
       - name: Run real-host factory installer E2E
         if: steps.config.outputs.enabled == 'true' && steps.config.outputs.backend == 'real-host'
         env:
-          SSH_TARGET: ${{ github.event.client_payload.ssh_target || secrets.ACFS_FACTORY_SSH_TARGET }}
-          SSH_PORT: ${{ github.event.client_payload.ssh_port || secrets.ACFS_FACTORY_SSH_PORT }}
+          SSH_TARGET: ${{ github.event.client_payload.ssh_target || secrets.GTBI_FACTORY_SSH_TARGET }}
+          SSH_PORT: ${{ github.event.client_payload.ssh_port || secrets.GTBI_FACTORY_SSH_PORT }}
           INPUT_REF: ${{ inputs.ref || github.event.client_payload.ref || 'main' }}
           INPUT_MODE: ${{ inputs.mode || github.event.client_payload.mode || 'vibe' }}
           INPUT_EXPECT_UBUNTU: ${{ inputs.expect_ubuntu || github.event.client_payload.expect_ubuntu || '25.10' }}
@@ -254,7 +254,7 @@ jobs:
           artifacts_dir="$GITHUB_WORKSPACE/tests/artifacts/factory-e2e-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
           args=(
             --ssh-target "$SSH_TARGET"
-            --ssh-key "$RUNNER_TEMP/acfs-factory-e2e/id"
+            --ssh-key "$RUNNER_TEMP/gtbi-factory-e2e/id"
             --ref "$INPUT_REF"
             --mode "$INPUT_MODE"
             --expect-ubuntu "$INPUT_EXPECT_UBUNTU"
@@ -266,8 +266,8 @@ jobs:
           if [[ -n "${SSH_PORT:-}" ]]; then
             args+=(--ssh-port "$SSH_PORT")
           fi
-          if [[ -f "$RUNNER_TEMP/acfs-factory-e2e/id.pub" ]]; then
-            args+=(--public-key-file "$RUNNER_TEMP/acfs-factory-e2e/id.pub")
+          if [[ -f "$RUNNER_TEMP/gtbi-factory-e2e/id.pub" ]]; then
+            args+=(--public-key-file "$RUNNER_TEMP/gtbi-factory-e2e/id.pub")
           fi
           if [[ "$INPUT_ALLOW_EXISTING_UBUNTU" == "true" ]]; then
             args+=(--allow-existing-ubuntu)

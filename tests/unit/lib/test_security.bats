@@ -22,7 +22,7 @@ write_security_checksums_fixture() {
     local index=1
 
     printf 'installers:\n' > "$output_file"
-    for tool in "${ACFS_SECURITY_REQUIRED_INSTALLERS[@]}"; do
+    for tool in "${GTBI_SECURITY_REQUIRED_INSTALLERS[@]}"; do
         printf -v checksum '%064d' "$index"
         printf '  %s:\n' "$tool" >> "$output_file"
         printf '    url: "%s"\n' "${KNOWN_INSTALLERS[$tool]}" >> "$output_file"
@@ -31,11 +31,11 @@ write_security_checksums_fixture() {
     done
 }
 
-stub_acfs_curl_response() {
-    STUB_ACFS_CURL_CONTENT="$1"
-    STUB_ACFS_CURL_EXIT_CODE="${2:-0}"
+stub_gtbi_curl_response() {
+    STUB_GTBI_CURL_CONTENT="$1"
+    STUB_GTBI_CURL_EXIT_CODE="${2:-0}"
 
-    acfs_curl() {
+    gtbi_curl() {
         local output_file=""
         local args=("$@")
         local i
@@ -48,12 +48,12 @@ stub_acfs_curl_response() {
         done
 
         if [[ -n "$output_file" ]]; then
-            printf '%s' "$STUB_ACFS_CURL_CONTENT" > "$output_file"
+            printf '%s' "$STUB_GTBI_CURL_CONTENT" > "$output_file"
         else
-            printf '%s' "$STUB_ACFS_CURL_CONTENT"
+            printf '%s' "$STUB_GTBI_CURL_CONTENT"
         fi
 
-        return "$STUB_ACFS_CURL_EXIT_CODE"
+        return "$STUB_GTBI_CURL_EXIT_CODE"
     }
 }
 
@@ -76,7 +76,7 @@ stub_acfs_curl_response() {
         sha=$(echo -n "$content" | shasum -a 256 | cut -d' ' -f1)
     fi
 
-    stub_acfs_curl_response "$content" 0
+    stub_gtbi_curl_response "$content" 0
 
     run verify_checksum "https://example.com" "$sha" "test"
     assert_success
@@ -90,7 +90,7 @@ stub_acfs_curl_response() {
     run bash -c '
         set -euo pipefail
         source "$1"
-        acfs_download_to_file() {
+        gtbi_download_to_file() {
             printf "%s" "verified content" > "$2"
         }
         sha="$(printf "%s" "verified content" | sha256sum | cut -d" " -f1)"
@@ -107,7 +107,7 @@ stub_acfs_curl_response() {
     run bash -c '
         set -euo pipefail
         source "$1"
-        acfs_download_to_file() {
+        gtbi_download_to_file() {
             printf "%s" "verified content" > "$2"
         }
         fetch_checksum "https://example.com" >/dev/null
@@ -123,7 +123,7 @@ stub_acfs_curl_response() {
     run bash -c '
         set -euo pipefail
         source "$1"
-        acfs_download_to_file() {
+        gtbi_download_to_file() {
             printf "%s" "verified content" > "$2"
         }
         sha="$(printf "%s" "verified content" | sha256sum | cut -d" " -f1)"
@@ -144,7 +144,7 @@ stub_acfs_curl_response() {
     run bash -c '
         set -euo pipefail
         source "$1"
-        acfs_download_to_file() {
+        gtbi_download_to_file() {
             printf "%s" "verified content" > "$2"
         }
         probe_return_trap() {
@@ -164,7 +164,7 @@ stub_acfs_curl_response() {
     run bash -c '
         set -euo pipefail
         source "$1"
-        acfs_download_to_file() {
+        gtbi_download_to_file() {
             printf "%s" "printf ok" > "$2"
         }
         bash() {
@@ -186,7 +186,7 @@ stub_acfs_curl_response() {
     local content="malicious content"
     local sha="0000000000000000000000000000000000000000000000000000000000000000"
 
-    stub_acfs_curl_response "$content" 0
+    stub_gtbi_curl_response "$content" 0
     
     run verify_checksum "https://example.com" "$sha" "test"
     assert_failure
@@ -198,10 +198,10 @@ stub_acfs_curl_response() {
 
     run bash -c '
         source "$1"
-        acfs_download_to_file() {
+        gtbi_download_to_file() {
             printf "%s" "changed trusted content" > "$2"
         }
-        acfs_refresh_loaded_checksums_from_remote() {
+        gtbi_refresh_loaded_checksums_from_remote() {
             return 1
         }
         verify_checksum \
@@ -215,9 +215,9 @@ stub_acfs_curl_response() {
     refute_output --partial "Trusted-tool auto-accept"
 }
 
-@test "acfs_curl: ignores shell function curl" {
+@test "gtbi_curl: ignores shell function curl" {
     local security_lib="$PROJECT_ROOT/scripts/lib/security.sh"
-    local marker="${BATS_TEST_TMPDIR:-/tmp}/acfs-curl-poison-marker"
+    local marker="${BATS_TEST_TMPDIR:-/tmp}/gtbi-curl-poison-marker"
 
     run bash -c '
         set -euo pipefail
@@ -229,7 +229,7 @@ stub_acfs_curl_response() {
         }
         source "$security_lib"
         set +e
-        acfs_curl "https://127.0.0.1:9/" >/dev/null 2>&1
+        gtbi_curl "https://127.0.0.1:9/" >/dev/null 2>&1
         status=$?
         set -e
         [[ ! -e "$marker" ]]
@@ -240,46 +240,46 @@ stub_acfs_curl_response() {
     [[ ! -e "$marker" ]]
 }
 
-@test "acfs_curl: refreshes stale cached curl path" {
+@test "gtbi_curl: refreshes stale cached curl path" {
     local security_lib="$PROJECT_ROOT/scripts/lib/security.sh"
 
     run bash -c '
         set -euo pipefail
         security_lib="$1"
         source "$security_lib"
-        ACFS_CURL_BIN="/tmp/acfs-missing-curl"
+        GTBI_CURL_BIN="/tmp/gtbi-missing-curl"
         set +e
-        acfs_curl "https://127.0.0.1:9/" >/dev/null 2>&1
+        gtbi_curl "https://127.0.0.1:9/" >/dev/null 2>&1
         status=$?
         set -e
         [[ "$status" -ne 127 ]]
-        [[ "$ACFS_CURL_BIN" = /* ]]
-        [[ -x "$ACFS_CURL_BIN" ]]
+        [[ "$GTBI_CURL_BIN" = /* ]]
+        [[ -x "$GTBI_CURL_BIN" ]]
     ' _ "$security_lib"
 
     assert_success
 }
 
-@test "acfs_download_to_file: treats root-level output parent as slash" {
+@test "gtbi_download_to_file: treats root-level output parent as slash" {
     local recorded_dir="$BATS_TEST_TMPDIR/security-recorded-output-dir"
 
-    acfs_security_mkdir_p() {
+    gtbi_security_mkdir_p() {
         printf '%s' "$1" > "$recorded_dir"
         [[ "$1" == "/" ]]
     }
 
-    acfs_curl() {
+    gtbi_curl() {
         return 0
     }
 
-    run acfs_download_to_file "https://example.com/install.sh" "/acfs-root-output" "root-target"
+    run gtbi_download_to_file "https://example.com/install.sh" "/gtbi-root-output" "root-target"
     assert_success
     assert_equal "$(cat "$recorded_dir")" "/"
 }
 
 @test "calculate_file_sha256: ignores shell function sha256sum" {
     local security_lib="$PROJECT_ROOT/scripts/lib/security.sh"
-    local probe_file="${BATS_TEST_TMPDIR:-/tmp}/acfs-sha-poison-probe"
+    local probe_file="${BATS_TEST_TMPDIR:-/tmp}/gtbi-sha-poison-probe"
 
     run bash -c '
         set -euo pipefail
@@ -326,7 +326,7 @@ content='printf "trusted installer\n"'
 # shellcheck source=/dev/null
 source "$security_lib"
 
-acfs_download_to_file() {
+gtbi_download_to_file() {
     printf '%s' "$content" > "$2"
 }
 
@@ -368,7 +368,7 @@ content='printf "trusted-run:%s\n" "$1"'
 # shellcheck source=/dev/null
 source "$security_lib"
 
-acfs_download_to_file() {
+gtbi_download_to_file() {
     printf '%s' "$content" > "$2"
 }
 
@@ -409,7 +409,7 @@ content='printf "trusted-recovery:%s\n" "$1"'
 # shellcheck source=/dev/null
 source "$security_lib"
 
-acfs_download_to_file() {
+gtbi_download_to_file() {
     printf '%s' "$content" > "$2"
 }
 
@@ -541,7 +541,7 @@ EOF
     assert_equal "${KNOWN_INSTALLERS["txn_tool"]}" "https://example.com/good"
 }
 
-@test "acfs_checksums_file_looks_valid: requires complete installer metadata" {
+@test "gtbi_checksums_file_looks_valid: requires complete installer metadata" {
     local full_file
     local partial_file
     full_file="$(create_temp_file)"
@@ -555,31 +555,31 @@ installers:
     sha256: "1111111111111111111111111111111111111111111111111111111111111111"
 EOF
 
-    run acfs_checksums_file_looks_valid "$full_file"
+    run gtbi_checksums_file_looks_valid "$full_file"
     assert_success
 
-    run acfs_checksums_file_looks_valid "$partial_file"
+    run gtbi_checksums_file_looks_valid "$partial_file"
     assert_failure
 }
 
-@test "acfs_checksums_file_looks_valid: ignores dynamic local installer keys" {
+@test "gtbi_checksums_file_looks_valid: ignores dynamic local installer keys" {
     local full_file
     full_file="$(create_temp_file)"
 
     write_security_checksums_fixture "$full_file"
     KNOWN_INSTALLERS["local_only_tool"]="https://example.com/local-only.sh"
 
-    run acfs_checksums_file_looks_valid "$full_file"
+    run gtbi_checksums_file_looks_valid "$full_file"
     assert_success
 }
 
-@test "acfs_refresh_loaded_checksums_from_remote: partial remote metadata preserves loaded state" {
+@test "gtbi_refresh_loaded_checksums_from_remote: partial remote metadata preserves loaded state" {
     local existing_sha="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 
     declare -gA LOADED_CHECKSUMS=([sentinel_tool]="$existing_sha")
-    ACFS_CHECKSUMS_REMOTE_REFRESHED=false
+    GTBI_CHECKSUMS_REMOTE_REFRESHED=false
 
-    acfs_curl() {
+    gtbi_curl() {
         local output_file=""
         local args=("$@")
         local i
@@ -600,7 +600,7 @@ EOF
         return 0
     }
 
-    acfs_download_to_file() {
+    gtbi_download_to_file() {
         cat > "$2" <<'EOF'
 installers:
   dcg:
@@ -610,10 +610,10 @@ EOF
         return 0
     }
 
-    if acfs_refresh_loaded_checksums_from_remote; then
+    if gtbi_refresh_loaded_checksums_from_remote; then
         fail "partial remote checksums unexpectedly refreshed loaded state"
     fi
 
     assert_equal "$(get_checksum "sentinel_tool")" "$existing_sha"
-    assert_equal "$ACFS_CHECKSUMS_REMOTE_REFRESHED" "false"
+    assert_equal "$GTBI_CHECKSUMS_REMOTE_REFRESHED" "false"
 }

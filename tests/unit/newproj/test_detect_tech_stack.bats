@@ -13,9 +13,9 @@ setup() {
     export TEST_DIR
 
     # Set up logging
-    export ACFS_LOG_DIR="$TEST_DIR/logs"
-    mkdir -p "$ACFS_LOG_DIR"
-    export ACFS_LOG_LEVEL=0
+    export GTBI_LOG_DIR="$TEST_DIR/logs"
+    mkdir -p "$GTBI_LOG_DIR"
+    export GTBI_LOG_LEVEL=0
 
     # Source dependencies
     source_lib "newproj_logging"

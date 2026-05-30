@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-# Unit tests for acfs swarm assignment planner
+# Unit tests for gtbi swarm assignment planner
 # ============================================================
 
 set -euo pipefail
@@ -10,7 +10,7 @@ SWARM_ASSIGN_SH="$REPO_ROOT/scripts/lib/swarm_assign.sh"
 
 TESTS_PASSED=0
 TESTS_FAILED=0
-ARTIFACT_DIR="${ACFS_SWARM_ASSIGN_TEST_ARTIFACTS_DIR:-${TMPDIR:-/tmp}/acfs-swarm-assign-test-artifacts-$(date +%Y%m%d-%H%M%S)-$$}"
+ARTIFACT_DIR="${GTBI_SWARM_ASSIGN_TEST_ARTIFACTS_DIR:-${TMPDIR:-/tmp}/gtbi-swarm-assign-test-artifacts-$(date +%Y%m%d-%H%M%S)-$$}"
 
 mkdir -p "$ARTIFACT_DIR"
 

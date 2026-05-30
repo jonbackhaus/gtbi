@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-# ACFS Installer - User Normalization Library
+# GTBI Installer - User Normalization Library
 # Ensures consistent user setup across VPS providers
 #
 # Requires:
@@ -9,13 +9,13 @@
 # ============================================================
 
 # Prevent multiple sourcing
-if [[ -n "${_ACFS_USER_SH_LOADED:-}" ]]; then
+if [[ -n "${_GTBI_USER_SH_LOADED:-}" ]]; then
     if [[ "${BASH_SOURCE[0]}" != "${0}" ]]; then
         return 0
     fi
     exit 0
 fi
-_ACFS_USER_SH_LOADED=1
+_GTBI_USER_SH_LOADED=1
 
 # Fallback logging if logging.sh not sourced
 if ! declare -f log_fatal &>/dev/null; then
@@ -207,25 +207,25 @@ user_home_for_user() {
     return 1
 }
 
-# Target user for ACFS installations
+# Target user for GTBI installations
 TARGET_USER="${TARGET_USER:-ubuntu}"
 user_require_valid_target_user "$TARGET_USER"
-_ACFS_USER_EXPLICIT_TARGET_HOME="${TARGET_HOME:-}"
-if [[ -n "$_ACFS_USER_EXPLICIT_TARGET_HOME" ]] && [[ "$_ACFS_USER_EXPLICIT_TARGET_HOME" == /* ]] && [[ "$_ACFS_USER_EXPLICIT_TARGET_HOME" != "/" ]]; then
-    _ACFS_USER_EXPLICIT_TARGET_HOME="${_ACFS_USER_EXPLICIT_TARGET_HOME%/}"
+_GTBI_USER_EXPLICIT_TARGET_HOME="${TARGET_HOME:-}"
+if [[ -n "$_GTBI_USER_EXPLICIT_TARGET_HOME" ]] && [[ "$_GTBI_USER_EXPLICIT_TARGET_HOME" == /* ]] && [[ "$_GTBI_USER_EXPLICIT_TARGET_HOME" != "/" ]]; then
+    _GTBI_USER_EXPLICIT_TARGET_HOME="${_GTBI_USER_EXPLICIT_TARGET_HOME%/}"
 else
-    _ACFS_USER_EXPLICIT_TARGET_HOME=""
+    _GTBI_USER_EXPLICIT_TARGET_HOME=""
 fi
-_ACFS_USER_CURRENT_USER="$(user_resolve_current_user 2>/dev/null || true)"
-_ACFS_USER_RESOLVED_TARGET_HOME="$(user_home_for_user "$TARGET_USER" "$_ACFS_USER_EXPLICIT_TARGET_HOME" 2>/dev/null || true)"
-if [[ -n "$_ACFS_USER_RESOLVED_TARGET_HOME" ]]; then
-    TARGET_HOME="$_ACFS_USER_RESOLVED_TARGET_HOME"
-elif [[ -n "$_ACFS_USER_EXPLICIT_TARGET_HOME" ]] && [[ "$TARGET_USER" == "$_ACFS_USER_CURRENT_USER" ]]; then
-    TARGET_HOME="$_ACFS_USER_EXPLICIT_TARGET_HOME"
+_GTBI_USER_CURRENT_USER="$(user_resolve_current_user 2>/dev/null || true)"
+_GTBI_USER_RESOLVED_TARGET_HOME="$(user_home_for_user "$TARGET_USER" "$_GTBI_USER_EXPLICIT_TARGET_HOME" 2>/dev/null || true)"
+if [[ -n "$_GTBI_USER_RESOLVED_TARGET_HOME" ]]; then
+    TARGET_HOME="$_GTBI_USER_RESOLVED_TARGET_HOME"
+elif [[ -n "$_GTBI_USER_EXPLICIT_TARGET_HOME" ]] && [[ "$TARGET_USER" == "$_GTBI_USER_CURRENT_USER" ]]; then
+    TARGET_HOME="$_GTBI_USER_EXPLICIT_TARGET_HOME"
 else
     TARGET_HOME=""
 fi
-unset _ACFS_USER_EXPLICIT_TARGET_HOME _ACFS_USER_CURRENT_USER _ACFS_USER_RESOLVED_TARGET_HOME
+unset _GTBI_USER_EXPLICIT_TARGET_HOME _GTBI_USER_CURRENT_USER _GTBI_USER_RESOLVED_TARGET_HOME
 
 # Generate a random password robustly
 _generate_random_password() {
@@ -324,7 +324,7 @@ ensure_user() {
 # This is the "vibe mode" default
 enable_passwordless_sudo() {
     local target="$TARGET_USER"
-    local sudoers_file="/etc/sudoers.d/90-ubuntu-acfs"
+    local sudoers_file="/etc/sudoers.d/90-ubuntu-gtbi"
 
     user_require_valid_target_user "$target"
 
@@ -383,12 +383,12 @@ migrate_ssh_keys() {
     fi
 
     if [[ -z "$source_keys" ]]; then
-        if [[ "${ACFS_CI:-false}" == "true" ]]; then
+        if [[ "${GTBI_CI:-false}" == "true" ]]; then
             log_detail "No SSH keys found to migrate (CI)"
         else
             log_warn "No SSH keys found to migrate to $target user"
             log_warn "You connected with password - SSH key not configured for $target"
-            local target_user_repair_command="cat ~/.ssh/acfs_ed25519.pub | ssh ${target}@YOUR_SERVER_IP \"read -r acfs_pubkey && test ! -L ~/.ssh && install -d -m 700 ~/.ssh && chmod 700 ~/.ssh && test ! -L ~/.ssh/authorized_keys && touch ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys && { [ ! -s ~/.ssh/authorized_keys ] || tail -c 1 ~/.ssh/authorized_keys | od -An -t u1 | grep -qw 10 || printf '\\n' >> ~/.ssh/authorized_keys; } && if ! grep -qxF \\\"\\\$acfs_pubkey\\\" ~/.ssh/authorized_keys; then printf '%s\\n' \\\"\\\$acfs_pubkey\\\" >> ~/.ssh/authorized_keys; fi\""
+            local target_user_repair_command="cat ~/.ssh/gtbi_ed25519.pub | ssh ${target}@YOUR_SERVER_IP \"read -r gtbi_pubkey && test ! -L ~/.ssh && install -d -m 700 ~/.ssh && chmod 700 ~/.ssh && test ! -L ~/.ssh/authorized_keys && touch ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys && { [ ! -s ~/.ssh/authorized_keys ] || tail -c 1 ~/.ssh/authorized_keys | od -An -t u1 | grep -qw 10 || printf '\\n' >> ~/.ssh/authorized_keys; } && if ! grep -qxF \\\"\\\$gtbi_pubkey\\\" ~/.ssh/authorized_keys; then printf '%s\\n' \\\"\\\$gtbi_pubkey\\\" >> ~/.ssh/authorized_keys; fi\""
             local target_ssh_dir="$target_home/.ssh"
             local target_authorized_keys="$target_ssh_dir/authorized_keys"
             local target_owner="$target:$target"
@@ -400,11 +400,11 @@ migrate_ssh_keys() {
             printf -v target_authorized_keys_q '%q' "$target_authorized_keys"
             printf -v target_q '%q' "$target"
             printf -v target_owner_q '%q' "$target_owner"
-            local root_remote_command="read -r acfs_pubkey && test ! -L $target_ssh_dir_q && install -d -m 700 -o $target_q -g $target_q $target_ssh_dir_q && test ! -L $target_authorized_keys_q && touch $target_authorized_keys_q && { [ ! -s $target_authorized_keys_q ] || tail -c 1 $target_authorized_keys_q | od -An -t u1 | grep -qw 10 || printf \"\\n\" >> $target_authorized_keys_q; } && if ! grep -qxF \"\$acfs_pubkey\" $target_authorized_keys_q; then printf \"%s\\n\" \"\$acfs_pubkey\" >> $target_authorized_keys_q; fi && chown $target_owner_q $target_authorized_keys_q && chmod 600 $target_authorized_keys_q"
+            local root_remote_command="read -r gtbi_pubkey && test ! -L $target_ssh_dir_q && install -d -m 700 -o $target_q -g $target_q $target_ssh_dir_q && test ! -L $target_authorized_keys_q && touch $target_authorized_keys_q && { [ ! -s $target_authorized_keys_q ] || tail -c 1 $target_authorized_keys_q | od -An -t u1 | grep -qw 10 || printf \"\\n\" >> $target_authorized_keys_q; } && if ! grep -qxF \"\$gtbi_pubkey\" $target_authorized_keys_q; then printf \"%s\\n\" \"\$gtbi_pubkey\" >> $target_authorized_keys_q; fi && chown $target_owner_q $target_authorized_keys_q && chmod 600 $target_authorized_keys_q"
             local root_remote_command_q="$root_remote_command"
             root_remote_command_q=${root_remote_command_q//\'/\'\\\'\'}
             printf -v root_remote_command_q "'%s'" "$root_remote_command_q"
-            local root_repair_command="cat ~/.ssh/acfs_ed25519.pub | ssh root@YOUR_SERVER_IP $root_remote_command_q"
+            local root_repair_command="cat ~/.ssh/gtbi_ed25519.pub | ssh root@YOUR_SERVER_IP $root_remote_command_q"
             echo ""
             echo "════════════════════════════════════════════════════════════"
             echo "  ⚠  SSH KEY SETUP REQUIRED FOR USER: $target"
@@ -430,12 +430,12 @@ migrate_ssh_keys() {
             echo "  ssh-copy-id is optional and only works if you know the ${target}"
             echo "  Linux account password:"
             echo ""
-            echo "    ssh-copy-id -i ~/.ssh/acfs_ed25519.pub ${target}@YOUR_SERVER_IP"
+            echo "    ssh-copy-id -i ~/.ssh/gtbi_ed25519.pub ${target}@YOUR_SERVER_IP"
             echo ""
             echo "════════════════════════════════════════════════════════════"
             echo ""
             # Set a flag for the final summary
-            export ACFS_SSH_KEY_WARNING="true"
+            export GTBI_SSH_KEY_WARNING="true"
         fi
         return 0
     fi
@@ -505,9 +505,9 @@ user_external_shell_handoff_configured() {
     [[ -f "$bashrc_path" ]] || return 1
 
     awk '
-        $0 == "# ACFS externally-managed shell handoff" { marker=1; next }
+        $0 == "# GTBI externally-managed shell handoff" { marker=1; next }
         marker && $0 ~ /^[[:space:]]*#/ { next }
-        marker && index($0, "command -v zsh") && index($0, "ACFS_ZSH_HANDOFF_ACTIVE") { found=1; exit }
+        marker && index($0, "command -v zsh") && index($0, "GTBI_ZSH_HANDOFF_ACTIVE") { found=1; exit }
         marker && $0 !~ /^[[:space:]]*$/ { marker=0 }
         END { exit(found ? 0 : 1) }
     ' "$bashrc_path" 2>/dev/null
@@ -529,9 +529,9 @@ user_append_external_shell_handoff() {
     fi
 
     cat >> "$bashrc_path" << 'EOF'
-# ACFS externally-managed shell handoff
-if [[ $- == *i* ]] && [[ -t 0 ]] && command -v zsh >/dev/null 2>&1 && [[ -z "${ACFS_ZSH_HANDOFF_ACTIVE:-}" ]]; then
-    export ACFS_ZSH_HANDOFF_ACTIVE=1
+# GTBI externally-managed shell handoff
+if [[ $- == *i* ]] && [[ -t 0 ]] && command -v zsh >/dev/null 2>&1 && [[ -z "${GTBI_ZSH_HANDOFF_ACTIVE:-}" ]]; then
+    export GTBI_ZSH_HANDOFF_ACTIVE=1
     exec "$(command -v zsh)" -l
 fi
 EOF
@@ -606,14 +606,14 @@ can_sudo_nopasswd() {
 # Returns 0 on success or skip, 1 on invalid key
 prompt_ssh_key() {
     # Skip entirely in CI mode - no TTY available and no need for SSH keys
-    if [[ "${ACFS_CI:-false}" == "true" ]]; then
+    if [[ "${GTBI_CI:-false}" == "true" ]]; then
         log_detail "Skipping SSH key prompt (CI mode)"
         return 0
     fi
 
     local authorized_keys="/root/.ssh/authorized_keys"
-    if [[ "${ACFS_TEST_MODE:-}" =~ ^(1|true)$ ]] && [[ -n "${ACFS_TEST_ROOT_AUTHORIZED_KEYS:-}" ]]; then
-        authorized_keys="$ACFS_TEST_ROOT_AUTHORIZED_KEYS"
+    if [[ "${GTBI_TEST_MODE:-}" =~ ^(1|true)$ ]] && [[ -n "${GTBI_TEST_ROOT_AUTHORIZED_KEYS:-}" ]]; then
+        authorized_keys="$GTBI_TEST_ROOT_AUTHORIZED_KEYS"
     fi
     local has_existing_key=false
     local existing_key_info=""
@@ -655,7 +655,7 @@ prompt_ssh_key() {
         if [[ -z "$prompt_fd" ]]; then
             log_warn "No SSH public key found for root; skipping SSH key prompt in --yes mode"
             log_detail "After install, use the final summary's root fallback if you only have the VPS root password"
-            export ACFS_SSH_KEY_WARNING="true"
+            export GTBI_SSH_KEY_WARNING="true"
             return 0
         fi
         log_warn "No SSH public key found for root; prompting for one even in --yes mode"
@@ -668,7 +668,7 @@ prompt_ssh_key() {
         fi
         log_warn "Non-interactive mode detected (no TTY), skipping SSH key prompt"
         log_detail "After install, use the final summary's root fallback if you only have the VPS root password"
-        export ACFS_SSH_KEY_WARNING="true"
+        export GTBI_SSH_KEY_WARNING="true"
         return 0
     fi
 
@@ -722,7 +722,7 @@ prompt_ssh_key() {
             log_warn "SSH key setup skipped"
             log_detail "From your local machine, you can add your key later by running:"
             log_detail "  Use the final summary's root fallback if you only have the VPS root password"
-            export ACFS_SSH_KEY_WARNING="true"
+            export GTBI_SSH_KEY_WARNING="true"
         fi
         return 0
     fi
@@ -775,7 +775,7 @@ prompt_ssh_key() {
     chmod 600 "$authorized_keys"
 
     log_success "SSH key installed successfully"
-    log_detail "ACFS will copy this key to ${TARGET_USER:-ubuntu}; after install, reconnect with the matching private key:"
+    log_detail "GTBI will copy this key to ${TARGET_USER:-ubuntu}; after install, reconnect with the matching private key:"
     log_detail "  ssh -i ~/.ssh/your_key ${TARGET_USER:-ubuntu}@<this_ip>"
 
     return 0
@@ -791,7 +791,7 @@ if ! declare -f normalize_user >/dev/null 2>&1; then
 
         ensure_user
 
-        local mode="${MODE:-${ACFS_MODE:-vibe}}"
+        local mode="${MODE:-${GTBI_MODE:-vibe}}"
         if [[ "$mode" == "vibe" ]]; then
             enable_passwordless_sudo
         fi

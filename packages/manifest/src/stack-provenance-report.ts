@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 /**
- * Cross-tool provenance and upstream release report for ACFS stack tools.
+ * Cross-tool provenance and upstream release report for GTBI stack tools.
  */
 
 import { readFileSync } from 'node:fs';
@@ -472,7 +472,7 @@ async function defaultReleaseFetcher(url: string): Promise<ReleaseFetchResponse>
   return fetchFn(url, {
     headers: {
       Accept: 'application/vnd.github+json',
-      'User-Agent': 'acfs-stack-provenance-report',
+      'User-Agent': 'gtbi-stack-provenance-report',
     },
   }) as Promise<ReleaseFetchResponse>;
 }
@@ -682,7 +682,7 @@ interface CliOptions {
 function parseArgs(args: string[]): CliOptions {
   const options: CliOptions = {
     root: DEFAULT_ROOT,
-    manifestPath: join(DEFAULT_ROOT, 'acfs.manifest.yaml'),
+    manifestPath: join(DEFAULT_ROOT, 'gtbi.manifest.yaml'),
     checksumsPath: join(DEFAULT_ROOT, 'checksums.yaml'),
     network: 'skip',
     json: false,
@@ -707,7 +707,7 @@ function parseArgs(args: string[]): CliOptions {
       case '--root':
         i += 1;
         options.root = resolve(args[i] ?? '');
-        options.manifestPath = join(options.root, 'acfs.manifest.yaml');
+        options.manifestPath = join(options.root, 'gtbi.manifest.yaml');
         options.checksumsPath = join(options.root, 'checksums.yaml');
         break;
       case '--manifest':
@@ -742,14 +742,14 @@ function parseArgs(args: string[]): CliOptions {
 function printUsage(): void {
   console.log(`Usage: scripts/stack-provenance-report.sh [--json] [--quiet] [--network=skip|check]
 
-Reports local and upstream provenance for ACFS Dicklesworthstone stack tools.
+Reports local and upstream provenance for GTBI Dicklesworthstone stack tools.
 
 Options:
   --network=skip             Offline mode. Report local manifest/checksum consistency.
   --network=check            Fetch GitHub latest releases and checksum candidates.
   --candidate-checksums PATH Use a pre-generated checksum candidate instead of fetching.
   --github-fixture PATH      Use fixture release metadata keyed by owner/repo or repo name.
-  --manifest PATH            Override acfs.manifest.yaml path.
+  --manifest PATH            Override gtbi.manifest.yaml path.
   --checksums PATH           Override checksums.yaml path.
   --root PATH                Override repository root.
 `);
@@ -767,7 +767,7 @@ function loadGitHubFixture(path: string | undefined): Record<string, GitHubRelea
 function printHumanReport(report: StackProvenanceReport, quiet: boolean): void {
   if (quiet) return;
 
-  console.log('ACFS stack provenance report');
+  console.log('GTBI stack provenance report');
   console.log(`Mode: network=${report.mode.network} candidate=${report.mode.candidateSource}`);
   console.log(`Summary: pass=${report.summary.pass} warn=${report.summary.warn} unknown=${report.summary.unknown} skip=${report.summary.skip} fail=${report.summary.fail}`);
   console.log('');

@@ -33,7 +33,7 @@ test_policy_doc_exists() {
 }
 
 test_schema_and_required_fields_are_defined() {
-    require_text "acfs.team-profile.v1" || return 1
+    require_text "gtbi.team-profile.v1" || return 1
     require_text "schemaVersion" || return 1
     require_text "profileId" || return 1
     require_text "providerDefaults" || return 1
@@ -46,7 +46,7 @@ test_schema_and_required_fields_are_defined() {
 
 test_secret_slots_replace_secret_values() {
     require_text "secretSlot" || return 1
-    require_text "secret://acfs/team/" || return 1
+    require_text "secret://gtbi/team/" || return 1
     require_text '"allowSecretValues": false' || return 1
     require_text '"secretSlotsRequired": true' || return 1
     require_text "Profiles are not a credential vault" || return 1

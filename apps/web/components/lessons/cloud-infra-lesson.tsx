@@ -37,7 +37,7 @@ export function CloudInfraLesson() {
         delay={0.1}
       >
         <Paragraph>
-          ACFS installs CLI tools for the major{" "}
+          GTBI installs CLI tools for the major{" "}
           <Highlight>cloud platforms</Highlight> used in modern web development.
           From local databases to edge computing, everything is configured and
           ready to go.

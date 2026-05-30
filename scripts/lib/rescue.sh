@@ -1,24 +1,24 @@
 #!/usr/bin/env bash
 # ============================================================
-# ACFS Rescue Advisor - read-only first-run recovery guidance
-# Usage: acfs rescue [--json]
+# GTBI Rescue Advisor - read-only first-run recovery guidance
+# Usage: gtbi rescue [--json]
 # ============================================================
 
 set -euo pipefail
 
 RESCUE_JSON=false
-RESCUE_STATE_FILE="${ACFS_RESCUE_STATE_FILE:-${ACFS_STATE_FILE:-}}"
-RESCUE_SUMMARY_FILE="${ACFS_RESCUE_SUMMARY_FILE:-}"
-RESCUE_DOCTOR_FILE="${ACFS_RESCUE_DOCTOR_FILE:-}"
-RESCUE_SUPPORT_DIR="${ACFS_RESCUE_SUPPORT_DIR:-}"
-RESCUE_ACFS_HOME="${ACFS_RESCUE_ACFS_HOME:-${ACFS_HOME:-}}"
-RESCUE_NOW_EPOCH="${ACFS_RESCUE_NOW_EPOCH:-}"
-RESCUE_STALE_SECONDS="${ACFS_RESCUE_STALE_SECONDS:-3600}"
+RESCUE_STATE_FILE="${GTBI_RESCUE_STATE_FILE:-${GTBI_STATE_FILE:-}}"
+RESCUE_SUMMARY_FILE="${GTBI_RESCUE_SUMMARY_FILE:-}"
+RESCUE_DOCTOR_FILE="${GTBI_RESCUE_DOCTOR_FILE:-}"
+RESCUE_SUPPORT_DIR="${GTBI_RESCUE_SUPPORT_DIR:-}"
+RESCUE_GTBI_HOME="${GTBI_RESCUE_GTBI_HOME:-${GTBI_HOME:-}}"
+RESCUE_NOW_EPOCH="${GTBI_RESCUE_NOW_EPOCH:-}"
+RESCUE_STALE_SECONDS="${GTBI_RESCUE_STALE_SECONDS:-3600}"
 
 RESCUE_STATUS="warn"
 RESCUE_SEVERITY="needs_evidence"
-RESCUE_REASON="ACFS state has not been evaluated yet."
-RESCUE_NEXT_COMMAND="acfs status --json"
+RESCUE_REASON="GTBI state has not been evaluated yet."
+RESCUE_NEXT_COMMAND="gtbi status --json"
 RESCUE_STATE_STATUS="missing"
 RESCUE_STATE_PATH=""
 RESCUE_SUMMARY_STATUS="missing"
@@ -48,17 +48,17 @@ RESCUE_NON_ACTIONS=(
 
 rescue_usage() {
     cat <<'EOF'
-Usage: acfs rescue [options]
+Usage: gtbi rescue [options]
 
-Read-only recovery advisor for first-run ACFS installer problems.
+Read-only recovery advisor for first-run GTBI installer problems.
 
 Options:
   --json                     Output machine-readable JSON
   --state-file PATH          Read installer state from PATH
   --summary-file PATH        Read install_summary JSON from PATH
-  --doctor-file PATH         Read acfs doctor --json output from PATH
+  --doctor-file PATH         Read gtbi doctor --json output from PATH
   --support-dir PATH         Look for support bundles under PATH
-  --acfs-home PATH           Resolve default state/log/support paths from PATH
+  --gtbi-home PATH           Resolve default state/log/support paths from PATH
   --now-epoch SECONDS        Override current time for stale checkpoint checks
   --stale-seconds SECONDS    Running checkpoint age before warning (default: 3600)
   -h, --help                 Show this help
@@ -128,45 +128,45 @@ rescue_add_evidence() {
     RESCUE_EVIDENCE+=("$1")
 }
 
-rescue_resolve_acfs_home() {
+rescue_resolve_gtbi_home() {
     local home_candidate=""
 
-    if [[ -n "$RESCUE_ACFS_HOME" ]]; then
-        printf '%s\n' "${RESCUE_ACFS_HOME%/}"
+    if [[ -n "$RESCUE_GTBI_HOME" ]]; then
+        printf '%s\n' "${RESCUE_GTBI_HOME%/}"
         return 0
     fi
 
     if [[ -n "${TARGET_HOME:-}" && "${TARGET_HOME:-}" == /* && "${TARGET_HOME:-}" != "/" ]]; then
-        printf '%s/.acfs\n' "${TARGET_HOME%/}"
+        printf '%s/.gtbi\n' "${TARGET_HOME%/}"
         return 0
     fi
 
     home_candidate="${HOME:-}"
     if [[ -n "$home_candidate" && "$home_candidate" == /* && "$home_candidate" != "/" ]]; then
-        printf '%s/.acfs\n' "${home_candidate%/}"
+        printf '%s/.gtbi\n' "${home_candidate%/}"
         return 0
     fi
 
-    printf '%s\n' "$PWD/.acfs"
+    printf '%s\n' "$PWD/.gtbi"
 }
 
 rescue_resolve_defaults() {
-    local acfs_home=""
-    acfs_home="$(rescue_resolve_acfs_home)"
-    RESCUE_ACFS_HOME="$acfs_home"
+    local gtbi_home=""
+    gtbi_home="$(rescue_resolve_gtbi_home)"
+    RESCUE_GTBI_HOME="$gtbi_home"
 
     if [[ -z "$RESCUE_STATE_FILE" ]]; then
-        RESCUE_STATE_FILE="$RESCUE_ACFS_HOME/state.json"
+        RESCUE_STATE_FILE="$RESCUE_GTBI_HOME/state.json"
     fi
     RESCUE_STATE_PATH="$RESCUE_STATE_FILE"
 
     if [[ -z "$RESCUE_SUMMARY_FILE" ]]; then
-        RESCUE_SUMMARY_FILE="$(rescue_latest_summary_file "$RESCUE_ACFS_HOME/logs" 2>/dev/null || true)"
+        RESCUE_SUMMARY_FILE="$(rescue_latest_summary_file "$RESCUE_GTBI_HOME/logs" 2>/dev/null || true)"
     fi
     RESCUE_SUMMARY_PATH="$RESCUE_SUMMARY_FILE"
 
     if [[ -z "$RESCUE_SUPPORT_DIR" ]]; then
-        RESCUE_SUPPORT_DIR="$RESCUE_ACFS_HOME/support"
+        RESCUE_SUPPORT_DIR="$RESCUE_GTBI_HOME/support"
     fi
 }
 
@@ -185,7 +185,7 @@ rescue_latest_support_path() {
     local latest=""
 
     [[ -n "$support_dir" && -d "$support_dir" ]] || return 1
-    latest="$(find "$support_dir" -maxdepth 1 \( -type d -o -type f \) \( -name 'acfs-support-*' -o -name 'support-*' -o -name '*.tar.gz' \) 2>/dev/null | sort | tail -n 1)"
+    latest="$(find "$support_dir" -maxdepth 1 \( -type d -o -type f \) \( -name 'gtbi-support-*' -o -name 'support-*' -o -name '*.tar.gz' \) 2>/dev/null | sort | tail -n 1)"
     [[ -n "$latest" ]] || return 1
     printf '%s\n' "$latest"
 }
@@ -283,7 +283,7 @@ rescue_is_safe_next_command() {
 
     [[ -n "$command_value" ]] || return 1
     case "$command_value" in
-        *"rm -rf"*|*"git reset"*|*"git clean"*|*"mkfs"*|*"shred "*|*"dd if="*|*" > /var/lib/acfs/state.json"*|*" > ~/.acfs/state.json"*)
+        *"rm -rf"*|*"git reset"*|*"git clean"*|*"mkfs"*|*"shred "*|*"dd if="*|*" > /var/lib/gtbi/state.json"*|*" > ~/.gtbi/state.json"*)
             return 1
             ;;
     esac
@@ -350,14 +350,14 @@ rescue_analyze_state() {
     if [[ ! -r "$state_file" ]]; then
         RESCUE_STATE_STATUS="unreadable"
         rescue_add_evidence "State file exists but is not readable: $state_file"
-        rescue_set_decision "fail" "blocked" "The ACFS state file cannot be read, so the safe next step is to capture diagnostics." "acfs support-bundle"
+        rescue_set_decision "fail" "blocked" "The GTBI state file cannot be read, so the safe next step is to capture diagnostics." "gtbi support-bundle"
         return 0
     fi
 
     if ! rescue_json_file_valid "$state_file"; then
         RESCUE_STATE_STATUS="malformed"
         rescue_add_evidence "State file is not valid JSON: $state_file"
-        rescue_set_decision "fail" "blocked" "The ACFS state file is malformed, so the safe next step is to capture diagnostics before changing anything." "acfs support-bundle"
+        rescue_set_decision "fail" "blocked" "The GTBI state file is malformed, so the safe next step is to capture diagnostics before changing anything." "gtbi support-bundle"
         return 0
     fi
 
@@ -399,7 +399,7 @@ rescue_analyze_state() {
     if [[ "$schema_version" =~ ^[0-9]+$ ]] && (( schema_version > RESCUE_SUPPORTED_STATE_SCHEMA_VERSION )); then
         RESCUE_STATE_STATUS="future_version"
         RESCUE_INSTALL_STATUS="unknown"
-        rescue_set_decision "fail" "future_state" "The ACFS state file was written by a newer schema; capture diagnostics before rerunning this older installer." "acfs support-bundle"
+        rescue_set_decision "fail" "future_state" "The GTBI state file was written by a newer schema; capture diagnostics before rerunning this older installer." "gtbi support-bundle"
         return 0
     fi
 
@@ -415,7 +415,7 @@ rescue_analyze_state() {
         if rescue_is_safe_next_command "$resume_hint"; then
             rescue_set_decision "fail" "blocked" "The installer recorded a failed phase; resume with the persisted installer command after reviewing the evidence." "$resume_hint"
         else
-            rescue_set_decision "fail" "blocked" "The installer recorded a failed phase, but no safe resume command is available in state." "acfs support-bundle"
+            rescue_set_decision "fail" "blocked" "The installer recorded a failed phase, but no safe resume command is available in state." "gtbi support-bundle"
         fi
         return 0
     fi
@@ -423,7 +423,7 @@ rescue_analyze_state() {
     if [[ "$completed_finalize" == "true" ]]; then
         RESCUE_INSTALL_STATUS="healthy"
         rescue_add_evidence "Finalize phase is marked complete."
-        rescue_set_decision "pass" "healthy" "ACFS appears installed; continue with onboarding." "onboard"
+        rescue_set_decision "pass" "healthy" "GTBI appears installed; continue with onboarding." "onboard"
         return 0
     fi
 
@@ -445,12 +445,12 @@ rescue_analyze_state() {
             RESCUE_CHECKPOINT_AGE_SECONDS="$age_seconds"
             rescue_add_evidence "Checkpoint age seconds: $age_seconds"
             if (( age_seconds > RESCUE_STALE_SECONDS )); then
-                rescue_set_decision "warn" "stale_checkpoint" "The installer has a running checkpoint that has not changed recently." "acfs continue --status"
+                rescue_set_decision "warn" "stale_checkpoint" "The installer has a running checkpoint that has not changed recently." "gtbi continue --status"
                 return 0
             fi
         fi
 
-        rescue_set_decision "warn" "install_running" "The installer appears to be in progress; watch progress before taking other action." "acfs continue"
+        rescue_set_decision "warn" "install_running" "The installer appears to be in progress; watch progress before taking other action." "gtbi continue"
         return 0
     fi
 }
@@ -522,7 +522,7 @@ rescue_analyze_summary() {
             if rescue_is_safe_next_command "$summary_resume_hint"; then
                 rescue_set_decision "fail" "blocked" "The latest install summary reports failure; resume with the recorded command after reviewing the evidence." "$summary_resume_hint"
             else
-                rescue_set_decision "fail" "blocked" "The latest install summary reports failure, but no safe resume command is available." "acfs support-bundle"
+                rescue_set_decision "fail" "blocked" "The latest install summary reports failure, but no safe resume command is available." "gtbi support-bundle"
             fi
             ;;
     esac
@@ -572,9 +572,9 @@ rescue_analyze_doctor() {
     fi
 
     if [[ "$doctor_status" == "fail" || "${fail_count:-0}" -gt 0 ]]; then
-        rescue_set_decision "fail" "doctor_failed" "Doctor checks are failing; collect a support bundle before changing installer state." "acfs support-bundle"
+        rescue_set_decision "fail" "doctor_failed" "Doctor checks are failing; collect a support bundle before changing installer state." "gtbi support-bundle"
     elif [[ "$doctor_status" == "warn" || "${warn_count:-0}" -gt 0 ]]; then
-        rescue_set_decision "warn" "doctor_warned" "Doctor checks have warnings; inspect doctor output before rerunning the installer." "acfs doctor --json"
+        rescue_set_decision "warn" "doctor_warned" "Doctor checks have warnings; inspect doctor output before rerunning the installer." "gtbi doctor --json"
     fi
 }
 
@@ -583,7 +583,7 @@ rescue_finalize_missing_state_decision() {
         return 0
     fi
 
-    rescue_set_decision "warn" "needs_state" "No ACFS state file was found; verify whether ACFS was installed on this VPS before rerunning anything." "acfs status --json"
+    rescue_set_decision "warn" "needs_state" "No GTBI state file was found; verify whether GTBI was installed on this VPS before rerunning anything." "gtbi status --json"
 }
 
 rescue_render_json() {
@@ -594,7 +594,7 @@ rescue_render_json() {
 
     jq_bin="$(rescue_jq 2>/dev/null || true)"
     if [[ -z "$jq_bin" ]]; then
-        printf '{"schema_version":1,"status":"fail","severity":"blocked","reason":"jq is required for acfs rescue JSON output","next_command":"acfs support-bundle"}\n'
+        printf '{"schema_version":1,"status":"fail","severity":"blocked","reason":"jq is required for gtbi rescue JSON output","next_command":"gtbi support-bundle"}\n'
         return 0
     fi
 
@@ -623,7 +623,7 @@ rescue_render_json() {
         --arg checkpoint_current_phase "$RESCUE_CHECKPOINT_CURRENT_PHASE" \
         --arg checkpoint_failed_phase "$RESCUE_CHECKPOINT_FAILED_PHASE" \
         --arg checkpoint_age_seconds "$RESCUE_CHECKPOINT_AGE_SECONDS" \
-        --arg support_command "acfs support-bundle" \
+        --arg support_command "gtbi support-bundle" \
         --argjson support_available "$support_available_json" \
         --arg support_latest "$RESCUE_SUPPORT_LATEST" \
         --arg support_report "$RESCUE_SUPPORT_REPORT" \
@@ -666,7 +666,7 @@ rescue_render_human() {
     local evidence=""
     local action=""
 
-    printf 'ACFS Rescue Advisor\n'
+    printf 'GTBI Rescue Advisor\n'
     printf 'Status: %s\n' "$RESCUE_STATUS"
     printf 'Severity: %s\n' "$RESCUE_SEVERITY"
     printf 'Reason: %s\n' "$RESCUE_REASON"
@@ -686,7 +686,7 @@ rescue_render_human() {
         printf '  - %s\n' "$action"
     done
     printf '\n'
-    printf 'Support bundle command: acfs support-bundle\n'
+    printf 'Support bundle command: gtbi support-bundle\n'
     if [[ "$RESCUE_SUPPORT_AVAILABLE" == "true" ]]; then
         printf 'Latest support bundle: %s\n' "$RESCUE_SUPPORT_LATEST"
         if [[ -n "$RESCUE_SUPPORT_REPORT" ]]; then
@@ -728,10 +728,10 @@ rescue_parse_args() {
                 RESCUE_SUPPORT_DIR="$1"
                 shift
                 ;;
-            --acfs-home)
+            --gtbi-home)
                 shift
-                [[ -n "${1:-}" ]] || { echo "Error: --acfs-home requires a path" >&2; return 2; }
-                RESCUE_ACFS_HOME="$1"
+                [[ -n "${1:-}" ]] || { echo "Error: --gtbi-home requires a path" >&2; return 2; }
+                RESCUE_GTBI_HOME="$1"
                 shift
                 ;;
             --now-epoch)
@@ -752,7 +752,7 @@ rescue_parse_args() {
                 ;;
             *)
                 echo "Error: unknown rescue option: $1" >&2
-                echo "Try 'acfs rescue --help' for usage." >&2
+                echo "Try 'gtbi rescue --help' for usage." >&2
                 return 2
                 ;;
         esac

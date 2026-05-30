@@ -10,7 +10,7 @@ OFFLINE_PACK_SH="$REPO_ROOT/scripts/lib/offline_artifact_pack.sh"
 
 TESTS_PASSED=0
 TESTS_FAILED=0
-ARTIFACT_DIR="${ACFS_OFFLINE_PACK_TEST_ARTIFACTS_DIR:-${TMPDIR:-/tmp}/acfs-offline-pack-test-artifacts-$(date +%Y%m%d-%H%M%S)-$$}"
+ARTIFACT_DIR="${GTBI_OFFLINE_PACK_TEST_ARTIFACTS_DIR:-${TMPDIR:-/tmp}/gtbi-offline-pack-test-artifacts-$(date +%Y%m%d-%H%M%S)-$$}"
 
 mkdir -p "$ARTIFACT_DIR"
 
@@ -49,7 +49,7 @@ case "$url" in
         path="${url#https://fixture.test/}"
         name="${path%%/*}"
         file_name="${path#*/}"
-        source_path="${ACFS_OFFLINE_PACK_TEST_ARTIFACTS_DIR:?}/$name/$file_name"
+        source_path="${GTBI_OFFLINE_PACK_TEST_ARTIFACTS_DIR:?}/$name/$file_name"
         [[ -f "$source_path" ]] || exit 22
         /bin/cp "$source_path" "$output"
         ;;
@@ -82,11 +82,11 @@ write_fixture_source() {
     local artifact_sha=""
     local artifact_url=""
 
-    mkdir -p "$source_root/scripts/lib" "$source_root/scripts/generated" "$source_root/acfs/zsh"
+    mkdir -p "$source_root/scripts/lib" "$source_root/scripts/generated" "$source_root/gtbi/zsh"
     printf '9.9.9-test\n' > "$source_root/VERSION"
     printf '# fixture lib\n' > "$source_root/scripts/lib/fixture.sh"
     printf '# fixture generated\n' > "$source_root/scripts/generated/manifest_index.sh"
-    printf '# fixture acfs config\n' > "$source_root/acfs/zsh/acfs.zshrc"
+    printf '# fixture gtbi config\n' > "$source_root/gtbi/zsh/gtbi.zshrc"
     printf '#!/usr/bin/env bash\nprintf "rch fixture installer\\n"\n' > "$artifact_file"
     artifact_sha="$(sha256sum "$artifact_file" | awk '{print $1}')"
     artifact_url="https://fixture.test/$name/rch-install.sh"
@@ -103,10 +103,10 @@ write_fixture_source() {
             ;;
     esac
 
-    cat > "$source_root/acfs.manifest.yaml" <<'YAML'
+    cat > "$source_root/gtbi.manifest.yaml" <<'YAML'
 version: 2
 name: fixture
-id: acfs
+id: gtbi
 modules:
   - id: base.system
     description: Base packages
@@ -150,7 +150,7 @@ run_pack() {
     local status=0
 
     set +e
-    output="$(ACFS_OFFLINE_PACK_CURL_BIN="$ARTIFACT_DIR/bin/curl" ACFS_OFFLINE_PACK_TEST_ARTIFACTS_DIR="$ARTIFACT_DIR" PATH="$ARTIFACT_DIR/bin:$PATH" bash "$OFFLINE_PACK_SH" "$@" 2>&1)"
+    output="$(GTBI_OFFLINE_PACK_CURL_BIN="$ARTIFACT_DIR/bin/curl" GTBI_OFFLINE_PACK_TEST_ARTIFACTS_DIR="$ARTIFACT_DIR" PATH="$ARTIFACT_DIR/bin:$PATH" bash "$OFFLINE_PACK_SH" "$@" 2>&1)"
     status=$?
     set -e
 
@@ -168,10 +168,10 @@ test_dry_run_json_uses_manifest_and_checksums() {
 
     [[ "$status" -eq 0 ]] || return 1
     jq -e '
-      .schema == "acfs.offline-artifact-pack-build.v1" and
+      .schema == "gtbi.offline-artifact-pack-build.v1" and
       .status == "pass" and
       .mode == "dry-run" and
-      .pack.schema == "acfs.offline-artifact-pack.v1" and
+      .pack.schema == "gtbi.offline-artifact-pack.v1" and
       .pack.downloadTimeoutSeconds == 60 and
       .pack.modules[0].moduleId == "stack.rch" and
       .pack.modules[0].verifiedInstallerKey == "rch" and
@@ -204,18 +204,18 @@ test_build_writes_manifest_and_verified_artifact() {
 
     output="$(run_pack build build --json --source-root "$source_root" --output "$output_dir" --module stack.rch --expires-days 7)"
     status="$(cat "$ARTIFACT_DIR/build.exit")"
-    manifest="$output_dir/acfs-offline-pack/manifest.json"
-    artifact_path="$output_dir/acfs-offline-pack/artifacts/stack.rch/rch-install.sh"
+    manifest="$output_dir/gtbi-offline-pack/manifest.json"
+    artifact_path="$output_dir/gtbi-offline-pack/artifacts/stack.rch/rch-install.sh"
     expected_sha="$(sha256sum "$artifact_path" | awk '{print $1}')"
 
     [[ "$status" -eq 0 ]] || return 1
     [[ -f "$manifest" ]] || return 1
     [[ -f "$artifact_path" ]] || return 1
-    [[ -d "$output_dir/acfs-offline-pack/scripts/lib" ]] || return 1
-    [[ -d "$output_dir/acfs-offline-pack/scripts/generated" ]] || return 1
-    [[ -d "$output_dir/acfs-offline-pack/acfs" ]] || return 1
+    [[ -d "$output_dir/gtbi-offline-pack/scripts/lib" ]] || return 1
+    [[ -d "$output_dir/gtbi-offline-pack/scripts/generated" ]] || return 1
+    [[ -d "$output_dir/gtbi-offline-pack/gtbi" ]] || return 1
     jq -e --arg expectedSha "$expected_sha" '
-      .schema == "acfs.offline-artifact-pack.v1" and
+      .schema == "gtbi.offline-artifact-pack.v1" and
       .packMode == "complete" and
       .policy.verifiedInstallerPolicy == "must_match_checksums_yaml" and
       .modules[0].id == "stack.rch" and
@@ -272,7 +272,7 @@ test_checksum_mismatch_fails_closed() {
       .status == "fail" and
       any(.validation.errors[]; contains("pack_hash_mismatch"))
     ' <<<"$output" >/dev/null || return 1
-    [[ ! -f "$output_dir/acfs-offline-pack/manifest.json" ]] || return 1
+    [[ ! -f "$output_dir/gtbi-offline-pack/manifest.json" ]] || return 1
 
     pass "checksum_mismatch_fails_closed"
 }
@@ -316,7 +316,7 @@ test_best_effort_records_download_failure() {
 
     output="$(run_pack best-effort build --json --best-effort --source-root "$source_root" --output "$output_dir" --module stack.rch)"
     status="$(cat "$ARTIFACT_DIR/best-effort.exit")"
-    manifest="$output_dir/acfs-offline-pack/manifest.json"
+    manifest="$output_dir/gtbi-offline-pack/manifest.json"
 
     [[ "$status" -eq 0 ]] || return 1
     [[ -f "$manifest" ]] || return 1

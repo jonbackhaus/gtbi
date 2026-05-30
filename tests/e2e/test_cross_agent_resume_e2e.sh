@@ -12,7 +12,7 @@
 #
 # Optional baseline diagnostics:
 #   - Self-resume checks for each CLI:
-#       ACFS_INCLUDE_SELF_RESUME_BASELINE=true
+#       GTBI_INCLUDE_SELF_RESUME_BASELINE=true
 #
 # Artifacts:
 #   tests/e2e/logs/cross_agent_resume_<timestamp>.log
@@ -39,14 +39,14 @@ SKIP_COUNT=0
 
 declare -a RESULTS_JSON=()
 
-INCLUDE_SELF_RESUME_BASELINE="${ACFS_INCLUDE_SELF_RESUME_BASELINE:-false}"
-RUN_DIRECT_CROSS_BASELINE="${ACFS_INCLUDE_DIRECT_CROSS_BASELINE:-true}"
+INCLUDE_SELF_RESUME_BASELINE="${GTBI_INCLUDE_SELF_RESUME_BASELINE:-false}"
+RUN_DIRECT_CROSS_BASELINE="${GTBI_INCLUDE_DIRECT_CROSS_BASELINE:-true}"
 
 CLAUDE_HOME="${CLAUDE_HOME:-$HOME/.claude}"
 CODEX_HOME="${CODEX_HOME:-$HOME/.codex}"
 GEMINI_HOME="${GEMINI_HOME:-$HOME/.gemini}"
 
-WORKSPACE_HINT="${ACFS_E2E_WORKSPACE_HINT:-$REPO_ROOT}"
+WORKSPACE_HINT="${GTBI_E2E_WORKSPACE_HINT:-$REPO_ROOT}"
 
 log() {
     local level="${1:-INFO}"
@@ -160,7 +160,7 @@ write_json_report() {
 
     cat > "$JSON_FILE" <<EOF_JSON
 {
-  "test_suite": "ACFS Cross-Agent Resume + Conversion E2E",
+  "test_suite": "GTBI Cross-Agent Resume + Conversion E2E",
   "timestamp": "$(date -Iseconds)",
   "workspace_hint": "$WORKSPACE_HINT",
   "log_file": "$LOG_FILE",
@@ -550,9 +550,9 @@ main() {
             fi
         fi
     else
-        record_result "SKIP" "self_resume_codex" "Self-resume baseline disabled (set ACFS_INCLUDE_SELF_RESUME_BASELINE=true to enable)" ""
-        record_result "SKIP" "self_resume_claude" "Self-resume baseline disabled (set ACFS_INCLUDE_SELF_RESUME_BASELINE=true to enable)" ""
-        record_result "SKIP" "self_resume_gemini" "Self-resume baseline disabled (set ACFS_INCLUDE_SELF_RESUME_BASELINE=true to enable)" ""
+        record_result "SKIP" "self_resume_codex" "Self-resume baseline disabled (set GTBI_INCLUDE_SELF_RESUME_BASELINE=true to enable)" ""
+        record_result "SKIP" "self_resume_claude" "Self-resume baseline disabled (set GTBI_INCLUDE_SELF_RESUME_BASELINE=true to enable)" ""
+        record_result "SKIP" "self_resume_gemini" "Self-resume baseline disabled (set GTBI_INCLUDE_SELF_RESUME_BASELINE=true to enable)" ""
     fi
 
     # Direct cross baseline (expected to fail/isolate without conversion).

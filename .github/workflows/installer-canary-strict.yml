@@ -29,7 +29,7 @@ jobs:
         id: canary
         continue-on-error: true
         env:
-          ACFS_CHECKSUMS_REF: main
+          GTBI_CHECKSUMS_REF: main
           INPUT_UBUNTU: ${{ inputs.ubuntu }}
           INPUT_MODE: ${{ inputs.mode }}
           EVENT_NAME: ${{ github.event_name }}

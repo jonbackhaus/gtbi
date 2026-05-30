@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-# ACFS Landing Plane - read-only closeout checklist
+# GTBI Landing Plane - read-only closeout checklist
 #
 # Builds an auditable end-of-session checklist for Beads, Agent Mail,
 # reservations, quality gates, exact-file staging, and handoff.
@@ -9,12 +9,12 @@
 set -euo pipefail
 
 LANDING_JSON=false
-LANDING_GATES_PASSED="${ACFS_LAND_GATES_PASSED:-false}"
-LANDING_MAIL_SENT="${ACFS_LAND_MAIL_SENT:-unknown}"
-LANDING_AGENT_NAME="${ACFS_LAND_AGENT_NAME:-${AGENT_NAME:-unknown-agent}}"
-LANDING_PROJECT_KEY="${ACFS_LAND_PROJECT_KEY:-$(pwd)}"
-LANDING_THREAD_ID="${ACFS_LAND_THREAD_ID:-}"
-LANDING_COMMIT_MESSAGE="${ACFS_LAND_COMMIT_MESSAGE:-close out session work}"
+LANDING_GATES_PASSED="${GTBI_LAND_GATES_PASSED:-false}"
+LANDING_MAIL_SENT="${GTBI_LAND_MAIL_SENT:-unknown}"
+LANDING_AGENT_NAME="${GTBI_LAND_AGENT_NAME:-${AGENT_NAME:-unknown-agent}}"
+LANDING_PROJECT_KEY="${GTBI_LAND_PROJECT_KEY:-$(pwd)}"
+LANDING_THREAD_ID="${GTBI_LAND_THREAD_ID:-}"
+LANDING_COMMIT_MESSAGE="${GTBI_LAND_COMMIT_MESSAGE:-close out session work}"
 
 LANDING_CHANGED_FILES=()
 LANDING_SHELL_FILES=()
@@ -41,7 +41,7 @@ declare -gA LANDING_COMMAND_SEEN=()
 
 landing_usage() {
     cat <<'EOF'
-Usage: acfs landing-plane [OPTIONS]
+Usage: gtbi landing-plane [OPTIONS]
 
 Read-only closeout assistant for agent work sessions.
 
@@ -56,11 +56,11 @@ Options:
   --help, -h          Show this help
 
 Environment for tests or nonstandard shells:
-  ACFS_LAND_GIT_STATUS_FILE       File containing git status --porcelain=v1 output
-  ACFS_LAND_IN_PROGRESS_JSON      br list --status in_progress --json payload or file path
-  ACFS_LAND_RESERVATIONS_JSON     Active reservation payload or file path
-  ACFS_LAND_GATES_PASSED=true     Same as --gates-passed
-  ACFS_LAND_MAIL_SENT=true        Same as --mail-sent
+  GTBI_LAND_GIT_STATUS_FILE       File containing git status --porcelain=v1 output
+  GTBI_LAND_IN_PROGRESS_JSON      br list --status in_progress --json payload or file path
+  GTBI_LAND_RESERVATIONS_JSON     Active reservation payload or file path
+  GTBI_LAND_GATES_PASSED=true     Same as --gates-passed
+  GTBI_LAND_MAIL_SENT=true        Same as --mail-sent
 EOF
 }
 
@@ -117,7 +117,7 @@ landing_parse_args() {
                 ;;
             *)
                 echo "Error: unknown option: $1" >&2
-                echo "Run 'acfs landing-plane --help' for usage." >&2
+                echo "Run 'gtbi landing-plane --help' for usage." >&2
                 return 2
                 ;;
         esac
@@ -186,8 +186,8 @@ landing_git_status_output() {
     local output=""
     local exit_status=0
 
-    if [[ -n "${ACFS_LAND_GIT_STATUS_FILE:-}" ]]; then
-        cat "$ACFS_LAND_GIT_STATUS_FILE"
+    if [[ -n "${GTBI_LAND_GIT_STATUS_FILE:-}" ]]; then
+        cat "$GTBI_LAND_GIT_STATUS_FILE"
         return 0
     fi
 
@@ -228,13 +228,13 @@ landing_classify_changed_file() {
     esac
 
     case "$path" in
-        install.sh|*.sh|scripts/acfs-*)
+        install.sh|*.sh|scripts/gtbi-*)
             LANDING_SHELL_FILES+=("$path")
             ;;
     esac
 
     case "$path" in
-        *.zsh|*.zshrc|acfs/zsh/*)
+        *.zsh|*.zshrc|gtbi/zsh/*)
             LANDING_ZSH_FILES+=("$path")
             ;;
     esac
@@ -287,8 +287,8 @@ landing_collect_beads() {
     local payload=""
     local id=""
 
-    if [[ -n "${ACFS_LAND_IN_PROGRESS_JSON:-}" ]]; then
-        payload="$(landing_read_payload "$ACFS_LAND_IN_PROGRESS_JSON")"
+    if [[ -n "${GTBI_LAND_IN_PROGRESS_JSON:-}" ]]; then
+        payload="$(landing_read_payload "$GTBI_LAND_IN_PROGRESS_JSON")"
     else
         br_bin="$(landing_binary_path br 2>/dev/null || true)"
         if [[ -n "$br_bin" ]]; then
@@ -325,8 +325,8 @@ landing_collect_reservations() {
     local path=""
     local exit_status=0
 
-    if [[ -n "${ACFS_LAND_RESERVATIONS_JSON:-}" ]]; then
-        payload="$(landing_read_payload "$ACFS_LAND_RESERVATIONS_JSON")"
+    if [[ -n "${GTBI_LAND_RESERVATIONS_JSON:-}" ]]; then
+        payload="$(landing_read_payload "$GTBI_LAND_RESERVATIONS_JSON")"
     else
         am_bin="$(landing_binary_path am 2>/dev/null || true)"
         if [[ -n "$am_bin" && "$LANDING_AGENT_NAME" != "unknown-agent" ]]; then
@@ -553,7 +553,7 @@ landing_emit_human() {
     local report="$1"
     local jq_bin="$2"
 
-    echo "ACFS Landing Plane"
+    echo "GTBI Landing Plane"
     echo "Status: $("${jq_bin}" -r '.status' <<<"$report")"
     echo ""
 
@@ -598,7 +598,7 @@ landing_main() {
 
     jq_bin="$(landing_binary_path jq 2>/dev/null || true)"
     if [[ -z "$jq_bin" ]]; then
-        echo "Error: jq is required for acfs landing-plane" >&2
+        echo "Error: jq is required for gtbi landing-plane" >&2
         return 2
     fi
 

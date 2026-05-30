@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
 # ============================================================
-# ACFS Provider Provisioning Packet - read-only validator/renderer
+# GTBI Provider Provisioning Packet - read-only validator/renderer
 #
-# Validates acfs.provider-provisioning-packet.v1 JSON artifacts and prints
+# Validates gtbi.provider-provisioning-packet.v1 JSON artifacts and prints
 # support-safe human or JSON output. This command never contacts provider APIs.
 # ============================================================
 
 set -euo pipefail
 
-PROVISIONING_PACKET_CHECK_SCHEMA="acfs.provider-provisioning-packet-check.v1"
-PROVISIONING_PACKET_SCHEMA="acfs.provider-provisioning-packet.v1"
+PROVISIONING_PACKET_CHECK_SCHEMA="gtbi.provider-provisioning-packet-check.v1"
+PROVISIONING_PACKET_SCHEMA="gtbi.provider-provisioning-packet.v1"
 PROVISIONING_PACKET_FORMAT="markdown"
 PROVISIONING_PACKET_FILE=""
 PROVISIONING_PACKET_ERRORS=()
@@ -17,7 +17,7 @@ PROVISIONING_PACKET_WARNINGS=()
 
 provisioning_packet_usage() {
     cat <<'EOF'
-Usage: acfs provisioning-packet --file FILE [OPTIONS]
+Usage: gtbi provisioning-packet --file FILE [OPTIONS]
 
 Options:
   --file FILE       Provider provisioning packet JSON file
@@ -57,7 +57,7 @@ provisioning_packet_parse_args() {
                 ;;
             *)
                 echo "Error: unknown option: $1" >&2
-                echo "Run 'acfs provisioning-packet --help' for usage." >&2
+                echo "Run 'gtbi provisioning-packet --help' for usage." >&2
                 return 2
                 ;;
         esac
@@ -415,7 +415,7 @@ provisioning_packet_emit_markdown() {
     local command_location=""
 
     status="$(provisioning_packet_status)"
-    printf 'ACFS Provider Provisioning Packet Check\n'
+    printf 'GTBI Provider Provisioning Packet Check\n'
     printf 'Status: %s\n' "$status"
     printf 'Schema: %s\n' "$(provisioning_packet_scalar "schema")"
     printf 'Stage: %s\n' "$(provisioning_packet_scalar "stage")"
@@ -476,7 +476,7 @@ provisioning_packet_main() {
         if [[ "$PROVISIONING_PACKET_FORMAT" == "json" ]]; then
             provisioning_packet_emit_error_json "Malformed JSON packet." "fail"
         else
-            echo "ACFS Provider Provisioning Packet Check"
+            echo "GTBI Provider Provisioning Packet Check"
             echo "Status: fail"
             echo "Errors:"
             echo "  - Malformed JSON packet."

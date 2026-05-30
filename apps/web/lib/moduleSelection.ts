@@ -373,14 +373,14 @@ export function buildInstallSelectorArgs(input: ModuleSelectionInput = {}): stri
 export function formatModuleSelectionPlan(plan: ModuleSelectionPlan): string {
   if (!plan.ok) {
     return [
-      "ACFS Module Selection Plan",
+      "GTBI Module Selection Plan",
       "Status: error",
       ...plan.errors.map((error) => `Error: ${error}`),
     ].join("\n");
   }
 
   const lines = [
-    "ACFS Module Selection Plan",
+    "GTBI Module Selection Plan",
     `Selected modules: ${plan.selectedCount} of ${plan.availableCount} available`,
   ];
 

@@ -89,7 +89,7 @@ export function TailscaleLesson() {
 
         <div className="mt-6">
           <CodeBlock
-            code={`# Install Tailscale (ACFS does this automatically)
+            code={`# Install Tailscale (GTBI does this automatically)
 curl -fsSL https://tailscale.com/install.sh | sh
 
 # Authenticate and join your tailnet

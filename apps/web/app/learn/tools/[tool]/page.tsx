@@ -25,12 +25,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   if (!doc) {
     return {
-      title: "Tool Not Found | ACFS Learning Hub",
+      title: "Tool Not Found | GTBI Learning Hub",
     };
   }
 
   return {
-    title: `${doc.title} | ACFS Learning Hub`,
+    title: `${doc.title} | GTBI Learning Hub`,
     description: doc.tagline,
   };
 }

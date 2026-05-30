@@ -55,7 +55,7 @@ test.describe.serial("RU Website Pages", () => {
       // Set localStorage to unlock lesson 20 (RU)
       await page.goto("/");
       await page.evaluate(() => {
-        localStorage.setItem("acfs-learning-hub-completed-lessons", JSON.stringify(Array.from({ length: 20 }, (_, i) => i)));
+        localStorage.setItem("gtbi-learning-hub-completed-lessons", JSON.stringify(Array.from({ length: 20 }, (_, i) => i)));
       });
 
       await page.goto("/learn/ru");
@@ -72,7 +72,7 @@ test.describe.serial("RU Website Pages", () => {
       // Set localStorage to unlock lesson 20 (RU)
       await page.goto("/");
       await page.evaluate(() => {
-        localStorage.setItem("acfs-learning-hub-completed-lessons", JSON.stringify(Array.from({ length: 20 }, (_, i) => i)));
+        localStorage.setItem("gtbi-learning-hub-completed-lessons", JSON.stringify(Array.from({ length: 20 }, (_, i) => i)));
       });
 
       await page.goto("/learn/ru");
@@ -93,7 +93,7 @@ test.describe.serial("RU Website Pages", () => {
       // Set localStorage to unlock lesson 20 (RU)
       await page.goto("/");
       await page.evaluate(() => {
-        localStorage.setItem("acfs-learning-hub-completed-lessons", JSON.stringify(Array.from({ length: 20 }, (_, i) => i)));
+        localStorage.setItem("gtbi-learning-hub-completed-lessons", JSON.stringify(Array.from({ length: 20 }, (_, i) => i)));
       });
 
       await page.goto("/learn/ru");
@@ -132,7 +132,7 @@ test.describe.serial("RU Website Pages", () => {
       // Set localStorage to unlock lesson 20 (RU)
       await page.goto("/");
       await page.evaluate(() => {
-        localStorage.setItem("acfs-learning-hub-completed-lessons", JSON.stringify(Array.from({ length: 20 }, (_, i) => i)));
+        localStorage.setItem("gtbi-learning-hub-completed-lessons", JSON.stringify(Array.from({ length: 20 }, (_, i) => i)));
       });
 
       await page.goto("/flywheel");
@@ -199,7 +199,7 @@ test.describe.serial("RU Website Pages", () => {
     test("can navigate from learn to RU lesson page", async ({ page }) => {
       // Mock progress to unlock lessons
       await page.addInitScript(() => {
-        window.localStorage.setItem('acfs-learning-hub-completed-lessons', JSON.stringify(Array.from({length: 50}, (_, i) => i)));
+        window.localStorage.setItem('gtbi-learning-hub-completed-lessons', JSON.stringify(Array.from({length: 50}, (_, i) => i)));
       });
       await page.goto("/learn");
       await page.waitForLoadState("networkidle");

@@ -73,7 +73,7 @@ EOF
 
     HOME="$tmpdir" TARGET_HOME="$tmpdir" UPDATE_SH_PATH="$update_sh" bash -c '
         set -euo pipefail
-        unset ACFS_BIN_DIR
+        unset GTBI_BIN_DIR
         source "$UPDATE_SH_PATH"
         [[ "$(get_version ru)" == "ru 9.9.9" ]]
     '
@@ -111,7 +111,7 @@ test_ru_self_update_check() {
 
 # Test 7: ru is in manifest
 test_ru_in_manifest() {
-    local manifest="$REPO_ROOT/acfs.manifest.yaml"
+    local manifest="$REPO_ROOT/gtbi.manifest.yaml"
     [[ -f "$manifest" ]] && command grep -q "stack.ru" "$manifest" 2>/dev/null
 }
 

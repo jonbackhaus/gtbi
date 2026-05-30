@@ -20,7 +20,7 @@ import type {
   WorkloadId,
 } from "./vpsProviders";
 
-export const PROVIDER_PROVISIONING_PACKET_SCHEMA = "acfs.provider-provisioning-packet.v1";
+export const PROVIDER_PROVISIONING_PACKET_SCHEMA = "gtbi.provider-provisioning-packet.v1";
 export const PROVIDER_PROVISIONING_PACKET_SCHEMA_VERSION = 1;
 
 export type ProviderProvisioningPacketStage =
@@ -33,8 +33,8 @@ export type ProviderProvisioningPacketStage =
   | "blocked";
 
 export type ProviderProvisioningPacketActor =
-  | "acfs-web-wizard"
-  | "acfs-installer"
+  | "gtbi-web-wizard"
+  | "gtbi-installer"
   | "provider-adapter"
   | "operator";
 
@@ -307,21 +307,21 @@ export const PROVIDER_PACKET_EXPECTED_ARTIFACTS = [
   },
   {
     id: "installer-log",
-    pathPattern: "~/.acfs/logs/install-*.log",
+    pathPattern: "~/.gtbi/logs/install-*.log",
     producedBy: "installer",
     supportBundleSafe: true,
     redactionRequired: true,
   },
   {
     id: "support-report",
-    pathPattern: "~/.acfs/support/<timestamp>/support-report.md",
+    pathPattern: "~/.gtbi/support/<timestamp>/support-report.md",
     producedBy: "installer",
     supportBundleSafe: true,
     redactionRequired: true,
   },
   {
     id: "support-manifest",
-    pathPattern: "~/.acfs/support/<timestamp>/manifest.json",
+    pathPattern: "~/.gtbi/support/<timestamp>/manifest.json",
     producedBy: "installer",
     supportBundleSafe: true,
     redactionRequired: true,
@@ -339,7 +339,7 @@ export const PROVIDER_PACKET_BASE_VERIFICATION_COMMANDS = [
   },
   {
     id: "installer",
-    label: "ACFS installer exits successfully",
+    label: "GTBI installer exits successfully",
     command: "<install-command>",
     runLocation: "vps",
     expectedStatus: "pass",
@@ -347,8 +347,8 @@ export const PROVIDER_PACKET_BASE_VERIFICATION_COMMANDS = [
   },
   {
     id: "doctor",
-    label: "ACFS doctor passes or reports only documented warnings",
-    command: "acfs doctor",
+    label: "GTBI doctor passes or reports only documented warnings",
+    command: "gtbi doctor",
     runLocation: "vps",
     expectedStatus: "pass",
     supportBundleSafe: true,
@@ -356,7 +356,7 @@ export const PROVIDER_PACKET_BASE_VERIFICATION_COMMANDS = [
   {
     id: "support-bundle",
     label: "Redacted support bundle can be produced",
-    command: "acfs support-bundle",
+    command: "gtbi support-bundle",
     runLocation: "vps",
     expectedStatus: "pass",
     supportBundleSafe: true,
@@ -365,14 +365,14 @@ export const PROVIDER_PACKET_BASE_VERIFICATION_COMMANDS = [
 
 export const PROVIDER_PACKET_MANUAL_STEPS_BY_PROVIDER: Record<string, string[]> = {
   contabo: [
-    "Log in to the provider console and choose the ACFS-recommended VPS product.",
+    "Log in to the provider console and choose the GTBI-recommended VPS product.",
     "Select the desired region and Ubuntu image from the provider UI.",
     "Use the provider password flow, keep root as the initial login user, and save the temporary VPS root password.",
     "Complete checkout and payment manually.",
     "Copy the assigned host address into the wizard; do not store it in a support-safe packet projection.",
   ],
   ovh: [
-    "Log in to the provider console and choose the ACFS-recommended VPS product.",
+    "Log in to the provider console and choose the GTBI-recommended VPS product.",
     "Select the desired region and Ubuntu image from the provider UI.",
     "Choose password authentication, skip the provider SSH key section for now, and save the temporary VPS root password.",
     "Complete checkout and payment manually.",
@@ -382,7 +382,7 @@ export const PROVIDER_PACKET_MANUAL_STEPS_BY_PROVIDER: Record<string, string[]> 
     "Create or choose a Hetzner Cloud project manually.",
     "Select an Ubuntu image and a server type that meets the packet capacity warning.",
     "Attach the public SSH key in the provider console.",
-    "Paste the ACFS cloud-init template when using cloud-init mode.",
+    "Paste the GTBI cloud-init template when using cloud-init mode.",
     "Complete checkout and payment manually.",
     "Copy the assigned host address into the wizard; do not store it in a support-safe packet projection.",
   ],
@@ -474,7 +474,7 @@ function buildCloudInit(
     userDataIncluded,
     templateRef: preset.cloudInitTemplateRef,
     redactedPreview: userDataIncluded
-      ? "ACFS cloud-init user-data available as a template reference; raw rendered user-data is excluded from support-safe packets."
+      ? "GTBI cloud-init user-data available as a template reference; raw rendered user-data is excluded from support-safe packets."
       : undefined,
     notes: userDataIncluded
       ? ["Paste or submit only after reviewing the generated user-data in the provider console."]
@@ -530,7 +530,7 @@ export function buildProviderProvisioningPacket(
       forbiddenFieldNames: [...PROVIDER_PACKET_FORBIDDEN_FIELD_NAMES],
     },
     provenance: {
-      generatedBy: "acfs-web-wizard",
+      generatedBy: "gtbi-web-wizard",
       generatedAt: input.generatedAt ?? new Date().toISOString(),
       sourceRef,
       wizardStep: "run-installer",
@@ -570,7 +570,7 @@ export function buildProviderProvisioningPacket(
     access: {
       username: targetUsername,
       rootLoginExpected: true,
-      sshPublicKeyLabel: input.sshPublicKeyLabel ?? "acfs_ed25519.pub",
+      sshPublicKeyLabel: input.sshPublicKeyLabel ?? "gtbi_ed25519.pub",
       sshPublicKeyFingerprint: input.sshPublicKeyFingerprint,
       sshPublicKeyMaterial: input.sshPublicKeyMaterial,
       sshPrivateKeyIncluded: false,

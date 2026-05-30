@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-# ACFS Swarm Status - local coordination snapshot
+# GTBI Swarm Status - local coordination snapshot
 #
 # Fast, offline collector for dashboards, support bundles, and
 # pre-swarm checks. External coordination tools are optional and
@@ -10,7 +10,7 @@
 set -euo pipefail
 
 SWARM_STATUS_JSON=false
-SWARM_STATUS_TIMEOUT="${ACFS_SWARM_STATUS_TIMEOUT:-3}"
+SWARM_STATUS_TIMEOUT="${GTBI_SWARM_STATUS_TIMEOUT:-3}"
 SWARM_STATUS_GENERATED_AT="$(date -Iseconds 2>/dev/null || date)"
 SWARM_STATUS_OVERALL="pass"
 SWARM_STATUS_WARNINGS=()
@@ -73,14 +73,14 @@ RCH_STALE_WORKER_COUNT="null"
 
 swarm_status_usage() {
     cat <<'EOF'
-Usage: acfs swarm status [OPTIONS]
+Usage: gtbi swarm status [OPTIONS]
 
 Options:
   --json       Emit machine-readable JSON
   --help, -h   Show this help
 
 Environment:
-  ACFS_SWARM_STATUS_TIMEOUT=SECONDS  Per-tool timeout (default: 3)
+  GTBI_SWARM_STATUS_TIMEOUT=SECONDS  Per-tool timeout (default: 3)
 EOF
 }
 
@@ -97,7 +97,7 @@ swarm_status_parse_args() {
                 ;;
             *)
                 echo "Error: unknown option: $1" >&2
-                echo "Run 'acfs swarm status --help' for usage." >&2
+                echo "Run 'gtbi swarm status --help' for usage." >&2
                 exit 2
                 ;;
         esac
@@ -714,7 +714,7 @@ swarm_status_emit_json() {
 }
 
 swarm_status_emit_human() {
-    echo "ACFS Swarm Status"
+    echo "GTBI Swarm Status"
     echo "Status: $SWARM_STATUS_OVERALL"
     echo "Host: ${HOST_CPU_COUNT} CPU, ${HOST_MEM_AVAILABLE_KB}/${HOST_MEM_TOTAL_KB} KiB memory available"
     echo "NTM/tmux: $NTM_STATUS (${NTM_TMUX_SESSION_COUNT} sessions, ${NTM_TMUX_WINDOW_COUNT} windows)"

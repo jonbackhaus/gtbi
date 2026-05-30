@@ -71,7 +71,7 @@ export const COMMAND_CATEGORIES: Array<{
   {
     id: "agents",
     label: "Agents",
-    description: "AI coding assistants installed by ACFS",
+    description: "AI coding assistants installed by GTBI",
   },
   {
     id: "search",
@@ -183,7 +183,7 @@ export const COMMANDS: CommandRef[] = [
     fullName: "Named Tmux Manager",
     description: "Session management for agents and workflows.",
     category: "stack",
-    example: "ntm new acfs",
+    example: "ntm new gtbi",
     docsUrl: "/learn/tools/ntm",
   },
   {
@@ -455,7 +455,7 @@ function mapGeneratedCategoryToCommandCategory(moduleCategory: string): CommandC
 }
 
 // Auto-merge any manifest-defined commands not already in the hand-maintained list.
-// This ensures new tools added to acfs.manifest.yaml appear automatically.
+// This ensures new tools added to gtbi.manifest.yaml appear automatically.
 const _mergedHandMaintainedCommands = COMMANDS.map(mergeCommandWithManifest);
 const _handMaintainedNames = new Set(_mergedHandMaintainedCommands.map((c) => c.name));
 const _generatedExtras: CommandRef[] = manifestCommands

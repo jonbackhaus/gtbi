@@ -171,7 +171,7 @@ export function WelcomeLesson() {
 
       {/* Tip */}
       <TipBox variant="tip">
-        If you ever break something, you can delete this VPS and re-run ACFS.
+        If you ever break something, you can delete this VPS and re-run GTBI.
         That&apos;s the beauty of VPS development!
       </TipBox>
     </div>
@@ -216,7 +216,7 @@ function AgentCard({
 }
 
 // =============================================================================
-// INTERACTIVE ARCHITECTURE - Layered ACFS system explorer
+// INTERACTIVE ARCHITECTURE - Layered GTBI system explorer
 // =============================================================================
 
 interface ArchLayer {
@@ -309,12 +309,12 @@ const archLayers: ArchLayer[] = [
         status: "active",
       },
       {
-        id: "acfs-shell",
-        name: "ACFS Shell Extensions",
-        shortName: "acfs.zshrc",
+        id: "gtbi-shell",
+        name: "GTBI Shell Extensions",
+        shortName: "gtbi.zshrc",
         description:
-          "Custom shell aliases and functions loaded by ACFS. Provides shortcuts like cc, cod, gmi and all the acfs subcommands.",
-        commands: ["source ~/.acfs.zshrc", "acfs help"],
+          "Custom shell aliases and functions loaded by GTBI. Provides shortcuts like cc, cod, gmi and all the gtbi subcommands.",
+        commands: ["source ~/.gtbi.zshrc", "gtbi help"],
         dependencies: ["zsh"],
         status: "active",
       },
@@ -424,7 +424,7 @@ const archLayers: ArchLayer[] = [
         shortName: "beads",
         description:
           "Lightweight task and issue tracker that lives in your repo as a JSONL file. Agents can read and update beads to coordinate work.",
-        commands: ["acfs beads list", "acfs beads add 'task'"],
+        commands: ["gtbi beads list", "gtbi beads add 'task'"],
         dependencies: ["git"],
         status: "active",
       },
@@ -434,7 +434,7 @@ const archLayers: ArchLayer[] = [
         shortName: "AGENTS.md",
         description:
           "A markdown file in your repo that tells agents about the project, coding conventions, and how to behave. The shared brain for all agents.",
-        commands: ["cat AGENTS.md", "acfs agents-md"],
+        commands: ["cat AGENTS.md", "gtbi agents-md"],
         dependencies: ["git"],
         status: "active",
       },
@@ -450,12 +450,12 @@ const archLayers: ArchLayer[] = [
     components: [
       {
         id: "doctor",
-        name: "acfs doctor",
+        name: "gtbi doctor",
         shortName: "doctor",
         description:
           "Diagnostic tool that checks your entire stack for problems: SSH keys, API keys, tool versions, tmux health, and more. Your first stop when something feels off.",
-        commands: ["acfs doctor", "acfs doctor --fix"],
-        dependencies: ["acfs-shell"],
+        commands: ["gtbi doctor", "gtbi doctor --fix"],
+        dependencies: ["gtbi-shell"],
         status: "active",
       },
       {
@@ -474,7 +474,7 @@ const archLayers: ArchLayer[] = [
         shortName: "Reset",
         description:
           "If everything goes wrong, you can nuke the VPS and re-run the installer. Your code lives in Git, so nothing is ever truly lost.",
-        commands: ["acfs reinstall", "install.sh"],
+        commands: ["gtbi reinstall", "install.sh"],
         dependencies: ["ubuntu"],
         status: "standby",
       },
@@ -483,11 +483,11 @@ const archLayers: ArchLayer[] = [
 ];
 
 const terminalCommands = [
-  { prompt: "~", cmd: "acfs status", output: "All systems nominal" },
+  { prompt: "~", cmd: "gtbi status", output: "All systems nominal" },
   { prompt: "~", cmd: "ntm launch 3", output: "Spawning 3 agent panes..." },
-  { prompt: "~", cmd: "acfs doctor", output: "14/14 checks passed" },
+  { prompt: "~", cmd: "gtbi doctor", output: "14/14 checks passed" },
   { prompt: "~", cmd: "cc 'fix the auth bug'", output: "Claude Code starting..." },
-  { prompt: "~/proj", cmd: "acfs beads list", output: "3 open, 2 done" },
+  { prompt: "~/proj", cmd: "gtbi beads list", output: "3 open, 2 done" },
   { prompt: "~", cmd: "tmux ls", output: "work: 4 panes (attached)" },
 ];
 
@@ -577,7 +577,7 @@ function InteractiveArchitecture() {
             </div>
             <div>
               <h3 className="text-sm font-semibold text-white">
-                ACFS Architecture Explorer
+                GTBI Architecture Explorer
               </h3>
               <p className="text-xs text-white/40">
                 Click any component to explore

@@ -63,7 +63,7 @@ export const STEP_HELP: Partial<Record<number, StepHelp>> = {
       {
         symptom: "The key file already exists",
         solution:
-          "If you already have an SSH key at ~/.ssh/acfs_ed25519, you can skip this step and reuse it. Just make sure you remember the passphrase (if any).",
+          "If you already have an SSH key at ~/.ssh/gtbi_ed25519, you can skip this step and reuse it. Just make sure you remember the passphrase (if any).",
       },
       {
         symptom: "Permission denied when creating the key",
@@ -196,7 +196,7 @@ export const STEP_HELP: Partial<Record<number, StepHelp>> = {
       {
         symptom: "I can't connect as the SSH user",
         solution:
-          "Use the key-based SSH command shown on this step. The default is: ssh -i ~/.ssh/acfs_ed25519 ubuntu@YOUR_IP; replace ubuntu if you chose a different target user. If that fails with 'permission denied', connect as root and check that the installer completed successfully.",
+          "Use the key-based SSH command shown on this step. The default is: ssh -i ~/.ssh/gtbi_ed25519 ubuntu@YOUR_IP; replace ubuntu if you chose a different target user. If that fails with 'permission denied', connect as root and check that the installer completed successfully.",
       },
     ],
     tips: [
@@ -207,14 +207,14 @@ export const STEP_HELP: Partial<Record<number, StepHelp>> = {
   12: {
     commonIssues: [
       {
-        symptom: "acfs doctor shows failures",
+        symptom: "gtbi doctor shows failures",
         solution:
-          "Re-run the installer: it's safe to run multiple times. Make sure you're connected as your configured SSH user (ubuntu by default), then run: source ~/.zshrc && acfs doctor",
+          "Re-run the installer: it's safe to run multiple times. Make sure you're connected as your configured SSH user (ubuntu by default), then run: source ~/.zshrc && gtbi doctor",
       },
       {
-        symptom: "Command not found: acfs",
+        symptom: "Command not found: gtbi",
         solution:
-          "Run: source ~/.zshrc  — the acfs command is loaded from your shell configuration. If that doesn't work, the installer may not have completed.",
+          "Run: source ~/.zshrc  — the gtbi command is loaded from your shell configuration. If that doesn't work, the installer may not have completed.",
       },
     ],
     tips: [
@@ -236,7 +236,7 @@ export function getDebugInfo(currentStep: number): string {
     typeof navigator !== "undefined" ? navigator.userAgent : "unknown";
 
   return [
-    "# ACFS Wizard Debug Info",
+    "# GTBI Wizard Debug Info",
     `Step: ${currentStep} of ${TOTAL_STEPS}`,
     `OS: ${os ?? "not selected"}`,
     `VPS IP: ${ip ?? "not entered"}`,

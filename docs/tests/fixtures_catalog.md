@@ -4,7 +4,7 @@ This catalog lists **existing** files used as real fixtures for tests. Do not
 introduce synthetic mocks for core behavior; prefer these artifacts.
 
 ## Manifests
-- `acfs.manifest.yaml` — Canonical module manifest (full real data set).
+- `gtbi.manifest.yaml` — Canonical module manifest (full real data set).
 
 ## Generated Artifacts (Real outputs)
 - `scripts/generated/manifest_index.sh` — Deterministic module index used by selection logic.
@@ -18,7 +18,7 @@ introduce synthetic mocks for core behavior; prefer these artifacts.
 - `scripts/generated/install_stack.sh` — Generated module functions (stack).
 - `scripts/generated/install_tools.sh` — Generated module functions (tools).
 - `scripts/generated/install_users.sh` — Generated module functions (users).
-- `scripts/generated/install_acfs.sh` — Generated module functions (acfs).
+- `scripts/generated/install_gtbi.sh` — Generated module functions (gtbi).
 - `scripts/generated/doctor_checks.sh` — Generated doctor checks list.
 
 ## Installer + Libs (Real logic under test)
@@ -30,7 +30,7 @@ introduce synthetic mocks for core behavior; prefer these artifacts.
 
 ## E2E Harnesses (Real integration scripts)
 - `tests/vm/test_install_ubuntu.sh` — Installer E2E (Docker).
-- `tests/vm/test_acfs_update.sh` — Update E2E (Docker).
+- `tests/vm/test_gtbi_update.sh` — Update E2E (Docker).
 - `tests/vm/resume_checks.sh` — Resume logic checks.
 
 ## Web E2E Fixtures

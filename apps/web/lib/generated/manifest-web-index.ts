@@ -1,5 +1,5 @@
 // ============================================================
-// AUTO-GENERATED FROM acfs.manifest.yaml — DO NOT EDIT
+// AUTO-GENERATED FROM gtbi.manifest.yaml — DO NOT EDIT
 // Regenerate: bun run generate (from packages/manifest)
 // ============================================================
 

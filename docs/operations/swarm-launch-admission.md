@@ -1,12 +1,12 @@
 # Swarm Launch Admission Model
 
 This note records the `bd-h8c2m` contract implemented by the queue-aware
-`acfs swarm plan` advisor. ACFS still does not launch agents from this model;
+`gtbi swarm plan` advisor. GTBI still does not launch agents from this model;
 the command is a read-only planner.
 
 ## Purpose
 
-Large ACFS hosts can run many agents, but launch decisions should still account
+Large GTBI hosts can run many agents, but launch decisions should still account
 for local capacity, RCH queue pressure, existing NTM/tmux activity, active
 Beads work, Agent Mail reservation pressure, and stale coordination state. The
 admission model answers one question:
@@ -39,9 +39,9 @@ The planner accepts:
 | --- | --- | --- |
 | `requested_agents` | yes | CLI flag such as `--agents 25` or profile name such as `25-agents` |
 | `workload` | yes | `light`, `standard`, or `heavy`; same vocabulary as `capacity.sh` |
-| `swarm_status` | yes | `acfs swarm status --json` or `scripts/lib/swarm_status.sh --json` |
-| `capacity` | yes | `acfs capacity --json --profile <N> --recommend-ntm` |
-| `simulation` | recommended | `acfs swarm simulate --json --counts 10,25,50` or selected counts |
+| `swarm_status` | yes | `gtbi swarm status --json` or `scripts/lib/swarm_status.sh --json` |
+| `capacity` | yes | `gtbi capacity --json --profile <N> --recommend-ntm` |
+| `simulation` | recommended | `gtbi swarm simulate --json --counts 10,25,50` or selected counts |
 | `agent_mail_pressure` | optional | future reservation summary, degraded to warning when unavailable |
 | `repo_policy` | advisory | local `AGENTS.md` and README presence/read freshness |
 
@@ -52,10 +52,10 @@ language for build/test work.
 Copyable examples:
 
 ```bash
-acfs swarm plan --agents 10
-acfs swarm plan --agents 25 --profile codex-heavy --workload standard
-acfs swarm plan --json --agents 50 --workload heavy
-acfs swarm plan --json --agents 25 --status-file swarm_status.json
+gtbi swarm plan --agents 10
+gtbi swarm plan --agents 25 --profile codex-heavy --workload standard
+gtbi swarm plan --json --agents 50 --workload heavy
+gtbi swarm plan --json --agents 25 --status-file swarm_status.json
 ```
 
 ## Admission Status
@@ -131,7 +131,7 @@ Required top-level fields:
 ## Load-Shedding Advisory
 
 `quiesce_advisory` is the operator-facing stoplight for whether to add more
-agents right now. It is part of `acfs swarm plan`, not a competing command. It
+agents right now. It is part of `gtbi swarm plan`, not a competing command. It
 does not kill sessions, delete files, release reservations, mutate Beads, or
 start cleanup. It only explains whether the launch should proceed, be scaled
 down, or wait.
@@ -170,7 +170,7 @@ Each check object should use this shape:
     "pressure_warning_count": 2,
     "stale_worker_count": 0
   },
-  "next_commands": ["acfs swarm status --json", "rch status --json", "rch queue --json"]
+  "next_commands": ["gtbi swarm status --json", "rch status --json", "rch queue --json"]
 }
 ```
 
@@ -205,7 +205,7 @@ The first implementation should use conservative thresholds:
 - If `probes.beads.in_progress_count > 0`, return at least `warn` and include
   `br list --status in_progress --json` as a next command.
 - If stale in-progress work is reported by status/doctor data, return at least
-  `warn`, include `acfs swarm doctor --stale-hours 12`, and set
+  `warn`, include `gtbi swarm doctor --stale-hours 12`, and set
   `quiesce_advisory.recommendation` to `wait`.
 - If Agent Mail reservation pressure is unavailable, return `warn`, not `fail`,
   unless Beads or bv are also unavailable.
@@ -222,7 +222,7 @@ detail fields that could expose secrets, private hosts, or local project paths.
 Human output should fit in one terminal screen:
 
 ```text
-ACFS Swarm Plan
+GTBI Swarm Plan
 Status: warn
 Requested: 25 agents (standard)
 Recommended: 18 agents
@@ -239,8 +239,8 @@ Warnings:
 
 Next commands:
   br list --status in_progress --json
-  acfs swarm status --json
-  acfs swarm simulate --counts 10,25,50
+  gtbi swarm status --json
+  gtbi swarm simulate --counts 10,25,50
 ```
 
 ## Example Plans
@@ -266,14 +266,14 @@ The JSON `examples` array should include the same scenarios:
 
 ## Stale Work Verification
 
-`acfs swarm doctor` includes a read-only stale work check. When detailed Beads
+`gtbi swarm doctor` includes a read-only stale work check. When detailed Beads
 or Agent Mail reservation records are present in the swarm status JSON, the
 doctor flags in-progress Beads or active reservations whose latest activity is
 older than the stale threshold. The default threshold is 12 hours and can be
 changed with:
 
 ```bash
-acfs swarm doctor --stale-hours 24
+gtbi swarm doctor --stale-hours 24
 ```
 
 The detector is advisory only. It never reopens Beads, releases reservations,
@@ -330,5 +330,5 @@ The implemented advisor has fixture-driven unit coverage for these cases:
 `scripts/lib/swarm_plan.sh` is the implementation source. It can replay a
 captured status file with `--status-file`, otherwise it runs the bounded
 `swarm_status.sh --json` collector and the capacity model for the requested
-agent count. Integrations from `acfs swarm doctor`, `acfs swarm simulate`, and
+agent count. Integrations from `gtbi swarm doctor`, `gtbi swarm simulate`, and
 support bundles remain separate follow-up Beads.

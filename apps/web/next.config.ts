@@ -4,9 +4,9 @@ import { fileURLToPath } from "node:url";
 
 const configDir = dirname(fileURLToPath(import.meta.url));
 const workspaceRoot = resolve(configDir, "../..");
-const NEXT_DIST_SCOPE_ENV = "ACFS_NEXT_DIST_SCOPE";
-const NEXT_TSCONFIG_PATH_ENV = "ACFS_NEXT_TSCONFIG_PATH";
-const NEXT_BUILD_CPUS_ENV = "ACFS_NEXT_BUILD_CPUS";
+const NEXT_DIST_SCOPE_ENV = "GTBI_NEXT_DIST_SCOPE";
+const NEXT_TSCONFIG_PATH_ENV = "GTBI_NEXT_TSCONFIG_PATH";
+const NEXT_BUILD_CPUS_ENV = "GTBI_NEXT_BUILD_CPUS";
 const DEFAULT_BUILD_CPUS = 1;
 
 const toScopedDistDir = (scope: string): string | undefined => {
@@ -43,7 +43,7 @@ const buildCpus = parseBuildCpus(process.env[NEXT_BUILD_CPUS_ENV]) ?? DEFAULT_BU
 
 const nextConfig: NextConfig = {
   // Allow concurrent agents in the same checkout to opt into isolated Next.js
-  // artifacts by setting ACFS_NEXT_DIST_SCOPE before build/typegen/start.
+  // artifacts by setting GTBI_NEXT_DIST_SCOPE before build/typegen/start.
   ...(scopedDistDir ? { distDir: scopedDistDir } : {}),
   ...(scopedTsconfigPath ? { typescript: { tsconfigPath: scopedTsconfigPath } } : {}),
   turbopack: {
@@ -70,7 +70,7 @@ const nextConfig: NextConfig = {
       {
         protocol: "https",
         hostname: "raw.githubusercontent.com",
-        pathname: "/Dicklesworthstone/agentic_coding_flywheel_setup/**",
+        pathname: "/Dicklesworthstone/gastown_batteries_included/**",
       },
     ],
   },

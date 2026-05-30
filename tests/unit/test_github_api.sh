@@ -168,7 +168,7 @@ test_has_gh_auth_prefers_target_home_binary() {
     local old_path="${PATH:-}"
     local old_target_user="${TARGET_USER-__unset__}"
     local old_target_home="${TARGET_HOME-__unset__}"
-    local old_acfs_bin_dir="${ACFS_BIN_DIR-__unset__}"
+    local old_gtbi_bin_dir="${GTBI_BIN_DIR-__unset__}"
 
     temp_dir=$(mktemp -d)
     target_home="$temp_dir/target"
@@ -198,7 +198,7 @@ EOF
     PATH="$fake_path:/usr/bin:/bin"
     unset TARGET_USER
     TARGET_HOME="$target_home"
-    ACFS_BIN_DIR="$target_home/.local/bin"
+    GTBI_BIN_DIR="$target_home/.local/bin"
 
     if _has_gh_auth; then
         status=0
@@ -216,10 +216,10 @@ EOF
     else
         TARGET_HOME="$old_target_home"
     fi
-    if [[ "$old_acfs_bin_dir" == "__unset__" ]]; then
-        unset ACFS_BIN_DIR
+    if [[ "$old_gtbi_bin_dir" == "__unset__" ]]; then
+        unset GTBI_BIN_DIR
     else
-        ACFS_BIN_DIR="$old_acfs_bin_dir"
+        GTBI_BIN_DIR="$old_gtbi_bin_dir"
     fi
 
     if [[ "$status" -ne 0 ]]; then
@@ -272,15 +272,15 @@ test_fetch_invalid_url() {
 
 test_fetch_valid_url_without_base_args() {
     # Regression test: github_fetch_with_backoff should still work when
-    # ACFS_CURL_BASE_ARGS is unset.
+    # GTBI_CURL_BASE_ARGS is unset.
     local tmp_file status=1 had_base_args=false
     local -a saved_base_args=()
     tmp_file=$(mktemp)
 
-    if declare -p ACFS_CURL_BASE_ARGS &>/dev/null; then
+    if declare -p GTBI_CURL_BASE_ARGS &>/dev/null; then
         had_base_args=true
-        saved_base_args=("${ACFS_CURL_BASE_ARGS[@]}")
-        unset ACFS_CURL_BASE_ARGS
+        saved_base_args=("${GTBI_CURL_BASE_ARGS[@]}")
+        unset GTBI_CURL_BASE_ARGS
     fi
 
     if github_fetch_with_backoff "https://raw.githubusercontent.com/Dicklesworthstone/beads_rust/main/README.md" "$tmp_file" "test" 2>/dev/null; then
@@ -290,9 +290,9 @@ test_fetch_valid_url_without_base_args() {
     fi
 
     if [[ "$had_base_args" == "true" ]]; then
-        ACFS_CURL_BASE_ARGS=("${saved_base_args[@]}")
+        GTBI_CURL_BASE_ARGS=("${saved_base_args[@]}")
     else
-        unset ACFS_CURL_BASE_ARGS 2>/dev/null || true
+        unset GTBI_CURL_BASE_ARGS 2>/dev/null || true
     fi
 
     rm -f "$tmp_file"
@@ -370,7 +370,7 @@ EOF
         _github_api_curl_binary_path() {
             printf "%s/curl\n" "$TEST_GITHUB_CURL_DIR"
         }
-        ACFS_CURL_BASE_ARGS=(--proto "=https" --proto-redir "=https" --connect-timeout 30 --max-time 300 -fsSL)
+        GTBI_CURL_BASE_ARGS=(--proto "=https" --proto-redir "=https" --connect-timeout 30 --max-time 300 -fsSL)
         GITHUB_BACKOFF_INITIAL=0
         GITHUB_BACKOFF_MAX=1
         github_fetch_with_backoff "https://example.invalid/file" "$2" "rate-limit-status-test" >/dev/null 2>/dev/null
@@ -572,16 +572,16 @@ test_fetch_with_backoff_ignores_shell_function_curl() {
     marker="$temp_dir/poisoned"
     output="$temp_dir/output"
 
-    ACFS_POISON_MARKER="$marker" GITHUB_MAX_RETRIES=1 bash -c '
+    GTBI_POISON_MARKER="$marker" GITHUB_MAX_RETRIES=1 bash -c '
         set -euo pipefail
         source "$1"
         curl() {
-            printf poisoned > "$ACFS_POISON_MARKER"
+            printf poisoned > "$GTBI_POISON_MARKER"
             printf 000
             return 0
         }
-        ACFS_CURL_BASE_ARGS=(--connect-timeout 1 --max-time 1 -sS)
-        github_fetch_with_backoff "https://127.0.0.1:9/acfs" "$2" "function-poison-test" >/dev/null 2>/dev/null
+        GTBI_CURL_BASE_ARGS=(--connect-timeout 1 --max-time 1 -sS)
+        github_fetch_with_backoff "https://127.0.0.1:9/gtbi" "$2" "function-poison-test" >/dev/null 2>/dev/null
     ' _ "$LIB_DIR/github_api.sh" "$output" || status=$?
 
     [[ "$status" -ne 0 && ! -e "$marker" ]]
@@ -662,7 +662,7 @@ main() {
         echo "--- Network Integration ---"
         run_test "Fetch valid URL" test_fetch_valid_url
         run_test "Fetch invalid URL" test_fetch_invalid_url
-        run_test "Fetch valid URL without ACFS_CURL_BASE_ARGS" test_fetch_valid_url_without_base_args
+        run_test "Fetch valid URL without GTBI_CURL_BASE_ARGS" test_fetch_valid_url_without_base_args
     else
         echo ""
         echo "(Skipping network tests - SKIP_NETWORK_TESTS=true)"

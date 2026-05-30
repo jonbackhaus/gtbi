@@ -47,10 +47,10 @@ import {
 import { useWizardAnalytics } from "@/lib/hooks/useWizardAnalytics";
 import { Jargon } from "@/components/jargon";
 import { buildInstallCommand, formatSshTarget } from "@/lib/commandBuilder";
-import { useACFSRef, useInstallMode, useSSHUsername, useVPSIP } from "@/lib/userPreferences";
+import { useGTBIRef, useInstallMode, useSSHUsername, useVPSIP } from "@/lib/userPreferences";
 import { safeGetItem, withCurrentSearch } from "@/lib/utils";
 
-const STATUS_CHECK_COMPLETION_KEY = "acfs-command-flywheel-doctor";
+const STATUS_CHECK_COMPLETION_KEY = "gtbi-command-flywheel-doctor";
 const QUICK_CHECKS = [
   {
     command: "cc --version",
@@ -133,9 +133,9 @@ export default function StatusCheckPage() {
   const [vpsIP, , vpsIPLoaded] = useVPSIP();
   const [sshUsername, , sshUsernameLoaded] = useSSHUsername();
   const [installMode, , installModeLoaded] = useInstallMode();
-  const [acfsRef, , acfsRefLoaded] = useACFSRef();
+  const [gtbiRef, , gtbiRefLoaded] = useGTBIRef();
   const ready =
-    vpsIPLoaded && sshUsernameLoaded && installModeLoaded && acfsRefLoaded;
+    vpsIPLoaded && sshUsernameLoaded && installModeLoaded && gtbiRefLoaded;
   const { data: doctorConfirmed = false } = useQuery({
     queryKey: commandCompletionKeys.completion(STATUS_CHECK_COMPLETION_KEY),
     queryFn: () => safeGetItem(STATUS_CHECK_COMPLETION_KEY) === "true",
@@ -145,13 +145,13 @@ export default function StatusCheckPage() {
   const effectiveVpsIP = vpsIP ?? "";
   const effectiveSSHUsername = sshUsername.trim() || "ubuntu";
   const reconnectTarget = formatSshTarget(effectiveSSHUsername, effectiveVpsIP);
-  const reconnectCommand = `ssh -i ~/.ssh/acfs_ed25519 ${reconnectTarget}`;
-  const reconnectWindowsCommand = `ssh -i $HOME\\.ssh\\acfs_ed25519 ${reconnectTarget}`;
-  const codexTunnelCommand = `ssh -i ~/.ssh/acfs_ed25519 -L 1455:localhost:1455 ${reconnectTarget}`;
-  const codexTunnelWindowsCommand = `ssh -i $HOME\\.ssh\\acfs_ed25519 -L 1455:localhost:1455 ${reconnectTarget}`;
+  const reconnectCommand = `ssh -i ~/.ssh/gtbi_ed25519 ${reconnectTarget}`;
+  const reconnectWindowsCommand = `ssh -i $HOME\\.ssh\\gtbi_ed25519 ${reconnectTarget}`;
+  const codexTunnelCommand = `ssh -i ~/.ssh/gtbi_ed25519 -L 1455:localhost:1455 ${reconnectTarget}`;
+  const codexTunnelWindowsCommand = `ssh -i $HOME\\.ssh\\gtbi_ed25519 -L 1455:localhost:1455 ${reconnectTarget}`;
   const reinstallCommand = buildInstallCommand(
     installModeLoaded ? installMode : "vibe",
-    acfsRefLoaded ? acfsRef : null,
+    gtbiRefLoaded ? gtbiRef : null,
     effectiveSSHUsername,
   );
   const promptPrefix = `${effectiveSSHUsername}@`;
@@ -275,11 +275,11 @@ export default function StatusCheckPage() {
           checkbox required to continue.
         </p>
         <CommandCard
-          command="acfs doctor"
+          command="gtbi doctor"
           description="Run Agent Flywheel health check"
           runLocation="vps"
           showCheckbox
-          checkboxLabel="I ran acfs doctor"
+          checkboxLabel="I ran gtbi doctor"
           completedLabel="Doctor completed"
           persistKey="flywheel-doctor"
         />
@@ -511,7 +511,7 @@ export default function StatusCheckPage() {
 
               <GuideStep number={2} title="Copy the doctor command">
                 Click the copy button on the{" "}
-                <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">acfs doctor</code>
+                <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">gtbi doctor</code>
                 command box above.
               </GuideStep>
 

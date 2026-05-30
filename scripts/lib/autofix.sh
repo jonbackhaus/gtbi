@@ -1,11 +1,11 @@
 #!/bin/bash
-# ACFS Auto-Fix Change Recording and Undo System
+# GTBI Auto-Fix Change Recording and Undo System
 # Tracks all auto-fix actions with selective undo capability
 # Implements crash-safe persistence with fsync, integrity verification, and automatic rollback
 
 # Prevent multiple sourcing
-[[ -n "${_ACFS_AUTOFIX_SOURCED:-}" ]] && return 0
-_ACFS_AUTOFIX_SOURCED=1
+[[ -n "${_GTBI_AUTOFIX_SOURCED:-}" ]] && return 0
+_GTBI_AUTOFIX_SOURCED=1
 
 # =============================================================================
 # State Directory Configuration
@@ -245,11 +245,11 @@ autofix_refresh_state_paths() {
     local runtime_home=""
     local state_dir=""
 
-    state_dir="$(autofix_sanitize_abs_nonroot_path "${ACFS_STATE_DIR:-}" 2>/dev/null || true)"
+    state_dir="$(autofix_sanitize_abs_nonroot_path "${GTBI_STATE_DIR:-}" 2>/dev/null || true)"
     if [[ -z "$state_dir" ]]; then
         runtime_home="$(autofix_runtime_home 2>/dev/null || true)"
         if [[ -n "$runtime_home" ]]; then
-            state_dir="$runtime_home/.acfs/autofix"
+            state_dir="$runtime_home/.gtbi/autofix"
         else
             local id_bin=""
             local current_uid="unknown"
@@ -258,28 +258,28 @@ autofix_refresh_state_paths() {
                 current_uid="$("$id_bin" -u 2>/dev/null || true)"
             fi
             [[ "$current_uid" =~ ^[0-9]+$ ]] || current_uid="unknown"
-            state_dir="/tmp/acfs-autofix.$current_uid"
+            state_dir="/tmp/gtbi-autofix.$current_uid"
         fi
     fi
 
-    ACFS_STATE_DIR="$state_dir"
-    ACFS_CHANGES_FILE="${ACFS_STATE_DIR}/changes.jsonl"
-    ACFS_UNDOS_FILE="${ACFS_STATE_DIR}/undos.jsonl"
-    ACFS_BACKUPS_DIR="${ACFS_STATE_DIR}/backups"
-    ACFS_LOCK_FILE="${ACFS_STATE_DIR}/.lock"
-    ACFS_INTEGRITY_FILE="${ACFS_STATE_DIR}/.integrity"
+    GTBI_STATE_DIR="$state_dir"
+    GTBI_CHANGES_FILE="${GTBI_STATE_DIR}/changes.jsonl"
+    GTBI_UNDOS_FILE="${GTBI_STATE_DIR}/undos.jsonl"
+    GTBI_BACKUPS_DIR="${GTBI_STATE_DIR}/backups"
+    GTBI_LOCK_FILE="${GTBI_STATE_DIR}/.lock"
+    GTBI_INTEGRITY_FILE="${GTBI_STATE_DIR}/.integrity"
 }
 
 autofix_refresh_state_paths
 
 # In-memory change records
-declare -gA ACFS_CHANGE_RECORDS=()  # id -> JSON record (global; file may be sourced inside a function)
-declare -ga ACFS_CHANGE_ORDER=()    # Ordered list of change IDs (global)
+declare -gA GTBI_CHANGE_RECORDS=()  # id -> JSON record (global; file may be sourced inside a function)
+declare -ga GTBI_CHANGE_ORDER=()    # Ordered list of change IDs (global)
 
 # Session management
-ACFS_SESSION_ID=""
-ACFS_AUTOFIX_INITIALIZED=false
-ACFS_AUTOFIX_LOCK_FD=""
+GTBI_SESSION_ID=""
+GTBI_AUTOFIX_INITIALIZED=false
+GTBI_AUTOFIX_LOCK_FD=""
 
 # =============================================================================
 # Logging Helpers (avoid dependency on logging.sh)
@@ -296,7 +296,7 @@ _autofix_log() {
         ERROR) echo "[$timestamp] ERROR: $message" >&2 ;;
         WARN)  echo "[$timestamp] WARN:  $message" >&2 ;;
         INFO)  echo "[$timestamp] INFO:  $message" >&2 ;;
-        DEBUG) [[ "${ACFS_DEBUG:-}" == "true" ]] && echo "[$timestamp] DEBUG: $message" || true ;;
+        DEBUG) [[ "${GTBI_DEBUG:-}" == "true" ]] && echo "[$timestamp] DEBUG: $message" || true ;;
     esac
 }
 
@@ -659,7 +659,7 @@ autofix_backup_restore_command() {
 }
 
 autofix_undo_status_map_json() {
-    if [[ -f "$ACFS_UNDOS_FILE" ]] && [[ -s "$ACFS_UNDOS_FILE" ]]; then
+    if [[ -f "$GTBI_UNDOS_FILE" ]] && [[ -s "$GTBI_UNDOS_FILE" ]]; then
         jq -s -c '
             reduce .[] as $entry ({};
                 if ((($entry.undone? // "") | tostring | length) > 0) then
@@ -668,7 +668,7 @@ autofix_undo_status_map_json() {
                     .
                 end
             )
-        ' "$ACFS_UNDOS_FILE" 2>/dev/null || printf '{}\n'
+        ' "$GTBI_UNDOS_FILE" 2>/dev/null || printf '{}\n'
         return 0
     fi
 
@@ -696,8 +696,8 @@ autofix_undone_ids_json() {
 autofix_active_backup_paths() {
     local undone_ids_json="[]"
 
-    [[ -f "$ACFS_CHANGES_FILE" ]] || return 0
-    [[ -s "$ACFS_CHANGES_FILE" ]] || return 0
+    [[ -f "$GTBI_CHANGES_FILE" ]] || return 0
+    [[ -s "$GTBI_CHANGES_FILE" ]] || return 0
 
     undone_ids_json="$(autofix_undone_ids_json)"
     jq -r --argjson undone "$undone_ids_json" '
@@ -705,7 +705,7 @@ autofix_active_backup_paths() {
         | (.backups // [] | if type == "array" then . elif type == "object" then [.] else [] end)[]
         | select(type == "object" and (.backup? != null))
         | .backup // empty
-    ' "$ACFS_CHANGES_FILE" 2>/dev/null | awk 'NF' | sort -u
+    ' "$GTBI_CHANGES_FILE" 2>/dev/null | awk 'NF' | sort -u
 }
 
 # Verify integrity of the state files
@@ -715,7 +715,7 @@ verify_state_integrity() {
     local errors=0
 
     # Check changes file
-    if [[ -f "$ACFS_CHANGES_FILE" ]]; then
+    if [[ -f "$GTBI_CHANGES_FILE" ]]; then
         local line_num=0
         while IFS= read -r line; do
             ((line_num++)) || true
@@ -743,22 +743,22 @@ verify_state_integrity() {
                     ((errors++)) || true
                 fi
             fi
-        done < "$ACFS_CHANGES_FILE"
+        done < "$GTBI_CHANGES_FILE"
     fi
 
     # Check undos file
-    if [[ -f "$ACFS_UNDOS_FILE" ]]; then
+    if [[ -f "$GTBI_UNDOS_FILE" ]]; then
         while IFS= read -r line; do
             [[ -z "$line" ]] && continue
             if ! echo "$line" | jq -e . >/dev/null 2>&1; then
                 log_error "[INTEGRITY] Invalid JSON in undos.jsonl"
                 ((errors++)) || true
             fi
-        done < "$ACFS_UNDOS_FILE"
+        done < "$GTBI_UNDOS_FILE"
     fi
 
     # Verify active backup paths match their recorded checksums
-    if [[ -f "$ACFS_CHANGES_FILE" ]]; then
+    if [[ -f "$GTBI_CHANGES_FILE" ]]; then
         local backup_infos
         local undone_ids_json="[]"
         undone_ids_json="$(autofix_undone_ids_json)"
@@ -769,7 +769,7 @@ verify_state_integrity() {
               | (.backups // [] | if type == "array" then . elif type == "object" then [.] else [] end)[]
               | select(type == "object" and (.backup? != null))
             ]
-        ' "$ACFS_CHANGES_FILE" 2>/dev/null)
+        ' "$GTBI_CHANGES_FILE" 2>/dev/null)
         if [[ -n "$backup_infos" ]] && [[ "$backup_infos" != "[]" ]]; then
             local backup_info
             while IFS= read -r backup_info; do
@@ -796,9 +796,9 @@ repair_state_files() {
     local repaired=0
 
     # Repair changes file - keep only valid JSON lines with valid record checksums
-    if [[ -f "$ACFS_CHANGES_FILE" ]]; then
+    if [[ -f "$GTBI_CHANGES_FILE" ]]; then
         local temp_file
-        temp_file=$(mktemp -p "$(dirname "$ACFS_CHANGES_FILE")" ".tmp.XXXXXX" 2>/dev/null) || {
+        temp_file=$(mktemp -p "$(dirname "$GTBI_CHANGES_FILE")" ".tmp.XXXXXX" 2>/dev/null) || {
             log_error "Failed to create temp file for changes repair"
             return 1
         }
@@ -824,15 +824,15 @@ repair_state_files() {
                 log_warn "[REPAIR] Discarding invalid line: ${line:0:50}..."
                 ((++repaired))
             fi
-        done < "$ACFS_CHANGES_FILE"
+        done < "$GTBI_CHANGES_FILE"
 
         if [[ $repaired -gt 0 ]]; then
-            if ! mv "$temp_file" "$ACFS_CHANGES_FILE"; then
+            if ! mv "$temp_file" "$GTBI_CHANGES_FILE"; then
                 log_error "[REPAIR] Failed to replace changes journal with repaired copy"
                 autofix_remove_temp_file "$temp_file"
                 return 1
             fi
-            if ! fsync_file "$ACFS_CHANGES_FILE"; then
+            if ! fsync_file "$GTBI_CHANGES_FILE"; then
                 log_error "[REPAIR] Failed to sync repaired changes journal"
                 return 1
             fi
@@ -843,9 +843,9 @@ repair_state_files() {
     fi
 
     # Same for undos file
-    if [[ -f "$ACFS_UNDOS_FILE" ]]; then
+    if [[ -f "$GTBI_UNDOS_FILE" ]]; then
         local temp_file repaired_undos=0
-        temp_file=$(mktemp -p "$(dirname "$ACFS_UNDOS_FILE")" ".tmp.XXXXXX" 2>/dev/null) || {
+        temp_file=$(mktemp -p "$(dirname "$GTBI_UNDOS_FILE")" ".tmp.XXXXXX" 2>/dev/null) || {
             log_error "Failed to create temp file for undos repair"
             return 1
         }
@@ -861,15 +861,15 @@ repair_state_files() {
                 log_warn "[REPAIR] Discarding invalid undo line: ${line:0:50}..."
                 ((++repaired_undos))
             fi
-        done < "$ACFS_UNDOS_FILE"
+        done < "$GTBI_UNDOS_FILE"
 
         if [[ $repaired_undos -gt 0 ]]; then
-            if ! mv "$temp_file" "$ACFS_UNDOS_FILE"; then
+            if ! mv "$temp_file" "$GTBI_UNDOS_FILE"; then
                 log_error "[REPAIR] Failed to replace undo journal with repaired copy"
                 autofix_remove_temp_file "$temp_file"
                 return 1
             fi
-            if ! fsync_file "$ACFS_UNDOS_FILE"; then
+            if ! fsync_file "$GTBI_UNDOS_FILE"; then
                 log_error "[REPAIR] Failed to sync repaired undo journal"
                 return 1
             fi
@@ -888,16 +888,16 @@ update_integrity_file() {
     local undos_checksum=""
     local backup_count=0
 
-    if [[ -f "$ACFS_CHANGES_FILE" ]]; then
-        changes_checksum=$(sha256sum "$ACFS_CHANGES_FILE" | cut -d' ' -f1)
+    if [[ -f "$GTBI_CHANGES_FILE" ]]; then
+        changes_checksum=$(sha256sum "$GTBI_CHANGES_FILE" | cut -d' ' -f1)
     fi
 
-    if [[ -f "$ACFS_UNDOS_FILE" ]]; then
-        undos_checksum=$(sha256sum "$ACFS_UNDOS_FILE" | cut -d' ' -f1)
+    if [[ -f "$GTBI_UNDOS_FILE" ]]; then
+        undos_checksum=$(sha256sum "$GTBI_UNDOS_FILE" | cut -d' ' -f1)
     fi
 
-    if [[ -d "$ACFS_BACKUPS_DIR" ]]; then
-        backup_count=$(find "$ACFS_BACKUPS_DIR" -mindepth 1 -maxdepth 1 2>/dev/null | wc -l)
+    if [[ -d "$GTBI_BACKUPS_DIR" ]]; then
+        backup_count=$(find "$GTBI_BACKUPS_DIR" -mindepth 1 -maxdepth 1 2>/dev/null | wc -l)
     fi
 
     local integrity_record
@@ -913,7 +913,7 @@ update_integrity_file() {
             backup_file_count: $backups
         }')
 
-    write_atomic "$ACFS_INTEGRITY_FILE" "$integrity_record"
+    write_atomic "$GTBI_INTEGRITY_FILE" "$integrity_record"
 }
 
 # =============================================================================
@@ -922,12 +922,12 @@ update_integrity_file() {
 
 # Initialize state directory
 init_autofix_state() {
-    ACFS_AUTOFIX_INITIALIZED=false
+    GTBI_AUTOFIX_INITIALIZED=false
     autofix_refresh_state_paths
-    mkdir -p "$ACFS_STATE_DIR" || { log_error "Failed to create state directory: $ACFS_STATE_DIR"; return 1; }
-    mkdir -p "$ACFS_BACKUPS_DIR" || { log_error "Failed to create backups directory: $ACFS_BACKUPS_DIR"; return 1; }
-    touch "$ACFS_CHANGES_FILE" || { log_error "Failed to create changes file: $ACFS_CHANGES_FILE"; return 1; }
-    touch "$ACFS_UNDOS_FILE" || { log_error "Failed to create undos file: $ACFS_UNDOS_FILE"; return 1; }
+    mkdir -p "$GTBI_STATE_DIR" || { log_error "Failed to create state directory: $GTBI_STATE_DIR"; return 1; }
+    mkdir -p "$GTBI_BACKUPS_DIR" || { log_error "Failed to create backups directory: $GTBI_BACKUPS_DIR"; return 1; }
+    touch "$GTBI_CHANGES_FILE" || { log_error "Failed to create changes file: $GTBI_CHANGES_FILE"; return 1; }
+    touch "$GTBI_UNDOS_FILE" || { log_error "Failed to create undos file: $GTBI_UNDOS_FILE"; return 1; }
 
     # Verify integrity on startup
     if ! verify_state_integrity; then
@@ -942,7 +942,7 @@ init_autofix_state() {
         fi
     fi
 
-    ACFS_AUTOFIX_INITIALIZED=true
+    GTBI_AUTOFIX_INITIALIZED=true
 }
 
 # =============================================================================
@@ -950,17 +950,17 @@ init_autofix_state() {
 # =============================================================================
 
 autofix_release_session_lock() {
-    local lock_fd="${ACFS_AUTOFIX_LOCK_FD:-}"
+    local lock_fd="${GTBI_AUTOFIX_LOCK_FD:-}"
 
     if [[ -n "$lock_fd" ]]; then
         flock -u "$lock_fd" 2>/dev/null || true
         eval "exec ${lock_fd}>&-" 2>/dev/null || true
-        ACFS_AUTOFIX_LOCK_FD=""
+        GTBI_AUTOFIX_LOCK_FD=""
     fi
 }
 
 autofix_session_active() {
-    [[ -n "${ACFS_AUTOFIX_LOCK_FD:-}" && -n "${ACFS_SESSION_ID:-}" ]]
+    [[ -n "${GTBI_AUTOFIX_LOCK_FD:-}" && -n "${GTBI_SESSION_ID:-}" ]]
 }
 
 autofix_ensure_session() {
@@ -995,60 +995,60 @@ autofix_finalize_managed_session() {
 # Start a new auto-fix session
 start_autofix_session() {
     autofix_refresh_state_paths
-    if [[ "$ACFS_AUTOFIX_INITIALIZED" != "true" ]]; then
+    if [[ "$GTBI_AUTOFIX_INITIALIZED" != "true" ]]; then
         if ! init_autofix_state; then
             log_error "Failed to initialize autofix state"
             return 1
         fi
     fi
 
-    ACFS_SESSION_ID="sess_$(date +%Y%m%d_%H%M%S)_$$"
-    log_info "[AUTO-FIX] Starting session: $ACFS_SESSION_ID"
+    GTBI_SESSION_ID="sess_$(date +%Y%m%d_%H%M%S)_$$"
+    log_info "[AUTO-FIX] Starting session: $GTBI_SESSION_ID"
 
     # Acquire lock (prevent concurrent modifications)
     # NOTE: On bash 5.3+, `exec N>file` under set -e exits the script
     # before `if` can catch the failure. We test in a subshell first,
     # then only exec in the main shell if the subshell succeeded.
-    ACFS_AUTOFIX_LOCK_FD=""
-    if (exec 200>"$ACFS_LOCK_FILE") 2>/dev/null; then
-        exec 200>"$ACFS_LOCK_FILE"
-        ACFS_AUTOFIX_LOCK_FD=200
-    elif (exec 199>"$ACFS_LOCK_FILE") 2>/dev/null; then
-        exec 199>"$ACFS_LOCK_FILE"
-        ACFS_AUTOFIX_LOCK_FD=199
+    GTBI_AUTOFIX_LOCK_FD=""
+    if (exec 200>"$GTBI_LOCK_FILE") 2>/dev/null; then
+        exec 200>"$GTBI_LOCK_FILE"
+        GTBI_AUTOFIX_LOCK_FD=200
+    elif (exec 199>"$GTBI_LOCK_FILE") 2>/dev/null; then
+        exec 199>"$GTBI_LOCK_FILE"
+        GTBI_AUTOFIX_LOCK_FD=199
     fi
-    if [[ -n "$ACFS_AUTOFIX_LOCK_FD" ]]; then
-        if ! flock -n "$ACFS_AUTOFIX_LOCK_FD"; then
-            log_error "Another ACFS process is running auto-fix operations"
+    if [[ -n "$GTBI_AUTOFIX_LOCK_FD" ]]; then
+        if ! flock -n "$GTBI_AUTOFIX_LOCK_FD"; then
+            log_error "Another GTBI process is running auto-fix operations"
             autofix_release_session_lock
-            ACFS_SESSION_ID=""
+            GTBI_SESSION_ID=""
             return 1
         fi
     else
         log_error "Could not acquire autofix lock; aborting to avoid concurrent state corruption"
-        ACFS_SESSION_ID=""
+        GTBI_SESSION_ID=""
         return 1
     fi
 
-    if autofix_path_exists "$ACFS_STATE_DIR/.session"; then
-        log_error "Detected unresolved autofix session marker: $ACFS_STATE_DIR/.session"
+    if autofix_path_exists "$GTBI_STATE_DIR/.session"; then
+        log_error "Detected unresolved autofix session marker: $GTBI_STATE_DIR/.session"
         log_error "Resolve the previous autofix session state before starting a new one"
         autofix_release_session_lock
-        ACFS_SESSION_ID=""
+        GTBI_SESSION_ID=""
         return 1
     fi
 
     # Write session start marker
-    if ! write_atomic "$ACFS_STATE_DIR/.session" "{\"id\": \"$ACFS_SESSION_ID\", \"start\": \"$(date -Iseconds)\", \"pid\": $$}"; then
+    if ! write_atomic "$GTBI_STATE_DIR/.session" "{\"id\": \"$GTBI_SESSION_ID\", \"start\": \"$(date -Iseconds)\", \"pid\": $$}"; then
         log_error "Failed to persist autofix session marker"
         autofix_release_session_lock
-        ACFS_SESSION_ID=""
+        GTBI_SESSION_ID=""
         return 1
     fi
 
     # Reset in-memory state
-    ACFS_CHANGE_RECORDS=()
-    ACFS_CHANGE_ORDER=()
+    GTBI_CHANGE_RECORDS=()
+    GTBI_CHANGE_ORDER=()
 
     return 0
 }
@@ -1057,7 +1057,7 @@ start_autofix_session() {
 end_autofix_session() {
     local finalize_failed=0
 
-    log_info "[AUTO-FIX] Ending session: $ACFS_SESSION_ID (${#ACFS_CHANGE_ORDER[@]} changes)"
+    log_info "[AUTO-FIX] Ending session: $GTBI_SESSION_ID (${#GTBI_CHANGE_ORDER[@]} changes)"
 
     # Update integrity file
     if ! update_integrity_file; then
@@ -1067,7 +1067,7 @@ end_autofix_session() {
 
     # Remove session marker only after durable finalization succeeds.
     if (( finalize_failed == 0 )); then
-        if ! rm -f "$ACFS_STATE_DIR/.session"; then
+        if ! rm -f "$GTBI_STATE_DIR/.session"; then
             log_error "Failed to remove autofix session marker"
             finalize_failed=1
         fi
@@ -1079,7 +1079,7 @@ end_autofix_session() {
         return 1
     fi
 
-    ACFS_SESSION_ID=""
+    GTBI_SESSION_ID=""
     return 0
 }
 
@@ -1149,11 +1149,11 @@ create_backup() {
     filename=$(basename "$original_path")
     path_type="$(autofix_detect_path_type "$original_path" 2>/dev/null || true)"
     path_fingerprint="$(autofix_path_fingerprint "$original_path" | cut -c1-12)"
-    backup_prefix="${filename}.${path_fingerprint}.${ACFS_SESSION_ID}"
-    backup_path="${ACFS_BACKUPS_DIR}/${backup_prefix}.${backup_index}.backup"
+    backup_prefix="${filename}.${path_fingerprint}.${GTBI_SESSION_ID}"
+    backup_path="${GTBI_BACKUPS_DIR}/${backup_prefix}.${backup_index}.backup"
     while autofix_path_exists "$backup_path"; do
         backup_index=$((backup_index + 1))
-        backup_path="${ACFS_BACKUPS_DIR}/${backup_prefix}.${backup_index}.backup"
+        backup_path="${GTBI_BACKUPS_DIR}/${backup_prefix}.${backup_index}.backup"
     done
 
     # Copy with metadata preservation
@@ -1311,7 +1311,7 @@ record_change() {
     fi
 
     # Ensure state is initialized
-    if [[ "$ACFS_AUTOFIX_INITIALIZED" != "true" ]]; then
+    if [[ "$GTBI_AUTOFIX_INITIALIZED" != "true" ]]; then
         init_autofix_state || return 1
     fi
     if ! autofix_session_active; then
@@ -1321,8 +1321,8 @@ record_change() {
 
     # Generate unique ID
     local seq_num=0
-    if [[ -f "$ACFS_CHANGES_FILE" ]]; then
-        seq_num=$(wc -l < "$ACFS_CHANGES_FILE" 2>/dev/null) || seq_num=0
+    if [[ -f "$GTBI_CHANGES_FILE" ]]; then
+        seq_num=$(wc -l < "$GTBI_CHANGES_FILE" 2>/dev/null) || seq_num=0
     fi
     local change_id
     change_id="chg_$(printf '%04d' $((seq_num + 1)))"
@@ -1342,7 +1342,7 @@ record_change() {
         --argjson files "$files_json" \
         --argjson backups "$backups_json" \
         --argjson deps "$depends_on" \
-        --arg sess "$ACFS_SESSION_ID" \
+        --arg sess "$GTBI_SESSION_ID" \
         --argjson reversible "$reversible" \
         '{
           id: $id,
@@ -1375,14 +1375,14 @@ record_change() {
     fi
 
     # Persist atomically with fsync before mutating in-memory session state
-    if ! append_atomic "$ACFS_CHANGES_FILE" "$record"; then
+    if ! append_atomic "$GTBI_CHANGES_FILE" "$record"; then
         log_error "Failed to persist change record: $description"
         return 1
     fi
 
     # Store in memory
-    ACFS_CHANGE_RECORDS["$change_id"]="$record"
-    ACFS_CHANGE_ORDER+=("$change_id")
+    GTBI_CHANGE_RECORDS["$change_id"]="$record"
+    GTBI_CHANGE_ORDER+=("$change_id")
 
     log_info "[AUTO-FIX] [$change_id] $description"
 
@@ -1417,7 +1417,7 @@ autofix_append_failed_undo_record() {
         return 1
     fi
 
-    append_atomic "$ACFS_UNDOS_FILE" "$failed_record"
+    append_atomic "$GTBI_UNDOS_FILE" "$failed_record"
 }
 
 # Undo a specific change
@@ -1426,23 +1426,23 @@ undo_change() {
     local force="${2:-false}"
     local skip_deps="${3:-false}"
 
-    if [[ -z "${ACFS_AUTOFIX_LOCK_FD:-}" ]]; then
+    if [[ -z "${GTBI_AUTOFIX_LOCK_FD:-}" ]]; then
         log_error "Undo requested without active auto-fix lock"
         return 1
     fi
 
     # Load from file if not in memory
-    if [[ -z "${ACFS_CHANGE_RECORDS["$change_id"]:-}" ]]; then
+    if [[ -z "${GTBI_CHANGE_RECORDS["$change_id"]:-}" ]]; then
         local record
-        record=$(grep -F "\"id\":\"$change_id\"" "$ACFS_CHANGES_FILE" | tail -1)
+        record=$(grep -F "\"id\":\"$change_id\"" "$GTBI_CHANGES_FILE" | tail -1)
         if [[ -z "$record" ]]; then
             log_error "Unknown change ID: $change_id"
             return 1
         fi
-        ACFS_CHANGE_RECORDS["$change_id"]="$record"
+        GTBI_CHANGE_RECORDS["$change_id"]="$record"
     fi
 
-    local record="${ACFS_CHANGE_RECORDS["$change_id"]}"
+    local record="${GTBI_CHANGE_RECORDS["$change_id"]}"
 
     # Verify record integrity
     local stored_checksum
@@ -1480,7 +1480,7 @@ undo_change() {
     if [[ "$skip_deps" != "true" ]]; then
         local dependents
         # Use more precise grep to avoid partial matches (e.g. chg_0001 matching chg_00010)
-        dependents=$(grep -E "\"depends_on\":\[([^]]*)?\"$change_id\"" "$ACFS_CHANGES_FILE" 2>/dev/null | jq -r '.id' 2>/dev/null || true)
+        dependents=$(grep -E "\"depends_on\":\[([^]]*)?\"$change_id\"" "$GTBI_CHANGES_FILE" 2>/dev/null | jq -r '.id' 2>/dev/null || true)
         for dep in $dependents; do
             if ! is_change_undone "$dep"; then
                 log_error "Cannot undo $change_id: $dep depends on it and hasn't been undone"
@@ -1536,7 +1536,7 @@ undo_change() {
         return 1
     fi
 
-    if ! append_atomic "$ACFS_UNDOS_FILE" "$pending_record"; then
+    if ! append_atomic "$GTBI_UNDOS_FILE" "$pending_record"; then
         log_error "Failed to persist pending undo record for $change_id"
         return 1
     fi
@@ -1598,12 +1598,12 @@ undo_change() {
         return 1
     fi
 
-    if ! append_atomic "$ACFS_UNDOS_FILE" "$undo_record"; then
+    if ! append_atomic "$GTBI_UNDOS_FILE" "$undo_record"; then
         log_error "Undo completed but failed to persist completion for $change_id"
         log_error "Undo state remains pending; inspect before retrying this change"
         return 1
     fi
-    ACFS_CHANGE_RECORDS["$change_id"]="$updated_record"
+    GTBI_CHANGE_RECORDS["$change_id"]="$updated_record"
 
     log_info "[UNDO] Successfully reverted: $change_id"
     return 0
@@ -1617,7 +1617,7 @@ rollback_all_on_failure() {
         return 0
     fi
 
-    if [[ ${#ACFS_CHANGE_ORDER[@]} -eq 0 ]]; then
+    if [[ ${#GTBI_CHANGE_ORDER[@]} -eq 0 ]]; then
         return 0
     fi
 
@@ -1630,9 +1630,9 @@ rollback_all_on_failure() {
     local rollback_failed=0
 
     # Undo in reverse order
-    for ((i=${#ACFS_CHANGE_ORDER[@]}-1; i>=0; i--)); do
-        local change_id="${ACFS_CHANGE_ORDER[$i]}"
-        local record="${ACFS_CHANGE_RECORDS["$change_id"]}"
+    for ((i=${#GTBI_CHANGE_ORDER[@]}-1; i>=0; i--)); do
+        local change_id="${GTBI_CHANGE_ORDER[$i]}"
+        local record="${GTBI_CHANGE_RECORDS["$change_id"]}"
         local desc
         desc=$(echo "$record" | jq -r '.description')
 
@@ -1649,7 +1649,7 @@ rollback_all_on_failure() {
     else
         log_warn "Rollback completed with $rollback_failed failures."
         log_warn "  Some changes may not have been reverted."
-        log_warn "  Check: $ACFS_CHANGES_FILE"
+        log_warn "  Check: $GTBI_CHANGES_FILE"
     fi
 }
 
@@ -1659,7 +1659,7 @@ rollback_all_on_failure() {
 
 # Print summary of all changes made
 print_undo_summary() {
-    local change_count=${#ACFS_CHANGE_ORDER[@]}
+    local change_count=${#GTBI_CHANGE_ORDER[@]}
     local undo_statuses_json="{}"
 
     if [[ $change_count -eq 0 ]]; then
@@ -1670,9 +1670,9 @@ print_undo_summary() {
 
     echo ""
     echo "========================================================================"
-    echo "  ACFS Auto-Fix Summary"
+    echo "  GTBI Auto-Fix Summary"
     echo "========================================================================"
-    echo "  Session: $ACFS_SESSION_ID"
+    echo "  Session: $GTBI_SESSION_ID"
     echo "  Changes: $change_count"
     echo "========================================================================"
     echo ""
@@ -1680,8 +1680,8 @@ print_undo_summary() {
     printf "%-10s %-12s %-10s %-50s\n" "ID" "Category" "Status" "Description"
     printf "%-10s %-12s %-10s %-50s\n" "----------" "------------" "----------" "--------------------------------------------------"
 
-    for change_id in "${ACFS_CHANGE_ORDER[@]}"; do
-        local record="${ACFS_CHANGE_RECORDS["$change_id"]}"
+    for change_id in "${GTBI_CHANGE_ORDER[@]}"; do
+        local record="${GTBI_CHANGE_RECORDS["$change_id"]}"
         local desc
         desc=$(echo "$record" | jq -r '.description' | cut -c1-50)
         local cat
@@ -1702,24 +1702,24 @@ print_undo_summary() {
     echo ""
     echo "------------------------------------------------------------------------"
     echo " Undo Commands:"
-    echo "   Single change:  acfs undo <change_id>"
-    echo "   All changes:    acfs undo --all"
-    echo "   List changes:   acfs undo --list"
-    echo "   Dry run:        acfs undo --dry-run <change_id>"
-    echo "   By category:    acfs undo --category nvm"
-    echo "   Verify state:   acfs undo --verify"
+    echo "   Single change:  gtbi undo <change_id>"
+    echo "   All changes:    gtbi undo --all"
+    echo "   List changes:   gtbi undo --list"
+    echo "   Dry run:        gtbi undo --dry-run <change_id>"
+    echo "   By category:    gtbi undo --category nvm"
+    echo "   Verify state:   gtbi undo --verify"
     echo "------------------------------------------------------------------------"
     echo ""
-    echo "State directory: $ACFS_STATE_DIR"
+    echo "State directory: $GTBI_STATE_DIR"
     echo ""
 }
 
 # =============================================================================
-# ACFS Undo Command Implementation
+# GTBI Undo Command Implementation
 # =============================================================================
 
-# Implementation of "acfs undo" subcommand
-acfs_undo_command() {
+# Implementation of "gtbi undo" subcommand
+gtbi_undo_command() {
     local dry_run=false
     local force=false
     local all=false
@@ -1749,7 +1749,7 @@ acfs_undo_command() {
     done
 
     # Initialize if needed
-    if [[ "$ACFS_AUTOFIX_INITIALIZED" != "true" ]]; then
+    if [[ "$GTBI_AUTOFIX_INITIALIZED" != "true" ]]; then
         init_autofix_state
     fi
 
@@ -1767,7 +1767,7 @@ acfs_undo_command() {
 
     # List mode
     if [[ "$list_only" == "true" ]]; then
-        if [[ ! -f "$ACFS_CHANGES_FILE" ]] || [[ ! -s "$ACFS_CHANGES_FILE" ]]; then
+        if [[ ! -f "$GTBI_CHANGES_FILE" ]] || [[ ! -s "$GTBI_CHANGES_FILE" ]]; then
             echo "No recorded changes found."
             return 0
         fi
@@ -1793,7 +1793,7 @@ acfs_undo_command() {
               ),
               .description
             ] | @tsv
-        ' "$ACFS_CHANGES_FILE")"
+        ' "$GTBI_CHANGES_FILE")"
         if command -v column >/dev/null 2>&1; then
             printf '%s\n' "$list_output" | column -t -s $'\t'
         else
@@ -1808,9 +1808,9 @@ acfs_undo_command() {
     undone_ids_json="$(autofix_undone_ids_json)"
     undo_statuses_json="$(autofix_undo_status_map_json)"
     if [[ "$all" == "true" ]]; then
-        mapfile -t change_ids < <(jq -r --argjson undone "$undone_ids_json" --argjson undo_statuses "$undo_statuses_json" 'select((.id // "") as $id | (($undone | index($id)) | not) and (($undo_statuses[$id] // "") != "pending")) | .id' "$ACFS_CHANGES_FILE" | sort -r)
+        mapfile -t change_ids < <(jq -r --argjson undone "$undone_ids_json" --argjson undo_statuses "$undo_statuses_json" 'select((.id // "") as $id | (($undone | index($id)) | not) and (($undo_statuses[$id] // "") != "pending")) | .id' "$GTBI_CHANGES_FILE" | sort -r)
     elif [[ -n "$category" ]]; then
-        mapfile -t change_ids < <(jq -r --argjson undone "$undone_ids_json" --argjson undo_statuses "$undo_statuses_json" --arg category "$category" 'select((.id // "") as $id | (($undone | index($id)) | not) and (($undo_statuses[$id] // "") != "pending")) | select(.category == $category) | .id' "$ACFS_CHANGES_FILE" | sort -r)
+        mapfile -t change_ids < <(jq -r --argjson undone "$undone_ids_json" --argjson undo_statuses "$undo_statuses_json" --arg category "$category" 'select((.id // "") as $id | (($undone | index($id)) | not) and (($undo_statuses[$id] // "") != "pending")) | select(.category == $category) | .id' "$GTBI_CHANGES_FILE" | sort -r)
     fi
 
     if [[ ${#change_ids[@]} -eq 0 ]]; then
@@ -1823,7 +1823,7 @@ acfs_undo_command() {
         echo "Dry run: Would undo the following changes:"
         for change_id in "${change_ids[@]}"; do
             local record
-            record=$(grep -F "\"id\":\"$change_id\"" "$ACFS_CHANGES_FILE" | tail -1)
+            record=$(grep -F "\"id\":\"$change_id\"" "$GTBI_CHANGES_FILE" | tail -1)
             local desc
             desc=$(echo "$record" | jq -r '.description')
             local undo
@@ -1891,7 +1891,7 @@ cleanup_old_backups() {
         fi
         rm -rf "$backup_entry"
         ((deleted++)) || true
-    done < <(find "$ACFS_BACKUPS_DIR" -mindepth 1 -maxdepth 1 -mtime +"$days" -print0 2>/dev/null)
+    done < <(find "$GTBI_BACKUPS_DIR" -mindepth 1 -maxdepth 1 -mtime +"$days" -print0 2>/dev/null)
 
     log_info "Deleted $deleted old backup entries"
 
@@ -1903,11 +1903,11 @@ cleanup_old_backups() {
 # Exported Functions for Use by Other Scripts
 # =============================================================================
 
-# These are the main entry points for other ACFS scripts:
+# These are the main entry points for other GTBI scripts:
 # - start_autofix_session: Call at start of installation
 # - end_autofix_session: Call at end of installation
 # - create_backup: Create a backup before modifying a file
 # - record_change: Record a change with undo information
 # - rollback_all_on_failure: Call in EXIT trap to rollback on failure
 # - print_undo_summary: Display summary of changes at end
-# - acfs_undo_command: Handle "acfs undo" subcommand
+# - gtbi_undo_command: Handle "gtbi undo" subcommand

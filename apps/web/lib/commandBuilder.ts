@@ -17,10 +17,10 @@ import { manifestProvenance, manifestSelectionProfiles } from "./generated/manif
 import { isValidIP, normalizeGitRef, normalizeSSHUsername } from "./userPreferences";
 
 const INSTALL_SCRIPT_BASE_URL =
-  "https://raw.githubusercontent.com/Dicklesworthstone/agentic_coding_flywheel_setup";
+  "https://raw.githubusercontent.com/jonbackhaus/gtbi";
 const DEFAULT_INSTALL_REF = "main";
-const SSH_KEY_PATH_UNIX = "~/.ssh/acfs_ed25519";
-const SSH_KEY_PATH_WINDOWS = "$HOME\\.ssh\\acfs_ed25519";
+const SSH_KEY_PATH_UNIX = "~/.ssh/gtbi_ed25519";
+const SSH_KEY_PATH_WINDOWS = "$HOME\\.ssh\\gtbi_ed25519";
 
 export interface CommandBuilderInputs {
   ip: string;
@@ -40,7 +40,7 @@ export interface GeneratedCommand {
   runLocation: "local" | "vps";
 }
 
-export const HANDOFF_RUNBOOK_SCHEMA = "acfs.handoff-runbook.v1";
+export const HANDOFF_RUNBOOK_SCHEMA = "gtbi.handoff-runbook.v1";
 
 export interface HandoffRunbookCommand {
   id: string;
@@ -52,7 +52,7 @@ export interface HandoffRunbookCommand {
 export interface HandoffRunbook {
   schema: typeof HANDOFF_RUNBOOK_SCHEMA;
   schemaVersion: 1;
-  generatedBy: "acfs-web-wizard";
+  generatedBy: "gtbi-web-wizard";
   privacy: {
     rawTargetHostIncluded: false;
     exactInstallCommandIncluded: true;
@@ -91,7 +91,7 @@ export interface HandoffRunbook {
   };
 }
 
-export const TEAM_PROFILE_SCHEMA = "acfs.team-profile.v1";
+export const TEAM_PROFILE_SCHEMA = "gtbi.team-profile.v1";
 export const TEAM_PROFILE_SCHEMA_VERSION = 1;
 
 export type TeamProfileRefType = "branch" | "tag" | "commit";
@@ -110,7 +110,7 @@ export interface TeamProfileServiceAccount {
   id: string;
   required: boolean;
   authMethod: "browser_login" | "api_token" | "cli_login";
-  secretSlot: `secret://acfs/team/${string}`;
+  secretSlot: `secret://gtbi/team/${string}`;
 }
 
 export interface TeamProfileModulePlan {
@@ -131,13 +131,13 @@ export interface TeamProfile {
   displayName: string;
   description: string;
   generatedAt: string;
-  generatedBy: "acfs-web-wizard";
+  generatedBy: "gtbi-web-wizard";
   provenance: {
     author: null;
     source: {
-      acfsVersion: string;
-      acfsRef: string;
-      acfsCommit: null;
+      gtbiVersion: string;
+      gtbiRef: string;
+      gtbiCommit: null;
       manifestSha256: string;
       checksumsYamlSha256: string;
     };
@@ -148,7 +148,7 @@ export interface TeamProfile {
     targetUbuntuVersions: string[];
     architectures: TeamProfileArchitecture[];
     installerRefPolicy: "prefer_pinned_ref";
-    checksumsRefPolicy: "current_acfs_default";
+    checksumsRefPolicy: "current_gtbi_default";
   };
   providerDefaults: {
     provider: string;
@@ -237,7 +237,7 @@ export interface TeamProfileImportCurrentState {
 }
 
 export interface TeamProfileImportDiff {
-  schema: "acfs.team-profile-import-diff.v1";
+  schema: "gtbi.team-profile-import-diff.v1";
   schemaVersion: 1;
   dryRun: true;
   ok: boolean;
@@ -288,7 +288,7 @@ const TEAM_PROFILE_FORBIDDEN_FIELDS = [
 const TEAM_PROFILE_SLOT_SCHEME = ["sec", "ret"].join("");
 
 function teamProfileSlot(id: string): TeamProfileServiceAccount["secretSlot"] {
-  return `${TEAM_PROFILE_SLOT_SCHEME}://acfs/team/${id}` as TeamProfileServiceAccount["secretSlot"];
+  return `${TEAM_PROFILE_SLOT_SCHEME}://gtbi/team/${id}` as TeamProfileServiceAccount["secretSlot"];
 }
 
 const TEAM_PROFILE_SERVICE_ACCOUNTS: TeamProfileServiceAccount[] = [
@@ -325,7 +325,7 @@ const TEAM_PROFILE_REQUIRED_PATHS = [
   "displayName",
   "generatedAt",
   "generatedBy",
-  "provenance.source.acfsRef",
+  "provenance.source.gtbiRef",
   "provenance.source.manifestSha256",
   "provenance.source.checksumsYamlSha256",
   "providerDefaults.provider",
@@ -396,14 +396,14 @@ export function buildRootKeyRepairCommand(username: string, host: string): strin
   const authorizedKeys = `${targetHome}/.ssh/authorized_keys`;
 
   return [
-    `cat ~/.ssh/acfs_ed25519.pub | ssh ${rootTarget}`,
-    `"read -r acfs_pubkey`,
+    `cat ~/.ssh/gtbi_ed25519.pub | ssh ${rootTarget}`,
+    `"read -r gtbi_pubkey`,
     `&& test ! -L ${targetHome}/.ssh`,
     `&& install -d -m 700 -o ${safeUsername} -g ${safeUsername} ${targetHome}/.ssh`,
     `&& test ! -L ${authorizedKeys}`,
     `&& touch ${authorizedKeys}`,
     `&& { [ ! -s ${authorizedKeys} ] || tail -c 1 ${authorizedKeys} | od -An -t u1 | grep -qw 10 || printf '\\n' >> ${authorizedKeys}; }`,
-    `&& if ! grep -qxF \\"\\$acfs_pubkey\\" ${authorizedKeys}; then printf '%s\\n' \\"\\$acfs_pubkey\\" >> ${authorizedKeys}; fi`,
+    `&& if ! grep -qxF \\"\\$gtbi_pubkey\\" ${authorizedKeys}; then printf '%s\\n' \\"\\$gtbi_pubkey\\" >> ${authorizedKeys}; fi`,
     `&& chown ${safeUsername}:${safeUsername} ${authorizedKeys}`,
     `&& chmod 600 ${authorizedKeys}"`,
   ].join(" ");
@@ -416,8 +416,8 @@ export function buildUserKeyRepairCommand(username: string, host: string): strin
   const authorizedKeys = `${sshDir}/authorized_keys`;
 
   return [
-    `cat ~/.ssh/acfs_ed25519.pub | ssh ${userTarget}`,
-    `"read -r acfs_pubkey`,
+    `cat ~/.ssh/gtbi_ed25519.pub | ssh ${userTarget}`,
+    `"read -r gtbi_pubkey`,
     `&& test ! -L ${sshDir}`,
     `&& install -d -m 700 ${sshDir}`,
     `&& chmod 700 ${sshDir}`,
@@ -425,7 +425,7 @@ export function buildUserKeyRepairCommand(username: string, host: string): strin
     `&& touch ${authorizedKeys}`,
     `&& chmod 600 ${authorizedKeys}`,
     `&& { [ ! -s ${authorizedKeys} ] || tail -c 1 ${authorizedKeys} | od -An -t u1 | grep -qw 10 || printf '\\n' >> ${authorizedKeys}; }`,
-    `&& if ! grep -qxF \\"\\$acfs_pubkey\\" ${authorizedKeys}; then printf '%s\\n' \\"\\$acfs_pubkey\\" >> ${authorizedKeys}; fi"`,
+    `&& if ! grep -qxF \\"\\$gtbi_pubkey\\" ${authorizedKeys}; then printf '%s\\n' \\"\\$gtbi_pubkey\\" >> ${authorizedKeys}; fi"`,
   ].join(" ");
 }
 
@@ -485,7 +485,7 @@ export function buildCommands(inputs: CommandBuilderInputs): GeneratedCommand[] 
   commands.push({
     id: "installer",
     label: "Run installer",
-    description: `Install ACFS in ${mode} mode${safeRef ? ` pinned to ${safeRef}` : ""}`,
+    description: `Install GTBI in ${mode} mode${safeRef ? ` pinned to ${safeRef}` : ""}`,
     command: buildInstallCommand(mode, ref, safeUsername, inputs.moduleSelection),
     runLocation: "vps",
   });
@@ -505,7 +505,7 @@ export function buildCommands(inputs: CommandBuilderInputs): GeneratedCommand[] 
     id: "doctor",
     label: "Health check",
     description: "Verify all tools installed correctly",
-    command: "acfs doctor",
+    command: "gtbi doctor",
     runLocation: "vps",
   });
 
@@ -608,9 +608,9 @@ function profileIdFromInputs(
   explicitProfileId?: string,
 ): string {
   if (explicitProfileId) {
-    return safeProfileSlug(explicitProfileId, "acfs-team-profile");
+    return safeProfileSlug(explicitProfileId, "gtbi-team-profile");
   }
-  return safeProfileSlug(`${provider}-${mode}-${sourceRef}-acfs`, "acfs-team-profile");
+  return safeProfileSlug(`${provider}-${mode}-${sourceRef}-gtbi`, "gtbi-team-profile");
 }
 
 function normalizeTeamModuleSelection(input: ModuleSelectionInput | undefined): Required<Pick<ModuleSelectionInput, "onlyModules" | "onlyPhases" | "skipModules">> & {
@@ -674,31 +674,31 @@ export function buildTeamProfile(inputs: TeamProfileInputs): TeamProfile {
     schema: TEAM_PROFILE_SCHEMA,
     schemaVersion: TEAM_PROFILE_SCHEMA_VERSION,
     profileId,
-    displayName: safeProfileText(inputs.displayName, "ACFS Team Profile"),
+    displayName: safeProfileText(inputs.displayName, "GTBI Team Profile"),
     description: safeProfileText(
       inputs.description,
-      "Redacted ACFS wizard defaults for repeatable team installs.",
+      "Redacted GTBI wizard defaults for repeatable team installs.",
       160,
     ),
     generatedAt: inputs.generatedAt ?? new Date().toISOString(),
-    generatedBy: "acfs-web-wizard",
+    generatedBy: "gtbi-web-wizard",
     provenance: {
       author: null,
       source: {
-        acfsVersion: manifestProvenance.acfsVersion,
-        acfsRef: sourceRef,
-        acfsCommit: null,
+        gtbiVersion: manifestProvenance.gtbiVersion,
+        gtbiRef: sourceRef,
+        gtbiCommit: null,
         manifestSha256: manifestProvenance.manifestSha256,
         checksumsYamlSha256: manifestProvenance.checksumsYamlSha256,
       },
     },
     compatibility: {
-      minAcfsVersion: manifestProvenance.acfsVersion,
+      minAcfsVersion: manifestProvenance.gtbiVersion,
       schemaVersions: [TEAM_PROFILE_SCHEMA_VERSION],
       targetUbuntuVersions: [ubuntuVersion],
       architectures: ["x86_64", "aarch64"],
       installerRefPolicy: "prefer_pinned_ref",
-      checksumsRefPolicy: "current_acfs_default",
+      checksumsRefPolicy: "current_gtbi_default",
     },
     providerDefaults: {
       provider,
@@ -775,7 +775,7 @@ export function formatTeamProfileReviewMarkdown(profile: TeamProfile): string {
     : profile.install.modulePlan.errors.map((error) => `- ${error}`).join("\n");
 
   return [
-    "# ACFS Team Profile Review",
+    "# GTBI Team Profile Review",
     "",
     `Schema: \`${profile.schema}\``,
     `Profile: ${profile.displayName} (\`${profile.profileId}\`)`,
@@ -911,7 +911,7 @@ function isTeamProfileArchitecture(value: unknown): value is TeamProfileArchitec
 }
 
 function isTeamSecretSlot(value: unknown): value is TeamProfileServiceAccount["secretSlot"] {
-  return typeof value === "string" && /^secret:\/\/acfs\/team\/[a-z0-9._-]+$/.test(value);
+  return typeof value === "string" && /^secret:\/\/gtbi\/team\/[a-z0-9._-]+$/.test(value);
 }
 
 function importedModuleSelection(profile: TeamProfile): ModuleSelectionInput {
@@ -1031,7 +1031,7 @@ function validateTeamProfileForImport(
     findings.push(importFinding(
       "team_profile_manifest_mismatch",
       "provenance.source.manifestSha256",
-      "Profile was generated from a different acfs.manifest.yaml.",
+      "Profile was generated from a different gtbi.manifest.yaml.",
     ));
   }
   if (provenance.checksumsYamlSha256 && provenance.checksumsYamlSha256 !== manifestProvenance.checksumsYamlSha256) {
@@ -1069,7 +1069,7 @@ function validateTeamProfileForImport(
     findings.push(importFinding(
       "team_profile_schema_unsupported",
       "install.ref.value",
-      "install.ref.value must be a valid ACFS git ref.",
+      "install.ref.value must be a valid GTBI git ref.",
     ));
   }
   if (ref.pinOnExport !== true) {
@@ -1156,7 +1156,7 @@ function validateTeamProfileForImport(
         findings.push(importFinding(
           "team_profile_secret_material_refused",
           `serviceAccounts.${index}.secretSlot`,
-          "Secret slots must be secret://acfs/team/<slot-id> placeholders.",
+          "Secret slots must be secret://gtbi/team/<slot-id> placeholders.",
         ));
       }
     });
@@ -1197,7 +1197,7 @@ export function buildTeamProfileImportDiff(
 
   if (!profile) {
     return {
-      schema: "acfs.team-profile-import-diff.v1",
+      schema: "gtbi.team-profile-import-diff.v1",
       schemaVersion: 1,
       dryRun: true,
       ok: false,
@@ -1245,7 +1245,7 @@ export function buildTeamProfileImportDiff(
     .sort();
 
   return {
-    schema: "acfs.team-profile-import-diff.v1",
+    schema: "gtbi.team-profile-import-diff.v1",
     schemaVersion: 1,
     dryRun: true,
     ok: findings.length === 0 && modulePlan.ok,
@@ -1292,7 +1292,7 @@ export function formatTeamProfileImportDiffMarkdown(diff: TeamProfileImportDiff)
       : "- none";
 
   return [
-    "# ACFS Team Profile Import Diff",
+    "# GTBI Team Profile Import Diff",
     "",
     `Dry run: ${diff.dryRun ? "yes" : "no"}`,
     `Status: ${diff.ok ? "ready" : "blocked"}`,
@@ -1362,7 +1362,7 @@ export function buildHandoffRunbook(inputs: CommandBuilderInputs): HandoffRunboo
   return {
     schema: HANDOFF_RUNBOOK_SCHEMA,
     schemaVersion: 1,
-    generatedBy: "acfs-web-wizard",
+    generatedBy: "gtbi-web-wizard",
     privacy: {
       rawTargetHostIncluded: false,
       exactInstallCommandIncluded: true,
@@ -1385,7 +1385,7 @@ export function buildHandoffRunbook(inputs: CommandBuilderInputs): HandoffRunboo
       value: redactedHost,
       assumptions: [
         "Run the installer from a root SSH session on the VPS unless an existing installer log explicitly tells you to resume as the target user.",
-        "ACFS creates or updates the target Linux user during installation.",
+        "GTBI creates or updates the target Linux user during installation.",
         "The host address is intentionally redacted from this artifact; keep it in your password manager or VPS provider console.",
       ],
     },
@@ -1405,13 +1405,13 @@ export function buildHandoffRunbook(inputs: CommandBuilderInputs): HandoffRunboo
     recoveryCommands: [
       {
         id: "repair-user-ssh-key",
-        label: "Copy the ACFS public key into the configured user",
+        label: "Copy the GTBI public key into the configured user",
         command: userKeyRepairCommand,
         runLocation: "local",
       },
       {
         id: "repair-user-ssh-key-through-root",
-        label: "Copy the ACFS public key through the root fallback",
+        label: "Copy the GTBI public key through the root fallback",
         command: rootKeyRepairCommand,
         runLocation: "local",
       },
@@ -1435,20 +1435,20 @@ export function buildHandoffRunbook(inputs: CommandBuilderInputs): HandoffRunboo
       },
       {
         id: "doctor",
-        label: "Run the ACFS health check",
-        command: "acfs doctor",
+        label: "Run the GTBI health check",
+        command: "gtbi doctor",
         runLocation: "vps",
       },
       {
         id: "support-bundle",
         label: "Create a redacted support bundle",
-        command: "acfs support-bundle",
+        command: "gtbi support-bundle",
         runLocation: "vps",
       },
     ],
     support: {
-      bundleCommand: "acfs support-bundle",
-      bundlePathPattern: "~/.acfs/support/<timestamp>/",
+      bundleCommand: "gtbi support-bundle",
+      bundlePathPattern: "~/.gtbi/support/<timestamp>/",
       reviewArtifacts: ["support-report.md", "manifest.json"],
     },
   };
@@ -1472,7 +1472,7 @@ export function formatHandoffRunbookMarkdown(runbook: HandoffRunbook): string {
     .join("\n\n");
 
   return [
-    "# ACFS Wizard Handoff Runbook",
+    "# GTBI Wizard Handoff Runbook",
     "",
     `Schema: \`${runbook.schema}\``,
     "",

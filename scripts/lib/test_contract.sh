@@ -34,8 +34,8 @@ test_fail() {
 # Reset environment for each test
 reset_env() {
     unset TARGET_USER TARGET_HOME MODE
-    unset SCRIPT_DIR ACFS_BOOTSTRAP_DIR ACFS_LIB_DIR
-    unset ACFS_GENERATED_DIR ACFS_ASSETS_DIR ACFS_CHECKSUMS_YAML ACFS_MANIFEST_YAML
+    unset SCRIPT_DIR GTBI_BOOTSTRAP_DIR GTBI_LIB_DIR
+    unset GTBI_GENERATED_DIR GTBI_ASSETS_DIR GTBI_CHECKSUMS_YAML GTBI_MANIFEST_YAML
 }
 
 # Define stub functions for contract requirements
@@ -45,12 +45,12 @@ define_required_functions() {
     run_as_target_shell() { :; }
     run_as_root_shell() { :; }
     run_as_current_shell() { :; }
-    _acfs_is_interactive() { return 1; }
-    export -f log_detail run_as_target run_as_target_shell run_as_root_shell run_as_current_shell _acfs_is_interactive
+    _gtbi_is_interactive() { return 1; }
+    export -f log_detail run_as_target run_as_target_shell run_as_root_shell run_as_current_shell _gtbi_is_interactive
 }
 
 # Define stub functions WITHOUT security.sh helpers.
-# Contract should not require _acfs_is_interactive (security is opt-in via acfs_security_init).
+# Contract should not require _gtbi_is_interactive (security is opt-in via gtbi_security_init).
 define_required_functions_no_security() {
     log_detail() { :; }
     run_as_target() { :; }
@@ -78,7 +78,7 @@ test_missing_target_user() {
     MODE="normal"
     SCRIPT_DIR="/some/path"
 
-    if ! acfs_require_contract "test" 2>/dev/null; then
+    if ! gtbi_require_contract "test" 2>/dev/null; then
         test_pass "$name"
     else
         test_fail "$name" "Should fail when TARGET_USER is missing"
@@ -94,7 +94,7 @@ test_missing_target_home() {
     MODE="normal"
     SCRIPT_DIR="/some/path"
 
-    if ! acfs_require_contract "test" 2>/dev/null; then
+    if ! gtbi_require_contract "test" 2>/dev/null; then
         test_pass "$name"
     else
         test_fail "$name" "Should fail when TARGET_HOME is missing"
@@ -110,7 +110,7 @@ test_missing_mode() {
     TARGET_HOME="/home/test"
     SCRIPT_DIR="/some/path"
 
-    if ! acfs_require_contract "test" 2>/dev/null; then
+    if ! gtbi_require_contract "test" 2>/dev/null; then
         test_pass "$name"
     else
         test_fail "$name" "Should fail when MODE is missing"
@@ -127,7 +127,7 @@ test_all_basic_vars_present() {
     MODE="normal"
     SCRIPT_DIR="/some/path"
 
-    if acfs_require_contract "test" 2>/dev/null; then
+    if gtbi_require_contract "test" 2>/dev/null; then
         test_pass "$name"
     else
         test_fail "$name" "Should pass with all required vars"
@@ -135,7 +135,7 @@ test_all_basic_vars_present() {
 }
 
 test_security_helpers_optional() {
-    local name="Missing _acfs_is_interactive does not fail contract"
+    local name="Missing _gtbi_is_interactive does not fail contract"
     reset_env
     define_required_functions_no_security
 
@@ -144,7 +144,7 @@ test_security_helpers_optional() {
     MODE="normal"
     SCRIPT_DIR="/some/path"
 
-    if acfs_require_contract "test" 2>/dev/null; then
+    if gtbi_require_contract "test" 2>/dev/null; then
         test_pass "$name"
     else
         test_fail "$name" "Contract should not require security.sh helpers"
@@ -152,7 +152,7 @@ test_security_helpers_optional() {
 }
 
 test_bootstrap_mode_missing_vars() {
-    local name="Bootstrap mode (empty SCRIPT_DIR) requires ACFS_BOOTSTRAP_DIR"
+    local name="Bootstrap mode (empty SCRIPT_DIR) requires GTBI_BOOTSTRAP_DIR"
     reset_env
     define_required_functions
 
@@ -161,10 +161,10 @@ test_bootstrap_mode_missing_vars() {
     MODE="normal"
     SCRIPT_DIR=""  # Empty triggers bootstrap check
 
-    if ! acfs_require_contract "test" 2>/dev/null; then
+    if ! gtbi_require_contract "test" 2>/dev/null; then
         test_pass "$name"
     else
-        test_fail "$name" "Should fail when ACFS_BOOTSTRAP_DIR is missing in bootstrap mode"
+        test_fail "$name" "Should fail when GTBI_BOOTSTRAP_DIR is missing in bootstrap mode"
     fi
 }
 
@@ -177,14 +177,14 @@ test_bootstrap_mode_all_vars() {
     TARGET_HOME="/home/test"
     MODE="normal"
     SCRIPT_DIR=""  # Bootstrap mode
-    ACFS_BOOTSTRAP_DIR="/tmp/acfs"
-    ACFS_LIB_DIR="/tmp/acfs/lib"
-    ACFS_GENERATED_DIR="/tmp/acfs/generated"
-    ACFS_ASSETS_DIR="/tmp/acfs/assets"
-    ACFS_CHECKSUMS_YAML="/tmp/acfs/checksums.yaml"
-    ACFS_MANIFEST_YAML="/tmp/acfs/acfs.manifest.yaml"
+    GTBI_BOOTSTRAP_DIR="/tmp/gtbi"
+    GTBI_LIB_DIR="/tmp/gtbi/lib"
+    GTBI_GENERATED_DIR="/tmp/gtbi/generated"
+    GTBI_ASSETS_DIR="/tmp/gtbi/assets"
+    GTBI_CHECKSUMS_YAML="/tmp/gtbi/checksums.yaml"
+    GTBI_MANIFEST_YAML="/tmp/gtbi/gtbi.manifest.yaml"
 
-    if acfs_require_contract "test" 2>/dev/null; then
+    if gtbi_require_contract "test" 2>/dev/null; then
         test_pass "$name"
     else
         test_fail "$name" "Should pass with all bootstrap vars"
@@ -202,7 +202,7 @@ test_missing_run_as_target_function() {
     MODE="normal"
     SCRIPT_DIR="/some/path"
 
-    if ! acfs_require_contract "test" 2>/dev/null; then
+    if ! gtbi_require_contract "test" 2>/dev/null; then
         test_pass "$name"
     else
         test_fail "$name" "Should fail when run_as_target is missing"
@@ -220,7 +220,7 @@ test_missing_run_as_target_shell_function() {
     MODE="normal"
     SCRIPT_DIR="/some/path"
 
-    if ! acfs_require_contract "test" 2>/dev/null; then
+    if ! gtbi_require_contract "test" 2>/dev/null; then
         test_pass "$name"
     else
         test_fail "$name" "Should fail when run_as_target_shell is missing"
@@ -238,7 +238,7 @@ test_missing_run_as_root_shell_function() {
     MODE="normal"
     SCRIPT_DIR="/some/path"
 
-    if ! acfs_require_contract "test" 2>/dev/null; then
+    if ! gtbi_require_contract "test" 2>/dev/null; then
         test_pass "$name"
     else
         test_fail "$name" "Should fail when run_as_root_shell is missing"
@@ -256,7 +256,7 @@ test_missing_run_as_current_shell_function() {
     MODE="normal"
     SCRIPT_DIR="/some/path"
 
-    if ! acfs_require_contract "test" 2>/dev/null; then
+    if ! gtbi_require_contract "test" 2>/dev/null; then
         test_pass "$name"
     else
         test_fail "$name" "Should fail when run_as_current_shell is missing"
@@ -268,7 +268,7 @@ test_missing_run_as_current_shell_function() {
 # ============================================================
 
 echo ""
-echo "ACFS Contract Tests"
+echo "GTBI Contract Tests"
 echo "==================="
 echo ""
 

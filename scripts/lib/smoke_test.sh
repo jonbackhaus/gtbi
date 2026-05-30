@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # shellcheck disable=SC1091
 # ============================================================
-# ACFS Installer - Post-Install Smoke Test
+# GTBI Installer - Post-Install Smoke Test
 # Fast verification that runs at the end of install.sh
 # ============================================================
 
@@ -17,7 +17,7 @@ if [[ "${BASH_SOURCE[0]}" != "${0}" ]]; then
 fi
 
 # Ensure we have logging functions available
-if [[ -z "${ACFS_BLUE:-}" ]]; then
+if [[ -z "${GTBI_BLUE:-}" ]]; then
     case "${BASH_SOURCE[0]}" in
         */*)
             _SMOKE_SCRIPT_DIR="$(cd "${BASH_SOURCE[0]%/*}" && pwd)"
@@ -222,7 +222,7 @@ _smoke_initial_current_home() {
     local cached_home=""
     local resolved_home=""
 
-    if [[ "${_SMOKE_WAS_SOURCED:-false}" == "true" ]] && [[ -z "${TARGET_HOME:-}${TARGET_USER:-}${ACFS_HOME:-}${ACFS_STATE_FILE:-}${ACFS_SYSTEM_STATE_FILE:-}" ]]; then
+    if [[ "${_SMOKE_WAS_SOURCED:-false}" == "true" ]] && [[ -z "${TARGET_HOME:-}${TARGET_USER:-}${GTBI_HOME:-}${GTBI_STATE_FILE:-}${GTBI_SYSTEM_STATE_FILE:-}" ]]; then
         cached_home="$(_smoke_sanitize_abs_nonroot_path "${_SMOKE_ORIGINAL_HOME:-${HOME:-}}" 2>/dev/null || true)"
         if [[ -n "$cached_home" ]]; then
             printf '%s\n' "$cached_home"
@@ -253,17 +253,17 @@ if [[ -n "$_SMOKE_CURRENT_HOME" ]]; then
     HOME="$_SMOKE_CURRENT_HOME"
     export HOME
 fi
-_SMOKE_EXPLICIT_ACFS_HOME="$(_smoke_sanitize_abs_nonroot_path "${ACFS_HOME:-}" 2>/dev/null || true)"
-_SMOKE_DEFAULT_ACFS_HOME=""
-[[ -n "$_SMOKE_CURRENT_HOME" ]] && _SMOKE_DEFAULT_ACFS_HOME="${_SMOKE_CURRENT_HOME}/.acfs"
-_SMOKE_SYSTEM_STATE_FILE="$(_smoke_sanitize_abs_nonroot_path "${ACFS_SYSTEM_STATE_FILE:-/var/lib/acfs/state.json}" 2>/dev/null || true)"
+_SMOKE_EXPLICIT_GTBI_HOME="$(_smoke_sanitize_abs_nonroot_path "${GTBI_HOME:-}" 2>/dev/null || true)"
+_SMOKE_DEFAULT_GTBI_HOME=""
+[[ -n "$_SMOKE_CURRENT_HOME" ]] && _SMOKE_DEFAULT_GTBI_HOME="${_SMOKE_CURRENT_HOME}/.gtbi"
+_SMOKE_SYSTEM_STATE_FILE="$(_smoke_sanitize_abs_nonroot_path "${GTBI_SYSTEM_STATE_FILE:-/var/lib/gtbi/state.json}" 2>/dev/null || true)"
 if [[ -z "$_SMOKE_SYSTEM_STATE_FILE" ]]; then
-    _SMOKE_SYSTEM_STATE_FILE="/var/lib/acfs/state.json"
+    _SMOKE_SYSTEM_STATE_FILE="/var/lib/gtbi/state.json"
 fi
 _SMOKE_SYSTEM_STATE_WAS_EXPLICIT=false
-[[ -n "${ACFS_SYSTEM_STATE_FILE:-}" ]] && [[ "${ACFS_SYSTEM_STATE_FILE%/}" != "/var/lib/acfs/state.json" ]] && _SMOKE_SYSTEM_STATE_WAS_EXPLICIT=true
+[[ -n "${GTBI_SYSTEM_STATE_FILE:-}" ]] && [[ "${GTBI_SYSTEM_STATE_FILE%/}" != "/var/lib/gtbi/state.json" ]] && _SMOKE_SYSTEM_STATE_WAS_EXPLICIT=true
 
-_smoke_script_acfs_home() {
+_smoke_script_gtbi_home() {
     local candidate=""
     local script_dir=""
 
@@ -277,7 +277,7 @@ _smoke_script_acfs_home() {
     esac
 
     candidate=$(cd "$script_dir/../.." 2>/dev/null && pwd) || return 1
-    [[ "${candidate##*/}" == ".acfs" ]] || return 1
+    [[ "${candidate##*/}" == ".gtbi" ]] || return 1
     printf '%s\n' "$candidate"
 }
 
@@ -322,7 +322,7 @@ _smoke_resolve_bootstrap_state_file() {
     local env_state_file=""
     local system_target_home=""
 
-    candidate="$(_smoke_script_acfs_home 2>/dev/null || true)"
+    candidate="$(_smoke_script_gtbi_home 2>/dev/null || true)"
     if [[ -n "$candidate" ]] && [[ -f "$candidate/state.json" ]]; then
         printf '%s\n' "$candidate/state.json"
         return 0
@@ -338,15 +338,15 @@ _smoke_resolve_bootstrap_state_file() {
         system_target_home="$(_smoke_read_state_string "$_SMOKE_SYSTEM_STATE_FILE" "target_home" 2>/dev/null || true)"
         system_target_home="$(_smoke_sanitize_abs_nonroot_path "$system_target_home" 2>/dev/null || true)"
         if [[ -n "$system_target_home" ]] && {
-            [[ -f "$system_target_home/.acfs/state.json" ]] || [[ -f "$system_target_home/.acfs/VERSION" ]] || [[ -d "$system_target_home/.acfs/onboard" ]]
+            [[ -f "$system_target_home/.gtbi/state.json" ]] || [[ -f "$system_target_home/.gtbi/VERSION" ]] || [[ -d "$system_target_home/.gtbi/onboard" ]]
         }; then
             printf '%s\n' "$_SMOKE_SYSTEM_STATE_FILE"
             return 0
         fi
     fi
 
-    if [[ -n "$_SMOKE_EXPLICIT_ACFS_HOME" ]]; then
-        explicit_state_file="$_SMOKE_EXPLICIT_ACFS_HOME/state.json"
+    if [[ -n "$_SMOKE_EXPLICIT_GTBI_HOME" ]]; then
+        explicit_state_file="$_SMOKE_EXPLICIT_GTBI_HOME/state.json"
         if [[ -f "$explicit_state_file" ]]; then
             printf '%s\n' "$explicit_state_file"
             return 0
@@ -358,21 +358,21 @@ _smoke_resolve_bootstrap_state_file() {
         return 0
     fi
 
-    if [[ -n "$_SMOKE_DEFAULT_ACFS_HOME" ]]; then
-        candidate="$_SMOKE_DEFAULT_ACFS_HOME/state.json"
+    if [[ -n "$_SMOKE_DEFAULT_GTBI_HOME" ]]; then
+        candidate="$_SMOKE_DEFAULT_GTBI_HOME/state.json"
         if [[ -f "$candidate" ]]; then
             printf '%s\n' "$candidate"
             return 0
         fi
     fi
 
-    env_state_file="$(_smoke_sanitize_abs_nonroot_path "${ACFS_STATE_FILE:-}" 2>/dev/null || true)"
+    env_state_file="$(_smoke_sanitize_abs_nonroot_path "${GTBI_STATE_FILE:-}" 2>/dev/null || true)"
     if [[ -n "$env_state_file" ]] && [[ -f "$env_state_file" ]]; then
         printf '%s\n' "$env_state_file"
         return 0
     fi
 
-    candidate="${env_state_file:-${_SMOKE_DEFAULT_ACFS_HOME:+$_SMOKE_DEFAULT_ACFS_HOME/state.json}}"
+    candidate="${env_state_file:-${_SMOKE_DEFAULT_GTBI_HOME:+$_SMOKE_DEFAULT_GTBI_HOME/state.json}}"
     [[ -n "$candidate" ]] || candidate="$explicit_state_file"
     printf '%s\n' "$candidate"
 }
@@ -457,7 +457,7 @@ _smoke_read_user_for_home() {
         return 0
     fi
 
-    state_file="$user_home/.acfs/state.json"
+    state_file="$user_home/.gtbi/state.json"
     candidate_user="$(_smoke_read_state_string "$state_file" "target_user" 2>/dev/null || true)"
     if [[ -n "$candidate_user" ]]; then
         current_home="$(_smoke_home_for_user "$candidate_user" 2>/dev/null || true)"
@@ -479,10 +479,10 @@ _smoke_current_home_state_file() {
     local state_user=""
     local state_user_home=""
 
-    [[ -n "$_SMOKE_DEFAULT_ACFS_HOME" && -n "$current_home" ]] || return 1
+    [[ -n "$_SMOKE_DEFAULT_GTBI_HOME" && -n "$current_home" ]] || return 1
     [[ "$current_home" != "/root" ]] || return 1
 
-    candidate="$_SMOKE_DEFAULT_ACFS_HOME/state.json"
+    candidate="$_SMOKE_DEFAULT_GTBI_HOME/state.json"
     [[ -f "$candidate" ]] || return 1
 
     if [[ "${_SMOKE_ORIGINAL_HOME_WAS_SET:-false}" == true ]]; then
@@ -571,7 +571,7 @@ _smoke_resolve_state_file() {
     local current_state_file=""
     local env_state_file=""
 
-    candidate="$(_smoke_script_acfs_home 2>/dev/null || true)"
+    candidate="$(_smoke_script_gtbi_home 2>/dev/null || true)"
     if [[ -n "$candidate" ]]; then
         current_state_file="$candidate/state.json"
         if [[ -f "$current_state_file" ]]; then
@@ -581,15 +581,15 @@ _smoke_resolve_state_file() {
     fi
 
     if [[ -n "${_SMOKE_TARGET_HOME:-}" ]]; then
-        target_state_file="${_SMOKE_TARGET_HOME}/.acfs/state.json"
+        target_state_file="${_SMOKE_TARGET_HOME}/.gtbi/state.json"
         if [[ -f "$target_state_file" ]]; then
             printf '%s\n' "$target_state_file"
             return 0
         fi
     fi
 
-    if [[ -n "$_SMOKE_EXPLICIT_ACFS_HOME" ]]; then
-        explicit_state_file="$_SMOKE_EXPLICIT_ACFS_HOME/state.json"
+    if [[ -n "$_SMOKE_EXPLICIT_GTBI_HOME" ]]; then
+        explicit_state_file="$_SMOKE_EXPLICIT_GTBI_HOME/state.json"
         if [[ -f "$explicit_state_file" ]]; then
             printf '%s\n' "$explicit_state_file"
             return 0
@@ -601,15 +601,15 @@ _smoke_resolve_state_file() {
         return 0
     fi
 
-    if [[ -n "$_SMOKE_DEFAULT_ACFS_HOME" ]]; then
-        current_state_file="$_SMOKE_DEFAULT_ACFS_HOME/state.json"
+    if [[ -n "$_SMOKE_DEFAULT_GTBI_HOME" ]]; then
+        current_state_file="$_SMOKE_DEFAULT_GTBI_HOME/state.json"
         if [[ -f "$current_state_file" ]]; then
             printf '%s\n' "$current_state_file"
             return 0
         fi
     fi
 
-    env_state_file="$(_smoke_sanitize_abs_nonroot_path "${ACFS_STATE_FILE:-}" 2>/dev/null || true)"
+    env_state_file="$(_smoke_sanitize_abs_nonroot_path "${GTBI_STATE_FILE:-}" 2>/dev/null || true)"
     if [[ -n "$env_state_file" ]] && [[ -f "$env_state_file" ]]; then
         printf '%s\n' "$env_state_file"
         return 0
@@ -626,11 +626,11 @@ _smoke_state_file_path_target_home() {
     local state_home=""
     local candidate_user=""
 
-    [[ "$state_file" == */.acfs/state.json ]] || return 1
+    [[ "$state_file" == */.gtbi/state.json ]] || return 1
     data_home="${state_file%/state.json}"
     data_home="$(_smoke_sanitize_abs_nonroot_path "$data_home" 2>/dev/null || true)"
     [[ -n "$data_home" ]] || return 1
-    path_home="${data_home%/.acfs}"
+    path_home="${data_home%/.gtbi}"
 
     candidate_user="$(_smoke_read_user_for_home "$path_home" 2>/dev/null || true)"
     if [[ -n "$candidate_user" ]]; then
@@ -645,7 +645,7 @@ _smoke_state_file_path_target_home() {
         return 0
     fi
 
-    if [[ -n "$_SMOKE_EXPLICIT_ACFS_HOME" ]] && [[ "$state_file" == "$_SMOKE_EXPLICIT_ACFS_HOME/state.json" ]] && [[ -d "$path_home/.local/bin" ]]; then
+    if [[ -n "$_SMOKE_EXPLICIT_GTBI_HOME" ]] && [[ "$state_file" == "$_SMOKE_EXPLICIT_GTBI_HOME/state.json" ]] && [[ -d "$path_home/.local/bin" ]]; then
         printf '%s\n' "$path_home"
         return 0
     fi
@@ -668,10 +668,10 @@ _smoke_repair_target_context_from_resolved_state() {
     state_file="$(_smoke_resolve_state_file 2>/dev/null || true)"
     [[ -n "$state_file" ]] || return 0
 
-    if [[ -n "$_SMOKE_DEFAULT_ACFS_HOME" ]]; then
-        default_state_file="$_SMOKE_DEFAULT_ACFS_HOME/state.json"
+    if [[ -n "$_SMOKE_DEFAULT_GTBI_HOME" ]]; then
+        default_state_file="$_SMOKE_DEFAULT_GTBI_HOME/state.json"
     fi
-    if [[ -n "$default_state_file" ]] && [[ "$state_file" == "$default_state_file" ]]         && [[ "$_SMOKE_TARGET_USER_DEFAULTED" != true ]]         && [[ -z "${TARGET_HOME:-}" ]]         && [[ -z "$_SMOKE_EXPLICIT_ACFS_HOME" ]]         && [[ ! -f "$_SMOKE_SYSTEM_STATE_FILE" ]]; then
+    if [[ -n "$default_state_file" ]] && [[ "$state_file" == "$default_state_file" ]]         && [[ "$_SMOKE_TARGET_USER_DEFAULTED" != true ]]         && [[ -z "${TARGET_HOME:-}" ]]         && [[ -z "$_SMOKE_EXPLICIT_GTBI_HOME" ]]         && [[ ! -f "$_SMOKE_SYSTEM_STATE_FILE" ]]; then
         return 0
     fi
 
@@ -690,7 +690,7 @@ _smoke_repair_target_context_from_resolved_state() {
     fi
 
     if [[ -z "$candidate_user" ]] && [[ -n "$system_user" ]] && [[ -n "$system_home" ]] && { [[ -z "$path_home" ]] || [[ "$path_home" == "$system_home" ]]; }; then
-        if [[ -n "$path_home" ]] || [[ -z "$state_home" ]] || [[ "$state_home" == "$system_home" ]] || [[ -z "$_SMOKE_EXPLICIT_ACFS_HOME" ]] || [[ "$state_file" != "$_SMOKE_EXPLICIT_ACFS_HOME/state.json" ]]; then
+        if [[ -n "$path_home" ]] || [[ -z "$state_home" ]] || [[ "$state_home" == "$system_home" ]] || [[ -z "$_SMOKE_EXPLICIT_GTBI_HOME" ]] || [[ "$state_file" != "$_SMOKE_EXPLICIT_GTBI_HOME/state.json" ]]; then
             candidate_user="$system_user"
             resolved_home="$system_home"
         fi
@@ -715,10 +715,10 @@ _smoke_repair_target_context_from_resolved_state() {
             elif [[ -n "$state_home" ]] && [[ -z "$path_home" || "$state_home" == "$path_home" ]] && [[ "$candidate_home" == "$state_home" ]]; then
                 candidate_user="$state_candidate_user"
                 resolved_home="$state_home"
-            elif [[ -z "$path_home" ]] && [[ -n "$state_home" ]] && { [[ -z "$system_home" ]] || [[ "$state_home" == "$system_home" ]] || { [[ -n "$_SMOKE_EXPLICIT_ACFS_HOME" ]] && [[ "$state_file" == "$_SMOKE_EXPLICIT_ACFS_HOME/state.json" ]]; }; }; then
+            elif [[ -z "$path_home" ]] && [[ -n "$state_home" ]] && { [[ -z "$system_home" ]] || [[ "$state_home" == "$system_home" ]] || { [[ -n "$_SMOKE_EXPLICIT_GTBI_HOME" ]] && [[ "$state_file" == "$_SMOKE_EXPLICIT_GTBI_HOME/state.json" ]]; }; }; then
                 candidate_user="$state_candidate_user"
                 resolved_home="$state_home"
-            elif [[ -n "$_SMOKE_EXPLICIT_ACFS_HOME" ]] && [[ "$state_file" == "$_SMOKE_EXPLICIT_ACFS_HOME/state.json" ]] && [[ -z "$path_home" ]]; then
+            elif [[ -n "$_SMOKE_EXPLICIT_GTBI_HOME" ]] && [[ "$state_file" == "$_SMOKE_EXPLICIT_GTBI_HOME/state.json" ]] && [[ -z "$path_home" ]]; then
                 candidate_user="$state_candidate_user"
                 if [[ -n "$state_home" ]]; then
                     resolved_home="$state_home"
@@ -735,7 +735,7 @@ _smoke_repair_target_context_from_resolved_state() {
         resolved_home="$path_home"
     fi
     if [[ -z "$resolved_home" ]] && [[ -n "$system_home" ]] && { [[ -z "$path_home" ]] || [[ "$path_home" == "$system_home" ]]; }; then
-        if [[ -n "$path_home" ]] || [[ -z "$state_home" ]] || [[ "$state_home" == "$system_home" ]] || [[ -z "$_SMOKE_EXPLICIT_ACFS_HOME" ]] || [[ "$state_file" != "$_SMOKE_EXPLICIT_ACFS_HOME/state.json" ]]; then
+        if [[ -n "$path_home" ]] || [[ -z "$state_home" ]] || [[ "$state_home" == "$system_home" ]] || [[ -z "$_SMOKE_EXPLICIT_GTBI_HOME" ]] || [[ "$state_file" != "$_SMOKE_EXPLICIT_GTBI_HOME/state.json" ]]; then
             resolved_home="$system_home"
         fi
     fi
@@ -788,7 +788,7 @@ _smoke_validate_bin_dir_for_home() {
 
     case "$bin_dir" in
         */.local/bin) hinted_home="${bin_dir%/.local/bin}" ;;
-        */.acfs/bin) hinted_home="${bin_dir%/.acfs/bin}" ;;
+        */.gtbi/bin) hinted_home="${bin_dir%/.gtbi/bin}" ;;
         */.bun/bin) hinted_home="${bin_dir%/.bun/bin}" ;;
         */.cargo/bin) hinted_home="${bin_dir%/.cargo/bin}" ;;
         */.atuin/bin) hinted_home="${bin_dir%/.atuin/bin}" ;;
@@ -827,7 +827,7 @@ _smoke_preferred_bin_dir() {
         return 0
     fi
 
-    candidate="$(_smoke_validate_bin_dir_for_home "${ACFS_BIN_DIR:-}" "$base_home" 2>/dev/null || true)"
+    candidate="$(_smoke_validate_bin_dir_for_home "${GTBI_BIN_DIR:-}" "$base_home" 2>/dev/null || true)"
     if [[ -n "$candidate" ]]; then
         printf '%s\n' "$candidate"
         return 0
@@ -852,7 +852,7 @@ _smoke_prepend_user_paths() {
     for dir in \
         "$primary_bin_dir" \
         "$base_home/.local/bin" \
-        "$base_home/.acfs/bin" \
+        "$base_home/.gtbi/bin" \
         "$base_home/.bun/bin" \
         "$base_home/.cargo/bin" \
         "$base_home/.atuin/bin" \
@@ -893,7 +893,7 @@ _smoke_binary_path() {
     for candidate in \
         "$primary_bin_dir/$name" \
         "$base_home/.local/bin/$name" \
-        "$base_home/.acfs/bin/$name" \
+        "$base_home/.gtbi/bin/$name" \
         "$base_home/.bun/bin/$name" \
         "$base_home/.cargo/bin/$name" \
         "$base_home/.atuin/bin/$name" \
@@ -957,9 +957,9 @@ _smoke_external_shell_handoff_configured() {
     [[ -f "$bashrc_path" ]] || return 1
 
     awk '
-        $0 == "# ACFS externally-managed shell handoff" { marker=1; next }
+        $0 == "# GTBI externally-managed shell handoff" { marker=1; next }
         marker && $0 ~ /^[[:space:]]*#/ { next }
-        marker && index($0, "command -v zsh") && index($0, "ACFS_ZSH_HANDOFF_ACTIVE") { found=1; exit }
+        marker && index($0, "command -v zsh") && index($0, "GTBI_ZSH_HANDOFF_ACTIVE") { found=1; exit }
         marker && $0 !~ /^[[:space:]]*$/ { marker=0 }
         END { exit(found ? 0 : 1) }
     ' "$bashrc_path" 2>/dev/null
@@ -973,16 +973,16 @@ _smoke_external_shell_handoff_configured() {
 # Related: bd-39ye
 _smoke_pass() {
     local label="$1"
-    echo -e "  ${ACFS_GREEN-\033[0;32m}✅${ACFS_NC-\033[0m} $label"
+    echo -e "  ${GTBI_GREEN-\033[0;32m}✅${GTBI_NC-\033[0m} $label"
     ((_SMOKE_CRITICAL_PASS += 1))
 }
 
 _smoke_fail() {
     local label="$1"
     local fix="${2:-}"
-    echo -e "  ${ACFS_RED-\033[0;31m}❌${ACFS_NC-\033[0m} $label"
+    echo -e "  ${GTBI_RED-\033[0;31m}❌${GTBI_NC-\033[0m} $label"
     if [[ -n "$fix" ]]; then
-        echo -e "     ${ACFS_GRAY-\033[0;90m}Fix: $fix${ACFS_NC-\033[0m}"
+        echo -e "     ${GTBI_GRAY-\033[0;90m}Fix: $fix${GTBI_NC-\033[0m}"
     fi
     ((_SMOKE_CRITICAL_FAIL += 1))
 }
@@ -990,9 +990,9 @@ _smoke_fail() {
 _smoke_warn() {
     local label="$1"
     local note="${2:-}"
-    echo -e "  ${ACFS_YELLOW-\033[0;33m}⚠️${ACFS_NC-\033[0m} $label"
+    echo -e "  ${GTBI_YELLOW-\033[0;33m}⚠️${GTBI_NC-\033[0m} $label"
     if [[ -n "$note" ]]; then
-        echo -e "     ${ACFS_GRAY-\033[0;90m}$note${ACFS_NC-\033[0m}"
+        echo -e "     ${GTBI_GRAY-\033[0;90m}$note${GTBI_NC-\033[0m}"
     fi
     ((_SMOKE_WARNING_COUNT += 1))
 }
@@ -1000,13 +1000,13 @@ _smoke_warn() {
 # Non-critical pass (doesn't affect critical count)
 _smoke_info() {
     local label="$1"
-    echo -e "  ${ACFS_GREEN-\033[0;32m}✅${ACFS_NC-\033[0m} $label"
+    echo -e "  ${GTBI_GREEN-\033[0;32m}✅${GTBI_NC-\033[0m} $label"
     ((_SMOKE_NONCRITICAL_PASS += 1))
 }
 
 _smoke_header() {
     echo ""
-    echo -e "${ACFS_BLUE-\033[0;34m}[Smoke Test]${ACFS_NC-\033[0m}"
+    echo -e "${GTBI_BLUE-\033[0;34m}[Smoke Test]${GTBI_NC-\033[0m}"
     echo ""
 }
 
@@ -1043,7 +1043,7 @@ _check_shell() {
             _smoke_pass "Shell: externally managed login hands off to zsh"
         else
             _smoke_warn "Shell: externally managed account reports ${shell:-unknown}" \
-                "Local chsh is not valid here; configure the identity provider shell or add the ACFS bash-to-zsh handoff."
+                "Local chsh is not valid here; configure the identity provider shell or add the GTBI bash-to-zsh handoff."
         fi
         return 0
     else
@@ -1149,7 +1149,7 @@ _check_onboard() {
         _smoke_pass "Onboard: installed"
         return 0
     else
-        _smoke_fail "Onboard: not found" "Check ~/.acfs/bin/onboard"
+        _smoke_fail "Onboard: not found" "Check ~/.gtbi/bin/onboard"
         return 1
     fi
 }
@@ -1163,7 +1163,7 @@ _check_agent_mail() {
     if _smoke_system_curl -fsS --max-time 5 http://127.0.0.1:8765/health/liveness &>/dev/null; then
         _smoke_info "Agent Mail: running"
     else
-        _smoke_warn "Agent Mail: not running" "re-run ACFS update/install to rewrite agent-mail.service, then run 'systemctl --user enable --now agent-mail.service'"
+        _smoke_warn "Agent Mail: not running" "re-run GTBI update/install to rewrite agent-mail.service, then run 'systemctl --user enable --now agent-mail.service'"
     fi
 }
 
@@ -1252,16 +1252,16 @@ run_smoke_test() {
     local total_critical=$((_SMOKE_CRITICAL_PASS + _SMOKE_CRITICAL_FAIL))
 
     if [[ $_SMOKE_CRITICAL_FAIL -eq 0 ]]; then
-        echo -e "${ACFS_GREEN-\033[0;32m}Smoke test: $_SMOKE_CRITICAL_PASS/$total_critical critical passed${ACFS_NC-\033[0m}"
+        echo -e "${GTBI_GREEN-\033[0;32m}Smoke test: $_SMOKE_CRITICAL_PASS/$total_critical critical passed${GTBI_NC-\033[0m}"
     else
-        echo -e "${ACFS_RED-\033[0;31m}Smoke test: $_SMOKE_CRITICAL_PASS/$total_critical critical passed, $_SMOKE_CRITICAL_FAIL failed${ACFS_NC-\033[0m}"
+        echo -e "${GTBI_RED-\033[0;31m}Smoke test: $_SMOKE_CRITICAL_PASS/$total_critical critical passed, $_SMOKE_CRITICAL_FAIL failed${GTBI_NC-\033[0m}"
     fi
 
     if [[ $_SMOKE_WARNING_COUNT -gt 0 ]]; then
-        echo -e "${ACFS_YELLOW-\033[0;33m}$_SMOKE_WARNING_COUNT warning(s)${ACFS_NC-\033[0m}"
+        echo -e "${GTBI_YELLOW-\033[0;33m}$_SMOKE_WARNING_COUNT warning(s)${GTBI_NC-\033[0m}"
     fi
 
-    echo -e "${ACFS_GRAY-\033[0;90m}Completed in ${duration}s${ACFS_NC-\033[0m}"
+    echo -e "${GTBI_GRAY-\033[0;90m}Completed in ${duration}s${GTBI_NC-\033[0m}"
     echo ""
 
     if [[ "$_SMOKE_WAS_SOURCED" == "true" ]]; then
@@ -1271,11 +1271,11 @@ run_smoke_test() {
 
     # Return exit code based on critical failures
     if [[ $_SMOKE_CRITICAL_FAIL -gt 0 ]]; then
-        echo -e "${ACFS_YELLOW-\033[0;33m}Some critical checks failed. Run 'acfs doctor' for detailed diagnostics.${ACFS_NC-\033[0m}"
+        echo -e "${GTBI_YELLOW-\033[0;33m}Some critical checks failed. Run 'gtbi doctor' for detailed diagnostics.${GTBI_NC-\033[0m}"
         return 1
     fi
 
-    echo -e "${ACFS_GREEN-\033[0;32m}Installation successful! Run 'onboard' to start the tutorial.${ACFS_NC-\033[0m}"
+    echo -e "${GTBI_GREEN-\033[0;32m}Installation successful! Run 'onboard' to start the tutorial.${GTBI_NC-\033[0m}"
     return 0
 }
 

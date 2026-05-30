@@ -91,7 +91,7 @@ type ScreenshotSpec = {
 };
 
 const SCREENSHOT_BASE =
-  "https://raw.githubusercontent.com/Dicklesworthstone/agentic_coding_flywheel_setup/main/research_screenshots";
+  "https://raw.githubusercontent.com/jonbackhaus/gtbi/main/research_screenshots";
 
 function screenshotUrl(file: string): string {
   return `${SCREENSHOT_BASE}/${file}`;
@@ -336,7 +336,7 @@ function CapacityPlanner() {
             Plan calculator
           </h2>
           <p className="text-sm text-muted-foreground">
-            Capacity uses the same conservative model as <code className="rounded bg-muted px-1">acfs capacity</code>:
+            Capacity uses the same conservative model as <code className="rounded bg-muted px-1">gtbi capacity</code>:
             reserve host headroom, then size RAM, CPU, and disk per active agent.
           </p>
         </div>
@@ -761,7 +761,7 @@ export default function RentVPSPage() {
       <AlertCard variant="tip" title="Using a different provider?">
         Any provider with an <Jargon term="ubuntu">Ubuntu</Jargon> <Jargon term="vps">VPS</Jargon>,{" "}
         <Jargon term="ssh">SSH</Jargon> access, and a first-login root password or root console works.
-        Choose password authentication when it is offered; ACFS sets up your SSH key after the first install.
+        Choose password authentication when it is offered; GTBI sets up your SSH key after the first install.
       </AlertCard>
 
       {/* Beginner Guide */}
@@ -945,7 +945,7 @@ export default function RentVPSPage() {
                   <li><strong>Image:</strong> Select &quot;Ubuntu 25.10&quot; or newest available</li>
                 </ul>
                 <p className="mt-2 text-xs text-muted-foreground">
-                  If 25.10 isn&apos;t offered, Ubuntu 24.04 LTS is fine — ACFS upgrades to 25.10 automatically.
+                  If 25.10 isn&apos;t offered, Ubuntu 24.04 LTS is fine — GTBI upgrades to 25.10 automatically.
                 </p>
                 <ScreenshotFigure
                   file="contabo_us_03_order_page.png"
@@ -1019,7 +1019,7 @@ export default function RentVPSPage() {
                   caption="Order flow — pick Ubuntu + region, then continue to checkout."
                 />
                 <p className="mt-2 text-xs text-muted-foreground">
-                  If Ubuntu 25.10 isn&apos;t available, Ubuntu 24.04 LTS is fine — ACFS upgrades automatically.
+                  If Ubuntu 25.10 isn&apos;t available, Ubuntu 24.04 LTS is fine — GTBI upgrades automatically.
                 </p>
               </GuideStep>
 

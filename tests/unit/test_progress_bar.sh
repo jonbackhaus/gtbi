@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Unit tests for ACFS progress bar library
+# Unit tests for GTBI progress bar library
 # Related: bead bd-21kh
 
 set -uo pipefail
@@ -37,16 +37,16 @@ test_progress_init() {
 
     progress_init 10
 
-    if [[ "$ACFS_PROGRESS_TOTAL" == "10" ]]; then
-        pass "ACFS_PROGRESS_TOTAL set to 10"
+    if [[ "$GTBI_PROGRESS_TOTAL" == "10" ]]; then
+        pass "GTBI_PROGRESS_TOTAL set to 10"
     else
-        fail "ACFS_PROGRESS_TOTAL is '$ACFS_PROGRESS_TOTAL', expected '10'"
+        fail "GTBI_PROGRESS_TOTAL is '$GTBI_PROGRESS_TOTAL', expected '10'"
     fi
 
-    if [[ "$ACFS_PROGRESS_CURRENT" == "0" ]]; then
-        pass "ACFS_PROGRESS_CURRENT starts at 0"
+    if [[ "$GTBI_PROGRESS_CURRENT" == "0" ]]; then
+        pass "GTBI_PROGRESS_CURRENT starts at 0"
     else
-        fail "ACFS_PROGRESS_CURRENT is '$ACFS_PROGRESS_CURRENT', expected '0'"
+        fail "GTBI_PROGRESS_CURRENT is '$GTBI_PROGRESS_CURRENT', expected '0'"
     fi
 }
 
@@ -57,19 +57,19 @@ test_progress_update() {
     progress_init 5
     progress_update "module1" >/dev/null 2>&1
 
-    if [[ "$ACFS_PROGRESS_CURRENT" == "1" ]]; then
+    if [[ "$GTBI_PROGRESS_CURRENT" == "1" ]]; then
         pass "Counter incremented to 1"
     else
-        fail "Counter is '$ACFS_PROGRESS_CURRENT', expected '1'"
+        fail "Counter is '$GTBI_PROGRESS_CURRENT', expected '1'"
     fi
 
     progress_update "module2" >/dev/null 2>&1
     progress_update "module3" >/dev/null 2>&1
 
-    if [[ "$ACFS_PROGRESS_CURRENT" == "3" ]]; then
+    if [[ "$GTBI_PROGRESS_CURRENT" == "3" ]]; then
         pass "Counter incremented to 3"
     else
-        fail "Counter is '$ACFS_PROGRESS_CURRENT', expected '3'"
+        fail "Counter is '$GTBI_PROGRESS_CURRENT', expected '3'"
     fi
 }
 
@@ -125,19 +125,19 @@ test_progress_finish() {
     run_test "progress_finish resets state"
 
     progress_init 10
-    ACFS_PROGRESS_CURRENT=5
+    GTBI_PROGRESS_CURRENT=5
     progress_finish 2>/dev/null
 
-    if [[ "$ACFS_PROGRESS_TOTAL" == "0" ]]; then
-        pass "ACFS_PROGRESS_TOTAL reset to 0"
+    if [[ "$GTBI_PROGRESS_TOTAL" == "0" ]]; then
+        pass "GTBI_PROGRESS_TOTAL reset to 0"
     else
-        fail "ACFS_PROGRESS_TOTAL is '$ACFS_PROGRESS_TOTAL', expected '0'"
+        fail "GTBI_PROGRESS_TOTAL is '$GTBI_PROGRESS_TOTAL', expected '0'"
     fi
 
-    if [[ "$ACFS_PROGRESS_CURRENT" == "0" ]]; then
-        pass "ACFS_PROGRESS_CURRENT reset to 0"
+    if [[ "$GTBI_PROGRESS_CURRENT" == "0" ]]; then
+        pass "GTBI_PROGRESS_CURRENT reset to 0"
     else
-        fail "ACFS_PROGRESS_CURRENT is '$ACFS_PROGRESS_CURRENT', expected '0'"
+        fail "GTBI_PROGRESS_CURRENT is '$GTBI_PROGRESS_CURRENT', expected '0'"
     fi
 }
 
@@ -148,10 +148,10 @@ test_no_color() {
     export NO_COLOR=1
     _progress_check_tty
 
-    if [[ "$ACFS_PROGRESS_IS_TTY" == "false" ]]; then
+    if [[ "$GTBI_PROGRESS_IS_TTY" == "false" ]]; then
         pass "NO_COLOR disables TTY mode"
     else
-        fail "ACFS_PROGRESS_IS_TTY is '$ACFS_PROGRESS_IS_TTY', expected 'false'"
+        fail "GTBI_PROGRESS_IS_TTY is '$GTBI_PROGRESS_IS_TTY', expected 'false'"
     fi
 
     unset NO_COLOR
@@ -160,7 +160,7 @@ test_no_color() {
 # Run all tests
 main() {
     echo "========================================="
-    echo "ACFS Progress Bar Unit Tests"
+    echo "GTBI Progress Bar Unit Tests"
     echo "========================================="
 
     test_progress_init

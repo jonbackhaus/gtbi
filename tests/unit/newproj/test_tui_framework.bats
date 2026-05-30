@@ -13,8 +13,8 @@ setup() {
     export TEST_DIR
 
     # Set up logging
-    export ACFS_LOG_DIR="$TEST_DIR"
-    export ACFS_LOG_LEVEL=0
+    export GTBI_LOG_DIR="$TEST_DIR"
+    export GTBI_LOG_LEVEL=0
 
     # Source dependencies first
     source_lib "newproj_logging"
@@ -151,8 +151,8 @@ teardown() {
 @test "state changes are logged" {
     state_set "project_name" "logged-value"
 
-    grep -q "STATE" "$ACFS_SESSION_LOG"
-    grep -q "project_name" "$ACFS_SESSION_LOG"
+    grep -q "STATE" "$GTBI_SESSION_LOG"
+    grep -q "project_name" "$GTBI_SESSION_LOG"
 }
 
 # ============================================================
@@ -326,10 +326,10 @@ teardown() {
 }
 
 @test "read_yes_no keeps gum confirm visible and honors configured default" {
-    grep -qF 'gum_default=false' "$ACFS_LIB_DIR/newproj_tui.sh"
-    grep -qF '[[ "$default" == "y" ]] && gum_default=true' "$ACFS_LIB_DIR/newproj_tui.sh"
-    grep -qF 'gum confirm --default="$gum_default" "$prompt" < /dev/tty > /dev/tty 2>/dev/tty' "$ACFS_LIB_DIR/newproj_tui.sh"
-    if grep -qF 'gum confirm "$prompt" < /dev/tty > /dev/tty 2>/dev/null' "$ACFS_LIB_DIR/newproj_tui.sh"; then
+    grep -qF 'gum_default=false' "$GTBI_LIB_DIR/newproj_tui.sh"
+    grep -qF '[[ "$default" == "y" ]] && gum_default=true' "$GTBI_LIB_DIR/newproj_tui.sh"
+    grep -qF 'gum confirm --default="$gum_default" "$prompt" < /dev/tty > /dev/tty 2>/dev/tty' "$GTBI_LIB_DIR/newproj_tui.sh"
+    if grep -qF 'gum confirm "$prompt" < /dev/tty > /dev/tty 2>/dev/null' "$GTBI_LIB_DIR/newproj_tui.sh"; then
         echo "gum confirm still discards its live stderr UI stream" >&2
         return 1
     fi

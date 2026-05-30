@@ -12,15 +12,15 @@ actual files, generated scripts, and real flags/CLI behavior rather than stubs.
 
 | Component | Current | Target | Fixtures (real files) | Notes |
 | --- | --- | --- | --- | --- |
-| `packages/manifest` schema + parser | Partial (`src/parser.test.ts`, `src/schema.test.ts`, `src/validate.test.ts`) | Full unit suite | `acfs.manifest.yaml`, `docs/reference/MANIFEST_SCHEMA_VNEXT.md`, generated `scripts/generated/manifest_index.sh` | Add fixture-driven tests for schema fields + errors |
-| `packages/manifest` generator outputs | Minimal | Full unit suite | `acfs.manifest.yaml`, `scripts/generated/*.sh` | Validate deterministic ordering + content |
+| `packages/manifest` schema + parser | Partial (`src/parser.test.ts`, `src/schema.test.ts`, `src/validate.test.ts`) | Full unit suite | `gtbi.manifest.yaml`, `docs/reference/MANIFEST_SCHEMA_VNEXT.md`, generated `scripts/generated/manifest_index.sh` | Add fixture-driven tests for schema fields + errors |
+| `packages/manifest` generator outputs | Minimal | Full unit suite | `gtbi.manifest.yaml`, `scripts/generated/*.sh` | Validate deterministic ordering + content |
 | `scripts/lib/install_helpers.sh` (selection) | None | Unit + integration | `scripts/generated/manifest_index.sh` | Exercise `--only/--skip/--only-phase/--no-deps/--print-plan` via real arrays |
 | `scripts/lib/contract.sh` | None | Unit | `scripts/lib/contract.sh` | Verify error cases + required env checks |
 | `scripts/lib/security.sh` | Partial | Unit + integration | `checksums.yaml` | Verify checksum load + verify output (no network mocks) |
 | `scripts/preflight.sh` | None | Unit + integration | `scripts/preflight.sh` | Run in controlled envs; validate expected warnings/errors |
 | `install.sh` selection/introspection | Partial (manual) | Unit + integration | `install.sh`, `scripts/generated/manifest_index.sh` | Ensure plan output is stable + no state mutation |
 | `tests/vm/test_install_ubuntu.sh` | Present | Enhanced E2E | `tests/vm/test_install_ubuntu.sh` | Add explicit selection + bootstrap cases |
-| `tests/vm/test_acfs_update.sh` | Present | Enhanced E2E | `tests/vm/test_acfs_update.sh` | Standardize logging + artifacts |
+| `tests/vm/test_gtbi_update.sh` | Present | Enhanced E2E | `tests/vm/test_gtbi_update.sh` | Standardize logging + artifacts |
 | `tests/vm/resume_checks.sh` | Present | Enhanced E2E | `tests/vm/resume_checks.sh` | Add selection/plan integration when ready |
 | Web wizard E2E | Present | Maintain + richer artifacts | `apps/web/e2e/wizard-flow.spec.ts` | Add runner script with logs + traces |
 

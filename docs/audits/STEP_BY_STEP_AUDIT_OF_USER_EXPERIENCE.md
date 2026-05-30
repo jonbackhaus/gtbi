@@ -133,7 +133,7 @@ Users are told to copy the key to a notes app, but they might:
 **Recommendation:** Add a "Find it later" tip:
 ```markdown
 **Can't find your key later?** Just run this command again to see it:
-`cat ~/.ssh/acfs_ed25519.pub`
+`cat ~/.ssh/gtbi_ed25519.pub`
 ```
 
 ---
@@ -425,7 +425,7 @@ If user closes their laptop or terminal, they'll be completely lost.
 1. Open your terminal app
 2. Reconnect to your VPS:
    ```bash
-   ssh -i ~/.ssh/acfs_ed25519 ubuntu@YOUR_IP
+   ssh -i ~/.ssh/gtbi_ed25519 ubuntu@YOUR_IP
    ```
 3. Your work is still there! If you were using NTM:
    ```bash

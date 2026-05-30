@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-# ACFS Progress Bar Library
+# GTBI Progress Bar Library
 # Provides visual progress tracking during tool installation.
 #
 # Related: bead bd-21kh
@@ -10,12 +10,12 @@
 # installers and must not leak set -euo pipefail.
 
 # Global progress state
-ACFS_PROGRESS_TOTAL=0
-ACFS_PROGRESS_CURRENT=0
-ACFS_PROGRESS_START_TIME=0
-ACFS_PROGRESS_ENABLED=true
-ACFS_PROGRESS_IS_TTY=false
-ACFS_PROGRESS_LAST_LINE_LEN=0
+GTBI_PROGRESS_TOTAL=0
+GTBI_PROGRESS_CURRENT=0
+GTBI_PROGRESS_START_TIME=0
+GTBI_PROGRESS_ENABLED=true
+GTBI_PROGRESS_IS_TTY=false
+GTBI_PROGRESS_LAST_LINE_LEN=0
 
 _progress_is_nonnegative_integer() {
     local value="${1:-}"
@@ -32,15 +32,15 @@ _progress_is_positive_integer() {
 _progress_check_tty() {
     # Disable progress bar if NO_COLOR is set or output is not a TTY
     if [[ -n "${NO_COLOR:-}" ]]; then
-        ACFS_PROGRESS_ENABLED=true  # Still show text, just no colors
-        ACFS_PROGRESS_IS_TTY=false
+        GTBI_PROGRESS_ENABLED=true  # Still show text, just no colors
+        GTBI_PROGRESS_IS_TTY=false
     elif [[ -t 2 ]]; then
-        ACFS_PROGRESS_ENABLED=true
-        ACFS_PROGRESS_IS_TTY=true
+        GTBI_PROGRESS_ENABLED=true
+        GTBI_PROGRESS_IS_TTY=true
     else
         # Non-TTY (piped output) - use simple line-by-line
-        ACFS_PROGRESS_ENABLED=true
-        ACFS_PROGRESS_IS_TTY=false
+        GTBI_PROGRESS_ENABLED=true
+        GTBI_PROGRESS_IS_TTY=false
     fi
 }
 
@@ -52,18 +52,18 @@ progress_init() {
     _progress_check_tty
 
     if ! _progress_is_positive_integer "$total"; then
-        ACFS_PROGRESS_TOTAL=0
-        ACFS_PROGRESS_CURRENT=0
-        ACFS_PROGRESS_START_TIME=0
-        ACFS_PROGRESS_LAST_LINE_LEN=0
-        ACFS_PROGRESS_ENABLED=false
+        GTBI_PROGRESS_TOTAL=0
+        GTBI_PROGRESS_CURRENT=0
+        GTBI_PROGRESS_START_TIME=0
+        GTBI_PROGRESS_LAST_LINE_LEN=0
+        GTBI_PROGRESS_ENABLED=false
         return
     fi
 
-    ACFS_PROGRESS_TOTAL="$total"
-    ACFS_PROGRESS_CURRENT=0
-    ACFS_PROGRESS_START_TIME=$(date +%s)
-    ACFS_PROGRESS_LAST_LINE_LEN=0
+    GTBI_PROGRESS_TOTAL="$total"
+    GTBI_PROGRESS_CURRENT=0
+    GTBI_PROGRESS_START_TIME=$(date +%s)
+    GTBI_PROGRESS_LAST_LINE_LEN=0
 }
 
 # Build ASCII progress bar
@@ -103,21 +103,21 @@ progress_update() {
     local item_name="${1:-}"
     local item_desc="${2:-}"
 
-    if [[ "$ACFS_PROGRESS_ENABLED" != "true" ]]; then
+    if [[ "$GTBI_PROGRESS_ENABLED" != "true" ]]; then
         return
     fi
-    if ! _progress_is_positive_integer "${ACFS_PROGRESS_TOTAL:-0}"; then
-        ACFS_PROGRESS_ENABLED=false
+    if ! _progress_is_positive_integer "${GTBI_PROGRESS_TOTAL:-0}"; then
+        GTBI_PROGRESS_ENABLED=false
         return
     fi
-    if ! _progress_is_nonnegative_integer "${ACFS_PROGRESS_CURRENT:-0}"; then
-        ACFS_PROGRESS_CURRENT=0
+    if ! _progress_is_nonnegative_integer "${GTBI_PROGRESS_CURRENT:-0}"; then
+        GTBI_PROGRESS_CURRENT=0
     fi
 
-    ((ACFS_PROGRESS_CURRENT++)) || true
+    ((GTBI_PROGRESS_CURRENT++)) || true
 
-    local current="$ACFS_PROGRESS_CURRENT"
-    local total="$ACFS_PROGRESS_TOTAL"
+    local current="$GTBI_PROGRESS_CURRENT"
+    local total="$GTBI_PROGRESS_TOTAL"
     local percent=$((10#$current * 100 / 10#$total))
     if [[ "$percent" -gt 100 ]]; then
         percent=100
@@ -129,7 +129,7 @@ progress_update() {
         display_name="${display_name:0:32}..."
     fi
 
-    if [[ "$ACFS_PROGRESS_IS_TTY" == "true" ]]; then
+    if [[ "$GTBI_PROGRESS_IS_TTY" == "true" ]]; then
         # Interactive TTY: in-place update
         local bar
         bar="$(_progress_bar "$current" "$total" 20)"
@@ -142,7 +142,7 @@ progress_update() {
         # Use carriage return to overwrite, then clear to end of line
         printf '\r\033[K%s' "$line" >&2
 
-        ACFS_PROGRESS_LAST_LINE_LEN=${#line}
+        GTBI_PROGRESS_LAST_LINE_LEN=${#line}
     else
         # Non-TTY or NO_COLOR: simple line-by-line output
         printf '[%d/%d] Installing %s...\n' "$current" "$total" "$display_name" >&2
@@ -151,16 +151,16 @@ progress_update() {
 
 # Mark progress as complete (add newline for TTY mode)
 progress_finish() {
-    local total="${ACFS_PROGRESS_TOTAL:-0}"
+    local total="${GTBI_PROGRESS_TOTAL:-0}"
 
-    if [[ "$ACFS_PROGRESS_ENABLED" != "true" ]]; then
+    if [[ "$GTBI_PROGRESS_ENABLED" != "true" ]]; then
         return
     fi
     if ! _progress_is_nonnegative_integer "$total"; then
         total=0
     fi
 
-    if [[ "$ACFS_PROGRESS_IS_TTY" == "true" ]] && [[ "$ACFS_PROGRESS_LAST_LINE_LEN" -gt 0 ]]; then
+    if [[ "$GTBI_PROGRESS_IS_TTY" == "true" ]] && [[ "$GTBI_PROGRESS_LAST_LINE_LEN" -gt 0 ]]; then
         # Print completion message and newline
         local bar
         bar="$(_progress_bar "$total" "$total" 20)"
@@ -168,9 +168,9 @@ progress_finish() {
     fi
 
     # Reset state
-    ACFS_PROGRESS_TOTAL=0
-    ACFS_PROGRESS_CURRENT=0
-    ACFS_PROGRESS_LAST_LINE_LEN=0
+    GTBI_PROGRESS_TOTAL=0
+    GTBI_PROGRESS_CURRENT=0
+    GTBI_PROGRESS_LAST_LINE_LEN=0
 }
 
 # Helper to count modules for a category/phase
@@ -182,15 +182,15 @@ progress_count_modules() {
     local count=0
     local module key
 
-    if [[ "${ACFS_MANIFEST_INDEX_LOADED:-false}" != "true" ]]; then
+    if [[ "${GTBI_MANIFEST_INDEX_LOADED:-false}" != "true" ]]; then
         echo "0"
         return
     fi
 
-    for module in "${ACFS_EFFECTIVE_PLAN[@]:-}"; do
+    for module in "${GTBI_EFFECTIVE_PLAN[@]:-}"; do
         key="$module"
-        if [[ "${ACFS_MODULE_CATEGORY[$key]:-}" == "$category" ]] && \
-           [[ "${ACFS_MODULE_PHASE[$key]:-}" == "$phase" ]]; then
+        if [[ "${GTBI_MODULE_CATEGORY[$key]:-}" == "$category" ]] && \
+           [[ "${GTBI_MODULE_PHASE[$key]:-}" == "$phase" ]]; then
             ((count++)) || true
         fi
     done
@@ -203,18 +203,18 @@ progress_count_modules() {
 # ============================================================
 
 local_progress_file_path() {
-    if [[ -n "${ACFS_LOCAL_PROGRESS_FILE:-}" ]]; then
-        printf '%s\n' "$ACFS_LOCAL_PROGRESS_FILE"
+    if [[ -n "${GTBI_LOCAL_PROGRESS_FILE:-}" ]]; then
+        printf '%s\n' "$GTBI_LOCAL_PROGRESS_FILE"
         return 0
     fi
 
-    if [[ -n "${ACFS_HOME:-}" ]]; then
-        printf '%s/local_progress.json\n' "${ACFS_HOME%/}"
+    if [[ -n "${GTBI_HOME:-}" ]]; then
+        printf '%s/local_progress.json\n' "${GTBI_HOME%/}"
         return 0
     fi
 
     if [[ -n "${HOME:-}" ]]; then
-        printf '%s/.acfs/local_progress.json\n' "${HOME%/}"
+        printf '%s/.gtbi/local_progress.json\n' "${HOME%/}"
         return 0
     fi
 
@@ -224,14 +224,14 @@ local_progress_file_path() {
 local_progress_is_disabled() {
     local value=""
 
-    value="${ACFS_LOCAL_PROGRESS:-}"
+    value="${GTBI_LOCAL_PROGRESS:-}"
     case "${value,,}" in
         0|false|no|off|disabled|disable|opt-out|opt_out)
             return 0
             ;;
     esac
 
-    for value in "${ACFS_LOCAL_PROGRESS_OPT_OUT:-}" "${ACFS_DISABLE_LOCAL_PROGRESS:-}" "${DO_NOT_TRACK:-}"; do
+    for value in "${GTBI_LOCAL_PROGRESS_OPT_OUT:-}" "${GTBI_DISABLE_LOCAL_PROGRESS:-}" "${DO_NOT_TRACK:-}"; do
         case "${value,,}" in
             1|true|yes|on|enabled|enable)
                 return 0
@@ -293,7 +293,7 @@ local_progress_record_event() {
     local lock_file=""
     local lock_fd=""
     local now=""
-    local max_events="${ACFS_LOCAL_PROGRESS_MAX_EVENTS:-100}"
+    local max_events="${GTBI_LOCAL_PROGRESS_MAX_EVENTS:-100}"
 
     [[ -n "$details_json" ]] || details_json="{}"
     local_progress_is_disabled && return 0

@@ -110,20 +110,20 @@ test_ru_sync_dry_run() {
     fi
 }
 
-# Test 7: ru appears in acfs doctor output
-test_acfs_doctor_has_ru() {
-    if command -v acfs &>/dev/null; then
+# Test 7: ru appears in gtbi doctor output
+test_gtbi_doctor_has_ru() {
+    if command -v gtbi &>/dev/null; then
         local doctor_output
-        doctor_output=$(acfs doctor 2>&1) || true
+        doctor_output=$(gtbi doctor 2>&1) || true
         # Use command grep to avoid rg alias
         if echo "$doctor_output" | command grep -qi "ru"; then
             return 0
         else
-            log_skip "acfs doctor doesn't mention ru (may be OK)"
+            log_skip "gtbi doctor doesn't mention ru (may be OK)"
             return 0
         fi
     else
-        log_skip "acfs command not available"
+        log_skip "gtbi command not available"
         return 0
     fi
 }
@@ -142,7 +142,7 @@ main() {
     run_test "doctor checks ru correctly" test_doctor_ru_installed
     run_test "ru doctor subcommand" test_ru_doctor_subcommand
     run_test "ru sync dry-run" test_ru_sync_dry_run
-    run_test "acfs doctor has ru" test_acfs_doctor_has_ru
+    run_test "gtbi doctor has ru" test_gtbi_doctor_has_ru
 
     echo ""
     echo "============================================================"

@@ -90,7 +90,7 @@ export function SSHBasicsLesson() {
             title="Key-Based Login"
             subtitle="Now"
             description="The installer copied your SSH key, so now you connect securely"
-            code="ssh -i ~/.ssh/acfs_ed25519 ubuntu@YOUR_SERVER_IP"
+            code="ssh -i ~/.ssh/gtbi_ed25519 ubuntu@YOUR_SERVER_IP"
             gradient="from-emerald-500/20 to-teal-500/20"
           />
         </div>
@@ -103,7 +103,7 @@ export function SSHBasicsLesson() {
           <div className="grid gap-3 sm:grid-cols-2">
             <CommandPart label="ssh" description="The command" />
             <CommandPart
-              label="-i ~/.ssh/acfs_ed25519"
+              label="-i ~/.ssh/gtbi_ed25519"
               description="Your private key"
             />
             <CommandPart
@@ -149,7 +149,7 @@ export function SSHBasicsLesson() {
             <FeatureCard
               icon={<Key className="h-5 w-5" />}
               title="Private Key"
-              description="Stays on your laptop at ~/.ssh/acfs_ed25519"
+              description="Stays on your laptop at ~/.ssh/gtbi_ed25519"
               gradient="from-violet-500/20 to-purple-500/20"
             />
             <FeatureCard
@@ -209,7 +209,7 @@ export function SSHBasicsLesson() {
 
         <div className="mt-6">
           <CodeBlock
-            code={`alias vps='ssh -i ~/.ssh/acfs_ed25519 ubuntu@YOUR_SERVER_IP'`}
+            code={`alias vps='ssh -i ~/.ssh/gtbi_ed25519 ubuntu@YOUR_SERVER_IP'`}
             language="bash"
           />
         </div>
@@ -760,7 +760,7 @@ function ScenarioKeyAuth() {
           <rect x="10" y="195" width="100" height="50" rx="8" fill="none" stroke="#8b5cf6" strokeWidth="0.8" opacity="0.4" />
           <Key x={20} y={203} className="text-violet-400" width={14} height={14} strokeWidth={1.5} />
           <text x="38" y="213" fill="#a78bfa" fontSize="8" fontWeight="600">PRIVATE KEY</text>
-          <text x="18" y="228" fill="white" fontSize="6.5" fontFamily="monospace" opacity="0.5">~/.ssh/acfs_ed25519</text>
+          <text x="18" y="228" fill="white" fontSize="6.5" fontFamily="monospace" opacity="0.5">~/.ssh/gtbi_ed25519</text>
           <text x="18" y="238" fill="#a78bfa" fontSize="6" fontFamily="monospace" opacity="0.4">SHA256:xR3...9kQ</text>
         </motion.g>
 
@@ -1227,8 +1227,8 @@ function InteractiveSSHTunnel() {
         <div className="rounded-lg bg-black/40 border border-white/[0.06] px-4 py-3 font-mono text-xs overflow-x-auto">
           <span className="text-emerald-400/70">$</span>{" "}
           <span className="text-white/70">
-            {scenario === "connect" && "ssh -i ~/.ssh/acfs_ed25519 ubuntu@YOUR_VPS_IP"}
-            {scenario === "keyauth" && "ssh-keygen -t ed25519 -f ~/.ssh/acfs_ed25519"}
+            {scenario === "connect" && "ssh -i ~/.ssh/gtbi_ed25519 ubuntu@YOUR_VPS_IP"}
+            {scenario === "keyauth" && "ssh-keygen -t ed25519 -f ~/.ssh/gtbi_ed25519"}
             {scenario === "portforward" && "ssh -L 5432:localhost:5432 ubuntu@YOUR_VPS_IP"}
             {scenario === "reconnect" && "mosh ubuntu@YOUR_VPS_IP -- tmux attach"}
           </span>
@@ -1378,7 +1378,7 @@ function QuizCards() {
   const questions = [
     {
       question: "Where does your private key live?",
-      answer: "~/.ssh/acfs_ed25519 on your laptop",
+      answer: "~/.ssh/gtbi_ed25519 on your laptop",
     },
     {
       question: "What happens if SSH drops?",

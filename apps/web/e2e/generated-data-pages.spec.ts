@@ -4,7 +4,7 @@ import { test, expect, type Page } from "@playwright/test";
  * E2E tests for pages that depend on manifest-generated data.
  *
  * These pages consume data from apps/web/lib/generated/* which is
- * derived from acfs.manifest.yaml via the manifest generator.
+ * derived from gtbi.manifest.yaml via the manifest generator.
  *
  * Related bead: bd-31ps.1.4
  */

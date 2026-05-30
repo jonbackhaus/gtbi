@@ -28,27 +28,27 @@ echo ""
 export YES_MODE=true
 export DRY_RUN=false
 export MODE=vibe
-export ACFS_VERSION="0.0.0-test"
+export GTBI_VERSION="0.0.0-test"
 export TARGET_USER="ubuntu"
 export TARGET_HOME="/tmp/test_lib_globals_home"
-export ACFS_HOME="$TARGET_HOME/.acfs"
-export ACFS_STATE_FILE="$ACFS_HOME/state.json"
-export ACFS_LOG_DIR="/tmp/test_lib_globals_logs"
-export ACFS_LIB_DIR="$LIB_DIR"
-export ACFS_GENERATED_DIR="$GENERATED_DIR"
-export ACFS_ASSETS_DIR="$REPO_ROOT/acfs"
-export ACFS_CHECKSUMS_YAML="$REPO_ROOT/checksums.yaml"
-export ACFS_MANIFEST_YAML="$REPO_ROOT/acfs.manifest.yaml"
+export GTBI_HOME="$TARGET_HOME/.gtbi"
+export GTBI_STATE_FILE="$GTBI_HOME/state.json"
+export GTBI_LOG_DIR="/tmp/test_lib_globals_logs"
+export GTBI_LIB_DIR="$LIB_DIR"
+export GTBI_GENERATED_DIR="$GENERATED_DIR"
+export GTBI_ASSETS_DIR="$REPO_ROOT/gtbi"
+export GTBI_CHECKSUMS_YAML="$REPO_ROOT/checksums.yaml"
+export GTBI_MANIFEST_YAML="$REPO_ROOT/gtbi.manifest.yaml"
 export SKIP_POSTGRES=false
 export SKIP_VAULT=false
 export SKIP_CLOUD=false
-export ACFS_RAW="https://raw.githubusercontent.com/test/test/main"
-export ACFS_CHECKSUMS_RAW="$ACFS_RAW"
-export ACFS_CHECKSUMS_REF="main"
-export _ACFS_LOGGING_SH_LOADED=1
-export ACFS_CI=true
+export GTBI_RAW="https://raw.githubusercontent.com/test/test/main"
+export GTBI_CHECKSUMS_RAW="$GTBI_RAW"
+export GTBI_CHECKSUMS_REF="main"
+export _GTBI_LOGGING_SH_LOADED=1
+export GTBI_CI=true
 
-mkdir -p "$TARGET_HOME/.acfs" "$ACFS_LOG_DIR" 2>/dev/null || true
+mkdir -p "$TARGET_HOME/.gtbi" "$GTBI_LOG_DIR" 2>/dev/null || true
 
 # Provide minimal logging stubs
 log_info() { echo "[INFO] $*"; }
@@ -102,26 +102,26 @@ check_global() {
 }
 
 # Key globals from state.sh
-check_global "ACFS_PHASE_NAMES" "state.sh: associative array of phase display names"
+check_global "GTBI_PHASE_NAMES" "state.sh: associative array of phase display names"
 
 # Key globals from install_helpers.sh
-check_global "ACFS_EFFECTIVE_RUN" "install_helpers.sh: module execution map"
-check_global "ACFS_EFFECTIVE_PLAN" "install_helpers.sh: ordered execution plan"
+check_global "GTBI_EFFECTIVE_RUN" "install_helpers.sh: module execution map"
+check_global "GTBI_EFFECTIVE_PLAN" "install_helpers.sh: ordered execution plan"
 
 # Key globals from autofix.sh
-check_global "ACFS_CHANGE_RECORDS" "autofix.sh: change record map"
-check_global "ACFS_CHANGE_ORDER" "autofix.sh: ordered change IDs"
+check_global "GTBI_CHANGE_RECORDS" "autofix.sh: change record map"
+check_global "GTBI_CHANGE_ORDER" "autofix.sh: ordered change IDs"
 
 # Key globals from error_tracking.sh
-check_global "ACFS_FAILED_TOOLS" "error_tracking.sh: failed tool list"
-check_global "ACFS_SUCCESSFUL_TOOLS" "error_tracking.sh: successful tool list"
+check_global "GTBI_FAILED_TOOLS" "error_tracking.sh: failed tool list"
+check_global "GTBI_SUCCESSFUL_TOOLS" "error_tracking.sh: successful tool list"
 
 echo ""
 echo "---"
 echo "Results: $passed passed, $errors failed"
 
 # Cleanup
-rm -rf "$TARGET_HOME" "$ACFS_LOG_DIR" 2>/dev/null || true
+rm -rf "$TARGET_HOME" "$GTBI_LOG_DIR" 2>/dev/null || true
 
 if [[ $errors -gt 0 ]]; then
     echo ""

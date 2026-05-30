@@ -1,5 +1,5 @@
 /**
- * ACFS Manifest Utilities
+ * GTBI Manifest Utilities
  * Helper functions for working with manifest data
  */
 
@@ -21,7 +21,7 @@ const VALID_CATEGORIES = new Set<string>([
   'cloud',
   'agents',
   'stack',
-  'acfs',
+  'gtbi',
 ]);
 
 /**

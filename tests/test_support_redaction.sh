@@ -53,7 +53,7 @@ fail() {
 }
 
 # Create a temp directory for test fixtures, clean up on exit
-TEST_DIR=$(mktemp -d /tmp/acfs_redaction_test_XXXXXX)
+TEST_DIR=$(mktemp -d /tmp/gtbi_redaction_test_XXXXXX)
 trap 'rm -rf "$TEST_DIR"' EXIT
 
 # ============================================================
@@ -186,7 +186,7 @@ if jq_bin=$(command -v jq 2>/dev/null); then
         log_error() { :; }
         source "$SUPPORT_SH"
         _SUPPORT_CURRENT_HOME="$HOME"
-        _SUPPORT_ACFS_HOME=""
+        _SUPPORT_GTBI_HOME=""
         SUPPORT_TARGET_HOME="$HOME"
         SUPPORT_TARGET_USER="tester"
         BUNDLE_FILES=()
@@ -266,7 +266,7 @@ assert_contains "Bearer token redacted" "$result" "Bearer <REDACTED:bearer>"
 result=$(redact_and_read "jwt.txt" "token=eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dozjgNryP4J3jVmNHl0w5N_XgL0n3I9PlFUP0THsR8U")
 assert_contains "JWT redacted" "$result" "<REDACTED:jwt>"
 
-result=$(redact_and_read "credential_urls.txt" "DATABASE_URL=postgres://acfs:supersecret@db.example.com/app
+result=$(redact_and_read "credential_urls.txt" "DATABASE_URL=postgres://gtbi:supersecret@db.example.com/app
 REDIS_URL=redis://:redispassword@localhost:6379/0
 PUBLIC_URL=https://example.com:443/path")
 assert_contains "Database URL credentials redacted" "$result" "postgres://<REDACTED:credentials>@db.example.com/app"
@@ -345,8 +345,8 @@ assert_not_contains "Quoted token value removed" "$result" "quoted token value 1
 assert_not_contains "Quoted client secret value removed" "$result" "quoted client secret value"
 
 result=$(redact_and_read "generated_password_log.txt" "WARN: Generated password for 'ubuntu': abcdefghijklmnopqrstuvwxyz123456")
-assert_contains "Generated ACFS password redacted" "$result" "Generated password for 'ubuntu': <REDACTED:password>"
-assert_not_contains "Generated ACFS password value removed" "$result" "abcdefghijklmnopqrstuvwxyz123456"
+assert_contains "Generated GTBI password redacted" "$result" "Generated password for 'ubuntu': <REDACTED:password>"
+assert_not_contains "Generated GTBI password value removed" "$result" "abcdefghijklmnopqrstuvwxyz123456"
 
 result=$(redact_and_read "mail_thread_snippet.json" '{"thread_snippet":"user pasted ghp_ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmn in a private thread","body_md":"Please inspect /home/alice/private/repo and use token ABCDEFGHIJKLMNOPQRSTUVWXYZ"}')
 assert_contains "Agent Mail thread snippet redacted" "$result" '"thread_snippet": "<REDACTED:message_snippet>"'

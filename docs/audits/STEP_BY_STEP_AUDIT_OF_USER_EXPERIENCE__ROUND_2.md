@@ -277,7 +277,7 @@ This audit traces through the entire user journey from visiting agent-flywheel.c
 
 **Issue 11.1: CRITICAL - New SSH command is different**
 - **Where:** Reconnect command
-- **Problem:** The reconnect command uses `-i ~/.ssh/acfs_ed25519` which is NEW. User has to understand they're now using their key instead of password.
+- **Problem:** The reconnect command uses `-i ~/.ssh/gtbi_ed25519` which is NEW. User has to understand they're now using their key instead of password.
 - **Fix:** Explain: "Notice this command is different - we're now using your SSH key (the one you generated earlier) instead of a password. You won't be asked for a password this time."
 
 **Issue 11.2: What if key doesn't work?**
@@ -306,7 +306,7 @@ This audit traces through the entire user journey from visiting agent-flywheel.c
 ## Phase 13: Status Check (Step 12)
 
 ### What Works Well
-- `acfs doctor` command is helpful
+- `gtbi doctor` command is helpful
 - Expected output shown
 - Service authentication commands listed
 
@@ -461,4 +461,4 @@ This audit traces through the entire user journey from visiting agent-flywheel.c
 
 ---
 
-*Audit completed by Claude (Opus 4.5) in ACFS code review session.*
+*Audit completed by Claude (Opus 4.5) in GTBI code review session.*

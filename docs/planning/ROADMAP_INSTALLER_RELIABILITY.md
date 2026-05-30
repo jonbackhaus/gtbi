@@ -1,6 +1,6 @@
-# ACFS Installer Reliability & UX Roadmap
+# GTBI Installer Reliability & UX Roadmap
 
-> **Purpose**: This document provides comprehensive technical specifications for 6 approved improvements to ACFS that enhance installation reliability, error handling, and user experience without sacrificing power or simplicity.
+> **Purpose**: This document provides comprehensive technical specifications for 6 approved improvements to GTBI that enhance installation reliability, error handling, and user experience without sacrificing power or simplicity.
 
 > **Guiding Principle**: Every improvement must maintain the one-liner install experience (`curl | bash`) while making failures recoverable, errors understandable, and the system trustworthy.
 
@@ -22,16 +22,16 @@
 
 ### Problem Statement
 
-The current installer (`install.sh`) writes `~/.acfs/state.json` only **after successful completion** (around line 1197-1210). This creates a catastrophic UX failure: if SSH disconnects at phase 8/10, the user loses 15-20 minutes of work and must restart from scratch.
+The current installer (`install.sh`) writes `~/.gtbi/state.json` only **after successful completion** (around line 1197-1210). This creates a catastrophic UX failure: if SSH disconnects at phase 8/10, the user loses 15-20 minutes of work and must restart from scratch.
 
 **Current behavior:**
 ```bash
 # state.json only written here, AFTER all phases complete
 install_completed() {
-    cat > "$ACFS_HOME/state.json" <<EOF
+    cat > "$GTBI_HOME/state.json" <<EOF
 {
     "installed_at": "$(date -Iseconds)",
-    "version": "$ACFS_VERSION",
+    "version": "$GTBI_VERSION",
     "mode": "$MODE",
     "completed_phases": [1,2,3,4,5,6,7,8,9,10]
 }
@@ -78,7 +78,7 @@ EOF
 ```bash
 # Initialize or load state at script start
 init_state() {
-    local state_file="$ACFS_HOME/state.json"
+    local state_file="$GTBI_HOME/state.json"
 
     if [[ -f "$state_file" ]]; then
         # Load existing state
@@ -89,21 +89,21 @@ init_state() {
         # Fresh install
         COMPLETED_PHASES=()
         CURRENT_PHASE=0
-        mkdir -p "$ACFS_HOME"
+        mkdir -p "$GTBI_HOME"
         save_state
     fi
 }
 
 # Save state after each phase completes
 save_state() {
-    local state_file="$ACFS_HOME/state.json"
+    local state_file="$GTBI_HOME/state.json"
     local completed_json
     completed_json=$(printf '%s\n' "${COMPLETED_PHASES[@]}" | jq -R . | jq -s .)
 
     cat > "$state_file" <<EOF
 {
     "schema_version": 2,
-    "version": "$ACFS_VERSION",
+    "version": "$GTBI_VERSION",
     "mode": "$MODE",
     "started_at": "${STARTED_AT:-$(date -Iseconds)}",
     "last_updated": "$(date -Iseconds)",
@@ -216,7 +216,7 @@ confirm_resume() {
 ### Edge Cases
 
 1. **Corrupted state file**: Fall back to fresh install with warning
-2. **Version mismatch**: Warn if state was from different ACFS version
+2. **Version mismatch**: Warn if state was from different GTBI version
 3. **Phase ordering changes**: Track by phase name, not just number
 4. **Partial phase completion**: State tracks current step within phase for better diagnostics
 
@@ -245,7 +245,7 @@ Users discover VPS configuration problems **15 minutes into installation**, afte
 
 ```bash
 #!/usr/bin/env bash
-# ACFS Pre-Flight Check
+# GTBI Pre-Flight Check
 # Run this BEFORE the main installer to validate your VPS is ready.
 #
 # Usage:
@@ -293,13 +293,13 @@ check_os() {
     os_version=$(grep -oP '^VERSION_ID=\K.*' /etc/os-release 2>/dev/null | tr -d '"')
 
     if [[ "$os_id" != "ubuntu" ]]; then
-        check "os" "fail" "Unsupported OS: $os_id" "ACFS requires Ubuntu 24.04+"
+        check "os" "fail" "Unsupported OS: $os_id" "GTBI requires Ubuntu 24.04+"
         return
     fi
 
     local major_version="${os_version%%.*}"
     if [[ "$major_version" -lt 24 ]]; then
-        check "os" "fail" "Ubuntu $os_version too old" "ACFS requires Ubuntu 24.04+"
+        check "os" "fail" "Ubuntu $os_version too old" "GTBI requires Ubuntu 24.04+"
     else
         check "os" "pass" "Ubuntu $os_version detected"
     fi
@@ -317,7 +317,7 @@ check_architecture() {
             check "arch" "pass" "Architecture: arm64"
             ;;
         *)
-            check "arch" "fail" "Unsupported architecture: $arch" "ACFS supports x86_64 and arm64"
+            check "arch" "fail" "Unsupported architecture: $arch" "GTBI supports x86_64 and arm64"
             ;;
     esac
 }
@@ -328,7 +328,7 @@ check_disk_space() {
     available_gb=$((available_kb / 1024 / 1024))
 
     if [[ $available_gb -lt 5 ]]; then
-        check "disk" "fail" "Only ${available_gb}GB available" "ACFS needs at least 10GB free"
+        check "disk" "fail" "Only ${available_gb}GB available" "GTBI needs at least 10GB free"
     elif [[ $available_gb -lt 10 ]]; then
         check "disk" "warn" "${available_gb}GB available" "Recommend 20GB+ for comfortable operation"
     else
@@ -342,7 +342,7 @@ check_memory() {
     total_gb=$((total_kb / 1024 / 1024))
 
     if [[ $total_gb -lt 2 ]]; then
-        check "memory" "fail" "Only ${total_gb}GB RAM" "ACFS needs at least 4GB RAM"
+        check "memory" "fail" "Only ${total_gb}GB RAM" "GTBI needs at least 4GB RAM"
     elif [[ $total_gb -lt 4 ]]; then
         check "memory" "warn" "${total_gb}GB RAM" "Recommend 8GB+ for agent workloads"
     else
@@ -428,7 +428,7 @@ run_checks() {
 print_human() {
     echo ""
     echo -e "${CYAN}╔══════════════════════════════════════════════════════════════╗${NC}"
-    echo -e "${CYAN}║              ACFS Pre-Flight Check                            ║${NC}"
+    echo -e "${CYAN}║              GTBI Pre-Flight Check                            ║${NC}"
     echo -e "${CYAN}╚══════════════════════════════════════════════════════════════╝${NC}"
     echo ""
 
@@ -452,18 +452,18 @@ print_human() {
     echo ""
 
     if [[ ${#FAIL[@]} -gt 0 ]]; then
-        echo -e "${RED}Pre-flight failed. Fix the issues above before running ACFS.${NC}"
+        echo -e "${RED}Pre-flight failed. Fix the issues above before running GTBI.${NC}"
         exit 1
     elif [[ ${#WARN[@]} -gt 0 ]]; then
         echo -e "${YELLOW}Pre-flight passed with warnings. You may proceed, but consider addressing warnings.${NC}"
         echo ""
         echo -e "Ready to install! Run:"
-        echo -e "  curl -fsSL \"https://raw.githubusercontent.com/Dicklesworthstone/agentic_coding_flywheel_setup/main/install.sh?\$(date +%s)\" | bash -s -- --yes --mode vibe"
+        echo -e "  curl -fsSL \"https://raw.githubusercontent.com/jonbackhaus/gtbi/main/install.sh?\$(date +%s)\" | bash -s -- --yes --mode vibe"
     else
-        echo -e "${GREEN}Pre-flight passed! Your VPS is ready for ACFS.${NC}"
+        echo -e "${GREEN}Pre-flight passed! Your VPS is ready for GTBI.${NC}"
         echo ""
         echo -e "Run:"
-        echo -e "  curl -fsSL \"https://raw.githubusercontent.com/Dicklesworthstone/agentic_coding_flywheel_setup/main/install.sh?\$(date +%s)\" | bash -s -- --yes --mode vibe"
+        echo -e "  curl -fsSL \"https://raw.githubusercontent.com/jonbackhaus/gtbi/main/install.sh?\$(date +%s)\" | bash -s -- --yes --mode vibe"
     fi
 }
 
@@ -534,11 +534,11 @@ Add a new step to the wizard between "SSH Connect" (step 6) and "Run Installer" 
 
 When installation fails, users see only:
 ```
-✖ ACFS installation failed
+✖ GTBI installation failed
 
 Fix:
-1. Check the log: cat /var/log/acfs/install.log
-2. Run: acfs doctor
+1. Check the log: cat /var/log/gtbi/install.log
+2. Run: gtbi doctor
 3. Re-run this installer
 ```
 
@@ -613,7 +613,7 @@ get_suggested_fix() {
         fi
     done
 
-    echo "Unknown error. Check logs: cat $ACFS_LOG_DIR/install.log"
+    echo "Unknown error. Check logs: cat $GTBI_LOG_DIR/install.log"
 }
 ```
 
@@ -639,7 +639,7 @@ report_failure() {
     if [[ "$HAS_GUM" == "true" ]]; then
         gum style \
             --border double \
-            --border-foreground "$ACFS_ERROR" \
+            --border-foreground "$GTBI_ERROR" \
             --padding "1 2" \
             --margin "1 0" \
             "$(cat <<EOF
@@ -654,7 +654,7 @@ $display_error
 Suggested Fix:
 $suggested_fix
 
-Full log: $ACFS_LOG_DIR/install.log
+Full log: $GTBI_LOG_DIR/install.log
 Resume: curl ... | bash -s -- --resume
 EOF
 )"
@@ -672,13 +672,13 @@ EOF
         echo -e "${YELLOW}║  Suggested Fix:${NC}"
         echo -e "${YELLOW}║    $suggested_fix${NC}"
         echo -e "${RED}║                                                                ║${NC}"
-        echo -e "${RED}║  Full log: $ACFS_LOG_DIR/install.log${NC}"
+        echo -e "${RED}║  Full log: $GTBI_LOG_DIR/install.log${NC}"
         echo -e "${RED}║  Resume: curl ... | bash -s -- --resume${NC}"
         echo -e "${RED}╚══════════════════════════════════════════════════════════════╝${NC}"
     fi
 
     # Also log structured JSON for programmatic consumption
-    cat >> "$ACFS_LOG_DIR/install.log" <<EOF
+    cat >> "$GTBI_LOG_DIR/install.log" <<EOF
 
 === FAILURE REPORT ===
 {
@@ -702,19 +702,19 @@ install_phase_languages() {
     # Bun
     if ! command -v bun &>/dev/null; then
         try_step "Installing Bun runtime" \
-            "acfs_curl https://bun.sh/install | bash" || return 1
+            "gtbi_curl https://bun.sh/install | bash" || return 1
     fi
 
     # Rust
     if ! command -v cargo &>/dev/null; then
         try_step "Installing Rust via rustup" \
-            "acfs_curl https://sh.rustup.rs | sh -s -- -y" || return 1
+            "gtbi_curl https://sh.rustup.rs | sh -s -- -y" || return 1
     fi
 
     # UV
     if ! command -v uv &>/dev/null; then
         try_step "Installing uv (Python tooling)" \
-            "acfs_curl https://astral.sh/uv/install.sh | sh" || return 1
+            "gtbi_curl https://astral.sh/uv/install.sh | sh" || return 1
     fi
 
     # Go
@@ -801,7 +801,7 @@ handle_checksum_mismatch() {
         log_error "This MUST be resolved before continuing."
         log_error ""
         log_error "Options:"
-        log_error "  1. File an issue: https://github.com/Dicklesworthstone/agentic_coding_flywheel_setup/issues"
+        log_error "  1. File an issue: https://github.com/jonbackhaus/gtbi/issues"
         log_error "  2. Manually verify the upstream script is safe"
         log_error "  3. Wait for maintainers to update checksums"
         return 1  # Abort for critical tools
@@ -870,7 +870,7 @@ verify_and_run_with_recovery() {
 
     # Fetch content
     local content
-    content=$(acfs_curl "$url") || {
+    content=$(gtbi_curl "$url") || {
         log_error "Failed to fetch $url"
         return 1
     }
@@ -912,7 +912,7 @@ report_skipped_tools() {
     done
     echo ""
     log_detail "You can install these manually after verifying they are safe."
-    log_detail "Or wait for ACFS to update checksums and run: acfs update --stack"
+    log_detail "Or wait for GTBI to update checksums and run: gtbi update --stack"
 }
 ```
 
@@ -927,7 +927,7 @@ report_skipped_tools() {
 
 ### Problem Statement
 
-`acfs doctor` only verifies binaries exist, not that they **work**:
+`gtbi doctor` only verifies binaries exist, not that they **work**:
 - `claude --version` passes but `claude` fails with "not authenticated"
 - `psql --version` passes but connection fails with "role does not exist"
 - `vault --version` passes but `vault status` fails with "connection refused"
@@ -938,7 +938,7 @@ report_skipped_tools() {
 
 ```bash
 # New flag
-acfs doctor --deep
+gtbi doctor --deep
 ```
 
 #### Functional Test Functions
@@ -1149,7 +1149,7 @@ check_with_status() {
 
 ```
 ╔══════════════════════════════════════════════════════════════╗
-║                    ACFS Deep Health Check                     ║
+║                    GTBI Deep Health Check                     ║
 ╠══════════════════════════════════════════════════════════════╣
 ║ Functional Tests (--deep)                                     ║
 ║   ✔ Claude Code auth: OK                                      ║
@@ -1435,18 +1435,18 @@ sanitize_content() {
 
 ```bash
 # Export last session
-acfs session export --last > my-workflow.json
-acfs session export --session-id abc123 > specific-session.json
+gtbi session export --last > my-workflow.json
+gtbi session export --session-id abc123 > specific-session.json
 
 # Export with options
-acfs session export --last \
+gtbi session export --last \
     --include-transcript \      # Include full transcript (sanitized)
     --include-diffs \          # Include file diffs
     --redact-emails \          # Also redact email addresses
     > detailed-export.json
 
 # Import and preview
-acfs session import my-workflow.json --dry-run
+gtbi session import my-workflow.json --dry-run
 # Output:
 # This session will:
 #   - Create 4 files
@@ -1462,24 +1462,24 @@ acfs session import my-workflow.json --dry-run
 # Proceed with replay? [y/N]
 
 # Replay (guided mode)
-acfs session import my-workflow.json --guided
+gtbi session import my-workflow.json --guided
 # Steps through each action, asking for confirmation
 
 # Replay (automatic, dangerous)
-acfs session import my-workflow.json --yes
+gtbi session import my-workflow.json --yes
 ```
 
 #### Integration with CASS
 
 ```bash
-# acfs session integrates with cass for storage
+# gtbi session integrates with cass for storage
 export_session() {
     local session_id="$1"
     local output_file="$2"
 
     # Use CASS to retrieve session
     if ! command -v cass &>/dev/null; then
-        log_error "CASS not installed. Run: acfs update --stack"
+        log_error "CASS not installed. Run: gtbi update --stack"
         return 1
     fi
 
@@ -1510,7 +1510,7 @@ This would require a hosted backend, which is out of scope for the initial imple
 ### Files Created
 
 - `scripts/lib/session.sh` (new): Session export/import logic
-- `acfs/session/` (new directory): Session templates and sanitization rules
+- `gtbi/session/` (new directory): Session templates and sanitization rules
 
 ---
 

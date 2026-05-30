@@ -19,8 +19,8 @@ const TIMEOUTS = {
 } as const;
 
 const COMPLETED_STEPS_KEY = "agent-flywheel-wizard-completed-steps";
-const COMMAND_COMPLETION_PREFIX = "acfs-command-";
-const ACFS_REF_KEY = "agent-flywheel-acfs-ref";
+const COMMAND_COMPLETION_PREFIX = "gtbi-command-";
+const GTBI_REF_KEY = "agent-flywheel-gtbi-ref";
 const FINAL_STEP_PREREQUISITES = Array.from({ length: 12 }, (_, index) => index + 1);
 
 function urlPathWithOptionalQuery(pathname: string): RegExp {
@@ -37,7 +37,7 @@ async function setupWizardState(
   options: {
     os?: "mac" | "windows";
     ip?: string;
-    acfsRef?: string;
+    gtbiRef?: string;
     completedSteps?: number[];
     commandCompletions?: string[];
   } = {}
@@ -47,17 +47,17 @@ async function setupWizardState(
     ({
       os,
       ip,
-      acfsRef,
+      gtbiRef,
       completedSteps,
       commandCompletions,
       completedStepsKey,
       commandCompletionPrefix,
-      acfsRefKey,
+      gtbiRefKey,
     }) => {
       localStorage.clear();
       if (os) localStorage.setItem("agent-flywheel-user-os", os);
       if (ip) localStorage.setItem("agent-flywheel-vps-ip", ip);
-      if (acfsRef) localStorage.setItem(acfsRefKey, acfsRef);
+      if (gtbiRef) localStorage.setItem(gtbiRefKey, gtbiRef);
 
       // If completedSteps is not provided, default to completing all steps up to 13
       // so the layout doesn't automatically redirect us to step 1 during tests.
@@ -73,12 +73,12 @@ async function setupWizardState(
     {
       os: options.os,
       ip: options.ip,
-      acfsRef: options.acfsRef,
+      gtbiRef: options.gtbiRef,
       completedSteps: options.completedSteps,
       commandCompletions: options.commandCompletions,
       completedStepsKey: COMPLETED_STEPS_KEY,
       commandCompletionPrefix: COMMAND_COMPLETION_PREFIX,
-      acfsRefKey: ACFS_REF_KEY,
+      gtbiRefKey: GTBI_REF_KEY,
     }
   );
 }
@@ -198,10 +198,10 @@ test.describe("Wizard Flow", () => {
     await expect(page.getByText(/safe to rerun/i)).toBeVisible();
     await expect(page.getByText(/No prompts expected/i)).toBeVisible();
     await expect(page.locator("code").filter({
-      hasText: "ssh-keygen -y -f ~/.ssh/acfs_ed25519",
+      hasText: "ssh-keygen -y -f ~/.ssh/gtbi_ed25519",
     }).first()).toBeVisible();
     await expect(page.locator("code").filter({
-      hasText: 'ssh-keygen -t ed25519 -C "acfs" -f ~/.ssh/acfs_ed25519 -N ""',
+      hasText: 'ssh-keygen -t ed25519 -C "gtbi" -f ~/.ssh/gtbi_ed25519 -N ""',
     }).first()).toBeVisible();
 
     await setupWizardState(page, { os: "windows", completedSteps: [1, 2] });
@@ -209,10 +209,10 @@ test.describe("Wizard Flow", () => {
     await page.waitForLoadState("domcontentloaded");
 
     await expect(page.locator("code").filter({
-      hasText: "Test-Path $HOME\\.ssh\\acfs_ed25519",
+      hasText: "Test-Path $HOME\\.ssh\\gtbi_ed25519",
     }).first()).toBeVisible();
     await expect(page.locator("code").filter({
-      hasText: "Set-Content $HOME\\.ssh\\acfs_ed25519.pub",
+      hasText: "Set-Content $HOME\\.ssh\\gtbi_ed25519.pub",
     }).first()).toBeVisible();
   });
 
@@ -300,7 +300,7 @@ test.describe("Wizard Flow", () => {
       "unknown",
       "manual spec comparison",
       "Unknown",
-      "Not in the ACFS provider table; compare the specs manually."
+      "Not in the GTBI provider table; compare the specs manually."
     );
 
     await providerSelect.selectOption("ovh");
@@ -310,7 +310,7 @@ test.describe("Wizard Flow", () => {
       "unsafe",
       "choose Ubuntu 24.04+ before checkout",
       "Unsupported",
-      /Ubuntu 20\.04 is below the ACFS minimum/
+      /Ubuntu 20\.04 is below the GTBI minimum/
     );
 
     await writeFile(artifactPath, JSON.stringify(matrixLog, null, 2));
@@ -925,7 +925,7 @@ test.describe("Step 8: Pre-Flight Check Page", () => {
     await setupWizardState(page, {
       os: "mac",
       ip: "192.168.1.100",
-      acfsRef: "release-2026-05-06",
+      gtbiRef: "release-2026-05-06",
     });
 
     await page.goto("/wizard/preflight-check");
@@ -998,9 +998,9 @@ test.describe("Step 9: Run Installer Page", () => {
       throw new Error(`Downloaded handoff runbook was not valid JSON: ${String(error)}`);
     }
 
-    expect(runbook.schema).toBe("acfs.handoff-runbook.v1");
+    expect(runbook.schema).toBe("gtbi.handoff-runbook.v1");
     expect(runbook.install?.command).toContain("curl -fsSL");
-    expect(runbook.support?.bundleCommand).toBe("acfs support-bundle");
+    expect(runbook.support?.bundleCommand).toBe("gtbi support-bundle");
     expect(runbook.targetHost?.value).toBe("<ipv4-target-host>");
     expect(jsonText).not.toContain("192.168.1.100");
 
@@ -1012,8 +1012,8 @@ test.describe("Step 9: Run Installer Page", () => {
     expect(markdownPath).toBeTruthy();
     const markdownText = await readFile(markdownPath!, "utf8");
 
-    expect(markdownText).toContain("# ACFS Wizard Handoff Runbook");
-    expect(markdownText).toContain("acfs support-bundle");
+    expect(markdownText).toContain("# GTBI Wizard Handoff Runbook");
+    expect(markdownText).toContain("gtbi support-bundle");
     expect(markdownText).toContain("ssh root@<ipv4-target-host>");
     expect(markdownText).not.toContain("192.168.1.100");
   });
@@ -1116,7 +1116,7 @@ test.describe("Step 9: Run Installer Page", () => {
     // Get the default command (without pinning)
     const commandElement = page.locator('code').filter({ hasText: 'curl -fsSL' }).first();
     const defaultCommand = await commandElement.textContent();
-    expect(defaultCommand).not.toContain('ACFS_REF=');
+    expect(defaultCommand).not.toContain('GTBI_REF=');
     expect(defaultCommand).not.toContain('--ref');
 
     // Enable pinning and set a custom ref
@@ -1167,7 +1167,7 @@ test.describe("Step 9: Run Installer Page", () => {
     await page.locator('#pin-ref').click();
 
     // Command should no longer include the pinned ref argument
-    await expect(commandElement).not.toContainText('ACFS_REF=');
+    await expect(commandElement).not.toContainText('GTBI_REF=');
     await expect(commandElement).not.toContainText('--ref');
   });
 
@@ -1280,12 +1280,12 @@ test.describe("Step 12: Status Check Page", () => {
     await expect(page.locator("h1").first()).toContainText(/status check/i);
   });
 
-  test("should display acfs doctor command", async ({ page }) => {
+  test("should display gtbi doctor command", async ({ page }) => {
     await page.goto("/wizard/status-check");
     await page.waitForLoadState("domcontentloaded");
 
     // Doctor command should be visible
-    await expect(page.locator('text="acfs doctor"')).toBeVisible();
+    await expect(page.locator('text="gtbi doctor"')).toBeVisible();
   });
 
   test("should display quick spot check commands", async ({ page }) => {
@@ -2108,7 +2108,7 @@ test.describe("Command Builder Panel", () => {
     await page.waitForLoadState("domcontentloaded");
 
     await expect(page.locator('text="ssh root@[2001:db8::99]"').first()).toBeVisible();
-    await expect(page.locator('text="ssh -i ~/.ssh/acfs_ed25519 ubuntu@[2001:db8::99]"').first()).toBeVisible();
+    await expect(page.locator('text="ssh -i ~/.ssh/gtbi_ed25519 ubuntu@[2001:db8::99]"').first()).toBeVisible();
   });
 });
 

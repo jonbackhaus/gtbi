@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
 # ============================================================
-# ACFS Offline Artifact Pack Builder
+# GTBI Offline Artifact Pack Builder
 #
-# Prepares an inspectable offline pack from acfs.manifest.yaml verified
+# Prepares an inspectable offline pack from gtbi.manifest.yaml verified
 # installer entries and checksums.yaml approved source URLs.
 # ============================================================
 
 set -euo pipefail
 
-OFFLINE_PACK_BUILD_SCHEMA="acfs.offline-artifact-pack-build.v1"
-OFFLINE_PACK_SCHEMA="acfs.offline-artifact-pack.v1"
+OFFLINE_PACK_BUILD_SCHEMA="gtbi.offline-artifact-pack-build.v1"
+OFFLINE_PACK_SCHEMA="gtbi.offline-artifact-pack.v1"
 OFFLINE_PACK_FORMAT="markdown"
 OFFLINE_PACK_DRY_RUN=false
 OFFLINE_PACK_BEST_EFFORT=false
@@ -19,8 +19,8 @@ OFFLINE_PACK_CHECKSUMS_FILE=""
 OFFLINE_PACK_MANIFEST_FILE=""
 OFFLINE_PACK_TIMEOUT_SECONDS=60
 OFFLINE_PACK_EXPIRES_DAYS=30
-OFFLINE_PACK_ARCH="${ACFS_OFFLINE_PACK_ARCH:-}"
-OFFLINE_PACK_UBUNTU_VERSION="${ACFS_OFFLINE_PACK_UBUNTU_VERSION:-25.10}"
+OFFLINE_PACK_ARCH="${GTBI_OFFLINE_PACK_ARCH:-}"
+OFFLINE_PACK_UBUNTU_VERSION="${GTBI_OFFLINE_PACK_UBUNTU_VERSION:-25.10}"
 OFFLINE_PACK_MODULE_ARGS=()
 OFFLINE_PACK_SELECTED_MODULES=()
 OFFLINE_PACK_ERRORS=()
@@ -42,17 +42,17 @@ declare -ga OFFLINE_PACK_VERIFIED_MODULES=()
 
 offline_pack_usage() {
     cat <<'EOF'
-Usage: acfs offline-pack build [OPTIONS]
+Usage: gtbi offline-pack build [OPTIONS]
 
 Options:
-  --output DIR          Directory that will receive acfs-offline-pack/
+  --output DIR          Directory that will receive gtbi-offline-pack/
   --module ID          Include one manifest module (repeatable; default: all verified installers)
   --dry-run            Print the resolved pack plan without writing files
   --best-effort        Write a diagnostic pack even when some downloads fail
   --json               Emit machine-readable JSON
   --markdown           Emit human-readable output (default)
-  --source-root DIR    ACFS source root (default: inferred from this script)
-  --manifest-file FILE Manifest YAML (default: SOURCE_ROOT/acfs.manifest.yaml)
+  --source-root DIR    GTBI source root (default: inferred from this script)
+  --manifest-file FILE Manifest YAML (default: SOURCE_ROOT/gtbi.manifest.yaml)
   --checksums-file FILE checksums.yaml (default: SOURCE_ROOT/checksums.yaml)
   --arch ARCH          Target architecture (default: uname -m)
   --ubuntu-version VER Target Ubuntu version metadata (default: 25.10)
@@ -262,7 +262,7 @@ offline_pack_git() {
 }
 
 offline_pack_curl_binary_path() {
-    local override="${ACFS_OFFLINE_PACK_CURL_BIN:-}"
+    local override="${GTBI_OFFLINE_PACK_CURL_BIN:-}"
 
     if [[ -n "$override" ]]; then
         case "$override" in
@@ -365,7 +365,7 @@ offline_pack_parse_args() {
         return 100
     elif [[ -n "${1:-}" && "${1:-}" != -* ]]; then
         echo "Error: unknown offline-pack subcommand: $1" >&2
-        echo "Run 'acfs offline-pack --help' for usage." >&2
+        echo "Run 'gtbi offline-pack --help' for usage." >&2
         return 2
     fi
 
@@ -467,7 +467,7 @@ offline_pack_parse_args() {
                 ;;
             *)
                 echo "Error: unknown option: $1" >&2
-                echo "Run 'acfs offline-pack --help' for usage." >&2
+                echo "Run 'gtbi offline-pack --help' for usage." >&2
                 return 2
                 ;;
         esac
@@ -485,7 +485,7 @@ offline_pack_resolve_inputs() {
         OFFLINE_PACK_CHECKSUMS_FILE="$OFFLINE_PACK_SOURCE_ROOT/checksums.yaml"
     fi
     if [[ -z "$OFFLINE_PACK_MANIFEST_FILE" ]]; then
-        OFFLINE_PACK_MANIFEST_FILE="$OFFLINE_PACK_SOURCE_ROOT/acfs.manifest.yaml"
+        OFFLINE_PACK_MANIFEST_FILE="$OFFLINE_PACK_SOURCE_ROOT/gtbi.manifest.yaml"
     fi
     if [[ -z "$OFFLINE_PACK_ARCH" ]]; then
         OFFLINE_PACK_ARCH="$(offline_pack_uname -m)"
@@ -496,7 +496,7 @@ offline_pack_resolve_inputs() {
         return 1
     }
     OFFLINE_PACK_MANIFEST_FILE="$(offline_pack_abs_file "$OFFLINE_PACK_MANIFEST_FILE")" || {
-        offline_pack_add_error "pack_missing_manifest: acfs.manifest.yaml not found"
+        offline_pack_add_error "pack_missing_manifest: gtbi.manifest.yaml not found"
         return 1
     }
 
@@ -735,7 +735,7 @@ offline_pack_prepare_layout() {
 
     offline_pack_mkdir_p "$pack_root/scripts" "$pack_root/provenance" "$pack_root/artifacts"
 
-    for rel in VERSION acfs.manifest.yaml checksums.yaml; do
+    for rel in VERSION gtbi.manifest.yaml checksums.yaml; do
         case "$rel" in
             VERSION)
                 [[ -f "$OFFLINE_PACK_SOURCE_ROOT/$rel" ]] || {
@@ -744,7 +744,7 @@ offline_pack_prepare_layout() {
                 }
                 offline_pack_cp "$OFFLINE_PACK_SOURCE_ROOT/$rel" "$pack_root/$rel"
                 ;;
-            acfs.manifest.yaml)
+            gtbi.manifest.yaml)
                 offline_pack_cp "$OFFLINE_PACK_MANIFEST_FILE" "$pack_root/$rel"
                 ;;
             checksums.yaml)
@@ -753,7 +753,7 @@ offline_pack_prepare_layout() {
         esac
     done
 
-    for rel in scripts/lib scripts/generated acfs; do
+    for rel in scripts/lib scripts/generated gtbi; do
         [[ -e "$OFFLINE_PACK_SOURCE_ROOT/$rel" ]] || {
             offline_pack_add_error "pack_source_missing: $rel"
             return 1
@@ -762,7 +762,7 @@ offline_pack_prepare_layout() {
 
     offline_pack_cp -R "$OFFLINE_PACK_SOURCE_ROOT/scripts/lib" "$pack_root/scripts/lib"
     offline_pack_cp -R "$OFFLINE_PACK_SOURCE_ROOT/scripts/generated" "$pack_root/scripts/generated"
-    offline_pack_cp -R "$OFFLINE_PACK_SOURCE_ROOT/acfs" "$pack_root/acfs"
+    offline_pack_cp -R "$OFFLINE_PACK_SOURCE_ROOT/gtbi" "$pack_root/gtbi"
 }
 
 offline_pack_fetch_url() {
@@ -976,12 +976,12 @@ offline_pack_write_manifest() {
     offline_pack_jq -n \
         --arg schema "$OFFLINE_PACK_SCHEMA" \
         --argjson schemaVersion 1 \
-        --arg generatedBy "acfs offline-pack build" \
+        --arg generatedBy "gtbi offline-pack build" \
         --arg generatedAt "$generated_at" \
         --arg expiresAt "$expires_at" \
         --argjson staleAfterDays "$OFFLINE_PACK_EXPIRES_DAYS" \
         --arg packMode "$pack_mode" \
-        --arg acfsVersion "$version" \
+        --arg gtbiVersion "$version" \
         --arg sourceRef "$source_ref" \
         --arg sourceCommit "$source_commit" \
         --arg manifestSha "$manifest_sha" \
@@ -999,8 +999,8 @@ offline_pack_write_manifest() {
           expiresAt: $expiresAt,
           staleAfterDays: $staleAfterDays,
           packMode: $packMode,
-          acfs: {
-            version: $acfsVersion,
+          gtbi: {
+            version: $gtbiVersion,
             sourceRef: $sourceRef,
             sourceCommit: $sourceCommit,
             manifestSha256: $manifestSha,
@@ -1087,7 +1087,7 @@ offline_pack_emit_markdown() {
     local url=""
 
     status="$(offline_pack_status)"
-    printf 'ACFS Offline Artifact Pack Build\n'
+    printf 'GTBI Offline Artifact Pack Build\n'
     printf 'Status: %s\n' "$status"
     printf 'Mode: %s\n' "$([[ "$OFFLINE_PACK_DRY_RUN" == "true" ]] && printf 'dry-run' || printf 'build')"
     printf 'Target: Ubuntu %s on %s\n' "$OFFLINE_PACK_UBUNTU_VERSION" "$OFFLINE_PACK_ARCH"
@@ -1169,7 +1169,7 @@ offline_pack_main() {
 
     output_dir="$(offline_pack_abs_dir "$OFFLINE_PACK_OUTPUT_DIR")"
     OFFLINE_PACK_OUTPUT_DIR="$output_dir"
-    pack_root="$output_dir/acfs-offline-pack"
+    pack_root="$output_dir/gtbi-offline-pack"
 
     if ! offline_pack_prepare_layout "$output_dir" "$pack_root"; then
         offline_pack_emit_result "$pack_root" "$generated_at"

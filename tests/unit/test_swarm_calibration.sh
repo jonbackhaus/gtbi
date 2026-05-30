@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-# Unit tests for acfs swarm capacity calibration
+# Unit tests for gtbi swarm capacity calibration
 # ============================================================
 
 set -euo pipefail
@@ -10,7 +10,7 @@ SWARM_CAL_SH="$REPO_ROOT/scripts/lib/swarm_calibration.sh"
 
 TESTS_PASSED=0
 TESTS_FAILED=0
-ARTIFACT_DIR="${ACFS_SWARM_CAL_TEST_ARTIFACTS_DIR:-${TMPDIR:-/tmp}/acfs-swarm-cal-test-artifacts-$(date +%Y%m%d-%H%M%S)-$$}"
+ARTIFACT_DIR="${GTBI_SWARM_CAL_TEST_ARTIFACTS_DIR:-${TMPDIR:-/tmp}/gtbi-swarm-cal-test-artifacts-$(date +%Y%m%d-%H%M%S)-$$}"
 
 mkdir -p "$ARTIFACT_DIR"
 
@@ -206,7 +206,7 @@ test_constrained_host_warns_when_recommended_tier_fails() {
       .calibration.posture == "too_aggressive" and
       .summary.valid_scenarios == 1 and
       .scenarios[0].classification == "model_too_aggressive" and
-      (.next_commands | index("acfs capacity --json --recommend-ntm"))
+      (.next_commands | index("gtbi capacity --json --recommend-ntm"))
     ' <<< "$output" >/dev/null || return 1
 
     pass "constrained_host_warns_when_recommended_tier_fails"

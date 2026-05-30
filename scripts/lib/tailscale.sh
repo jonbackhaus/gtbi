@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # shellcheck disable=SC1091
 # ============================================================
-# ACFS Installer - Tailscale Library
+# GTBI Installer - Tailscale Library
 # Installs and verifies Tailscale VPN for secure remote access
 # ============================================================
 
 TAILSCALE_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Ensure we have logging functions available
-if [[ -z "${ACFS_BLUE:-}" ]]; then
+if [[ -z "${GTBI_BLUE:-}" ]]; then
     # shellcheck source=logging.sh
     source "$TAILSCALE_SCRIPT_DIR/logging.sh"
 fi
@@ -169,7 +169,7 @@ install_tailscale() {
 # ============================================================
 
 # Verify Tailscale installation and status
-# Used by acfs doctor
+# Used by gtbi doctor
 verify_tailscale() {
     if ! command -v tailscale &>/dev/null; then
         log_warn "Tailscale not installed"

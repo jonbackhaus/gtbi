@@ -30,7 +30,7 @@ const STATIC_ROUTE_SOCIAL_DATA: Record<string, SocialImageData> = {
   },
   "/learn": {
     badge: "Interactive Lessons",
-    title: "ACFS Learning Hub",
+    title: "GTBI Learning Hub",
     description:
       "Master Linux, SSH, tmux, git, and multi-agent workflows with structured lessons designed for real-world execution.",
     path: "/learn",
@@ -53,7 +53,7 @@ const STATIC_ROUTE_SOCIAL_DATA: Record<string, SocialImageData> = {
       "Plain-language definitions for infrastructure, tooling, and agentic coding concepts used throughout the learning track.",
     path: "/learn/glossary",
     theme: "learn",
-    tags: ["Definitions", "Beginner Friendly", "ACFS Terms"],
+    tags: ["Definitions", "Beginner Friendly", "GTBI Terms"],
   },
   "/glossary": {
     badge: "Jargon Decoder",

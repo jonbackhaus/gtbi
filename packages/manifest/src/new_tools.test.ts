@@ -2,7 +2,7 @@
  * Tests: Verify all 9 new Dicklesworthstone tools have complete manifest entries
  * Related: bead bd-bd536
  *
- * Parses the real acfs.manifest.yaml and checks each tool has:
+ * Parses the real gtbi.manifest.yaml and checks each tool has:
  *   - Correct module ID and description
  *   - installed_check with run_as and command
  *   - verify commands
@@ -22,7 +22,7 @@ import type { Manifest, Module, VerifiedInstaller, ModuleWebMetadata } from './t
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = resolve(__dirname, '../../..');
-const MANIFEST_PATH = resolve(PROJECT_ROOT, 'acfs.manifest.yaml');
+const MANIFEST_PATH = resolve(PROJECT_ROOT, 'gtbi.manifest.yaml');
 const CHECKSUMS_PATH = resolve(PROJECT_ROOT, 'checksums.yaml');
 
 interface ToolExpectation {

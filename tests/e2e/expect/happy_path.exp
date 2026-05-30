@@ -54,7 +54,7 @@ spawn bash $newproj_script --interactive
 log_step "Waiting for Welcome screen..."
 expect {
     timeout { puts stderr "ERROR: Timeout waiting for Welcome screen"; exit 1 }
-    "Welcome to ACFS Project Setup" { log_step "Welcome screen detected" }
+    "Welcome to GTBI Project Setup" { log_step "Welcome screen detected" }
 }
 
 # Press Enter to continue

@@ -1,8 +1,8 @@
 /**
- * Tests for ACFS Manifest Parser using real fixtures
+ * Tests for GTBI Manifest Parser using real fixtures
  * Related: bead dvt.2
  *
- * Uses the actual acfs.manifest.yaml as the primary fixture.
+ * Uses the actual gtbi.manifest.yaml as the primary fixture.
  * This ensures tests reflect real-world usage.
  */
 
@@ -15,7 +15,7 @@ import type { Manifest } from './types.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = resolve(__dirname, '../../..');
-const MANIFEST_PATH = resolve(PROJECT_ROOT, 'acfs.manifest.yaml');
+const MANIFEST_PATH = resolve(PROJECT_ROOT, 'gtbi.manifest.yaml');
 
 describe('parseManifestFile with real manifest', () => {
   let manifest: Manifest;
@@ -29,11 +29,11 @@ describe('parseManifestFile with real manifest', () => {
     manifest = result.data;
   });
 
-  test('parses acfs.manifest.yaml successfully', () => {
+  test('parses gtbi.manifest.yaml successfully', () => {
     expect(manifest).toBeDefined();
     expect(manifest.version).toBeGreaterThan(0);
     expect(manifest.name).toBeTruthy();
-    expect(manifest.id).toBe('acfs');
+    expect(manifest.id).toBe('gtbi');
   });
 
   test('has expected defaults', () => {

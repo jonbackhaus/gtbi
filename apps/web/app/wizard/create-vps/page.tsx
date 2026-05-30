@@ -36,7 +36,7 @@ type ScreenshotSpec = {
 };
 
 const SCREENSHOT_BASE =
-  "https://raw.githubusercontent.com/Dicklesworthstone/agentic_coding_flywheel_setup/main/research_screenshots";
+  "https://raw.githubusercontent.com/jonbackhaus/gtbi/main/research_screenshots";
 
 function screenshotUrl(file: string): string {
   return `${SCREENSHOT_BASE}/${file}`;
@@ -367,7 +367,7 @@ export default function CreateVPSPage() {
                 This IP address is stored <strong className="text-foreground/80">in your browser&apos;s local storage</strong>.
                 If browser storage is blocked, the wizard keeps it in the page URL so the next step still works. The{" "}
                 <a
-                  href="https://github.com/Dicklesworthstone/agentic_coding_flywheel_setup"
+                  href="https://github.com/jonbackhaus/gtbi"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-0.5 font-medium text-[oklch(0.75_0.18_195)] hover:underline"
@@ -581,7 +581,7 @@ export default function CreateVPSPage() {
                   <br />
                   <em className="text-xs">
                     If only Ubuntu 24.04 LTS is offered, that&apos;s fine. The installer
-                    automatically upgrades to 25.10 before ACFS installs.
+                    automatically upgrades to 25.10 before GTBI installs.
                   </em>
                 </GuideStep>
 

@@ -77,7 +77,7 @@ function validateVPSCreation(): ValidationResult {
       };
 }
 
-const COMMAND_COMPLETION_KEY_PREFIX = "acfs-command-";
+const COMMAND_COMPLETION_KEY_PREFIX = "gtbi-command-";
 
 function isCommandMarkedComplete(persistKey: string): boolean {
   if (safeGetItem(`${COMMAND_COMPLETION_KEY_PREFIX}${persistKey}`) === "true") {
@@ -224,7 +224,7 @@ export const COMPLETED_STEPS_KEY = "agent-flywheel-wizard-completed-steps";
 const COMPLETED_STEPS_QUERY_KEY = "steps";
 
 export const COMPLETED_STEPS_CHANGED_EVENT =
-  "acfs:wizard:completed-steps-changed";
+  "gtbi:wizard:completed-steps-changed";
 
 // Query keys for TanStack Query
 export const wizardStepsKeys = {

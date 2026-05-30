@@ -62,8 +62,8 @@ export default function VerifyKeyConnectionPage() {
   const effectiveUsername = sshUsername.trim() || "ubuntu";
   const userTarget = formatSshTarget(effectiveUsername, vpsIP);
   const userPrompt = `${effectiveUsername}@`;
-  const sshKeyCommand = `ssh -i ~/.ssh/acfs_ed25519 ${userTarget}`;
-  const sshKeyCommandWindows = `ssh -i $HOME\\.ssh\\acfs_ed25519 ${userTarget}`;
+  const sshKeyCommand = `ssh -i ~/.ssh/gtbi_ed25519 ${userTarget}`;
+  const sshKeyCommandWindows = `ssh -i $HOME\\.ssh\\gtbi_ed25519 ${userTarget}`;
   const userKeyRepairCommand = buildUserKeyRepairCommand(effectiveUsername, vpsIP);
   const rootKeyRepairCommand = buildRootKeyRepairCommand(effectiveUsername, vpsIP);
 
@@ -151,7 +151,7 @@ export default function VerifyKeyConnectionPage() {
           <AlertCard variant="warning" title="Still asks for a password?">
             <div className="space-y-2">
               <p>
-                If you can still sign in as {effectiveUsername}, copy your local ACFS public key into that account:
+                If you can still sign in as {effectiveUsername}, copy your local GTBI public key into that account:
               </p>
               <CommandCard command={userKeyRepairCommand} runLocation="local" />
               <p className="text-xs text-muted-foreground">
@@ -162,14 +162,14 @@ export default function VerifyKeyConnectionPage() {
               </p>
               <CommandCard command={rootKeyRepairCommand} runLocation="local" />
               <p className="text-xs text-muted-foreground">
-                This asks for the VPS root password once. ACFS skips exact duplicate public key lines on reruns.
+                This asks for the VPS root password once. GTBI skips exact duplicate public key lines on reruns.
               </p>
             </div>
           </AlertCard>
           <AlertCard variant="warning" title="Permission denied (publickey)">
             Your key file permissions may be too open. Fix with:
             <div className="mt-2">
-              <CommandCard command="chmod 600 ~/.ssh/acfs_ed25519" runLocation="local" />
+              <CommandCard command="chmod 600 ~/.ssh/gtbi_ed25519" runLocation="local" />
             </div>
           </AlertCard>
           <AlertCard variant="warning" title="Connection refused">
@@ -211,7 +211,7 @@ export default function VerifyKeyConnectionPage() {
 
           <GuideCaution>
             <strong>Using a different key?</strong> Make sure you&apos;re pointing to the same key you created earlier:
-            <code className="ml-1 rounded bg-muted px-1.5 py-0.5 font-mono text-xs">~/.ssh/acfs_ed25519</code>.
+            <code className="ml-1 rounded bg-muted px-1.5 py-0.5 font-mono text-xs">~/.ssh/gtbi_ed25519</code>.
           </GuideCaution>
         </div>
       </SimplerGuide>

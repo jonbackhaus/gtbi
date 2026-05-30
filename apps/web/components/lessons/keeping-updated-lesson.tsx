@@ -36,7 +36,7 @@ export function KeepingUpdatedLesson() {
   return (
     <div className="space-y-8">
       <GoalBanner>
-        Learn how to keep your ACFS tools current.
+        Learn how to keep your GTBI tools current.
       </GoalBanner>
 
       {/* Why Updates Matter */}
@@ -73,11 +73,11 @@ export function KeepingUpdatedLesson() {
         delay={0.15}
       >
         <Paragraph>
-          ACFS provides a single command to update everything:
+          GTBI provides a single command to update everything:
         </Paragraph>
 
         <div className="mt-6">
-          <CodeBlock code="acfs-update" />
+          <CodeBlock code="gtbi-update" />
         </div>
 
         <Paragraph>That&apos;s it! This updates:</Paragraph>
@@ -122,25 +122,25 @@ export function KeepingUpdatedLesson() {
           <UpdatePattern
             title="Quick Agent Update"
             description="If you just want the latest agent versions:"
-            command="acfs-update --agents-only"
+            command="gtbi-update --agents-only"
           />
 
           <UpdatePattern
             title="Skip System Packages"
             description="apt updates can be slow. Skip them when you're in a hurry:"
-            command="acfs-update --no-apt"
+            command="gtbi-update --no-apt"
           />
 
           <UpdatePattern
             title="Preview Changes"
             description="See what would be updated without changing anything:"
-            command="acfs-update --dry-run"
+            command="gtbi-update --dry-run"
           />
 
           <UpdatePattern
             title="Include Stack Tools"
             description="The Dicklesworthstone stack (ntm, slb, ubs, etc.) is skipped by default because it takes longer. Include it with:"
-            command="acfs-update --stack"
+            command="gtbi-update --stack"
           />
         </div>
       </Section>
@@ -156,7 +156,7 @@ export function KeepingUpdatedLesson() {
         <Paragraph>For hands-off maintenance, use quiet mode:</Paragraph>
 
         <div className="mt-6">
-          <CodeBlock code="acfs-update --yes --quiet" />
+          <CodeBlock code="gtbi-update --yes --quiet" />
         </div>
 
         <Paragraph>
@@ -175,7 +175,7 @@ export function KeepingUpdatedLesson() {
 crontab -e
 
 # Add this line for weekly Sunday 3am updates
-0 3 * * 0 $HOME/.local/bin/acfs-update --yes --quiet >> $HOME/.acfs/logs/cron-update.log 2>&1`}
+0 3 * * 0 $HOME/.local/bin/gtbi-update --yes --quiet >> $HOME/.gtbi/logs/cron-update.log 2>&1`}
           />
         </div>
       </Section>
@@ -193,13 +193,13 @@ crontab -e
         <div className="mt-6">
           <CodeBlock
             code={`# List recent logs
-ls -lt ~/.acfs/logs/updates/ | head -5
+ls -lt ~/.gtbi/logs/updates/ | head -5
 
 # View the most recent log
-cat ~/.acfs/logs/updates/$(ls -1t ~/.acfs/logs/updates | head -1)
+cat ~/.gtbi/logs/updates/$(ls -1t ~/.gtbi/logs/updates | head -1)
 
 # Watch a running update
-tail -f ~/.acfs/logs/updates/$(ls -1t ~/.acfs/logs/updates | head -1)`}
+tail -f ~/.gtbi/logs/updates/$(ls -1t ~/.gtbi/logs/updates | head -1)`}
             showLineNumbers
           />
         </div>
@@ -420,13 +420,13 @@ function TroubleshootingCard({
 // =============================================================================
 function QuickReferenceTable() {
   const commands = [
-    { command: "acfs-update", description: "Update everything (except stack)" },
-    { command: "acfs-update --stack", description: "Include stack tools" },
-    { command: "acfs-update --agents-only", description: "Just update agents" },
-    { command: "acfs-update --no-apt", description: "Skip apt (faster)" },
-    { command: "acfs-update --dry-run", description: "Preview changes" },
-    { command: "acfs-update --yes --quiet", description: "Automated mode" },
-    { command: "acfs-update --help", description: "Full help" },
+    { command: "gtbi-update", description: "Update everything (except stack)" },
+    { command: "gtbi-update --stack", description: "Include stack tools" },
+    { command: "gtbi-update --agents-only", description: "Just update agents" },
+    { command: "gtbi-update --no-apt", description: "Skip apt (faster)" },
+    { command: "gtbi-update --dry-run", description: "Preview changes" },
+    { command: "gtbi-update --yes --quiet", description: "Automated mode" },
+    { command: "gtbi-update --help", description: "Full help" },
   ];
 
   return (
@@ -508,7 +508,7 @@ function CongratulationsCard() {
         </motion.div>
 
         <h3 className="text-2xl font-bold text-white mb-4">
-          You&apos;ve completed the ACFS onboarding!
+          You&apos;ve completed the GTBI onboarding!
         </h3>
 
         <p className="text-white/70 mb-6">You now have:</p>
@@ -589,7 +589,7 @@ const SCENARIOS: Scenario[] = [
     id: "routine",
     label: "Routine Sync",
     description: "Standard update across all components. Everything pulls cleanly.",
-    command: "acfs-update --stack",
+    command: "gtbi-update --stack",
     repoSequence: [
       { repoId: "apt", finalStatus: "updated", delay: 0 },
       { repoId: "omz", finalStatus: "updated", delay: 400 },
@@ -605,7 +605,7 @@ const SCENARIOS: Scenario[] = [
       { repoId: "dcg", finalStatus: "updated", delay: 1400 },
     ],
     terminalLines: [
-      "$ acfs-update --stack",
+      "$ gtbi-update --stack",
       "[apt] Fetching package lists...",
       "[apt] 3 packages upgraded",
       "[shell] Pulling oh-my-zsh latest... done",
@@ -626,7 +626,7 @@ const SCENARIOS: Scenario[] = [
     id: "breaking",
     label: "Breaking Change",
     description: "A major version bump in Wrangler introduces breaking API changes. The updater detects this and pauses.",
-    command: "acfs-update --stack",
+    command: "gtbi-update --stack",
     repoSequence: [
       { repoId: "apt", finalStatus: "updated", delay: 0 },
       { repoId: "omz", finalStatus: "updated", delay: 400 },
@@ -642,7 +642,7 @@ const SCENARIOS: Scenario[] = [
       { repoId: "dcg", finalStatus: "conflict", delay: 1400, errorMsg: "Depends on wrangler@^3" },
     ],
     terminalLines: [
-      "$ acfs-update --stack",
+      "$ gtbi-update --stack",
       "[apt] 3 packages upgraded",
       "[shell] All shell tools updated",
       "[agents] All agents updated",
@@ -660,7 +660,7 @@ const SCENARIOS: Scenario[] = [
     id: "conflict",
     label: "Version Conflict",
     description: "NTM and Supabase CLI have conflicting dependency requirements. The resolver detects and handles it.",
-    command: "acfs-update --stack",
+    command: "gtbi-update --stack",
     repoSequence: [
       { repoId: "apt", finalStatus: "updated", delay: 0 },
       { repoId: "omz", finalStatus: "updated", delay: 400 },
@@ -676,7 +676,7 @@ const SCENARIOS: Scenario[] = [
       { repoId: "dcg", finalStatus: "updated", delay: 1400 },
     ],
     terminalLines: [
-      "$ acfs-update --stack",
+      "$ gtbi-update --stack",
       "[apt] 3 packages upgraded",
       "[shell] All shell tools updated",
       "[agents] All agents updated",
@@ -694,7 +694,7 @@ const SCENARIOS: Scenario[] = [
     id: "automerge",
     label: "Auto-Merge",
     description: "Git-based tools (OMZ, plugins) have local modifications. The updater auto-merges cleanly via stash/pop.",
-    command: "acfs-update --stack",
+    command: "gtbi-update --stack",
     repoSequence: [
       { repoId: "apt", finalStatus: "updated", delay: 0 },
       { repoId: "omz", finalStatus: "updated", delay: 600 },
@@ -710,7 +710,7 @@ const SCENARIOS: Scenario[] = [
       { repoId: "dcg", finalStatus: "updated", delay: 1400 },
     ],
     terminalLines: [
-      "$ acfs-update --stack",
+      "$ gtbi-update --stack",
       "[apt] 3 packages upgraded",
       "[shell] omz: local modifications detected",
       "[shell] omz: git stash -> pull -> stash pop",
@@ -728,7 +728,7 @@ const SCENARIOS: Scenario[] = [
     id: "manual",
     label: "Manual Intervention",
     description: "A merge conflict in OMZ custom config cannot be auto-resolved. The updater flags it for manual fix.",
-    command: "acfs-update --stack",
+    command: "gtbi-update --stack",
     repoSequence: [
       { repoId: "apt", finalStatus: "updated", delay: 0 },
       { repoId: "omz", finalStatus: "manual", delay: 600, errorMsg: "Merge conflict in custom/themes" },
@@ -744,7 +744,7 @@ const SCENARIOS: Scenario[] = [
       { repoId: "dcg", finalStatus: "updated", delay: 1400 },
     ],
     terminalLines: [
-      "$ acfs-update --stack",
+      "$ gtbi-update --stack",
       "[apt] 3 packages upgraded",
       "[shell] omz: local modifications detected",
       "[shell] omz: git stash -> pull -> stash pop",
@@ -762,7 +762,7 @@ const SCENARIOS: Scenario[] = [
     id: "fleet",
     label: "Fleet Rollout",
     description: "Simulates rolling updates across a fleet of VPS instances. Agents update in waves to minimize downtime.",
-    command: "acfs-update --fleet --rolling",
+    command: "gtbi-update --fleet --rolling",
     repoSequence: [
       { repoId: "apt", finalStatus: "updated", delay: 0 },
       { repoId: "claude", finalStatus: "updated", delay: 300 },
@@ -778,7 +778,7 @@ const SCENARIOS: Scenario[] = [
       { repoId: "dcg", finalStatus: "updated", delay: 1500 },
     ],
     terminalLines: [
-      "$ acfs-update --fleet --rolling",
+      "$ gtbi-update --fleet --rolling",
       "[fleet] Wave 1/4: System packages",
       "[apt] 3 packages upgraded across fleet",
       "[fleet] Wave 2/4: Shell + Agents (parallel)",

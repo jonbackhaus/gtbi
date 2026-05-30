@@ -1,29 +1,29 @@
 #!/usr/bin/env bash
 # ============================================================
-# ACFS CLI - Notification Management Subcommand
+# GTBI CLI - Notification Management Subcommand
 #
-# Manages ntfy.sh push notifications for ACFS events.
-# Usage: acfs notifications <enable|disable|test|status|topic|set-server>
+# Manages ntfy.sh push notifications for GTBI events.
+# Usage: gtbi notifications <enable|disable|test|status|topic|set-server>
 #
-# Config stored at: ~/.config/acfs/config.yaml
+# Config stored at: ~/.config/gtbi/config.yaml
 # Related bead: bd-2igt6
 # ============================================================
 
-_ACFS_NOTIFICATIONS_SOURCED=false
-_ACFS_NOTIFICATIONS_HAD_ERREXIT=false
-_ACFS_NOTIFICATIONS_HAD_NOUNSET=false
-_ACFS_NOTIFICATIONS_HAD_PIPEFAIL=false
+_GTBI_NOTIFICATIONS_SOURCED=false
+_GTBI_NOTIFICATIONS_HAD_ERREXIT=false
+_GTBI_NOTIFICATIONS_HAD_NOUNSET=false
+_GTBI_NOTIFICATIONS_HAD_PIPEFAIL=false
 
 if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
-    _ACFS_NOTIFICATIONS_SOURCED=true
+    _GTBI_NOTIFICATIONS_SOURCED=true
     case "$-" in
-        *e*) _ACFS_NOTIFICATIONS_HAD_ERREXIT=true ;;
+        *e*) _GTBI_NOTIFICATIONS_HAD_ERREXIT=true ;;
     esac
     case "$-" in
-        *u*) _ACFS_NOTIFICATIONS_HAD_NOUNSET=true ;;
+        *u*) _GTBI_NOTIFICATIONS_HAD_NOUNSET=true ;;
     esac
     if [[ -o pipefail ]]; then
-        _ACFS_NOTIFICATIONS_HAD_PIPEFAIL=true
+        _GTBI_NOTIFICATIONS_HAD_PIPEFAIL=true
     fi
 fi
 
@@ -218,15 +218,15 @@ notifications_runtime_home() {
     notifications_resolve_current_home
 }
 
-_ACFS_NOTIFICATIONS_RUNTIME_HOME="$(notifications_runtime_home 2>/dev/null || true)"
+_GTBI_NOTIFICATIONS_RUNTIME_HOME="$(notifications_runtime_home 2>/dev/null || true)"
 
-if [[ -n "$_ACFS_NOTIFICATIONS_RUNTIME_HOME" ]]; then
-    ACFS_CONFIG_DIR="${_ACFS_NOTIFICATIONS_RUNTIME_HOME}/.config/acfs"
+if [[ -n "$_GTBI_NOTIFICATIONS_RUNTIME_HOME" ]]; then
+    GTBI_CONFIG_DIR="${_GTBI_NOTIFICATIONS_RUNTIME_HOME}/.config/gtbi"
 else
-    ACFS_CONFIG_DIR=""
+    GTBI_CONFIG_DIR=""
 fi
-ACFS_CONFIG_FILE="${ACFS_CONFIG_DIR:+${ACFS_CONFIG_DIR}/config.yaml}"
-ACFS_NTFY_SERVER_DEFAULT="https://ntfy.sh"
+GTBI_CONFIG_FILE="${GTBI_CONFIG_DIR:+${GTBI_CONFIG_DIR}/config.yaml}"
+GTBI_NTFY_SERVER_DEFAULT="https://ntfy.sh"
 
 # ============================================================
 # Helpers
@@ -235,11 +235,11 @@ ACFS_NTFY_SERVER_DEFAULT="https://ntfy.sh"
 # Read a key from config.yaml (simple YAML parser)
 _notif_config_read() {
     local key="$1"
-    if [[ ! -f "$ACFS_CONFIG_FILE" ]]; then
+    if [[ ! -f "$GTBI_CONFIG_FILE" ]]; then
         return 0
     fi
     local val
-    val=$(grep -E "^\s*${key}\s*:" "$ACFS_CONFIG_FILE" 2>/dev/null | head -1 | \
+    val=$(grep -E "^\s*${key}\s*:" "$GTBI_CONFIG_FILE" 2>/dev/null | head -1 | \
           sed -E "s/^\s*${key}\s*:\s*//; s/^[\"']//; s/[\"']\s*$//" | \
           sed 's/^[[:space:]]*//; s/[[:space:]]*$//') || true
     printf '%s' "$val"
@@ -260,31 +260,31 @@ _notif_config_write() {
         return 1
     fi
 
-    if [[ -z "$ACFS_CONFIG_DIR" || -z "$ACFS_CONFIG_FILE" ]]; then
-        echo "Error: Unable to resolve ACFS notification config directory." >&2
+    if [[ -z "$GTBI_CONFIG_DIR" || -z "$GTBI_CONFIG_FILE" ]]; then
+        echo "Error: Unable to resolve GTBI notification config directory." >&2
         return 1
     fi
 
     # Ensure config dir exists
-    if ! mkdir -p "$ACFS_CONFIG_DIR"; then
-        echo "Error: Unable to create notification config directory: $ACFS_CONFIG_DIR" >&2
+    if ! mkdir -p "$GTBI_CONFIG_DIR"; then
+        echo "Error: Unable to create notification config directory: $GTBI_CONFIG_DIR" >&2
         return 1
     fi
 
-    if [[ ! -f "$ACFS_CONFIG_FILE" ]]; then
+    if [[ ! -f "$GTBI_CONFIG_FILE" ]]; then
         # Create new config file
-        if ! printf '%s: %s\n' "$key" "$value" > "$ACFS_CONFIG_FILE"; then
-            echo "Error: Unable to write notification config file: $ACFS_CONFIG_FILE" >&2
+        if ! printf '%s: %s\n' "$key" "$value" > "$GTBI_CONFIG_FILE"; then
+            echo "Error: Unable to write notification config file: $GTBI_CONFIG_FILE" >&2
             return 1
         fi
         return 0
     fi
 
     # Check if key already exists
-    if grep -qE "^\s*${key}\s*:" "$ACFS_CONFIG_FILE" 2>/dev/null; then
+    if grep -qE "^\s*${key}\s*:" "$GTBI_CONFIG_FILE" 2>/dev/null; then
         # Update existing key in-place (avoid sed delimiter and backreference bugs)
         local temp_file
-        if ! temp_file=$(mktemp "${TMPDIR:-/tmp}/acfs_config.XXXXXX" 2>/dev/null); then
+        if ! temp_file=$(mktemp "${TMPDIR:-/tmp}/gtbi_config.XXXXXX" 2>/dev/null); then
             echo "Error: Unable to create temporary notification config file." >&2
             return 1
         fi
@@ -294,18 +294,18 @@ _notif_config_write() {
             else
                 printf '%s\n' "$line"
             fi
-        done < "$ACFS_CONFIG_FILE" > "$temp_file"; then
-            echo "Error: Unable to update notification config file: $ACFS_CONFIG_FILE" >&2
+        done < "$GTBI_CONFIG_FILE" > "$temp_file"; then
+            echo "Error: Unable to update notification config file: $GTBI_CONFIG_FILE" >&2
             return 1
         fi
-        if ! mv "$temp_file" "$ACFS_CONFIG_FILE"; then
-            echo "Error: Unable to replace notification config file: $ACFS_CONFIG_FILE" >&2
+        if ! mv "$temp_file" "$GTBI_CONFIG_FILE"; then
+            echo "Error: Unable to replace notification config file: $GTBI_CONFIG_FILE" >&2
             return 1
         fi
     else
         # Append new key
-        if ! printf '%s: %s\n' "$key" "$value" >> "$ACFS_CONFIG_FILE"; then
-            echo "Error: Unable to append notification config file: $ACFS_CONFIG_FILE" >&2
+        if ! printf '%s: %s\n' "$key" "$value" >> "$GTBI_CONFIG_FILE"; then
+            echo "Error: Unable to append notification config file: $GTBI_CONFIG_FILE" >&2
             return 1
         fi
     fi
@@ -355,7 +355,7 @@ notifications_server_is_valid() {
     [[ "$server" =~ ^https?://[^/]+(/[^[:space:]]*)?$ ]]
 }
 
-# Generate a random topic string: acfs-HOSTNAME-RANDOM8
+# Generate a random topic string: gtbi-HOSTNAME-RANDOM8
 _notif_generate_topic() {
     local hostname
     hostname=$(hostname -s 2>/dev/null || hostname 2>/dev/null || echo "host")
@@ -368,7 +368,7 @@ _notif_generate_topic() {
     else
         random_part=$(printf '%04x%04x' $((RANDOM % 65536)) $((RANDOM % 65536)))
     fi
-    printf 'acfs-%s-%s' "$hostname" "$random_part"
+    printf 'gtbi-%s-%s' "$hostname" "$random_part"
 }
 
 # ============================================================
@@ -387,7 +387,7 @@ cmd_enable() {
     local server
     server=$(_notif_config_read "ntfy_server")
     if [[ -z "$server" ]]; then
-        server="$ACFS_NTFY_SERVER_DEFAULT"
+        server="$GTBI_NTFY_SERVER_DEFAULT"
     fi
 
     if ! notifications_topic_is_valid "$topic"; then
@@ -415,7 +415,7 @@ cmd_enable() {
     echo ""
     echo "Or open the URL above in any browser."
     echo ""
-    echo "Test it with: acfs notifications test"
+    echo "Test it with: gtbi notifications test"
 }
 
 cmd_disable() {
@@ -428,17 +428,17 @@ cmd_test() {
     local enabled
     enabled=$(_notif_config_read "ntfy_enabled")
     if [[ "$enabled" != "true" ]]; then
-        echo "Notifications are not enabled. Run 'acfs notifications enable' first."
+        echo "Notifications are not enabled. Run 'gtbi notifications enable' first."
         return 1
     fi
 
     local topic server
     topic=$(_notif_config_read "ntfy_topic")
     server=$(_notif_config_read "ntfy_server")
-    server="${server:-$ACFS_NTFY_SERVER_DEFAULT}"
+    server="${server:-$GTBI_NTFY_SERVER_DEFAULT}"
 
     if [[ -z "$topic" ]]; then
-        echo "Error: No topic configured. Run 'acfs notifications enable' first."
+        echo "Error: No topic configured. Run 'gtbi notifications enable' first."
         return 1
     fi
     if ! notifications_topic_is_valid "$topic"; then
@@ -461,10 +461,10 @@ cmd_test() {
     local http_code
     http_code=$("$curl_bin" -s -o /dev/null -w '%{http_code}' \
         --max-time 10 \
-        -H "Title: ACFS Test Notification" \
+        -H "Title: GTBI Test Notification" \
         -H "Priority: default" \
-        -H "Tags: white_check_mark,acfs" \
-        -d "If you see this, ACFS notifications are working! ($(hostname 2>/dev/null || echo 'unknown'))" \
+        -H "Tags: white_check_mark,gtbi" \
+        -d "If you see this, GTBI notifications are working! ($(hostname 2>/dev/null || echo 'unknown'))" \
         "${server}/${topic}" 2>/dev/null) || http_code="000"
 
     if [[ "$http_code" =~ ^2 ]]; then
@@ -480,24 +480,24 @@ cmd_test() {
 cmd_status() {
     local enabled topic server priority
 
-    if [[ -z "$ACFS_CONFIG_FILE" ]]; then
+    if [[ -z "$GTBI_CONFIG_FILE" ]]; then
         echo "Notifications: unavailable"
         echo "Config file:   unable to resolve runtime home"
         return 1
     fi
 
-    if [[ ! -f "$ACFS_CONFIG_FILE" ]]; then
+    if [[ ! -f "$GTBI_CONFIG_FILE" ]]; then
         echo "Notifications: not configured"
-        echo "Config file:   ${ACFS_CONFIG_FILE} (not found)"
+        echo "Config file:   ${GTBI_CONFIG_FILE} (not found)"
         echo ""
-        echo "Run 'acfs notifications enable' to set up."
+        echo "Run 'gtbi notifications enable' to set up."
         return 0
     fi
 
     enabled=$(_notif_config_read "ntfy_enabled")
     topic=$(_notif_config_read "ntfy_topic")
     server=$(_notif_config_read "ntfy_server")
-    server="${server:-$ACFS_NTFY_SERVER_DEFAULT}"
+    server="${server:-$GTBI_NTFY_SERVER_DEFAULT}"
     priority=$(_notif_config_read "ntfy_priority")
     priority="${priority:-default}"
 
@@ -505,7 +505,7 @@ cmd_status() {
     echo "Topic:         ${topic:-not set}"
     echo "Server:        ${server}"
     echo "Priority:      ${priority}"
-    echo "Config file:   ${ACFS_CONFIG_FILE}"
+    echo "Config file:   ${GTBI_CONFIG_FILE}"
 
     if [[ "$enabled" == "true" ]] && [[ -n "$topic" ]]; then
         echo ""
@@ -519,10 +519,10 @@ cmd_topic() {
     enabled=$(_notif_config_read "ntfy_enabled")
     topic=$(_notif_config_read "ntfy_topic")
     server=$(_notif_config_read "ntfy_server")
-    server="${server:-$ACFS_NTFY_SERVER_DEFAULT}"
+    server="${server:-$GTBI_NTFY_SERVER_DEFAULT}"
 
     if [[ -z "$topic" ]]; then
-        echo "No topic configured. Run 'acfs notifications enable' first."
+        echo "No topic configured. Run 'gtbi notifications enable' first."
         return 1
     fi
     if ! notifications_topic_is_valid "$topic"; then
@@ -541,8 +541,8 @@ cmd_set_server() {
     local new_server="${1:-}"
 
     if [[ -z "$new_server" ]]; then
-        echo "Usage: acfs notifications set-server <url>"
-        echo "Example: acfs notifications set-server https://ntfy.example.com"
+        echo "Usage: gtbi notifications set-server <url>"
+        echo "Example: gtbi notifications set-server https://ntfy.example.com"
         return 1
     fi
 
@@ -568,7 +568,7 @@ cmd_set_priority() {
     local new_priority="${1:-}"
 
     if [[ -z "$new_priority" ]]; then
-        echo "Usage: acfs notifications set-priority <priority>"
+        echo "Usage: gtbi notifications set-priority <priority>"
         echo "Options: min, low, default, high, urgent (or 1-5)"
         return 1
     fi
@@ -587,8 +587,8 @@ cmd_set_topic() {
     local new_topic="${1:-}"
 
     if [[ -z "$new_topic" ]]; then
-        echo "Usage: acfs notifications set-topic <topic>"
-        echo "Example: acfs notifications set-topic acfs-myserver-secret123"
+        echo "Usage: gtbi notifications set-topic <topic>"
+        echo "Example: gtbi notifications set-topic gtbi-myserver-secret123"
         return 1
     fi
 
@@ -602,7 +602,7 @@ cmd_set_topic() {
 
     local server
     server=$(_notif_config_read "ntfy_server")
-    server="${server:-$ACFS_NTFY_SERVER_DEFAULT}"
+    server="${server:-$GTBI_NTFY_SERVER_DEFAULT}"
     echo "Subscribe URL: ${server}/${new_topic}"
 }
 
@@ -613,30 +613,30 @@ cmd_send() {
     local curl_bin=""
 
     if [[ -z "$title" ]]; then
-        echo "Usage: acfs notifications send <title> [body] [priority]"
+        echo "Usage: gtbi notifications send <title> [body] [priority]"
         echo ""
         echo "Send an ad-hoc notification via ntfy.sh."
         echo ""
         echo "Examples:"
-        echo "  acfs notifications send 'Build done' 'All tests passed'"
-        echo "  acfs notifications send 'Deploy failed' 'See logs' high"
+        echo "  gtbi notifications send 'Build done' 'All tests passed'"
+        echo "  gtbi notifications send 'Deploy failed' 'See logs' high"
         return 1
     fi
 
     local enabled
     enabled=$(_notif_config_read "ntfy_enabled")
     if [[ "$enabled" != "true" ]]; then
-        echo "Notifications are not enabled. Run 'acfs notifications enable' first."
+        echo "Notifications are not enabled. Run 'gtbi notifications enable' first."
         return 1
     fi
 
     local topic server
     topic=$(_notif_config_read "ntfy_topic")
     server=$(_notif_config_read "ntfy_server")
-    server="${server:-$ACFS_NTFY_SERVER_DEFAULT}"
+    server="${server:-$GTBI_NTFY_SERVER_DEFAULT}"
 
     if [[ -z "$topic" ]]; then
-        echo "Error: No topic configured. Run 'acfs notifications enable' first."
+        echo "Error: No topic configured. Run 'gtbi notifications enable' first."
         return 1
     fi
     if ! notifications_topic_is_valid "$topic"; then
@@ -679,7 +679,7 @@ cmd_send() {
         --max-time 10 \
         -H "Title: ${title}" \
         -H "Priority: ${priority}" \
-        -H "Tags: computer,acfs" \
+        -H "Tags: computer,gtbi" \
         -d "${body:-$title}" \
         "${server}/${topic}" 2>/dev/null) || http_code="000"
 
@@ -696,9 +696,9 @@ cmd_send() {
 # ============================================================
 
 show_help() {
-    echo "ACFS Notifications - Push notifications via ntfy.sh"
+    echo "GTBI Notifications - Push notifications via ntfy.sh"
     echo ""
-    echo "Usage: acfs notifications <command>"
+    echo "Usage: gtbi notifications <command>"
     echo ""
     echo "Setup:"
     echo "  enable              Enable notifications (generates random topic)"
@@ -715,30 +715,30 @@ show_help() {
     echo "  test                Send a test notification"
     echo "  send TITLE [BODY] [PRIORITY]   Send a custom notification"
     echo ""
-    echo "Config: ${ACFS_CONFIG_FILE:-<unresolved>}"
+    echo "Config: ${GTBI_CONFIG_FILE:-<unresolved>}"
     echo ""
     echo "How it works:"
-    echo "  1. Run 'acfs notifications enable'"
+    echo "  1. Run 'gtbi notifications enable'"
     echo "  2. Subscribe to the topic URL on your phone (ntfy app) or browser"
-    echo "  3. ACFS sends notifications for:"
+    echo "  3. GTBI sends notifications for:"
     echo "     - Install success/failure"
     echo "     - Agent task completion/failure"
     echo "     - Human attention needed (urgent)"
     echo "     - Nightly update results"
     echo ""
     echo "Scripting (source scripts/lib/notify.sh):"
-    echo "  acfs_notify <title> [body] [priority] [tags]"
-    echo "  acfs_notify_task_complete <task> [agent] [detail]"
-    echo "  acfs_notify_task_failed <task> [error] [agent]"
-    echo "  acfs_notify_human_needed <reason> [context] [agent]"
-    echo "  acfs_notify_debounced <key> <title> [body] [priority] [tags]"
+    echo "  gtbi_notify <title> [body] [priority] [tags]"
+    echo "  gtbi_notify_task_complete <task> [agent] [detail]"
+    echo "  gtbi_notify_task_failed <task> [error] [agent]"
+    echo "  gtbi_notify_human_needed <reason> [context] [agent]"
+    echo "  gtbi_notify_debounced <key> <title> [body] [priority] [tags]"
     echo ""
     echo "Environment overrides:"
-    echo "  ACFS_NTFY_ENABLED=true|false"
-    echo "  ACFS_NTFY_TOPIC=<topic>"
-    echo "  ACFS_NTFY_SERVER=<url>"
-    echo "  ACFS_NTFY_PRIORITY=<priority>"
-    echo "  ACFS_NTFY_DEBOUNCE_SECONDS=<seconds>  (default: 30)"
+    echo "  GTBI_NTFY_ENABLED=true|false"
+    echo "  GTBI_NTFY_TOPIC=<topic>"
+    echo "  GTBI_NTFY_SERVER=<url>"
+    echo "  GTBI_NTFY_PRIORITY=<priority>"
+    echo "  GTBI_NTFY_DEBOUNCE_SECONDS=<seconds>  (default: 30)"
 }
 
 # ============================================================
@@ -782,7 +782,7 @@ main() {
             ;;
         *)
             echo "Unknown command: $subcmd"
-            echo "Run 'acfs notifications help' for available commands."
+            echo "Run 'gtbi notifications help' for available commands."
             return 1
             ;;
     esac
@@ -790,14 +790,14 @@ main() {
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
     main "$@"
-elif [[ "$_ACFS_NOTIFICATIONS_SOURCED" == true ]]; then
-    if [[ "$_ACFS_NOTIFICATIONS_HAD_ERREXIT" != true ]]; then
+elif [[ "$_GTBI_NOTIFICATIONS_SOURCED" == true ]]; then
+    if [[ "$_GTBI_NOTIFICATIONS_HAD_ERREXIT" != true ]]; then
         set +e
     fi
-    if [[ "$_ACFS_NOTIFICATIONS_HAD_NOUNSET" != true ]]; then
+    if [[ "$_GTBI_NOTIFICATIONS_HAD_NOUNSET" != true ]]; then
         set +u
     fi
-    if [[ "$_ACFS_NOTIFICATIONS_HAD_PIPEFAIL" != true ]]; then
+    if [[ "$_GTBI_NOTIFICATIONS_HAD_PIPEFAIL" != true ]]; then
         set +o pipefail
     fi
 fi

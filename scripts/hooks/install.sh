@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Install ACFS git hooks
+# Install GTBI git hooks
 #
 # Usage: ./scripts/hooks/install.sh
 
@@ -9,7 +9,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 HOOKS_DIR="$REPO_ROOT/.git/hooks"
 
-echo "Installing ACFS git hooks..."
+echo "Installing GTBI git hooks..."
 
 # Install pre-commit hook
 cp "$SCRIPT_DIR/pre-commit" "$HOOKS_DIR/pre-commit"

@@ -1,6 +1,6 @@
 /**
- * @acfs/manifest
- * TypeScript library for parsing and working with ACFS manifest files
+ * /manifest
+ * TypeScript library for parsing and working with GTBI manifest files
  */
 
 // Export types

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ============================================================
-# ACFS Cheatsheet - discover installed aliases/commands
-# Source of truth: ~/.acfs/zsh/acfs.zshrc
+# GTBI Cheatsheet - discover installed aliases/commands
+# Source of truth: ~/.gtbi/zsh/gtbi.zshrc
 # ============================================================
 
 _CHEATSHEET_WAS_SOURCED=false
@@ -187,7 +187,7 @@ cheatsheet_initial_current_home() {
   local cached_home=""
   local resolved_home=""
 
-  if [[ "${_CHEATSHEET_WAS_SOURCED:-false}" == "true" ]] && [[ -z "${TARGET_HOME:-}${TARGET_USER:-}${ACFS_HOME:-}${ACFS_STATE_FILE:-}${ACFS_SYSTEM_STATE_FILE:-}" ]]; then
+  if [[ "${_CHEATSHEET_WAS_SOURCED:-false}" == "true" ]] && [[ -z "${TARGET_HOME:-}${TARGET_USER:-}${GTBI_HOME:-}${GTBI_STATE_FILE:-}${GTBI_SYSTEM_STATE_FILE:-}" ]]; then
       cached_home="$(cheatsheet_sanitize_abs_nonroot_path "${_CHEATSHEET_ORIGINAL_HOME:-${HOME:-}}" 2>/dev/null || true)"
       if [[ -n "$cached_home" ]]; then
           printf '%s\n' "$cached_home"
@@ -217,23 +217,23 @@ if [[ -n "$_CHEATSHEET_CURRENT_HOME" ]]; then
   export HOME
 fi
 
-_CHEATSHEET_EXPLICIT_ACFS_HOME="$(cheatsheet_sanitize_abs_nonroot_path "${ACFS_HOME:-}" 2>/dev/null || true)"
-_CHEATSHEET_DEFAULT_ACFS_HOME=""
-[[ -n "$_CHEATSHEET_CURRENT_HOME" ]] && _CHEATSHEET_DEFAULT_ACFS_HOME="${_CHEATSHEET_CURRENT_HOME}/.acfs"
-_CHEATSHEET_ACFS_HOME="${_CHEATSHEET_EXPLICIT_ACFS_HOME:-$_CHEATSHEET_DEFAULT_ACFS_HOME}"
+_CHEATSHEET_EXPLICIT_GTBI_HOME="$(cheatsheet_sanitize_abs_nonroot_path "${GTBI_HOME:-}" 2>/dev/null || true)"
+_CHEATSHEET_DEFAULT_GTBI_HOME=""
+[[ -n "$_CHEATSHEET_CURRENT_HOME" ]] && _CHEATSHEET_DEFAULT_GTBI_HOME="${_CHEATSHEET_CURRENT_HOME}/.gtbi"
+_CHEATSHEET_GTBI_HOME="${_CHEATSHEET_EXPLICIT_GTBI_HOME:-$_CHEATSHEET_DEFAULT_GTBI_HOME}"
 _CHEATSHEET_SYSTEM_STATE_WAS_EXPLICIT=false
-[[ -n "${ACFS_SYSTEM_STATE_FILE:-}" ]] && [[ "${ACFS_SYSTEM_STATE_FILE%/}" != "/var/lib/acfs/state.json" ]] && _CHEATSHEET_SYSTEM_STATE_WAS_EXPLICIT=true
-_CHEATSHEET_VERSION="${ACFS_VERSION:-0.1.0}"
+[[ -n "${GTBI_SYSTEM_STATE_FILE:-}" ]] && [[ "${GTBI_SYSTEM_STATE_FILE%/}" != "/var/lib/gtbi/state.json" ]] && _CHEATSHEET_SYSTEM_STATE_WAS_EXPLICIT=true
+_CHEATSHEET_VERSION="${GTBI_VERSION:-0.1.0}"
 CHEATSHEET_DELIM=$'\t'
-_CHEATSHEET_SYSTEM_STATE_FILE="$(cheatsheet_sanitize_abs_nonroot_path "${ACFS_SYSTEM_STATE_FILE:-/var/lib/acfs/state.json}" 2>/dev/null || true)"
+_CHEATSHEET_SYSTEM_STATE_FILE="$(cheatsheet_sanitize_abs_nonroot_path "${GTBI_SYSTEM_STATE_FILE:-/var/lib/gtbi/state.json}" 2>/dev/null || true)"
 if [[ -z "$_CHEATSHEET_SYSTEM_STATE_FILE" ]]; then
-  _CHEATSHEET_SYSTEM_STATE_FILE="/var/lib/acfs/state.json"
+  _CHEATSHEET_SYSTEM_STATE_FILE="/var/lib/gtbi/state.json"
 fi
 _CHEATSHEET_EXPLICIT_TARGET_HOME_RAW="${TARGET_HOME:-}"
 _CHEATSHEET_EXPLICIT_TARGET_USER_RAW="${TARGET_USER:-}"
 _CHEATSHEET_EXPLICIT_TARGET_HOME="$(cheatsheet_existing_abs_home "${TARGET_HOME:-}" 2>/dev/null || true)"
-_CHEATSHEET_RESOLVED_ACFS_HOME=""
-_CHEATSHEET_RESOLVED_ACFS_HOME_SOURCE=""
+_CHEATSHEET_RESOLVED_GTBI_HOME=""
+_CHEATSHEET_RESOLVED_GTBI_HOME_SOURCE=""
 _CHEATSHEET_RESOLVED_TARGET_USER=""
 _CHEATSHEET_RESOLVED_TARGET_HOME=""
 
@@ -251,8 +251,8 @@ _CHEATSHEET_SHOW_STATS=false
 
 if [[ -f "$_CHEATSHEET_SCRIPT_DIR/../../VERSION" ]]; then
   _CHEATSHEET_VERSION="$(cat "$_CHEATSHEET_SCRIPT_DIR/../../VERSION" 2>/dev/null || echo "$_CHEATSHEET_VERSION")"
-elif [[ -n "$_CHEATSHEET_ACFS_HOME" ]] && [[ -f "$_CHEATSHEET_ACFS_HOME/VERSION" ]]; then
-  _CHEATSHEET_VERSION="$(cat "$_CHEATSHEET_ACFS_HOME/VERSION" 2>/dev/null || echo "$_CHEATSHEET_VERSION")"
+elif [[ -n "$_CHEATSHEET_GTBI_HOME" ]] && [[ -f "$_CHEATSHEET_GTBI_HOME/VERSION" ]]; then
+  _CHEATSHEET_VERSION="$(cat "$_CHEATSHEET_GTBI_HOME/VERSION" 2>/dev/null || echo "$_CHEATSHEET_VERSION")"
 fi
 
 _CHEATSHEET_HAS_GUM=false
@@ -260,30 +260,30 @@ command -v gum &>/dev/null && _CHEATSHEET_HAS_GUM=true
 
 print_help() {
   cat <<'EOF'
-ACFS Cheatsheet (aliases + quick commands)
+GTBI Cheatsheet (aliases + quick commands)
 
 Usage:
-  acfs cheatsheet [query]
-  acfs cheatsheet --category <name>
-  acfs cheatsheet --search <pattern>
-  acfs cheatsheet --json
-  acfs cheatsheet --format <json|toon>
-  acfs cheatsheet --stats
-  acfs cheatsheet --zshrc <path>
+  gtbi cheatsheet [query]
+  gtbi cheatsheet --category <name>
+  gtbi cheatsheet --search <pattern>
+  gtbi cheatsheet --json
+  gtbi cheatsheet --format <json|toon>
+  gtbi cheatsheet --stats
+  gtbi cheatsheet --zshrc <path>
 
 Options:
   --json           Output as JSON
-  --format <fmt>   Output format: json or toon (env: ACFS_OUTPUT_FORMAT, TOON_DEFAULT_FORMAT)
+  --format <fmt>   Output format: json or toon (env: GTBI_OUTPUT_FORMAT, TOON_DEFAULT_FORMAT)
   --toon, -t       Shorthand for --format toon
   --stats          Show token savings statistics (JSON vs TOON bytes)
 
 Examples:
-  acfs cheatsheet
-  acfs cheatsheet git
-  acfs cheatsheet "push"
-  acfs cheatsheet --category Agents
-  acfs cheatsheet --search docker
-  acfs cheatsheet --format toon --stats
+  gtbi cheatsheet
+  gtbi cheatsheet git
+  gtbi cheatsheet "push"
+  gtbi cheatsheet --category Agents
+  gtbi cheatsheet --search docker
+  gtbi cheatsheet --format toon --stats
 EOF
 }
 
@@ -336,7 +336,7 @@ cheatsheet_resolve_explicit_target_home() {
       return 0
     fi
     target_home="$_CHEATSHEET_EXPLICIT_TARGET_HOME"
-    if [[ -n "$target_home" ]] && [[ "$target_home" != "${_CHEATSHEET_CURRENT_HOME:-}" ]] && cheatsheet_candidate_has_acfs_data "$target_home/.acfs"; then
+    if [[ -n "$target_home" ]] && [[ "$target_home" != "${_CHEATSHEET_CURRENT_HOME:-}" ]] && cheatsheet_candidate_has_gtbi_data "$target_home/.gtbi"; then
       printf '%s\n' "${target_home%/}"
       return 0
     fi
@@ -387,7 +387,7 @@ cheatsheet_read_user_for_home() {
     return 0
   fi
 
-  state_file="$user_home/.acfs/state.json"
+  state_file="$user_home/.gtbi/state.json"
   candidate_user="$(cheatsheet_read_state_string "$state_file" "target_user" 2>/dev/null || true)"
   if [[ -n "$candidate_user" ]]; then
     current_home="$(cheatsheet_home_for_user "$candidate_user" 2>/dev/null || true)"
@@ -418,7 +418,7 @@ cheatsheet_validate_bin_dir_for_home() {
 
   case "$bin_dir" in
     */.local/bin) hinted_home="${bin_dir%/.local/bin}" ;;
-    */.acfs/bin) hinted_home="${bin_dir%/.acfs/bin}" ;;
+    */.gtbi/bin) hinted_home="${bin_dir%/.gtbi/bin}" ;;
     */.bun/bin) hinted_home="${bin_dir%/.bun/bin}" ;;
     */.cargo/bin) hinted_home="${bin_dir%/.cargo/bin}" ;;
     */.atuin/bin) hinted_home="${bin_dir%/.atuin/bin}" ;;
@@ -476,21 +476,21 @@ cheatsheet_read_target_home_from_state() {
   printf '%s\n' "${target_home%/}"
 }
 
-cheatsheet_candidate_has_acfs_data() {
+cheatsheet_candidate_has_gtbi_data() {
   local candidate="$1"
   [[ -n "$candidate" ]] || return 1
-  [[ -f "$candidate/state.json" || -f "$candidate/VERSION" || -f "$candidate/zsh/acfs.zshrc" ]]
+  [[ -f "$candidate/state.json" || -f "$candidate/VERSION" || -f "$candidate/zsh/gtbi.zshrc" ]]
 }
 
-cheatsheet_script_acfs_home() {
+cheatsheet_script_gtbi_home() {
   local candidate=""
   candidate=$(cd "$_CHEATSHEET_SCRIPT_DIR/../.." 2>/dev/null && pwd) || return 1
-  [[ "$(basename "$candidate")" == ".acfs" ]] || return 1
+  [[ "$(basename "$candidate")" == ".gtbi" ]] || return 1
   printf '%s\n' "$candidate"
 }
 
-cheatsheet_current_home_acfs_candidate() {
-  local candidate="$_CHEATSHEET_DEFAULT_ACFS_HOME"
+cheatsheet_current_home_gtbi_candidate() {
+  local candidate="$_CHEATSHEET_DEFAULT_GTBI_HOME"
   local current_home="$_CHEATSHEET_CURRENT_HOME"
   local current_user=""
   local original_home=""
@@ -500,7 +500,7 @@ cheatsheet_current_home_acfs_candidate() {
 
   [[ -n "$candidate" && -n "$current_home" ]] || return 1
   [[ "$current_home" != "/root" ]] || return 1
-  cheatsheet_candidate_has_acfs_data "$candidate" || return 1
+  cheatsheet_candidate_has_gtbi_data "$candidate" || return 1
 
   if [[ "${_CHEATSHEET_ORIGINAL_HOME_WAS_SET:-false}" == true ]]; then
     original_home="$(cheatsheet_sanitize_abs_nonroot_path "$_CHEATSHEET_ORIGINAL_HOME" 2>/dev/null || true)"
@@ -524,9 +524,9 @@ cheatsheet_current_home_acfs_candidate() {
   printf '%s\n' "$candidate"
 }
 
-cheatsheet_resolve_acfs_home() {
-  if [[ -n "$_CHEATSHEET_RESOLVED_ACFS_HOME" ]]; then
-    printf '%s\n' "$_CHEATSHEET_RESOLVED_ACFS_HOME"
+cheatsheet_resolve_gtbi_home() {
+  if [[ -n "$_CHEATSHEET_RESOLVED_GTBI_HOME" ]]; then
+    printf '%s\n' "$_CHEATSHEET_RESOLVED_GTBI_HOME"
     return 0
   fi
 
@@ -535,69 +535,69 @@ cheatsheet_resolve_acfs_home() {
   local target_user=""
   local explicit_target_home=""
 
-  _CHEATSHEET_RESOLVED_ACFS_HOME_SOURCE=""
+  _CHEATSHEET_RESOLVED_GTBI_HOME_SOURCE=""
 
-  candidate=$(cheatsheet_script_acfs_home 2>/dev/null || true)
-  if cheatsheet_candidate_has_acfs_data "$candidate"; then
-    _CHEATSHEET_RESOLVED_ACFS_HOME="$candidate"
-    _CHEATSHEET_RESOLVED_ACFS_HOME_SOURCE="script_acfs_home"
-    printf '%s\n' "$_CHEATSHEET_RESOLVED_ACFS_HOME"
+  candidate=$(cheatsheet_script_gtbi_home 2>/dev/null || true)
+  if cheatsheet_candidate_has_gtbi_data "$candidate"; then
+    _CHEATSHEET_RESOLVED_GTBI_HOME="$candidate"
+    _CHEATSHEET_RESOLVED_GTBI_HOME_SOURCE="script_gtbi_home"
+    printf '%s\n' "$_CHEATSHEET_RESOLVED_GTBI_HOME"
     return 0
   fi
 
   explicit_target_home="$(cheatsheet_resolve_explicit_target_home 2>/dev/null || true)"
   if [[ -n "$explicit_target_home" ]]; then
-    candidate="${explicit_target_home}/.acfs"
-    if cheatsheet_candidate_has_acfs_data "$candidate"; then
-      _CHEATSHEET_RESOLVED_ACFS_HOME="$candidate"
-      _CHEATSHEET_RESOLVED_ACFS_HOME_SOURCE="explicit_target_home"
-      printf '%s\n' "$_CHEATSHEET_RESOLVED_ACFS_HOME"
+    candidate="${explicit_target_home}/.gtbi"
+    if cheatsheet_candidate_has_gtbi_data "$candidate"; then
+      _CHEATSHEET_RESOLVED_GTBI_HOME="$candidate"
+      _CHEATSHEET_RESOLVED_GTBI_HOME_SOURCE="explicit_target_home"
+      printf '%s\n' "$_CHEATSHEET_RESOLVED_GTBI_HOME"
       return 0
     fi
   fi
 
-  if [[ ! -f "$_CHEATSHEET_SYSTEM_STATE_FILE" ]] && [[ -n "$_CHEATSHEET_EXPLICIT_ACFS_HOME" ]] && cheatsheet_candidate_has_acfs_data "$_CHEATSHEET_EXPLICIT_ACFS_HOME"; then
-    _CHEATSHEET_RESOLVED_ACFS_HOME="$_CHEATSHEET_EXPLICIT_ACFS_HOME"
-    _CHEATSHEET_RESOLVED_ACFS_HOME_SOURCE="explicit_acfs_home"
-    printf '%s\n' "$_CHEATSHEET_RESOLVED_ACFS_HOME"
+  if [[ ! -f "$_CHEATSHEET_SYSTEM_STATE_FILE" ]] && [[ -n "$_CHEATSHEET_EXPLICIT_GTBI_HOME" ]] && cheatsheet_candidate_has_gtbi_data "$_CHEATSHEET_EXPLICIT_GTBI_HOME"; then
+    _CHEATSHEET_RESOLVED_GTBI_HOME="$_CHEATSHEET_EXPLICIT_GTBI_HOME"
+    _CHEATSHEET_RESOLVED_GTBI_HOME_SOURCE="explicit_gtbi_home"
+    printf '%s\n' "$_CHEATSHEET_RESOLVED_GTBI_HOME"
     return 0
   fi
 
-  candidate="$(cheatsheet_current_home_acfs_candidate 2>/dev/null || true)"
+  candidate="$(cheatsheet_current_home_gtbi_candidate 2>/dev/null || true)"
   if [[ -n "$candidate" ]]; then
-    _CHEATSHEET_RESOLVED_ACFS_HOME="$candidate"
-    _CHEATSHEET_RESOLVED_ACFS_HOME_SOURCE="current_home"
-    printf '%s\n' "$_CHEATSHEET_RESOLVED_ACFS_HOME"
+    _CHEATSHEET_RESOLVED_GTBI_HOME="$candidate"
+    _CHEATSHEET_RESOLVED_GTBI_HOME_SOURCE="current_home"
+    printf '%s\n' "$_CHEATSHEET_RESOLVED_GTBI_HOME"
     return 0
   fi
 
   if [[ "$_CHEATSHEET_SYSTEM_STATE_WAS_EXPLICIT" == true ]]; then
     target_home=$(cheatsheet_read_target_home_from_state "$_CHEATSHEET_SYSTEM_STATE_FILE" 2>/dev/null || true)
-    candidate="${target_home}/.acfs"
-    if [[ -n "$target_home" ]] && cheatsheet_candidate_has_acfs_data "$candidate"; then
-      _CHEATSHEET_RESOLVED_ACFS_HOME="$candidate"
-      _CHEATSHEET_RESOLVED_ACFS_HOME_SOURCE="system_state_target_home"
-      printf '%s\n' "$_CHEATSHEET_RESOLVED_ACFS_HOME"
+    candidate="${target_home}/.gtbi"
+    if [[ -n "$target_home" ]] && cheatsheet_candidate_has_gtbi_data "$candidate"; then
+      _CHEATSHEET_RESOLVED_GTBI_HOME="$candidate"
+      _CHEATSHEET_RESOLVED_GTBI_HOME_SOURCE="system_state_target_home"
+      printf '%s\n' "$_CHEATSHEET_RESOLVED_GTBI_HOME"
       return 0
     fi
 
     target_user=$(cheatsheet_read_state_string "$_CHEATSHEET_SYSTEM_STATE_FILE" "target_user" 2>/dev/null || true)
     if [[ -n "$target_user" ]]; then
       target_home=$(cheatsheet_home_for_user "$target_user" 2>/dev/null || true)
-      candidate="${target_home}/.acfs"
-      if [[ -n "$target_home" ]] && cheatsheet_candidate_has_acfs_data "$candidate"; then
-        _CHEATSHEET_RESOLVED_ACFS_HOME="$candidate"
-        _CHEATSHEET_RESOLVED_ACFS_HOME_SOURCE="system_state_target_user"
-        printf '%s\n' "$_CHEATSHEET_RESOLVED_ACFS_HOME"
+      candidate="${target_home}/.gtbi"
+      if [[ -n "$target_home" ]] && cheatsheet_candidate_has_gtbi_data "$candidate"; then
+        _CHEATSHEET_RESOLVED_GTBI_HOME="$candidate"
+        _CHEATSHEET_RESOLVED_GTBI_HOME_SOURCE="system_state_target_user"
+        printf '%s\n' "$_CHEATSHEET_RESOLVED_GTBI_HOME"
         return 0
       fi
     fi
   fi
 
-  if [[ -n "$_CHEATSHEET_EXPLICIT_ACFS_HOME" ]] && cheatsheet_candidate_has_acfs_data "$_CHEATSHEET_EXPLICIT_ACFS_HOME"; then
-    _CHEATSHEET_RESOLVED_ACFS_HOME="$_CHEATSHEET_EXPLICIT_ACFS_HOME"
-    _CHEATSHEET_RESOLVED_ACFS_HOME_SOURCE="explicit_acfs_home"
-    printf '%s\n' "$_CHEATSHEET_RESOLVED_ACFS_HOME"
+  if [[ -n "$_CHEATSHEET_EXPLICIT_GTBI_HOME" ]] && cheatsheet_candidate_has_gtbi_data "$_CHEATSHEET_EXPLICIT_GTBI_HOME"; then
+    _CHEATSHEET_RESOLVED_GTBI_HOME="$_CHEATSHEET_EXPLICIT_GTBI_HOME"
+    _CHEATSHEET_RESOLVED_GTBI_HOME_SOURCE="explicit_gtbi_home"
+    printf '%s\n' "$_CHEATSHEET_RESOLVED_GTBI_HOME"
     return 0
   fi
 
@@ -607,21 +607,21 @@ cheatsheet_resolve_acfs_home() {
 
   if [[ -n "${SUDO_USER:-}" ]]; then
     target_home=$(cheatsheet_home_for_user "$SUDO_USER" 2>/dev/null || true)
-    candidate="${target_home}/.acfs"
-    if [[ -n "$target_home" ]] && cheatsheet_candidate_has_acfs_data "$candidate"; then
-      _CHEATSHEET_RESOLVED_ACFS_HOME="$candidate"
-      _CHEATSHEET_RESOLVED_ACFS_HOME_SOURCE="sudo_user_home"
-      printf '%s\n' "$_CHEATSHEET_RESOLVED_ACFS_HOME"
+    candidate="${target_home}/.gtbi"
+    if [[ -n "$target_home" ]] && cheatsheet_candidate_has_gtbi_data "$candidate"; then
+      _CHEATSHEET_RESOLVED_GTBI_HOME="$candidate"
+      _CHEATSHEET_RESOLVED_GTBI_HOME_SOURCE="sudo_user_home"
+      printf '%s\n' "$_CHEATSHEET_RESOLVED_GTBI_HOME"
       return 0
     fi
   fi
 
   target_home=$(cheatsheet_read_target_home_from_state "$_CHEATSHEET_SYSTEM_STATE_FILE" 2>/dev/null || true)
-  candidate="${target_home}/.acfs"
-  if [[ -n "$target_home" ]] && cheatsheet_candidate_has_acfs_data "$candidate"; then
-    _CHEATSHEET_RESOLVED_ACFS_HOME="$candidate"
-    _CHEATSHEET_RESOLVED_ACFS_HOME_SOURCE="system_state_target_home"
-    printf '%s\n' "$_CHEATSHEET_RESOLVED_ACFS_HOME"
+  candidate="${target_home}/.gtbi"
+  if [[ -n "$target_home" ]] && cheatsheet_candidate_has_gtbi_data "$candidate"; then
+    _CHEATSHEET_RESOLVED_GTBI_HOME="$candidate"
+    _CHEATSHEET_RESOLVED_GTBI_HOME_SOURCE="system_state_target_home"
+    printf '%s\n' "$_CHEATSHEET_RESOLVED_GTBI_HOME"
     return 0
   fi
 
@@ -630,25 +630,25 @@ cheatsheet_resolve_acfs_home() {
     if [[ -z "$target_home" ]]; then
       target_home=$(cheatsheet_home_for_user "$target_user" 2>/dev/null || true)
     fi
-    candidate="${target_home}/.acfs"
-    if [[ -n "$target_home" ]] && cheatsheet_candidate_has_acfs_data "$candidate"; then
-      _CHEATSHEET_RESOLVED_ACFS_HOME="$candidate"
-      _CHEATSHEET_RESOLVED_ACFS_HOME_SOURCE="system_state_target_user"
-      printf '%s\n' "$_CHEATSHEET_RESOLVED_ACFS_HOME"
+    candidate="${target_home}/.gtbi"
+    if [[ -n "$target_home" ]] && cheatsheet_candidate_has_gtbi_data "$candidate"; then
+      _CHEATSHEET_RESOLVED_GTBI_HOME="$candidate"
+      _CHEATSHEET_RESOLVED_GTBI_HOME_SOURCE="system_state_target_user"
+      printf '%s\n' "$_CHEATSHEET_RESOLVED_GTBI_HOME"
       return 0
     fi
   fi
 
-  _CHEATSHEET_RESOLVED_ACFS_HOME="$_CHEATSHEET_DEFAULT_ACFS_HOME"
-  _CHEATSHEET_RESOLVED_ACFS_HOME_SOURCE="current_home"
-  printf '%s\n' "$_CHEATSHEET_RESOLVED_ACFS_HOME"
+  _CHEATSHEET_RESOLVED_GTBI_HOME="$_CHEATSHEET_DEFAULT_GTBI_HOME"
+  _CHEATSHEET_RESOLVED_GTBI_HOME_SOURCE="current_home"
+  printf '%s\n' "$_CHEATSHEET_RESOLVED_GTBI_HOME"
 }
 
 cheatsheet_resolve_state_file() {
   local candidate=""
 
-  if [[ -n "$_CHEATSHEET_ACFS_HOME" ]]; then
-    candidate="${_CHEATSHEET_ACFS_HOME}/state.json"
+  if [[ -n "$_CHEATSHEET_GTBI_HOME" ]]; then
+    candidate="${_CHEATSHEET_GTBI_HOME}/state.json"
   fi
 
   if [[ -n "$candidate" ]] && [[ -f "$candidate" ]]; then
@@ -667,7 +667,7 @@ cheatsheet_resolve_state_file() {
 cheatsheet_prepend_user_paths() {
   local base_home="$1"
   local dir=""
-  local primary_bin_dir="${ACFS_BIN_DIR:-$base_home/.local/bin}"
+  local primary_bin_dir="${GTBI_BIN_DIR:-$base_home/.local/bin}"
   local current_path="${PATH:-}"
   local seen_path=":${current_path}:"
   local -a to_prepend=()
@@ -681,7 +681,7 @@ cheatsheet_prepend_user_paths() {
   for dir in \
     "$primary_bin_dir" \
     "$base_home/.local/bin" \
-    "$base_home/.acfs/bin" \
+    "$base_home/.gtbi/bin" \
     "$base_home/.bun/bin" \
     "$base_home/.cargo/bin" \
     "$base_home/go/bin" \
@@ -704,26 +704,26 @@ cheatsheet_prepend_user_paths() {
   fi
 }
 
-cheatsheet_infer_target_home_from_acfs_home() {
-  local acfs_home_candidate=""
+cheatsheet_infer_target_home_from_gtbi_home() {
+  local gtbi_home_candidate=""
   local inferred_home=""
 
-  acfs_home_candidate="$(cheatsheet_sanitize_abs_nonroot_path "${_CHEATSHEET_ACFS_HOME:-}" 2>/dev/null || true)"
-  [[ -n "$acfs_home_candidate" ]] || return 1
-  [[ "$(basename "$acfs_home_candidate")" == ".acfs" ]] || return 1
-  [[ -f "$acfs_home_candidate/state.json" || -f "$acfs_home_candidate/VERSION" || -f "$acfs_home_candidate/zsh/acfs.zshrc" ]] || return 1
+  gtbi_home_candidate="$(cheatsheet_sanitize_abs_nonroot_path "${_CHEATSHEET_GTBI_HOME:-}" 2>/dev/null || true)"
+  [[ -n "$gtbi_home_candidate" ]] || return 1
+  [[ "$(basename "$gtbi_home_candidate")" == ".gtbi" ]] || return 1
+  [[ -f "$gtbi_home_candidate/state.json" || -f "$gtbi_home_candidate/VERSION" || -f "$gtbi_home_candidate/zsh/gtbi.zshrc" ]] || return 1
 
-  if [[ -n "$_CHEATSHEET_EXPLICIT_ACFS_HOME" ]] && [[ "$acfs_home_candidate" == "$_CHEATSHEET_EXPLICIT_ACFS_HOME" ]]; then
+  if [[ -n "$_CHEATSHEET_EXPLICIT_GTBI_HOME" ]] && [[ "$gtbi_home_candidate" == "$_CHEATSHEET_EXPLICIT_GTBI_HOME" ]]; then
     :
-  elif [[ -n "$_CHEATSHEET_DEFAULT_ACFS_HOME" ]] && [[ "$acfs_home_candidate" == "$_CHEATSHEET_DEFAULT_ACFS_HOME" ]]; then
+  elif [[ -n "$_CHEATSHEET_DEFAULT_GTBI_HOME" ]] && [[ "$gtbi_home_candidate" == "$_CHEATSHEET_DEFAULT_GTBI_HOME" ]]; then
     :
-  elif [[ "${_CHEATSHEET_RESOLVED_ACFS_HOME_SOURCE:-}" == "explicit_target_home" ]]; then
+  elif [[ "${_CHEATSHEET_RESOLVED_GTBI_HOME_SOURCE:-}" == "explicit_target_home" ]]; then
     :
   else
     return 1
   fi
 
-  inferred_home="${acfs_home_candidate%/.acfs}"
+  inferred_home="${gtbi_home_candidate%/.gtbi}"
   inferred_home="$(cheatsheet_sanitize_abs_nonroot_path "$inferred_home" 2>/dev/null || true)"
   [[ -n "$inferred_home" ]] || return 1
   printf '%s\n' "$inferred_home"
@@ -739,9 +739,9 @@ cheatsheet_prepare_context() {
 
   _CHEATSHEET_RESOLVED_TARGET_USER=""
   _CHEATSHEET_RESOLVED_TARGET_HOME=""
-  _CHEATSHEET_ACFS_HOME="$(cheatsheet_resolve_acfs_home 2>/dev/null || true)"
+  _CHEATSHEET_GTBI_HOME="$(cheatsheet_resolve_gtbi_home 2>/dev/null || true)"
   state_file="$(cheatsheet_resolve_state_file)"
-  path_home="$(cheatsheet_infer_target_home_from_acfs_home 2>/dev/null || true)"
+  path_home="$(cheatsheet_infer_target_home_from_gtbi_home 2>/dev/null || true)"
   explicit_target_home="$(cheatsheet_resolve_explicit_target_home 2>/dev/null || true)"
   if [[ -n "$path_home" ]]; then
     state_target_user="$(cheatsheet_read_state_string "$state_file" "target_user" 2>/dev/null || true)"
@@ -786,11 +786,11 @@ cheatsheet_prepare_context() {
     target_home_source="path_home"
   fi
 
-  if [[ -z "$_CHEATSHEET_RESOLVED_TARGET_HOME" ]] && [[ "$_CHEATSHEET_ACFS_HOME" == */.acfs ]]; then
-    resolved_target_home="$(cheatsheet_existing_abs_home "${_CHEATSHEET_ACFS_HOME%/.acfs}" 2>/dev/null || true)"
+  if [[ -z "$_CHEATSHEET_RESOLVED_TARGET_HOME" ]] && [[ "$_CHEATSHEET_GTBI_HOME" == */.gtbi ]]; then
+    resolved_target_home="$(cheatsheet_existing_abs_home "${_CHEATSHEET_GTBI_HOME%/.gtbi}" 2>/dev/null || true)"
     if [[ -n "$resolved_target_home" ]]; then
       _CHEATSHEET_RESOLVED_TARGET_HOME="$resolved_target_home"
-      target_home_source="acfs_home_path"
+      target_home_source="gtbi_home_path"
     fi
   fi
 
@@ -876,7 +876,7 @@ infer_category() {
 }
 
 cheatsheet_parse_zshrc() {
-  local zshrc="${1:-$_CHEATSHEET_ACFS_HOME/zsh/acfs.zshrc}"
+  local zshrc="${1:-$_CHEATSHEET_GTBI_HOME/zsh/gtbi.zshrc}"
   [[ -f "$zshrc" ]] || return 1
 
   local current_category="Misc"
@@ -896,7 +896,7 @@ cheatsheet_parse_zshrc() {
       continue
     fi
 
-    # Track simple conditional blocks used in acfs.zshrc (command -v ...; then / elif / else / fi).
+    # Track simple conditional blocks used in gtbi.zshrc (command -v ...; then / elif / else / fi).
     # This keeps the cheatsheet aligned with what will actually be active on the current system.
     if [[ "$line" =~ ^[[:space:]]*if[[:space:]]+command[[:space:]]+-v[[:space:]]+([[:alnum:]_.+-]+) ]]; then
       local tool="${BASH_REMATCH[1]}"
@@ -975,9 +975,9 @@ cheatsheet_parse_zshrc() {
     # Zsh/Bash aliases often use '\'' to embed single quotes inside single-quoted strings.
     # We replace this sequence with a placeholder to avoid splitting on the inner quotes.
     local safe_line
-    safe_line="${line//\'\\\'\'/__ACFS_SQ__}"
+    safe_line="${line//\'\\\'\'/__GTBI_SQ__}"
     # Protect \" inside double quotes
-    safe_line="${safe_line//\\\"/__ACFS_DQ__}"
+    safe_line="${safe_line//\\\"/__GTBI_DQ__}"
 
     rest="$safe_line"
     while [[ "$rest" == *"alias "* ]]; do
@@ -1016,8 +1016,8 @@ cheatsheet_parse_zshrc() {
       fi
 
       # Restore placeholders
-      cmd="${cmd//__ACFS_SQ__/\'}"
-      cmd="${cmd//__ACFS_DQ__/\"}"
+      cmd="${cmd//__GTBI_SQ__/\'}"
+      cmd="${cmd//__GTBI_DQ__/\"}"
 
       local category="$current_category"
       [[ -z "$category" || "$category" == "Misc" ]] && category="$(infer_category "$name" "$cmd")"
@@ -1031,7 +1031,7 @@ cheatsheet_parse_zshrc() {
 }
 
 cheatsheet_collect_entries() {
-  local zshrc="${1:-$_CHEATSHEET_ACFS_HOME/zsh/acfs.zshrc}"
+  local zshrc="${1:-$_CHEATSHEET_GTBI_HOME/zsh/gtbi.zshrc}"
   local -a entries=()
   local line
 
@@ -1061,7 +1061,7 @@ cheatsheet_collect_entries() {
 cheatsheet_filter_entries() {
   local category_filter="${1:-}"
   local search_filter="${2:-}"
-  local zshrc="${3:-$_CHEATSHEET_ACFS_HOME/zsh/acfs.zshrc}"
+  local zshrc="${3:-$_CHEATSHEET_GTBI_HOME/zsh/gtbi.zshrc}"
 
   local line cat name cmd kind
   while IFS= read -r line; do
@@ -1087,9 +1087,9 @@ cheatsheet_filter_entries() {
 cheatsheet_render_plain() {
   local category_filter="${1:-}"
   local search_filter="${2:-}"
-  local zshrc="${3:-$_CHEATSHEET_ACFS_HOME/zsh/acfs.zshrc}"
+  local zshrc="${3:-$_CHEATSHEET_GTBI_HOME/zsh/gtbi.zshrc}"
 
-  echo "ACFS Cheatsheet v$_CHEATSHEET_VERSION"
+  echo "GTBI Cheatsheet v$_CHEATSHEET_VERSION"
   echo "Source: $zshrc"
   echo ""
 
@@ -1108,9 +1108,9 @@ cheatsheet_render_plain() {
 cheatsheet_render_gum() {
   local category_filter="${1:-}"
   local search_filter="${2:-}"
-  local zshrc="${3:-$_CHEATSHEET_ACFS_HOME/zsh/acfs.zshrc}"
+  local zshrc="${3:-$_CHEATSHEET_GTBI_HOME/zsh/gtbi.zshrc}"
 
-  gum style --bold --foreground "#89b4fa" "ACFS Cheatsheet v$_CHEATSHEET_VERSION"
+  gum style --bold --foreground "#89b4fa" "GTBI Cheatsheet v$_CHEATSHEET_VERSION"
   gum style --foreground "#6c7086" "Source: $zshrc"
   echo ""
 
@@ -1130,7 +1130,7 @@ cheatsheet_render_gum() {
 cheatsheet_render_json() {
   local category_filter="${1:-}"
   local search_filter="${2:-}"
-  local zshrc="${3:-$_CHEATSHEET_ACFS_HOME/zsh/acfs.zshrc}"
+  local zshrc="${3:-$_CHEATSHEET_GTBI_HOME/zsh/gtbi.zshrc}"
 
   local json_output
   json_output=$(
@@ -1161,10 +1161,10 @@ cheatsheet_render_json() {
   )
 
   # Use output formatting library if available
-  if type -t acfs_format_output &>/dev/null; then
+  if type -t gtbi_format_output &>/dev/null; then
     local resolved_format
-    resolved_format=$(acfs_resolve_format "$_CHEATSHEET_OUTPUT_FORMAT")
-    acfs_format_output "$json_output" "$resolved_format" "$_CHEATSHEET_SHOW_STATS"
+    resolved_format=$(gtbi_resolve_format "$_CHEATSHEET_OUTPUT_FORMAT")
+    gtbi_format_output "$json_output" "$resolved_format" "$_CHEATSHEET_SHOW_STATS"
   else
     # Fallback: direct JSON output
     printf '%s\n' "$json_output"
@@ -1257,12 +1257,12 @@ main() {
   cheatsheet_prepare_context
 
   if [[ -z "$zshrc" ]]; then
-    zshrc="$_CHEATSHEET_ACFS_HOME/zsh/acfs.zshrc"
+    zshrc="$_CHEATSHEET_GTBI_HOME/zsh/gtbi.zshrc"
   fi
 
   if [[ ! -f "$zshrc" ]]; then
     echo "Error: zshrc not found: $zshrc" >&2
-    echo "Hint: re-run the ACFS installer, or pass --zshrc <path> / set ACFS_HOME." >&2
+    echo "Hint: re-run the GTBI installer, or pass --zshrc <path> / set GTBI_HOME." >&2
     return 1
   fi
 

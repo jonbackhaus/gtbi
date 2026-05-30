@@ -1,20 +1,20 @@
 #!/usr/bin/env bash
 # ============================================================
-# ACFS Error Tracking Library
+# GTBI Error Tracking Library
 #
 # Provides error context tracking and step execution wrappers
 # to capture exactly where failures occur during installation.
 #
 # Related beads:
-#   - agentic_coding_flywheel_setup-qqo: Create error context tracking
-#   - agentic_coding_flywheel_setup-fkf: EPIC: Per-Phase Error Reporting
+#   - gastown_batteries_included-qqo: Create error context tracking
+#   - gastown_batteries_included-fkf: EPIC: Per-Phase Error Reporting
 # ============================================================
 
 # Prevent multiple sourcing
-if [[ -n "${_ACFS_ERROR_TRACKING_SH_LOADED:-}" ]]; then
+if [[ -n "${_GTBI_ERROR_TRACKING_SH_LOADED:-}" ]]; then
     return 0
 fi
-_ACFS_ERROR_TRACKING_SH_LOADED=1
+_GTBI_ERROR_TRACKING_SH_LOADED=1
 
 # ============================================================
 # Global Error Context Variables
@@ -158,7 +158,7 @@ try_step() {
 
     # Create temp file for output capture
     local output_file
-    output_file=$(mktemp "${TMPDIR:-/tmp}/acfs_step.XXXXXX" 2>/dev/null) || output_file=""
+    output_file=$(mktemp "${TMPDIR:-/tmp}/gtbi_step.XXXXXX" 2>/dev/null) || output_file=""
 
     local exit_code=0
     local had_errexit=false
@@ -172,7 +172,7 @@ try_step() {
             # We avoid a subshell (...) to preserve global variable updates (SC2030/SC2031).
             # Using a temporary FIFO or redirection to a background process is more robust.
             local fifo_dir fifo
-            fifo_dir=$(mktemp -d "${TMPDIR:-/tmp}/acfs_fifo.XXXXXX" 2>/dev/null) || fifo_dir=""
+            fifo_dir=$(mktemp -d "${TMPDIR:-/tmp}/gtbi_fifo.XXXXXX" 2>/dev/null) || fifo_dir=""
             if [[ -n "$fifo_dir" ]]; then
                 fifo="$fifo_dir/fifo"
                 mkfifo "$fifo"
@@ -434,7 +434,7 @@ get_error_context() {
 get_error_context_json() {
     if ! command -v jq &>/dev/null; then
         # Fallback without jq - emit valid JSON with proper escaping and nulls.
-        _acfs_json_escape() {
+        _gtbi_json_escape() {
             local s="$1"
             s="${s//\\/\\\\}"      # \ -> \\
             s="${s//\"/\\\"}"      # " -> \"
@@ -444,13 +444,13 @@ get_error_context_json() {
             printf '%s' "$s"
         }
 
-        _acfs_json_string_or_null() {
+        _gtbi_json_string_or_null() {
             local s="${1:-}"
             if [[ -z "$s" ]]; then
                 printf 'null'
                 return 0
             fi
-            printf '"%s"' "$(_acfs_json_escape "$s")"
+            printf '"%s"' "$(_gtbi_json_escape "$s")"
         }
 
         local exit_code=0
@@ -459,13 +459,13 @@ get_error_context_json() {
         fi
 
         printf '{\n'
-        printf '  "phase": %s,\n' "$(_acfs_json_string_or_null "${CURRENT_PHASE:-}")"
-        printf '  "phase_name": %s,\n' "$(_acfs_json_string_or_null "${CURRENT_PHASE_NAME:-}")"
-        printf '  "step": %s,\n' "$(_acfs_json_string_or_null "${CURRENT_STEP:-}")"
-        printf '  "error": %s,\n' "$(_acfs_json_string_or_null "${LAST_ERROR:-}")"
+        printf '  "phase": %s,\n' "$(_gtbi_json_string_or_null "${CURRENT_PHASE:-}")"
+        printf '  "phase_name": %s,\n' "$(_gtbi_json_string_or_null "${CURRENT_PHASE_NAME:-}")"
+        printf '  "step": %s,\n' "$(_gtbi_json_string_or_null "${CURRENT_STEP:-}")"
+        printf '  "error": %s,\n' "$(_gtbi_json_string_or_null "${LAST_ERROR:-}")"
         printf '  "exit_code": %s,\n' "$exit_code"
-        printf '  "time": %s,\n' "$(_acfs_json_string_or_null "${LAST_ERROR_TIME:-}")"
-        printf '  "output": %s\n' "$(_acfs_json_string_or_null "${LAST_ERROR_OUTPUT:-}")"
+        printf '  "time": %s,\n' "$(_gtbi_json_string_or_null "${LAST_ERROR_TIME:-}")"
+        printf '  "output": %s\n' "$(_gtbi_json_string_or_null "${LAST_ERROR_OUTPUT:-}")"
         printf '}\n'
         return 0
     fi
@@ -569,7 +569,7 @@ should_skip_phase() {
 # ============================================================
 # Automatic Retry for Transient Network Errors
 # ============================================================
-# Related bead: agentic_coding_flywheel_setup-nna
+# Related bead: gastown_batteries_included-nna
 
 # Retry delays: Immediate, then 5s, then 15s (total max wait: 20s)
 # Rationale:
@@ -644,8 +644,8 @@ retry_with_backoff() {
     local stdout_file
     local stderr_content=""
 
-    stderr_file=$(mktemp "${TMPDIR:-/tmp}/acfs_retry_stderr.XXXXXX" 2>/dev/null) || stderr_file=""
-    stdout_file=$(mktemp "${TMPDIR:-/tmp}/acfs_retry_stdout.XXXXXX" 2>/dev/null) || stdout_file=""
+    stderr_file=$(mktemp "${TMPDIR:-/tmp}/gtbi_retry_stderr.XXXXXX" 2>/dev/null) || stderr_file=""
+    stdout_file=$(mktemp "${TMPDIR:-/tmp}/gtbi_retry_stdout.XXXXXX" 2>/dev/null) || stdout_file=""
 
     local use_temp_files="true"
     if [[ -z "$stderr_file" || -z "$stdout_file" ]]; then
@@ -859,13 +859,13 @@ fetch_with_retry() {
 # ============================================================
 
 # Array of failed tool names
-declare -ga ACFS_FAILED_TOOLS=()
+declare -ga GTBI_FAILED_TOOLS=()
 
 # Associative array of tool -> error message
-declare -gA ACFS_FAILED_TOOL_ERRORS=()
+declare -gA GTBI_FAILED_TOOL_ERRORS=()
 
 # Array of successful tool names
-declare -ga ACFS_SUCCESSFUL_TOOLS=()
+declare -ga GTBI_SUCCESSFUL_TOOLS=()
 
 # Track a failed tool installation
 # Usage: track_failed_tool <tool_name> [error_message]
@@ -874,8 +874,8 @@ track_failed_tool() {
     local tool_name="$1"
     local error_message="${2:-Installation failed}"
 
-    ACFS_FAILED_TOOLS+=("$tool_name")
-    ACFS_FAILED_TOOL_ERRORS["$tool_name"]="$error_message"
+    GTBI_FAILED_TOOLS+=("$tool_name")
+    GTBI_FAILED_TOOL_ERRORS["$tool_name"]="$error_message"
 
     if type -t log_warn &>/dev/null; then
         log_warn "$tool_name installation failed: $error_message (will continue)"
@@ -886,7 +886,7 @@ track_failed_tool() {
 # Usage: track_successful_tool <tool_name>
 track_successful_tool() {
     local tool_name="$1"
-    ACFS_SUCCESSFUL_TOOLS+=("$tool_name")
+    GTBI_SUCCESSFUL_TOOLS+=("$tool_name")
 }
 
 # Install a tool with tracking
@@ -923,27 +923,27 @@ install_tool_tracked() {
 # Usage: get_failed_tool_count
 # Outputs: Number of failed tools
 get_failed_tool_count() {
-    echo "${#ACFS_FAILED_TOOLS[@]}"
+    echo "${#GTBI_FAILED_TOOLS[@]}"
 }
 
 # Get count of successful tools
 # Usage: get_successful_tool_count
 get_successful_tool_count() {
-    echo "${#ACFS_SUCCESSFUL_TOOLS[@]}"
+    echo "${#GTBI_SUCCESSFUL_TOOLS[@]}"
 }
 
 # Check if any tools failed
 # Usage: has_failed_tools
 # Returns: 0 if tools failed, 1 otherwise
 has_failed_tools() {
-    [[ ${#ACFS_FAILED_TOOLS[@]} -gt 0 ]]
+    [[ ${#GTBI_FAILED_TOOLS[@]} -gt 0 ]]
 }
 
 # Print installation summary
 # Usage: print_install_summary
 print_install_summary() {
-    local success_count="${#ACFS_SUCCESSFUL_TOOLS[@]}"
-    local fail_count="${#ACFS_FAILED_TOOLS[@]}"
+    local success_count="${#GTBI_SUCCESSFUL_TOOLS[@]}"
+    local fail_count="${#GTBI_FAILED_TOOLS[@]}"
 
     echo ""
     echo "=== INSTALLATION SUMMARY ==="
@@ -953,13 +953,13 @@ print_install_summary() {
     if [[ $fail_count -gt 0 ]]; then
         echo ""
         echo "Failed tools:"
-        for tool in "${ACFS_FAILED_TOOLS[@]}"; do
-            local error="${ACFS_FAILED_TOOL_ERRORS[$tool]:-Unknown error}"
+        for tool in "${GTBI_FAILED_TOOLS[@]}"; do
+            local error="${GTBI_FAILED_TOOL_ERRORS[$tool]:-Unknown error}"
             echo "  - $tool: $error"
         done
         echo ""
         echo "To retry failed tools:"
-        echo "  acfs install --retry-failed"
+        echo "  gtbi install --retry-failed"
     fi
 }
 
@@ -967,13 +967,13 @@ print_install_summary() {
 # Usage: get_failed_tools_list
 # Outputs: Space-separated list of failed tools
 get_failed_tools_list() {
-    echo "${ACFS_FAILED_TOOLS[*]}"
+    echo "${GTBI_FAILED_TOOLS[*]}"
 }
 
 # Get list of failed tools as JSON array
 # Usage: get_failed_tools_json
 get_failed_tools_json() {
-    if [[ ${#ACFS_FAILED_TOOLS[@]} -eq 0 ]]; then
+    if [[ ${#GTBI_FAILED_TOOLS[@]} -eq 0 ]]; then
         echo "[]"
         return 0
     fi
@@ -982,8 +982,8 @@ get_failed_tools_json() {
         # Fallback JSON generation
         local json="["
         local first=true
-        for tool in "${ACFS_FAILED_TOOLS[@]}"; do
-            local error="${ACFS_FAILED_TOOL_ERRORS[$tool]:-Unknown error}"
+        for tool in "${GTBI_FAILED_TOOLS[@]}"; do
+            local error="${GTBI_FAILED_TOOL_ERRORS[$tool]:-Unknown error}"
             # Escape JSON
             error="${error//\\/\\\\}"
             error="${error//\"/\\\"}"
@@ -1002,8 +1002,8 @@ get_failed_tools_json() {
     fi
 
     local -a items=()
-    for tool in "${ACFS_FAILED_TOOLS[@]}"; do
-        items+=("$tool" "${ACFS_FAILED_TOOL_ERRORS[$tool]:-Unknown error}")
+    for tool in "${GTBI_FAILED_TOOLS[@]}"; do
+        items+=("$tool" "${GTBI_FAILED_TOOL_ERRORS[$tool]:-Unknown error}")
     done
 
     # We use NUL delimiter to safely pass arbitrary strings (including newlines)
@@ -1017,9 +1017,9 @@ get_failed_tools_json() {
 # Clear all installation tracking state
 # Usage: clear_install_tracking
 clear_install_tracking() {
-    ACFS_FAILED_TOOLS=()
-    ACFS_FAILED_TOOL_ERRORS=()
-    ACFS_SUCCESSFUL_TOOLS=()
+    GTBI_FAILED_TOOLS=()
+    GTBI_FAILED_TOOL_ERRORS=()
+    GTBI_SUCCESSFUL_TOOLS=()
 }
 
 error_tracking_sanitize_abs_nonroot_path() {
@@ -1049,7 +1049,7 @@ error_tracking_default_retry_file_path() {
         return 1
     fi
 
-    printf '%s/.acfs/failed_tools.txt\n' "$base_home"
+    printf '%s/.gtbi/failed_tools.txt\n' "$base_home"
 }
 
 error_tracking_retry_file_path() {
@@ -1065,18 +1065,18 @@ error_tracking_retry_file_path() {
 
 # Save failed tools to file for retry
 # Usage: save_failed_tools_for_retry [file_path]
-# Default file: $HOME/.acfs/failed_tools.txt
+# Default file: $HOME/.gtbi/failed_tools.txt
 save_failed_tools_for_retry() {
     local file_path
     file_path="$(error_tracking_retry_file_path "${1:-}")" || return 1
 
-    if [[ ${#ACFS_FAILED_TOOLS[@]} -eq 0 ]]; then
+    if [[ ${#GTBI_FAILED_TOOLS[@]} -eq 0 ]]; then
         rm -f "$file_path" 2>/dev/null || true
         return 0
     fi
 
     mkdir -p "$(dirname "$file_path")" 2>/dev/null || true
-    printf '%s\n' "${ACFS_FAILED_TOOLS[@]}" > "$file_path"
+    printf '%s\n' "${GTBI_FAILED_TOOLS[@]}" > "$file_path"
 }
 
 # Load failed tools for retry
@@ -1090,9 +1090,9 @@ load_failed_tools_for_retry() {
         return 1
     fi
 
-    ACFS_FAILED_TOOLS=()
+    GTBI_FAILED_TOOLS=()
     while IFS= read -r tool; do
-        [[ -n "$tool" ]] && ACFS_FAILED_TOOLS+=("$tool")
+        [[ -n "$tool" ]] && GTBI_FAILED_TOOLS+=("$tool")
     done < "$file_path"
 
     return 0

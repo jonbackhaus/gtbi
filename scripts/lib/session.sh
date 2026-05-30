@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # shellcheck disable=SC1091
 # ============================================================
-# ACFS Installer - Session Export Library
+# GTBI Installer - Session Export Library
 # Defines schema and validation for agent session exports
 # ============================================================
 #
@@ -101,7 +101,7 @@
 # ============================================================
 
 # Source logging if not already loaded
-if [[ -z "${_ACFS_LOGGING_SH_LOADED:-}" ]]; then
+if [[ -z "${_GTBI_LOGGING_SH_LOADED:-}" ]]; then
     SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
     # shellcheck source=logging.sh
     source "${SCRIPT_DIR}/logging.sh" 2>/dev/null || true
@@ -111,7 +111,7 @@ fi
 # VALIDATION
 # ============================================================
 
-acfs_session_system_binary_path() {
+gtbi_session_system_binary_path() {
     local name="${1:-}"
     local candidate=""
 
@@ -141,10 +141,10 @@ acfs_session_system_binary_path() {
     return 1
 }
 
-acfs_session_jq() {
+gtbi_session_jq() {
     local jq_bin=""
 
-    jq_bin="$(acfs_session_system_binary_path jq 2>/dev/null || true)"
+    jq_bin="$(gtbi_session_system_binary_path jq 2>/dev/null || true)"
     if [[ -z "$jq_bin" ]]; then
         log_error "jq is required for session operations but not installed"
         return 1
@@ -166,13 +166,13 @@ validate_session_export() {
     fi
 
     # Check it's valid JSON
-    if ! acfs_session_jq -e . "$file" >/dev/null 2>&1; then
+    if ! gtbi_session_jq -e . "$file" >/dev/null 2>&1; then
         log_error "Invalid JSON in session export: $file"
         return 1
     fi
 
     # Check required top-level fields exist and contain usable values
-    if ! acfs_session_jq -e '
+    if ! gtbi_session_jq -e '
         (.schema_version != null)
         and (.session_id | type == "string" and test("\\S"))
         and (.agent | type == "string" and test("\\S"))
@@ -183,14 +183,14 @@ validate_session_export() {
 
     # Check schema version compatibility
     local version
-    version=$(acfs_session_jq -r '.schema_version' "$file")
+    version=$(gtbi_session_jq -r '.schema_version' "$file")
     if [[ "$version" != "1" ]]; then
         log_warn "Session schema version $version may not be fully compatible (expected: 1)"
     fi
 
     # Validate agent field is one of the known agents
     local agent
-    agent=$(acfs_session_jq -r '.agent' "$file")
+    agent=$(gtbi_session_jq -r '.agent' "$file")
     case "$agent" in
         claude-code|codex|gemini)
             ;;
@@ -200,7 +200,7 @@ validate_session_export() {
     esac
 
     # Validate stats object exists and has expected fields
-    if ! acfs_session_jq -e '.stats.turns != null' "$file" >/dev/null 2>&1; then
+    if ! gtbi_session_jq -e '.stats.turns != null' "$file" >/dev/null 2>&1; then
         log_warn "Session export missing stats.turns field"
     fi
 
@@ -218,7 +218,7 @@ get_session_schema_version() {
         return 1
     fi
 
-    acfs_session_jq -r '.schema_version // "unknown"' "$file" 2>/dev/null || echo "unknown"
+    gtbi_session_jq -r '.schema_version // "unknown"' "$file" 2>/dev/null || echo "unknown"
 }
 
 # Get session summary from an export
@@ -231,7 +231,7 @@ get_session_summary() {
         return 1
     fi
 
-    acfs_session_jq -r '.summary // ""' "$file" 2>/dev/null || echo ""
+    gtbi_session_jq -r '.summary // ""' "$file" 2>/dev/null || echo ""
 }
 
 # Get session agent from an export
@@ -244,13 +244,13 @@ get_session_agent() {
         return 1
     fi
 
-    acfs_session_jq -r '.agent // ""' "$file" 2>/dev/null || echo ""
+    gtbi_session_jq -r '.agent // ""' "$file" 2>/dev/null || echo ""
 }
 
 # Check if jq is available (required for session operations)
 # Usage: check_session_deps
 check_session_deps() {
-    if ! acfs_session_system_binary_path jq >/dev/null 2>&1; then
+    if ! gtbi_session_system_binary_path jq >/dev/null 2>&1; then
         log_error "jq is required for session operations but not installed"
         return 1
     fi
@@ -264,7 +264,7 @@ check_session_deps() {
 # Sanitization patterns for removing secrets from session exports.
 # See bead 1xq for design decisions.
 #
-# ACFS_SANITIZE_OPTIONAL=1 enables optional patterns (IPs, emails)
+# GTBI_SANITIZE_OPTIONAL=1 enables optional patterns (IPs, emails)
 
 # Core redaction patterns - always applied
 # These patterns detect secrets that MUST be redacted
@@ -309,7 +309,7 @@ readonly REDACT_PATTERNS=(
     '[rs]k_(live|test)_[a-zA-Z0-9]{24,}'
 )
 
-# Optional redaction patterns - applied when ACFS_SANITIZE_OPTIONAL=1
+# Optional redaction patterns - applied when GTBI_SANITIZE_OPTIONAL=1
 # These may have higher false positive rates
 readonly OPTIONAL_REDACT_PATTERNS=(
     # IPv4 addresses
@@ -340,7 +340,7 @@ sanitize_content() {
     sed_script+="s/${kv_pattern}/\\1\\2\\3\\4\\5[REDACTED]\\6/${sed_flags}; "
 
     # Apply optional patterns if enabled
-    if [[ "${ACFS_SANITIZE_OPTIONAL:-0}" == "1" ]]; then
+    if [[ "${GTBI_SANITIZE_OPTIONAL:-0}" == "1" ]]; then
         for pattern in "${OPTIONAL_REDACT_PATTERNS[@]}"; do
             sed_script+="s/${pattern}/[REDACTED]/${sed_flags}; "
         done
@@ -357,7 +357,7 @@ sanitize_content() {
     fi
 }
 
-acfs_session_remove_temp_files() {
+gtbi_session_remove_temp_files() {
     local path
     for path in "$@"; do
         if [[ -n "$path" ]]; then
@@ -378,7 +378,7 @@ sanitize_session_export() {
     fi
 
     # Validate it's valid JSON first
-    if ! acfs_session_jq -e . "$file" >/dev/null 2>&1; then
+    if ! gtbi_session_jq -e . "$file" >/dev/null 2>&1; then
         log_error "Invalid JSON in session export: $file"
         return 1
     fi
@@ -392,7 +392,7 @@ sanitize_session_export() {
         file_dir="."
     fi
 
-    tmpfile=$(mktemp "${file_dir}/acfs_session_sanitize.XXXXXX" 2>/dev/null) || {
+    tmpfile=$(mktemp "${file_dir}/gtbi_session_sanitize.XXXXXX" 2>/dev/null) || {
         log_error "Failed to create temp file for sanitization in: $file_dir"
         return 1
     }
@@ -429,7 +429,7 @@ def sanitize_value:
 JQ_BASE
 
     local jq_filter_optional=""
-    if [[ "${ACFS_SANITIZE_OPTIONAL:-0}" == "1" ]]; then
+    if [[ "${GTBI_SANITIZE_OPTIONAL:-0}" == "1" ]]; then
         read -r -d '' jq_filter_optional <<'JQ_OPTIONAL' || true
         |
         gsub("\\b[0-9]{1,3}(\\.[0-9]{1,3}){3}\\b"; "[REDACTED]") |
@@ -457,15 +457,15 @@ JQ_TAIL
 
     local jq_filter="${jq_filter_base}${jq_filter_optional}${jq_filter_tail}"
 
-    if ! acfs_session_jq "$jq_filter" "$file" > "$tmpfile"; then
-        acfs_session_remove_temp_files "$tmpfile"
+    if ! gtbi_session_jq "$jq_filter" "$file" > "$tmpfile"; then
+        gtbi_session_remove_temp_files "$tmpfile"
         log_error "Failed to sanitize session export"
         return 1
     fi
 
     # Atomic replace
     if ! mv -- "$tmpfile" "$file"; then
-        acfs_session_remove_temp_files "$tmpfile"
+        gtbi_session_remove_temp_files "$tmpfile"
         log_error "Failed to write sanitized session export"
         return 1
     fi
@@ -708,7 +708,7 @@ export_session() {
 
     # Use a temp file for the export to handle large sessions efficiently
     local tmp_export
-    tmp_export=$(mktemp "${TMPDIR:-/tmp}/acfs_session_export.XXXXXX" 2>/dev/null) || {
+    tmp_export=$(mktemp "${TMPDIR:-/tmp}/gtbi_session_export.XXXXXX" 2>/dev/null) || {
         log_error "Failed to create temp file for session export"
         return 1
     }
@@ -732,12 +732,12 @@ export_session() {
             # Text-based sanitization (stream through sed to new temp file)
             if sanitize_content "$tmp_export" > "$tmp_sanitized"; then
                 if ! mv -- "$tmp_sanitized" "$tmp_export"; then
-                    acfs_session_remove_temp_files "$tmp_sanitized"
+                    gtbi_session_remove_temp_files "$tmp_sanitized"
                     log_error "Sanitization failed; refusing to output unsanitized export"
                     status=1
                 fi
             else
-                acfs_session_remove_temp_files "$tmp_sanitized"
+                gtbi_session_remove_temp_files "$tmp_sanitized"
                 log_error "Sanitization failed; refusing to output unsanitized export"
                 status=1
             fi
@@ -763,7 +763,7 @@ export_session() {
         fi
     fi
 
-    acfs_session_remove_temp_files "$tmp_export" "$tmp_sanitized"
+    gtbi_session_remove_temp_files "$tmp_export" "$tmp_sanitized"
     return "$status"
 }
 
@@ -791,9 +791,9 @@ export_recent_session() {
 }
 
 # Convert CASS export JSON to our schema format
-# Usage: convert_to_acfs_schema <cass.json | raw_json>
-# Returns: ACFS-schema JSON to stdout
-convert_to_acfs_schema() {
+# Usage: convert_to_gtbi_schema <cass.json | raw_json>
+# Returns: GTBI-schema JSON to stdout
+convert_to_gtbi_schema() {
     local input="${1:-}"
     local agent_hint="${2:-}"
     if [[ -z "$input" ]]; then
@@ -964,7 +964,7 @@ session_now_iso() {
     date -u +"%Y-%m-%dT%H:%M:%SZ"
 }
 
-acfs_session_sanitize_abs_nonroot_path() {
+gtbi_session_sanitize_abs_nonroot_path() {
     local path_value="${1:-}"
 
     [[ -n "$path_value" ]] || return 1
@@ -975,26 +975,26 @@ acfs_session_sanitize_abs_nonroot_path() {
     printf '%s\n' "$path_value"
 }
 
-acfs_session_home_base() {
+gtbi_session_home_base() {
     local base_home=""
 
-    base_home="$(acfs_session_sanitize_abs_nonroot_path "${TARGET_HOME:-}" 2>/dev/null || true)"
+    base_home="$(gtbi_session_sanitize_abs_nonroot_path "${TARGET_HOME:-}" 2>/dev/null || true)"
     if [[ -z "$base_home" ]]; then
-        base_home="$(acfs_session_sanitize_abs_nonroot_path "${HOME:-}" 2>/dev/null || true)"
+        base_home="$(gtbi_session_sanitize_abs_nonroot_path "${HOME:-}" 2>/dev/null || true)"
     fi
     [[ -n "$base_home" ]] || return 1
 
     printf '%s\n' "$base_home"
 }
 
-acfs_session_provider_home_dir() {
+gtbi_session_provider_home_dir() {
     local env_name="$1"
     local default_leaf="$2"
     local explicit_home="${!env_name-}"
     local home_dir=""
 
     if [[ -n "$explicit_home" ]]; then
-        home_dir="$(acfs_session_sanitize_abs_nonroot_path "$explicit_home" 2>/dev/null || true)"
+        home_dir="$(gtbi_session_sanitize_abs_nonroot_path "$explicit_home" 2>/dev/null || true)"
         if [[ -z "$home_dir" ]]; then
             log_error "Invalid $env_name: $explicit_home"
             return 1
@@ -1004,7 +1004,7 @@ acfs_session_provider_home_dir() {
     fi
 
     local base_home=""
-    base_home="$(acfs_session_home_base 2>/dev/null || true)"
+    base_home="$(gtbi_session_home_base 2>/dev/null || true)"
     if [[ -z "$base_home" ]]; then
         log_error "Unable to resolve $env_name; set $env_name, TARGET_HOME, or HOME"
         return 1
@@ -1013,34 +1013,34 @@ acfs_session_provider_home_dir() {
     printf '%s/%s\n' "$base_home" "$default_leaf"
 }
 
-acfs_session_default_sessions_dir() {
+gtbi_session_default_sessions_dir() {
     local base_home=""
 
-    base_home="$(acfs_session_home_base 2>/dev/null || true)"
+    base_home="$(gtbi_session_home_base 2>/dev/null || true)"
     [[ -n "$base_home" ]] || return 1
 
-    printf '%s/.acfs/sessions\n' "$base_home"
+    printf '%s/.gtbi/sessions\n' "$base_home"
 }
 
-acfs_session_storage_dir() {
+gtbi_session_storage_dir() {
     local sessions_dir=""
 
-    if [[ -n "${ACFS_SESSIONS_DIR:-}" ]]; then
-        sessions_dir="$(acfs_session_sanitize_abs_nonroot_path "$ACFS_SESSIONS_DIR" 2>/dev/null || true)"
+    if [[ -n "${GTBI_SESSIONS_DIR:-}" ]]; then
+        sessions_dir="$(gtbi_session_sanitize_abs_nonroot_path "$GTBI_SESSIONS_DIR" 2>/dev/null || true)"
         if [[ -z "$sessions_dir" ]]; then
-            log_error "Invalid ACFS_SESSIONS_DIR: $ACFS_SESSIONS_DIR"
+            log_error "Invalid GTBI_SESSIONS_DIR: $GTBI_SESSIONS_DIR"
             return 1
         fi
     else
-        sessions_dir="$(acfs_session_default_sessions_dir 2>/dev/null || true)"
+        sessions_dir="$(gtbi_session_default_sessions_dir 2>/dev/null || true)"
         if [[ -z "$sessions_dir" ]]; then
-            log_error "Unable to resolve session storage directory; set HOME, TARGET_HOME, or ACFS_SESSIONS_DIR"
+            log_error "Unable to resolve session storage directory; set HOME, TARGET_HOME, or GTBI_SESSIONS_DIR"
             return 1
         fi
     fi
 
-    ACFS_SESSIONS_DIR="$sessions_dir"
-    printf '%s\n' "$ACFS_SESSIONS_DIR"
+    GTBI_SESSIONS_DIR="$sessions_dir"
+    printf '%s\n' "$GTBI_SESSIONS_DIR"
 }
 
 session_project_dir_key_claude() {
@@ -1065,7 +1065,7 @@ session_project_hash_gemini() {
 session_project_dir_key_gemini() {
     local workspace="${1:-/tmp}"
     local home_dir=""
-    home_dir="$(acfs_session_provider_home_dir GEMINI_HOME ".gemini")" || return 1
+    home_dir="$(gtbi_session_provider_home_dir GEMINI_HOME ".gemini")" || return 1
     local tmp_root="$home_dir/tmp"
 
     # Prefer an existing native project directory keyed by .project_root.
@@ -1249,7 +1249,7 @@ write_native_claude_from_canonical() {
     local dry_run="$4"
 
     local home_dir=""
-    home_dir="$(acfs_session_provider_home_dir CLAUDE_HOME ".claude")" || return 1
+    home_dir="$(gtbi_session_provider_home_dir CLAUDE_HOME ".claude")" || return 1
     local dir_key
     dir_key="$(session_project_dir_key_claude "$workspace")" || return 1
     local target_dir="$home_dir/projects/$dir_key"
@@ -1314,7 +1314,7 @@ write_native_claude_from_canonical() {
         # Update/seed sessions-index so converted session appears alongside native sessions.
         local index_file="$home_dir/projects/$dir_key/sessions-index.json"
         local index_tmp
-        index_tmp=$(mktemp "${TMPDIR:-/tmp}/acfs_claude_index.XXXXXX") || return 1
+        index_tmp=$(mktemp "${TMPDIR:-/tmp}/gtbi_claude_index.XXXXXX") || return 1
         if [[ ! -f "$index_file" ]]; then
             printf '{"version":1,"entries":[]}\n' > "$index_file"
         fi
@@ -1352,12 +1352,12 @@ write_native_claude_from_canonical() {
                     }]
                 )
             ' "$index_file" > "$index_tmp"; then
-            acfs_session_remove_temp_files "$index_tmp"
+            gtbi_session_remove_temp_files "$index_tmp"
             log_error "Failed to update Claude sessions-index: $index_file"
             return 1
         fi
         if ! mv -- "$index_tmp" "$index_file"; then
-            acfs_session_remove_temp_files "$index_tmp"
+            gtbi_session_remove_temp_files "$index_tmp"
             log_error "Failed to write Claude sessions-index: $index_file"
             return 1
         fi
@@ -1373,7 +1373,7 @@ write_native_codex_from_canonical() {
     local dry_run="$4"
 
     local home_dir=""
-    home_dir="$(acfs_session_provider_home_dir CODEX_HOME ".codex")" || return 1
+    home_dir="$(gtbi_session_provider_home_dir CODEX_HOME ".codex")" || return 1
     local now_slug date_path now_iso
     now_slug="$(date -u +%Y-%m-%dT%H-%M-%S)"
     date_path="$(date -u +%Y/%m/%d)"
@@ -1397,7 +1397,7 @@ write_native_codex_from_canonical() {
                     id: $sid,
                     timestamp: $ts,
                     cwd: $cwd,
-                    originator: "acfs_session_bridge",
+                    originator: "gtbi_session_bridge",
                     cli_version: "unknown",
                     source: "cli",
                     model_provider: "openai"
@@ -1463,7 +1463,7 @@ write_native_gemini_from_canonical() {
     local dry_run="$4"
 
     local home_dir=""
-    home_dir="$(acfs_session_provider_home_dir GEMINI_HOME ".gemini")" || return 1
+    home_dir="$(gtbi_session_provider_home_dir GEMINI_HOME ".gemini")" || return 1
     local hash
     hash="$(jq -r '.project_hash // ""' "$canonical_file" 2>/dev/null || true)"
     if [[ -z "$hash" || "$hash" == "null" ]]; then
@@ -1487,7 +1487,7 @@ write_native_gemini_from_canonical() {
         printf '%s\n' "$workspace" > "$project_root_file"
 
         local msg_tmp logs_tmp=""
-        msg_tmp=$(mktemp "${TMPDIR:-/tmp}/acfs_gemini_msgs.XXXXXX") || return 1
+        msg_tmp=$(mktemp "${TMPDIR:-/tmp}/gtbi_gemini_msgs.XXXXXX") || return 1
 
         local first_ts=""
         local last_ts="$now_iso"
@@ -1521,7 +1521,7 @@ write_native_gemini_from_canonical() {
 
         local messages_json
         if ! messages_json="$(jq -s '.' "$msg_tmp")"; then
-            acfs_session_remove_temp_files "$msg_tmp" "$logs_tmp"
+            gtbi_session_remove_temp_files "$msg_tmp" "$logs_tmp"
             log_error "Failed to assemble Gemini message payload"
             return 1
         fi
@@ -1541,7 +1541,7 @@ write_native_gemini_from_canonical() {
                 summary: ""
             }
         ' > "$target_path"; then
-            acfs_session_remove_temp_files "$msg_tmp" "$logs_tmp"
+            gtbi_session_remove_temp_files "$msg_tmp" "$logs_tmp"
             log_error "Failed to write Gemini chat file: $target_path"
             return 1
         fi
@@ -1563,33 +1563,33 @@ write_native_gemini_from_canonical() {
         ' "$canonical_file")"
 
         if [[ -f "$logs_path" ]]; then
-            logs_tmp=$(mktemp "${TMPDIR:-/tmp}/acfs_gemini_logs.XXXXXX") || {
-                acfs_session_remove_temp_files "$msg_tmp"
+            logs_tmp=$(mktemp "${TMPDIR:-/tmp}/gtbi_gemini_logs.XXXXXX") || {
+                gtbi_session_remove_temp_files "$msg_tmp"
                 return 1
             }
             if jq --argjson add "$user_log_entries" '. + $add' "$logs_path" > "$logs_tmp"; then
                 if ! mv -- "$logs_tmp" "$logs_path"; then
-                    acfs_session_remove_temp_files "$msg_tmp" "$logs_tmp"
+                    gtbi_session_remove_temp_files "$msg_tmp" "$logs_tmp"
                     log_error "Failed to update Gemini logs file: $logs_path"
                     return 1
                 fi
             else
-                acfs_session_remove_temp_files "$logs_tmp"
+                gtbi_session_remove_temp_files "$logs_tmp"
                 if ! printf '%s\n' "$user_log_entries" > "$logs_path"; then
-                    acfs_session_remove_temp_files "$msg_tmp"
+                    gtbi_session_remove_temp_files "$msg_tmp"
                     log_error "Failed to replace Gemini logs file: $logs_path"
                     return 1
                 fi
             fi
         else
             if ! printf '%s\n' "$user_log_entries" > "$logs_path"; then
-                acfs_session_remove_temp_files "$msg_tmp" "$logs_tmp"
+                gtbi_session_remove_temp_files "$msg_tmp" "$logs_tmp"
                 log_error "Failed to write Gemini logs file: $logs_path"
                 return 1
             fi
         fi
 
-        acfs_session_remove_temp_files "$msg_tmp" "$logs_tmp"
+        gtbi_session_remove_temp_files "$msg_tmp" "$logs_tmp"
     fi
 
     printf '%s\n' "$target_path"
@@ -1750,13 +1750,13 @@ convert_session_native() {
     fi
 
     local canonical_tmp
-    canonical_tmp=$(mktemp "${TMPDIR:-/tmp}/acfs_native_canonical.XXXXXX") || {
+    canonical_tmp=$(mktemp "${TMPDIR:-/tmp}/gtbi_native_canonical.XXXXXX") || {
         log_error "Failed to create temp file for canonical conversion"
         return 1
     }
 
     if ! parse_native_to_canonical "$input_file" "$from_agent" "$workspace_hint" > "$canonical_tmp"; then
-        acfs_session_remove_temp_files "$canonical_tmp"
+        gtbi_session_remove_temp_files "$canonical_tmp"
         log_error "Failed to parse source session into canonical format"
         return 1
     fi
@@ -1770,7 +1770,7 @@ convert_session_native() {
     local msg_count
     msg_count="$(jq -r '.messages | length' "$canonical_tmp")"
     if [[ "${msg_count:-0}" -le 0 ]]; then
-        acfs_session_remove_temp_files "$canonical_tmp"
+        gtbi_session_remove_temp_files "$canonical_tmp"
         log_error "Source session has no conversational messages to convert"
         return 1
     fi
@@ -1780,7 +1780,7 @@ convert_session_native() {
 
     local written_path
     if ! written_path="$(write_native_from_canonical "$canonical_tmp" "$to_agent" "$workspace" "$target_session_id" "$dry_run")"; then
-        acfs_session_remove_temp_files "$canonical_tmp"
+        gtbi_session_remove_temp_files "$canonical_tmp"
         log_error "Failed to write target-native session"
         return 1
     fi
@@ -1824,7 +1824,7 @@ convert_session_native() {
         echo "Written: $written_path"
     fi
 
-    acfs_session_remove_temp_files "$canonical_tmp"
+    gtbi_session_remove_temp_files "$canonical_tmp"
     return "$output_status"
 }
 
@@ -1833,8 +1833,8 @@ convert_session_native() {
 # ============================================================
 
 # Default session storage directory
-if [[ -z "${ACFS_SESSIONS_DIR:-}" ]]; then
-    ACFS_SESSIONS_DIR="$(acfs_session_default_sessions_dir 2>/dev/null || true)"
+if [[ -z "${GTBI_SESSIONS_DIR:-}" ]]; then
+    GTBI_SESSIONS_DIR="$(gtbi_session_default_sessions_dir 2>/dev/null || true)"
 fi
 
 # Infer agent type from a CASS export JSON file.
@@ -1920,14 +1920,14 @@ import_session() {
     fi
 
     # Detect format
-    local is_cass=false is_acfs=false
+    local is_cass=false is_gtbi=false
     if jq -e 'type == "array"' "$file" >/dev/null 2>&1; then
         # CASS exports can begin with snapshot/event records before conversation messages.
         # Detect by scanning entries rather than assuming .[0] is a message record.
         jq -e 'any(.[]?; (.type == "user" or .type == "assistant") and (.sessionId? | type) == "string")' "$file" >/dev/null 2>&1 && is_cass=true
         jq -e 'any(.[]?; .type == "event_msg" and ((.payload.type? // "") == "user_message" or (.payload.type? // "") == "agent_message"))' "$file" >/dev/null 2>&1 && is_cass=true
     fi
-    jq -e 'type == "object" and .schema_version' "$file" >/dev/null 2>&1 && is_acfs=true
+    jq -e 'type == "object" and .schema_version' "$file" >/dev/null 2>&1 && is_gtbi=true
 
     # Extract metadata
     local session_id agent turn_count first_ts last_ts
@@ -1961,7 +1961,7 @@ import_session() {
                 ([.[] | select(.type == "event_msg" and ((.payload.type? // "") == "user_message" or (.payload.type? // "") == "agent_message")) | .timestamp] | map(select(type == "string")) | .[-1]) // ""
             end
         ' "$file")
-    elif [[ "$is_acfs" == "true" ]]; then
+    elif [[ "$is_gtbi" == "true" ]]; then
         if ! validate_session_export "$file"; then
             return 1
         fi
@@ -1987,7 +1987,7 @@ import_session() {
         echo ""; echo "(Dry run - nothing imported)"; return 0
     fi
 
-    sessions_dir="$(acfs_session_storage_dir)" || return 1
+    sessions_dir="$(gtbi_session_storage_dir)" || return 1
     if ! mkdir -p "$sessions_dir"; then
         log_error "Failed to create session storage directory: $sessions_dir"
         return 1
@@ -2002,21 +2002,21 @@ import_session() {
             return 1
         }
 
-        if ! convert_to_acfs_schema "$file" "$agent" > "$tmp_dest"; then
-            acfs_session_remove_temp_files "$tmp_dest"
-            log_error "Failed to convert CASS export to ACFS schema"
+        if ! convert_to_gtbi_schema "$file" "$agent" > "$tmp_dest"; then
+            gtbi_session_remove_temp_files "$tmp_dest"
+            log_error "Failed to convert CASS export to GTBI schema"
             return 1
         fi
 
         # Always sanitize imported output before persisting.
         if ! sanitize_session_export "$tmp_dest"; then
-            acfs_session_remove_temp_files "$tmp_dest"
+            gtbi_session_remove_temp_files "$tmp_dest"
             log_error "Sanitization failed; refusing to import unsanitized session"
             return 1
         fi
 
         if ! mv -- "$tmp_dest" "$dest"; then
-            acfs_session_remove_temp_files "$tmp_dest"
+            gtbi_session_remove_temp_files "$tmp_dest"
             log_error "Failed to write imported session: $dest"
             return 1
         fi
@@ -2028,20 +2028,20 @@ import_session() {
         }
 
         if ! cp -- "$file" "$tmp_dest"; then
-            acfs_session_remove_temp_files "$tmp_dest"
+            gtbi_session_remove_temp_files "$tmp_dest"
             log_error "Failed to copy session export into staging file"
             return 1
         fi
 
         # Always sanitize imported output before persisting.
         if ! sanitize_session_export "$tmp_dest"; then
-            acfs_session_remove_temp_files "$tmp_dest"
+            gtbi_session_remove_temp_files "$tmp_dest"
             log_error "Sanitization failed; refusing to import unsanitized session"
             return 1
         fi
 
         if ! mv -- "$tmp_dest" "$dest"; then
-            acfs_session_remove_temp_files "$tmp_dest"
+            gtbi_session_remove_temp_files "$tmp_dest"
             log_error "Failed to write imported session: $dest"
             return 1
         fi
@@ -2078,7 +2078,7 @@ show_session() {
         return 1
     fi
 
-    sessions_dir="$(acfs_session_storage_dir)" || return 1
+    sessions_dir="$(gtbi_session_storage_dir)" || return 1
 
     local file="$sessions_dir/${session_id}.json"
     if [[ ! -f "$file" ]]; then
@@ -2116,7 +2116,7 @@ show_session() {
 # List imported sessions
 list_imported_sessions() {
     local sessions_dir=""
-    sessions_dir="$(acfs_session_storage_dir 2>/dev/null || true)"
+    sessions_dir="$(gtbi_session_storage_dir 2>/dev/null || true)"
 
     if [[ -z "$sessions_dir" ]] || [[ ! -d "$sessions_dir" ]]; then
         echo "No imported sessions. Import with: import_session <file.json>"
