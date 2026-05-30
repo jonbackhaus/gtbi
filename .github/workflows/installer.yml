@@ -12,6 +12,7 @@ on:
       - '.github/workflows/*.yml'
       - '.shellcheckrc'
       - 'tests/**/*.sh'
+      - 'tests/docker/**'
   pull_request:
     branches: [main]
     paths:
@@ -23,6 +24,7 @@ on:
       - '.github/workflows/*.yml'
       - '.shellcheckrc'
       - 'tests/**/*.sh'
+      - 'tests/docker/**'
 
 jobs:
   yaml-lint:
@@ -421,3 +423,51 @@ jobs:
 
       - name: Run resume-after-failure E2E test
         run: bash tests/e2e/test_resume_after_failure.sh
+
+  e2e-upgrade-and-repair:
+    name: E2E Upgrade and Repair
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    container:
+      image: ubuntu:24.04
+    env:
+      DEBIAN_FRONTEND: noninteractive
+      ACFS_CI: "true"
+    steps:
+      - name: Install container prerequisites
+        working-directory: /
+        run: |
+          apt-get update
+          apt-get install -y sudo curl git ca-certificates jq unzip tar xz-utils gnupg
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure CI sudo
+        run: |
+          echo 'ubuntu ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/90-gtbi-ubuntu
+          chmod 440 /etc/sudoers.d/90-gtbi-ubuntu
+
+      - name: Run upgrade test
+        run: bash tests/docker/test_upgrade.sh
+        timeout-minutes: 60
+
+      - name: Upload upgrade artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: upgrade-artifacts
+          path: tests/artifacts/upgrade_*.log
+
+      - name: Run repair test
+        run: bash tests/docker/test_repair.sh
+        timeout-minutes: 60
+
+      - name: Upload repair artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: repair-artifacts
+          path: tests/artifacts/repair_*.log

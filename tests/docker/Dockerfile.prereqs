@@ -1,0 +1,13 @@
+ARG UBUNTU_VERSION=25.10
+FROM ubuntu:${UBUNTU_VERSION}
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+      sudo curl git ca-certificates jq unzip tar xz-utils gnupg && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN useradd -m -s /bin/bash ubuntu && \
+    echo 'ubuntu ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/90-gtbi-ubuntu && \
+    chmod 440 /etc/sudoers.d/90-gtbi-ubuntu

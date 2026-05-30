@@ -1,0 +1,140 @@
+#!/usr/bin/env bash
+# ============================================================
+# GTBI Installer - Version Upgrade Test (Docker)
+#
+# Installs the previous tagged release of GTBI, then runs the
+# current installer (--force-reinstall) on top and verifies
+# the system is healthy. Tests the version upgrade path.
+#
+# Runs INSIDE a Docker container. Mount the repo at /repo:
+#
+#   docker run --rm \
+#     -e ACFS_CI=true \
+#     -v /path/to/gtbi:/repo:rw \
+#     ubuntu:25.10 bash /repo/tests/docker/test_upgrade.sh
+# ============================================================
+
+set -euo pipefail
+
+ARTIFACTS_DIR="/repo/tests/artifacts"
+mkdir -p "$ARTIFACTS_DIR"
+
+log()  { echo "[GTBI-UPGRADE] $1"; }
+fail() { echo "[FAIL] $1" >&2; exit 1; }
+
+# Bootstrap prerequisites if not already present
+if ! command -v sudo >/dev/null 2>&1; then
+    log "Installing bootstrap prerequisites..."
+    apt-get update -qq
+    apt-get install -y -qq sudo curl git ca-certificates jq unzip tar xz-utils gnupg >/dev/null
+fi
+
+# Pre-configure sudoers if not already done
+if [[ ! -f /etc/sudoers.d/90-gtbi-ubuntu ]]; then
+    echo 'ubuntu ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/90-gtbi-ubuntu
+    chmod 440 /etc/sudoers.d/90-gtbi-ubuntu
+fi
+
+CURRENT_VERSION="$(cat /repo/VERSION)"
+
+# ── Find previous tag ──────────────────────────────────────────────────────────
+
+log "Resolving previous release tag (current: ${CURRENT_VERSION})"
+PREV_TAG="$(git -C /repo tag --sort=-version:refname | grep -v "^v\?${CURRENT_VERSION}$" | head -1 || true)"
+
+if [[ -z "$PREV_TAG" ]]; then
+    log "[SKIP] No previous tag found — skipping upgrade test"
+    exit 0
+fi
+
+log "Previous tag: ${PREV_TAG}"
+
+# ── Phase 1: Install previous release ─────────────────────────────────────────
+
+log "Phase 1: Install previous release (${PREV_TAG})"
+git -C /repo show "${PREV_TAG}:install.sh" > /tmp/install_old.sh
+chmod +x /tmp/install_old.sh
+
+if ACFS_CI=true bash /tmp/install_old.sh \
+        --yes --skip-preflight --skip-ubuntu-upgrade --mode vibe \
+        > "${ARTIFACTS_DIR}/upgrade_old_install.log" 2>&1; then
+    log "Previous release installed successfully"
+else
+    log "Previous release install failed — last 50 lines:"
+    tail -n 50 "${ARTIFACTS_DIR}/upgrade_old_install.log"
+    fail "Previous release install failed"
+fi
+
+# ── Assert state.json from old install ────────────────────────────────────────
+
+STATE_FILE="/home/ubuntu/.acfs/state.json"
+if [[ ! -f "$STATE_FILE" ]]; then
+    fail "state.json not found at $STATE_FILE after old install"
+fi
+
+SCHEMA_VERSION="$(jq -r '.schema_version // 0' "$STATE_FILE")"
+OLD_VERSION="$(jq -r '.version // ""' "$STATE_FILE")"
+log "Old state: schema_version=${SCHEMA_VERSION}, version=${OLD_VERSION}"
+
+if [[ "$SCHEMA_VERSION" -lt 3 ]]; then
+    fail "state.json schema_version is ${SCHEMA_VERSION}, expected >= 3"
+fi
+
+# ── Phase 2: Upgrade to current release ───────────────────────────────────────
+
+log "Phase 2: Upgrade to current release (${CURRENT_VERSION}) via --force-reinstall"
+if ACFS_CI=true bash /repo/install.sh \
+        --yes --skip-preflight --skip-ubuntu-upgrade --force-reinstall --mode vibe \
+        > "${ARTIFACTS_DIR}/upgrade_new_install.log" 2>&1; then
+    log "Current release installed successfully"
+else
+    log "Current release install failed — last 50 lines:"
+    tail -n 50 "${ARTIFACTS_DIR}/upgrade_new_install.log"
+    fail "Current release install failed"
+fi
+
+# ── Assert VERSION updated in state.json ──────────────────────────────────────
+
+NEW_VERSION="$(jq -r '.version // ""' "$STATE_FILE")"
+log "New state: version=${NEW_VERSION}"
+
+if [[ "$NEW_VERSION" != "$CURRENT_VERSION" ]]; then
+    fail "state.json version is '${NEW_VERSION}', expected '${CURRENT_VERSION}'"
+fi
+
+# ── Phase 3: Doctor verification ──────────────────────────────────────────────
+
+log "Phase 3: Doctor verification"
+if su - ubuntu -c "ACFS_DOCTOR_CI=true zsh -ic 'acfs doctor'" \
+        > "${ARTIFACTS_DIR}/upgrade_doctor.log" 2>&1; then
+    log "Doctor passed"
+else
+    log "Doctor failed — output:"
+    cat "${ARTIFACTS_DIR}/upgrade_doctor.log"
+    fail "Doctor failed after upgrade"
+fi
+
+# ── Spot-check key binaries ───────────────────────────────────────────────────
+
+log "Spot-checking key binaries"
+failed=0
+check() {
+    local name="$1" cmd="$2"
+    if su - ubuntu -c "$cmd" >> "${ARTIFACTS_DIR}/upgrade_doctor.log" 2>&1; then
+        echo "  [ok] $name"
+    else
+        echo "  [fail] $name"
+        failed=$((failed + 1))
+    fi
+}
+
+check "gh"     "zsh -ic 'gh --version >/dev/null'"
+check "jq"     "zsh -ic 'jq --version >/dev/null'"
+check "sg"     "zsh -ic 'sg --version >/dev/null'"
+check "claude" "zsh -ic 'claude --version >/dev/null'"
+
+if [[ $failed -gt 0 ]]; then
+    fail "Spot-check failed for $failed binary/binaries"
+fi
+
+log "ALL TESTS PASSED (upgraded ${PREV_TAG} → ${CURRENT_VERSION})"
