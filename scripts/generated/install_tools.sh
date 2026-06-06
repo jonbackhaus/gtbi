@@ -289,7 +289,7 @@ gtbi_security_init() {
 }
 
 # Category: tools
-# Modules: 16
+# Modules: 6
 
 # Lazygit (apt or binary fallback)
 install_tools_lazygit() {

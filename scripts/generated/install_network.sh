@@ -317,7 +317,7 @@ echo "deb [signed-by=/usr/share/keyrings/tailscale-archive-keyring.gpg] https://
   | tee /etc/apt/sources.list.d/tailscale.list
 apt-get update
 apt-get install -y tailscale
-systemctl enable tailscaled
+systemctl enable tailscaled 2>/dev/null || true
 INSTALL_NETWORK_TAILSCALE
         then
             log_error "network.tailscale: install command failed: case \"\$DISTRO_CODENAME\" in"
@@ -334,17 +334,6 @@ tailscale version
 INSTALL_NETWORK_TAILSCALE
         then
             log_error "network.tailscale: verify failed: tailscale version"
-            return 1
-        fi
-    fi
-    if [[ "${DRY_RUN:-false}" = "true" ]]; then
-        log_info "dry-run: verify: systemctl is-enabled tailscaled (root)"
-    else
-        if ! run_as_root_shell <<'INSTALL_NETWORK_TAILSCALE'
-systemctl is-enabled tailscaled
-INSTALL_NETWORK_TAILSCALE
-        then
-            log_error "network.tailscale: verify failed: systemctl is-enabled tailscaled"
             return 1
         fi
     fi

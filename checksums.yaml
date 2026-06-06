@@ -16,7 +16,7 @@ installers:
 
   dolt:
     url: "https://github.com/dolthub/dolt/releases/latest/download/install.sh"
-    sha256: "0af41df3a2129c5a572f13378c4b067e6828a9a999fe821f52b5111d40951654"
+    sha256: "1141362353ea2248061bda8a569b97001b82279d5a7cb9075d3799c2890b0108"
 
   gemini_patch:
     url: "https://raw.githubusercontent.com/Dicklesworthstone/misc_coding_agent_tips_and_scripts/main/fix-gemini-cli-ebadf-crash.sh"
@@ -40,7 +40,7 @@ installers:
 
   uv:
     url: "https://astral.sh/uv/install.sh"
-    sha256: "d79d834572b5b5cdd521289c055adcdbacd43bfe9e6b896445f351075dac4113"
+    sha256: "ef8cf0575d37cf3c72e05f153dd72a845a87a7bb9be86184d5fe931b8c426250"
 
   zoxide:
     url: "https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh"

@@ -133,7 +133,7 @@ declare -gA GTBI_PHASE_NAMES=(
     [languages]="Language Runtimes"
     [agents]="Coding Agents"
     [cloud_db]="Cloud & Database Tools"
-    [stack]="Dicklesworthstone Stack"
+    [stack]="Gastown Stack"
     [finalize]="Final Wiring"
 )
 
