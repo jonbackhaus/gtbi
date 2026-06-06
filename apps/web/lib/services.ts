@@ -62,7 +62,7 @@ export interface Service {
   postInstallCommand?: string;
 
   /** Whether this service is installed by GTBI */
-  installedByAcfs: boolean;
+  installedByGtbi: boolean;
 
   /** External documentation URL */
   docsUrl: string;
@@ -86,7 +86,7 @@ export const SERVICES: Service[] = [
     googleSsoUrl: 'https://login.tailscale.com/start',
     alternativeAuth: ['github', 'apple'],
     postInstallCommand: 'sudo tailscale up',
-    installedByAcfs: true,
+    installedByGtbi: true,
     docsUrl: 'https://tailscale.com/kb/',
   },
 
@@ -108,7 +108,7 @@ export const SERVICES: Service[] = [
     supportsGoogleSso: true,
     googleSsoUrl: 'https://claude.ai/login',
     postInstallCommand: 'claude',
-    installedByAcfs: true,
+    installedByGtbi: true,
     docsUrl: 'https://docs.anthropic.com/',
   },
   {
@@ -129,7 +129,7 @@ export const SERVICES: Service[] = [
     googleSsoUrl: 'https://chat.openai.com/auth/login',
     alternativeAuth: ['apple', 'email'],
     postInstallCommand: 'codex login --device-auth',
-    installedByAcfs: true,
+    installedByGtbi: true,
     docsUrl: 'https://platform.openai.com/docs/',
   },
   {
@@ -148,7 +148,7 @@ export const SERVICES: Service[] = [
     signupUrl: 'https://accounts.google.com/',
     supportsGoogleSso: true, // It IS Google
     postInstallCommand: 'mkdir -p ~/.gemini && ${EDITOR:-nano} ~/.gemini/.env',
-    installedByAcfs: true,
+    installedByGtbi: true,
     docsUrl: 'https://ai.google.dev/',
   },
 
@@ -168,7 +168,7 @@ export const SERVICES: Service[] = [
     supportsGoogleSso: false, // Email-based, but can link Google email
     alternativeAuth: ['email'],
     postInstallCommand: 'gh auth login',
-    installedByAcfs: true,
+    installedByGtbi: true,
     docsUrl: 'https://docs.github.com/',
   },
 
@@ -188,7 +188,7 @@ export const SERVICES: Service[] = [
     supportsGoogleSso: true,
     alternativeAuth: ['github', 'email'],
     postInstallCommand: 'vercel login',
-    installedByAcfs: true,
+    installedByGtbi: true,
     docsUrl: 'https://vercel.com/docs',
   },
   {
@@ -206,7 +206,7 @@ export const SERVICES: Service[] = [
     supportsGoogleSso: true,
     alternativeAuth: ['github'],
     postInstallCommand: 'supabase login --token YOUR_SUPABASE_ACCESS_TOKEN',
-    installedByAcfs: true,
+    installedByGtbi: true,
     docsUrl: 'https://supabase.com/docs',
   },
   {
@@ -224,7 +224,7 @@ export const SERVICES: Service[] = [
     supportsGoogleSso: false, // Email-based only
     alternativeAuth: ['email'],
     postInstallCommand: '${EDITOR:-nano} ~/.zshrc',
-    installedByAcfs: true,
+    installedByGtbi: true,
     docsUrl: 'https://developers.cloudflare.com/',
   },
 ];

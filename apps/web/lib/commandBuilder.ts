@@ -143,7 +143,7 @@ export interface TeamProfile {
     };
   };
   compatibility: {
-    minAcfsVersion: string;
+    minGtbiVersion: string;
     schemaVersions: [1];
     targetUbuntuVersions: string[];
     architectures: TeamProfileArchitecture[];
@@ -693,7 +693,7 @@ export function buildTeamProfile(inputs: TeamProfileInputs): TeamProfile {
       },
     },
     compatibility: {
-      minAcfsVersion: manifestProvenance.gtbiVersion,
+      minGtbiVersion: manifestProvenance.gtbiVersion,
       schemaVersions: [TEAM_PROFILE_SCHEMA_VERSION],
       targetUbuntuVersions: [ubuntuVersion],
       architectures: ["x86_64", "aarch64"],

@@ -57,7 +57,7 @@ but the profile JSON remains the trust boundary and must validate by itself.
     }
   },
   "compatibility": {
-    "minAcfsVersion": "0.0.0-dev",
+    "minGtbiVersion": "0.0.0-dev",
     "schemaVersions": [1],
     "targetUbuntuVersions": ["25.10"],
     "architectures": ["x86_64", "aarch64"],

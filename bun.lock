@@ -3,13 +3,13 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "agentic-coding-flywheel-setup",
+      "name": "gtbi",
       "devDependencies": {
         "typescript": "^5.9.3",
       },
     },
     "apps/web": {
-      "name": "@acfs/web",
+      "name": "@gtbi/web",
       "version": "0.6.0",
       "dependencies": {
         "@google-analytics/admin": "^9.0.1",
@@ -54,7 +54,7 @@
       },
     },
     "packages/manifest": {
-      "name": "@acfs/manifest",
+      "name": "@gtbi/manifest",
       "version": "0.6.0",
       "dependencies": {
         "yaml": "^2.8.2",
@@ -74,9 +74,9 @@
     "unrs-resolver",
   ],
   "packages": {
-    "@acfs/manifest": ["@acfs/manifest@workspace:packages/manifest"],
+    "@gtbi/manifest": ["@gtbi/manifest@workspace:packages/manifest"],
 
-    "@acfs/web": ["@acfs/web@workspace:apps/web"],
+    "@gtbi/web": ["@gtbi/web@workspace:apps/web"],
 
     "@alloc/quick-lru": ["@alloc/quick-lru@5.2.0", "", {}, "sha512-UrcABB+4bUrFABwbluTIBErXwvbsU/V7TZWfmbgJfbkwiBuziS9gxdODUyuiecfdGQ85jglMW6juS3+z5TsKLw=="],
 
@@ -1356,9 +1356,9 @@
 
     "zwitch": ["zwitch@2.0.4", "", {}, "sha512-bXE4cR/kVZhKZX/RjPEflHaKVhUVl85noU3v6b8apfQEc1x4A+zBxjZ4lN8LqGd6WZ3dl98pY4o717VFmoPp+A=="],
 
-    "@acfs/web/@types/node": ["@types/node@20.19.27", "", { "dependencies": { "undici-types": "~6.21.0" } }, "sha512-N2clP5pJhB2YnZJ3PIHFk5RkygRX5WO/5f0WC08tp0wd+sv0rsJk3MqWn3CbNmT2J505a5336jaQj4ph1AdMug=="],
+    "@gtbi/web/@types/node": ["@types/node@20.19.27", "", { "dependencies": { "undici-types": "~6.21.0" } }, "sha512-N2clP5pJhB2YnZJ3PIHFk5RkygRX5WO/5f0WC08tp0wd+sv0rsJk3MqWn3CbNmT2J505a5336jaQj4ph1AdMug=="],
 
-    "@acfs/web/zod": ["zod@3.25.76", "", {}, "sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ=="],
+    "@gtbi/web/zod": ["zod@3.25.76", "", {}, "sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ=="],
 
     "@babel/core/json5": ["json5@2.2.3", "", { "bin": { "json5": "lib/cli.js" } }, "sha512-XmOWe7eyHYH14cLdVPoyg+GOH3rYX++KpzrylJwSW98t3Nk+U8XOl8FWKOgwtzdb8lXGf6zYwDUzeHMWfxasyg=="],
 

@@ -168,7 +168,7 @@ flowchart TB
   subgraph V["Target VPS (Ubuntu 25.10, auto-upgraded)"]
     Run["Run install.sh"]
     Verify["Verified upstream installers<br/>(security.sh + checksums.yaml)"]
-    AcfsHome["~/.gtbi/<br/>configs + scripts + state.json"]
+    GtbiHome["~/.gtbi/<br/>configs + scripts + state.json"]
     Commands["Commands<br/>gtbi doctor / gtbi update / gtbi services-setup / onboard"]
     Tools["Installed tools<br/>bun/uv/rust/go + tmux/rg/gh + vault + ..."]
     Agents["Agent CLIs<br/>claude / codex / gemini"]
@@ -201,7 +201,7 @@ flowchart TB
   Verify --> Tools
   Verify --> Agents
   Verify --> Stack
-  Run --> AcfsHome --> Commands
+  Run --> GtbiHome --> Commands
 ```
 
 ```

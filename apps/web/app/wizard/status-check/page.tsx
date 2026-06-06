@@ -87,7 +87,7 @@ function getAuthServices(): Record<ServiceCategory, Service[]> {
     devtools: [],
   };
   for (const service of SERVICES) {
-    if (service.postInstallCommand && service.installedByAcfs) {
+    if (service.postInstallCommand && service.installedByGtbi) {
       groups[service.category].push(service);
     }
   }

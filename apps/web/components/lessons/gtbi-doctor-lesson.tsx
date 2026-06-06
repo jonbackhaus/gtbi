@@ -22,7 +22,7 @@ import {
   FeatureGrid,
 } from "./lesson-components";
 
-export function AcfsDoctorLesson() {
+export function GtbiDoctorLesson() {
   return (
     <div className="space-y-8">
       <GoalBanner>
