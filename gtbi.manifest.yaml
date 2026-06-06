@@ -27,7 +27,7 @@ modules:
       command: "command -v curl && command -v git && command -v jq"
     install:
       - apt-get update -y
-      - apt-get install -y curl git ca-certificates unzip tar xz-utils jq build-essential gnupg lsb-release
+      - apt-get install -y curl git ca-certificates unzip tar xz-utils jq build-essential gnupg lsb-release zstd
     verify:
       - curl --version
       - git --version

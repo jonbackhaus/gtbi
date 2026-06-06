@@ -4618,7 +4618,7 @@ ensure_base_deps() {
     try_step "Updating apt package index" "${sudo_cmd[@]}" "$apt_get_bin" update -y || return 1
 
     log_detail "Installing base packages"
-    try_step "Installing base packages" "${sudo_cmd[@]}" "$apt_get_bin" install -y curl git ca-certificates unzip tar xz-utils jq build-essential sudo gnupg libssl-dev pkg-config || return 1
+    try_step "Installing base packages" "${sudo_cmd[@]}" "$apt_get_bin" install -y curl git ca-certificates unzip tar xz-utils jq build-essential sudo gnupg libssl-dev pkg-config zstd || return 1
 }
 
 # ============================================================

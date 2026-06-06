@@ -309,13 +309,13 @@ INSTALL_BASE_SYSTEM
         fi
     fi
     if [[ "${DRY_RUN:-false}" = "true" ]]; then
-        log_info "dry-run: install: apt-get install -y curl git ca-certificates unzip tar xz-utils jq build-essential gnupg lsb-release (root)"
+        log_info "dry-run: install: apt-get install -y curl git ca-certificates unzip tar xz-utils jq build-essential gnupg lsb-release zstd (root)"
     else
         if ! run_as_root_shell <<'INSTALL_BASE_SYSTEM'
-apt-get install -y curl git ca-certificates unzip tar xz-utils jq build-essential gnupg lsb-release
+apt-get install -y curl git ca-certificates unzip tar xz-utils jq build-essential gnupg lsb-release zstd
 INSTALL_BASE_SYSTEM
         then
-            log_error "base.system: install command failed: apt-get install -y curl git ca-certificates unzip tar xz-utils jq build-essential gnupg lsb-release"
+            log_error "base.system: install command failed: apt-get install -y curl git ca-certificates unzip tar xz-utils jq build-essential gnupg lsb-release zstd"
             return 1
         fi
     fi

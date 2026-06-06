@@ -2039,7 +2039,7 @@ check_core_tools() {
     check_command "tool.rsync" "rsync" "rsync" "sudo apt-get install -y rsync"
     check_command "tool.strace" "strace" "strace" "sudo apt-get install -y strace"
     check_command "tool.lsof" "lsof" "lsof" "sudo apt-get install -y lsof"
-    check_command "tool.zstd" "zstd" "zstd" "sudo apt-get install -y zstd"
+    check_optional_command "tool.zstd" "zstd" "zstd" "sudo apt-get install -y zstd"
     check_optional_command "tool.cosign" "cosign" "cosign" \
         "COSIGN_VERSION=v2.4.1 && curl -fsSL https://github.com/sigstore/cosign/releases/download/\${COSIGN_VERSION}/cosign-linux-amd64 -o /tmp/cosign && sudo install /tmp/cosign /usr/local/bin/cosign"
     check_command "tool.dig" "dig (dnsutils)" "dig" "sudo apt-get install -y dnsutils"
@@ -2288,9 +2288,9 @@ check_stack() {
 
     section "Dicklesworthstone stack"
 
-    check_command "stack.ntm" "NTM" "ntm" \
+    check_optional_command "stack.ntm" "NTM" "ntm" \
         "Re-run: curl -fsSL https://raw.githubusercontent.com/Dicklesworthstone/ntm/main/install.sh | bash"
-    check_command "stack.slb" "SLB" "slb" \
+    check_optional_command "stack.slb" "SLB" "slb" \
         "Re-run: curl -fsSL https://raw.githubusercontent.com/Dicklesworthstone/simultaneous_launch_button/main/scripts/install.sh | bash"
 
     # UBS - custom check
@@ -2299,7 +2299,7 @@ check_stack() {
         version=$(get_version_line "$ubs_bin")
         check "stack.ubs" "UBS ($version)" "pass" "installed"
     else
-        check "stack.ubs" "UBS" "fail" "not found" \
+        check "stack.ubs" "UBS" "warn" "not found" \
             "Re-run: curl -fsSL https://raw.githubusercontent.com/Dicklesworthstone/ultimate_bug_scanner/main/install.sh | bash"
     fi
 
@@ -2308,7 +2308,7 @@ check_stack() {
         local version
         # Check if the resolved bv is gcloud's BigQuery Visualizer
         if [[ "$bv_path" == *"google-cloud-sdk"* ]]; then
-            check "stack.bv" "Beads Viewer" "fail" "SHADOWED by gcloud bv at $bv_path" \
+            check "stack.bv" "Beads Viewer" "warn" "SHADOWED by gcloud bv at $bv_path" \
                 "gcloud's 'bv' (BigQuery) is masking beads_viewer. Fix: Ensure ~/.local/bin is before gcloud in PATH, or re-run installer."
         else
             version=$(get_version_line "$bv_path")
@@ -2323,7 +2323,7 @@ check_stack() {
             fi
         fi
     else
-        check "stack.bv" "Beads Viewer" "fail" "not found" \
+        check "stack.bv" "Beads Viewer" "warn" "not found" \
             "Re-run: curl -fsSL https://raw.githubusercontent.com/Dicklesworthstone/beads_viewer/main/install.sh | bash"
     fi
 
@@ -2333,13 +2333,13 @@ check_stack() {
         version=$(get_version_line "$(doctor_binary_path cass 2>/dev/null || echo cass)")
         check "stack.cass" "CASS ($version)" "pass" "installed"
     else
-        check "stack.cass" "CASS" "fail" "not found" \
+        check "stack.cass" "CASS" "warn" "not found" \
             "Re-run: curl -fsSL https://raw.githubusercontent.com/Dicklesworthstone/coding_agent_session_search/main/install.sh | bash -s -- --easy-mode"
     fi
 
-    check_command "stack.cm" "CASS Memory" "cm" \
+    check_optional_command "stack.cm" "CASS Memory" "cm" \
         "Re-run: curl -fsSL https://raw.githubusercontent.com/Dicklesworthstone/cass_memory_system/main/install.sh | bash -s -- --easy-mode"
-    check_command "stack.caam" "CAAM" "caam" \
+    check_optional_command "stack.caam" "CAAM" "caam" \
         "Re-run: curl -fsSL https://raw.githubusercontent.com/Dicklesworthstone/coding_agent_account_manager/main/install.sh | bash"
 
     # Check MCP Agent Mail
