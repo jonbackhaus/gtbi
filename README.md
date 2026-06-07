@@ -1,27 +1,31 @@
-# Agentic Coding Flywheel Setup (GTBI)
+# GTBI — Gastown Batteries Included
 
-<div align="center">
-  <img src="docs/assets/gtbi_illustration.webp" alt="Agentic Coding Flywheel Setup (GTBI) - From zero to fully-configured agentic coding VPS in 30 minutes">
-</div>
+```
+   ██████╗ ████████╗██████╗ ██╗
+  ██╔════╝    ██║   ██╔══██╗██║
+  ██║  ███╗   ██║   ██████╔╝██║
+  ██║   ██║   ██║   ██╔══██╗██║
+  ╚██████╔╝   ██║   ██████╔╝██║
+   ╚═════╝    ╚═╝   ╚═════╝ ╚═╝
+  Gastown Batteries Included
+```
 
 ![Version](https://img.shields.io/badge/Version-0.7.0-bd93f9?style=for-the-badge)
 ![Platform](https://img.shields.io/badge/Platform-Ubuntu%2025.10-6272a4?style=for-the-badge)
 ![License](https://img.shields.io/badge/License-MIT%2BOpenAI%2FAnthropic%20Rider-blue?style=for-the-badge)
 ![Shell](https://img.shields.io/badge/Shell-Bash-ff79c6?style=for-the-badge)
 
-<p align="center">
-  <strong>🌐 <a href="https://agent-flywheel.com">agent-flywheel.com</a></strong> — Interactive setup wizard for beginners
-</p>
-
 > **From zero to fully-configured agentic coding VPS in 30 minutes.**
 > A complete bootstrapping system that transforms a fresh Ubuntu VPS into a professional AI-powered development environment.
+
+> **Fork notice:** GTBI is forked from [ACFS (Agentic Coding Flywheel Setup)](https://github.com/Dicklesworthstone/gastown_batteries_included) by Jeffrey Emanuel ([@Dicklesworthstone](https://github.com/Dicklesworthstone)). This fork adapts ACFS for the Gastown toolchain with customized workflows and configurations.
 
 <div align="center" style="margin: 1.2em 0;">
   <table>
     <tr>
       <td align="center" style="padding: 8px;">
         <strong>The Vision</strong><br/>
-        <sub>Beginner with laptop → Wizard → VPS → Agents coding for you</sub>
+        <sub>Beginner with laptop → SSH → VPS → Agents coding for you</sub>
       </td>
     </tr>
   </table>
@@ -74,12 +78,7 @@ graph LR
     %%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#e8f5e9', 'lineColor': '#90a4ae'}}}%%
 
     subgraph user ["User's Machine"]
-        LAPTOP["Laptop"]
-        BROWSER["Browser"]
-    end
-
-    subgraph wizard ["Wizard Website"]
-        STEPS["13-Step Guide"]
+        TERMINAL["Terminal / SSH client"]
     end
 
     subgraph vps ["Fresh VPS"]
@@ -94,9 +93,7 @@ graph LR
         GEMINI["Gemini CLI"]
     end
 
-    LAPTOP --> BROWSER
-    BROWSER --> STEPS
-    STEPS -->|SSH| UBUNTU
+    TERMINAL -->|SSH + curl| UBUNTU
     UBUNTU --> INSTALLER
     INSTALLER --> CONFIGURED
     CONFIGURED --> CLAUDE
@@ -104,25 +101,25 @@ graph LR
     CONFIGURED --> GEMINI
 
     classDef user fill:#e3f2fd,stroke:#90caf9,stroke-width:2px
-    classDef wizard fill:#fff8e1,stroke:#ffcc80,stroke-width:2px
     classDef vps fill:#f3e5f5,stroke:#ce93d8,stroke-width:2px
     classDef agent fill:#e8f5e9,stroke:#a5d6a7,stroke-width:2px
 
-    class LAPTOP,BROWSER user
-    class STEPS wizard
+    class TERMINAL user
     class UBUNTU,INSTALLER,CONFIGURED vps
     class CLAUDE,CODEX,GEMINI agent
 ```
 
 ### For Beginners
-GTBI includes a **step-by-step wizard website** at [agent-flywheel.com](https://agent-flywheel.com) that guides complete beginners through:
-1. Installing a terminal on their local machine
-2. Generating SSH keys (for secure access later)
-3. Renting a VPS from providers like OVH or Contabo
-4. Connecting via SSH with a password (initial setup)
-5. Running the installer (which sets up key-based access)
-6. Reconnecting securely with your SSH key
-7. Starting to code with AI agents
+GTBI provides step-by-step guidance for complete beginners to:
+1. Install a terminal on their local machine
+2. Generate SSH keys (for secure access later)
+3. Rent a VPS from providers like OVH or Contabo
+4. Connect via SSH with a password (initial setup)
+5. Run the installer (which sets up key-based access)
+6. Reconnect securely with your SSH key
+7. Start coding with AI agents
+
+See the [VPS Providers](#vps-providers) section and `scripts/providers/` for per-provider setup guides.
 
 ### For Developers
 GTBI is a **one-liner** that transforms any fresh Ubuntu VPS into a fully-configured development environment with modern tooling and three AI coding agents ready to go.
@@ -146,7 +143,7 @@ flowchart TB
     Terminal["Terminal / SSH client"]
   end
 
-  subgraph W["Wizard Website (Next.js 16) — apps/web"]
+  subgraph W["Wizard Website (Next.js 16) — apps/web (ACFS-era, not deployed)"]
     Wizard["Wizard UI (/wizard/*)"]
     InstallRoute["GET /install (302 redirect to raw install.sh)"]
     WebState["State: URL params + localStorage"]
@@ -219,7 +216,7 @@ flowchart TB
 │        CODE GENERATION            │   │        WIZARD WEBSITE             │
 │  ┌─────────────────────────────┐  │   │  ┌─────────────────────────────┐  │
 │  │ TypeScript Parser (Zod)     │  │   │  │ apps/web/ (Next.js 16)      │  │
-│  │ generate.ts                 │  │   │  │ agent-flywheel.com          │  │
+│  │ generate.ts                 │  │   │  │ (ACFS-era, not deployed)    │  │
 │  └─────────────────────────────┘  │   │  └─────────────────────────────┘  │
 └───────────────────────────────────┘   └───────────────────────────────────┘
                     │
@@ -286,7 +283,7 @@ flowchart TB
 version: "1.0"
 meta:
   name: "GTBI"
-  description: "Agentic Coding Flywheel Setup"
+  description: "Gastown Batteries Included"
   version: "0.1.0"
 
 modules:
@@ -743,7 +740,7 @@ The wizard guides you through:
     ║     ██║  ██║╚██████╗ ██║      ███████║                ║
     ║     ╚═╝  ╚═╝ ╚═════╝ ╚═╝      ╚══════╝                ║
     ║                                                       ║
-    ║          Agentic Coding Flywheel Setup                ║
+    ║          Gastown Batteries Included                   ║
     ║                                                       ║
     ╚═══════════════════════════════════════════════════════╝
 
@@ -928,185 +925,6 @@ Displays:
 - Target version
 - Current upgrade stage
 - Next steps after completion
-
----
-
-## Learning Hub (Web)
-
-In addition to the terminal-based onboarding, GTBI provides a comprehensive web-based Learning Hub at [agent-flywheel.com/learn](https://agent-flywheel.com/learn).
-
-### Web Lessons
-
-The Learning Hub provides interactive lessons with progress tracking:
-
-| # | Lesson | Duration | Topics |
-|---|--------|----------|--------|
-| 0 | Welcome & Overview | 5 min | What's installed, mental model |
-| 1 | Linux Navigation | 8 min | Filesystem structure, essential commands |
-| 2 | SSH & Persistence | 6 min | Secure connections, staying connected |
-| 3 | tmux Basics | 7 min | Sessions, windows, panes, survival |
-| 4 | Git Essentials | 10 min | Version control, dangerous operations |
-| 5 | GitHub CLI | 8 min | Issues, PRs, releases via `gh` |
-| 6 | Agent Commands | 10 min | Claude, Codex, Gemini usage |
-| 7 | NTM Command Center | 8 min | Session orchestration |
-| 8 | NTM Prompt Palette | 6 min | Quick command access |
-| 9 | The Flywheel Loop | 8 min | How all 10 tools work together |
-
-**Features:**
-- Progress tracking in localStorage
-- Code blocks with copy buttons
-- Expandable deep-dive sections
-- Practical exercises
-
-### Command Reference
-
-The [Command Reference](https://agent-flywheel.com/learn/commands) documents every installed tool:
-
-| Category | Commands |
-|----------|----------|
-| **Agents** | `cc`, `cod`, `gmi` |
-| **Search** | `rg`, `fd`, `sg`, `fzf` |
-| **Git** | `lg`, `gh`, `git-lfs` |
-| **System** | `z`, `bat`, `lsd`, `atuin`, `tmux` |
-| **Stack** | `ntm`, `bv`, `am`, `cass`, `cm`, `ubs`, `slb`, `caam`, `dcg`, `ru` |
-| **Languages** | `bun`, `uv`, `cargo`, `go` |
-| **Cloud** | `wrangler`, `supabase`, `vercel`, `vault` |
-
-### Technical Glossary
-
-The [Glossary](https://agent-flywheel.com/glossary) defines 100+ technical terms with:
-
-- **One-liner**: Quick tooltip definition
-- **Full explanation**: Plain language description
-- **Analogy**: "Think of it like..."
-- **Why we use it**: Problem it solves
-- **Related terms**: For context
-
-Example entry:
-```
-RAM (Random Access Memory)
-├── Short: Fast temporary storage your computer uses while working
-├── Long: RAM is your computer's short-term memory...
-├── Analogy: Like your desk space while working
-├── Why: More RAM = run more programs simultaneously
-└── Related: vCPU, VPS, NVMe
-```
-
-### Flywheel Visualization
-
-The [Flywheel page](https://agent-flywheel.com/flywheel) visualizes tool interactions:
-
-```
-Plan (Beads) ──> Coordinate (Agent Mail) ──> Execute (NTM + Agents)
-      ^                                              │
-      │                                              v
-      └──── Remember (CASS Memory) <──── Scan (UBS) ┘
-```
-
-**Workflow Scenarios:**
-
-| Scenario | Description | Time |
-|----------|-------------|------|
-| Daily Parallel Progress | 3+ projects moving simultaneously | 3+ hours |
-| Agents Reviewing Agents | Cross-review before merging | 30 min |
-| Memory-Augmented Debugging | Past solutions for current bugs | 15 min |
-| Coordinated Feature Dev | Multiple agents, one feature | 2+ hours |
-
-### Tool Status Page
-
-The [Tool Status page](https://agent-flywheel.com/tools) provides a searchable catalog of all installed tools:
-
-- **Search & Filter**: Find tools by name, CLI command, features, or tech stack
-- **Category Browsing**: Filter by "Flywheel Stack" (core agentic tools) or "Utilities"
-- **Tool Details**: Each card shows the tool name, CLI command, GitHub stars, features, and tech stack
-- **Live Data**: Content is auto-generated from `gtbi.manifest.yaml` — never manually edited
-
-This page helps users discover tools they may not know about and understand how each fits into the agentic coding workflow.
-
-### Interactive Website Components
-
-The wizard website includes specialized components for guiding beginners:
-
-**ConnectionCheck Component:**
-A prominent visual that helps users verify they're connected to their VPS before running commands:
-- Side-by-side comparison: "Wrong (laptop)" vs "Right (VPS)"
-- Terminal prompt examples for Windows, Mac, and Linux
-- Clear "STOP!" warning with color-coded styling
-
-**CommandCard Component:**
-CLI instruction cards with:
-- Syntax-highlighted code blocks
-- One-click copy button
-- Platform-specific variations (bash/zsh/PowerShell)
-- Expandable explanations
-
-**Jargon Component (Responsive Technical Terms):**
-A sophisticated tooltip system that adapts to device capabilities:
-
-*Desktop behavior:*
-- Hover reveals floating tooltip with term definition
-- Radix UI Tooltip for accessible ARIA-compliant overlays
-- Viewport-aware positioning (auto-flips when near edges)
-- 200ms hover delay prevents tooltip spam
-
-*Mobile behavior:*
-- Tap opens bottom sheet drawer (Vaul library)
-- Full definition visible without tiny tap targets
-- Swipe-to-dismiss gesture support
-- Snap points for partial/full expansion
-
-*Visual features:*
-- Gradient underline indicates tappable term
-- Each term gets unique gradient based on slug hash
-- Consistent color scheme with OKLCH tokens
-
-*Content structure per term:*
-```typescript
-{
-  term: "VPS",
-  short: "Virtual Private Server - a remote computer you rent",
-  long: "A VPS is your own slice of a powerful computer...",
-  analogy: "Think of it like renting an apartment in a building",
-  whyWeUseIt: "You get root access, dedicated resources...",
-  relatedTerms: ["SSH", "Ubuntu", "RAM"]
-}
-```
-
-**Confetti Celebration:**
-On lesson completion:
-- Burst of celebratory confetti particles
-- Randomized encouraging messages
-- Special celebration for completing all lessons
-- Respects `prefers-reduced-motion` setting
-
-**Stepper Component:**
-Multi-step progress indicator:
-- Visual step-by-step progress
-- Clickable navigation
-- Completion checkmarks
-- Mobile-responsive design
-
-### Expanded Lesson Library
-
-The Learning Hub includes specialized lessons for each tool in the Dicklesworthstone stack:
-
-| Lesson | Topics |
-|--------|--------|
-| **UBS (Bug Scanner)** | Scan workflow, severity levels, CI integration |
-| **Agent Mail** | Registration, messaging, file reservations |
-| **CASS (Session Search)** | Indexing, searching, cross-agent queries |
-| **CASS Memory (cm)** | Rule extraction, playbook management |
-| **Beads** | Issue tracking, graph metrics, priorities |
-| **SLB (Safety)** | Two-person rule, dangerous command approval |
-| **Prompt Engineering** | Effective prompts, context management |
-| **Real-World Case Study** | End-to-end feature development walkthrough |
-
-Each lesson includes:
-- Conceptual introduction
-- Practical commands with examples
-- Interactive exercises
-- Common pitfalls to avoid
-- Links to tool documentation
 
 ---
 
@@ -1481,167 +1299,6 @@ gtbi undo --list      # List all changes
 gtbi undo chg_0001    # Undo specific change
 gtbi undo --all       # Undo all changes from last session
 ```
-
----
-
-## The Wizard Website
-
-The wizard guides beginners through a **13-step journey** from "I have a laptop" to "AI agents are coding for me":
-
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│  GTBI Wizard                                                   [Step 3/13]  │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                             │
-│  ┌────────────────────────────────────────────────────────────────────────┐ │
-│  │  STEP 3: Generate SSH Key                                              │ │
-│  │  ──────────────────────────────────────────────────────────────────    │ │
-│  │                                                                        │ │
-│  │  Run this command in your terminal:                                    │ │
-│  │                                                                        │ │
-│  │  ┌─────────────────────────────────────────────────────────────────┐  │ │
-│  │  │ ssh-keygen -t ed25519 -C "your-email@example.com"         [📋] │  │ │
-│  │  └─────────────────────────────────────────────────────────────────┘  │ │
-│  │                                                                        │ │
-│  │  ☐ I ran this command                                                  │ │
-│  │                                                                        │ │
-│  │  [← Previous]                                        [Next Step →]     │ │
-│  └────────────────────────────────────────────────────────────────────────┘ │
-│                                                                             │
-│  Progress: ●●●○○○○○○○○○○                                                   │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
-
-### Wizard Steps
-
-| Step | Title | What Happens |
-|------|-------|--------------|
-| 1 | **Choose Your OS** | Select Mac, Windows, or Linux (auto-detected) |
-| 2 | **Install Terminal** | Get a proper terminal application set up |
-| 3 | **Generate SSH Key** | Create an ed25519 key for VPS access |
-| 4 | **Rent a VPS** | Choose a VPS provider and plan |
-| 5 | **Create VPS Instance** | Launch your VPS and confirm SSH access |
-| 6 | **SSH Into Your VPS** | First connection with troubleshooting tips |
-| 7 | **Set Up Accounts** | Create accounts for the services you'll use |
-| 8 | **Pre-Flight Check** | Verify your VPS is ready before installing |
-| 9 | **Run Installer** | The `curl \| bash` one-liner |
-| 10 | **Reconnect as Ubuntu** | Post-install reconnection |
-| 11 | **Verify Key Connection** | Reconnect using your SSH key and confirm it works |
-| 12 | **Status Check** | Run `gtbi doctor` to verify |
-| 13 | **Launch Onboarding** | Start the interactive tutorial |
-
-### Key Features
-
-- **OS Detection:** Auto-detects Mac vs Windows for tailored instructions
-- **Copy-to-Clipboard:** One-click copy for all commands
-- **Handoff Runbook:** Downloadable JSON/Markdown artifact for the installer command and recovery steps
-- **Progress Tracking:** localStorage persistence across browser sessions
-- **Confirmation Checkboxes:** "I ran this command" acknowledgments
-- **Troubleshooting:** Expandable help for common issues
-
-### Wizard Handoff Runbook
-
-Step 9 can download a local handoff runbook in JSON or Markdown. The runbook is meant for the user and support loop when an SSH session drops, an install is interrupted, or the user needs to remember the exact command they ran.
-
-**Schema:** `gtbi.handoff-runbook.v1`
-
-| Field | Purpose |
-|-------|---------|
-| `wizardSelections` | Local OS, install mode, source ref, and normalized target user |
-| `targetHost` | Redacted host kind and target-host assumptions |
-| `ssh` | Expected SSH key paths and redacted reconnect command templates |
-| `install` | Exact installer command generated from the shared command builder |
-| `recoveryCommands` | Copy/paste-safe reconnect, retry, doctor, and support-bundle commands |
-| `support` | Deterministic `gtbi support-bundle` reference and review artifacts |
-| `privacy` | Explicit redaction policy for host data and exact-command inclusion |
-
-Host addresses are not written into the runbook. The installer command stays exact so a user can paste it back into the VPS session, and the artifact points to `support-report.md` and `manifest.json` for support-bundle review.
-
-### Technology Stack
-
-```
-Next.js 16 (App Router)
-├── React 19
-├── Tailwind CSS 4 (OKLCH colors)
-├── shadcn/ui components
-├── Radix UI primitives
-└── Lucide icons
-```
-
-**No backend required.** All state is stored in:
-- URL query parameters
-- localStorage (`agent-flywheel-user-os`, `agent-flywheel-vps-ip`, `agent-flywheel-wizard-completed-steps`)
-
-### Wizard State Management
-
-The wizard uses **TanStack Query** for state management with optimistic updates and cross-tab synchronization:
-
-**Architecture:**
-```typescript
-// Query-based state with localStorage persistence
-const { data: steps } = useQuery({
-  queryKey: ['wizardSteps', 'completed'],
-  queryFn: getCompletedSteps,  // Reads from localStorage
-  staleTime: 0,                // Always check for updates
-  gcTime: Infinity,            // Never garbage collect
-});
-```
-
-**Optimistic Updates with Rollback:**
-```typescript
-const mutation = useMutation({
-  mutationFn: async (stepId) => {
-    const newSteps = addCompletedStep(currentSteps, stepId);
-    setCompletedSteps(newSteps);  // Persist to localStorage
-    return newSteps;
-  },
-  onMutate: (stepId) => {
-    // Optimistically update cache immediately
-    const previousSteps = queryClient.getQueryData(queryKey);
-    queryClient.setQueryData(queryKey, addCompletedStep(baseSteps, stepId));
-    return { previousSteps };  // For rollback
-  },
-  onError: (_err, _stepId, context) => {
-    // Rollback on failure
-    queryClient.setQueryData(queryKey, context.previousSteps);
-  },
-});
-```
-
-**Cross-Tab Synchronization:**
-The wizard maintains sync across browser tabs via two mechanisms:
-1. **Custom DOM events** for same-tab coordination between components
-2. **Storage events** for cross-tab updates when localStorage changes
-
-```typescript
-// Same-tab: custom event dispatch
-window.dispatchEvent(new CustomEvent('gtbi:wizard:completed-steps-changed', {
-  detail: { steps }
-}));
-
-// Cross-tab: storage event listener
-window.addEventListener('storage', (event) => {
-  if (event.key === COMPLETED_STEPS_KEY) {
-    queryClient.setQueryData(queryKey, getCompletedSteps());
-  }
-});
-```
-
-**Safe localStorage Utilities:**
-All localStorage access is wrapped in safe utilities that handle SSR, private browsing, and quota exceeded errors:
-
-```typescript
-// Safe read (returns null on any error)
-export function safeGetJSON<T>(key: string): T | null;
-
-// Safe write (returns boolean success)
-export function safeSetJSON(key: string, value: unknown): boolean;
-
-// URL preservation for state fallback
-export function withCurrentSearch(path: string): string;
-```
-
-This architecture ensures the wizard progress survives browser refreshes, works across tabs, and degrades gracefully when localStorage is unavailable.
 
 ---
 
@@ -2401,20 +2058,6 @@ bash scripts/agent-readiness-audit.sh --home /home/ubuntu --path "$PATH"
 
 Treat failures as launch blockers. Warnings usually mean the CLI is installed but needs a user sign-in or CAAM default profile selection.
 
-### Website Deployment (`website.yml`)
-
-```yaml
-# Builds and deploys the Next.js wizard
-jobs:
-  build:
-    - Type-check TypeScript
-    - Run ESLint
-    - Build production bundle
-
-  deploy:
-    - Deploy to Vercel (production)
-```
-
 ### Automated Checksum + Drift Repair (`checksum-monitor.yml`)
 
 GTBI automatically monitors upstream installers for changes, and also repairs generated artifact checksum drift:
@@ -2549,26 +2192,6 @@ sudo apt-get install -y qemu-system-x86 qemu-utils cloud-image-utils openssh-cli
 
 Use this when Docker passes but you need local proof for systemd, sshd, cloud-init, kernel, filesystem, and login behavior before spending time on a disposable provider VPS.
 
-### Playwright E2E Tests (`playwright.yml`)
-
-Full browser testing of the wizard website:
-
-```yaml
-# Runs on PR to main
-browsers:
-  - Chromium
-  - Firefox
-  - WebKit
-  - Mobile Chrome
-  - Mobile Safari
-
-tests:
-  - Wizard flow completion
-  - Step navigation
-  - Copy button functionality
-  - Responsive design
-```
-
 ---
 
 ## VPS Providers
@@ -2613,7 +2236,7 @@ After installation, run `gtbi capacity --profile 25-agents --recommend-ntm` on t
 
 ### Other Providers
 
-Any provider with an Ubuntu VPS, SSH access, and a first-login root password or root console works. The wizard at [agent-flywheel.com](https://agent-flywheel.com) has step-by-step guides.
+Any provider with an Ubuntu VPS, SSH access, and a first-login root password or root console works. See `scripts/providers/` for setup guides.
 
 ### Provider Setup Guides
 
@@ -2653,7 +2276,7 @@ Each guide includes:
 ## Project Structure
 
 ```
-gastown_batteries_included/
+gtbi/
 ├── README.md                     # This file
 ├── AGENTS.md                     # Development guidelines
 ├── VERSION                       # Current version (0.7.0)
@@ -2733,17 +2356,6 @@ gastown_batteries_included/
 ---
 
 ## Development
-
-### Website Development
-
-```bash
-cd apps/web
-bun install           # Install dependencies
-bun run dev           # Dev server at http://localhost:3000
-bun run build         # Production build
-bun run lint          # Lint check
-bun run type-check    # TypeScript check
-```
 
 ### Manifest Development
 
@@ -2899,47 +2511,6 @@ Sync scripts keep GTBI documentation aligned with upstream projects:
 
 All sync scripts use the security library for HTTPS enforcement and content hashing.
 
-### Website Design System
-
-The website uses a comprehensive design system (`apps/web/lib/design-tokens.ts`):
-
-**Color Tokens (OKLCH Color Space):**
-```typescript
-// Perceptually uniform colors
-colors: {
-  cyan:    "oklch(0.75 0.18 195)",   // Primary accent
-  pink:    "oklch(0.7 0.2 330)",     // Secondary accent
-  purple:  "oklch(0.65 0.18 290)",   // Tertiary
-  success: "oklch(0.72 0.19 145)",   // Green
-  warning: "oklch(0.78 0.16 75)",    // Yellow
-  error:   "oklch(0.65 0.22 25)",    // Red
-}
-```
-
-**Shadow Tokens:**
-```typescript
-shadows: {
-  cardHover: "0 20px 40px -12px oklch(0.75 0.18 195 / 0.15)",
-  cardLifted: "0 25px 50px -12px oklch(0.75 0.18 195 / 0.2)",
-  primaryGlow: "0 0 40px -8px oklch(0.75 0.18 195 / 0.3)",
-}
-```
-
-**Animation Presets:**
-```typescript
-animations: {
-  hover: { scale: 1.02, transition: { duration: 0.2 } },
-  tap: { scale: 0.98 },
-  fadeIn: { opacity: [0, 1], transition: { duration: 0.3 } },
-}
-```
-
-**Accessibility:**
-- Reduced motion support via `useReducedMotion` hook
-- Semantic HTML structure
-- ARIA labels on interactive elements
-- Keyboard navigation support
-
 ### Requirements
 
 - **Runtime:** Bun (not npm/yarn/pnpm)
@@ -3047,13 +2618,13 @@ For experienced developers, the setup is tedious but doable. For beginners—the
 - How do I connect to a remote server?
 - What are all these tools and why do I need them?
 
-The [wizard website at agent-flywheel.com](https://agent-flywheel.com) solves this by providing:
+GTBI's README and provider guides (`scripts/providers/`) address this by providing:
 
 1. **Absolute beginner guidance** — Explains every concept in plain English
-2. **OS-specific instructions** — Detects Mac vs Windows, shows the right commands
-3. **Visual confirmations** — Checkboxes for each step, copy buttons for commands
-4. **Troubleshooting help** — Expandable sections for common problems
-5. **Progress persistence** — Resume where you left off across browser sessions
+2. **OS-specific instructions** — Shows the right commands per platform
+3. **Pre-flight checks** — `scripts/preflight.sh` to validate the VPS before running the full install
+4. **Troubleshooting help** — Common failure scenarios and recovery steps
+5. **Resume capability** — Re-run the installer; it resumes from where it left off
 
 ---
 
@@ -4797,8 +4368,8 @@ MIT License (with OpenAI/Anthropic Rider). See [LICENSE](LICENSE) for details.
 
 ## Links
 
-- **Website:** [agent-flywheel.com](https://agent-flywheel.com) — Interactive wizard for beginners
-- **GitHub:** [Dicklesworthstone/gastown_batteries_included](https://github.com/jonbackhaus/gtbi)
+- **GitHub:** [jonbackhaus/gtbi](https://github.com/jonbackhaus/gtbi)
+- **Upstream (ACFS):** [Dicklesworthstone/gastown_batteries_included](https://github.com/Dicklesworthstone/gastown_batteries_included)
 - **Related Projects:**
   - [ntm](https://github.com/Dicklesworthstone/ntm) - Named Tmux Manager
   - [beads_viewer](https://github.com/Dicklesworthstone/beads_viewer) - Task management TUI
@@ -4809,12 +4380,14 @@ MIT License (with OpenAI/Anthropic Rider). See [LICENSE](LICENSE) for details.
 
 ---
 
-## About Contributions
+## Acknowledgements
 
-Please don't take this the wrong way, but I do not accept outside contributions for any of my projects. I simply don't have the mental bandwidth to review anything, and it's my name on the thing, so I'm responsible for any problems it causes; thus, the risk-reward is highly asymmetric from my perspective. I'd also have to worry about other "stakeholders," which seems unwise for tools I mostly make for myself for free. Feel free to submit issues, and even PRs if you want to illustrate a proposed fix, but know I won't merge them directly. Instead, I'll have Claude or Codex review submissions via `gh` and independently decide whether and how to address them. Bug reports in particular are welcome. Sorry if this offends, but I want to avoid wasted time and hurt feelings. I understand this isn't in sync with the prevailing open-source ethos that seeks community contributions, but it's the only way I can move at this velocity and keep my sanity.
+GTBI is a fork of [ACFS (Agentic Coding Flywheel Setup)](https://github.com/Dicklesworthstone/gastown_batteries_included), created by **Jeffrey Emanuel** ([@Dicklesworthstone](https://github.com/Dicklesworthstone) · [X/Twitter](https://x.com/doodlestein)).
+
+A sincere thank you to Jeff for the original ACFS project — the installer architecture, the manifest-driven generation system, the Dicklesworthstone coordination stack, and the overall philosophy that makes agentic coding practical. This fork would not exist without his work, and the vast majority of the code here originated with him.
 
 ---
 
 <div align="center">
-  <sub>Created by <a href="https://x.com/doodlestein">Jeffrey Emanuel</a> (<a href="https://github.com/Dicklesworthstone">@Dicklesworthstone</a>) for the agentic coding community.</sub>
+  <sub>Forked from <a href="https://github.com/Dicklesworthstone/gastown_batteries_included">ACFS</a> by <a href="https://github.com/jonbackhaus">Jon Backhaus</a>. Original work by <a href="https://github.com/Dicklesworthstone">Jeffrey Emanuel (@Dicklesworthstone)</a>.</sub>
 </div>
