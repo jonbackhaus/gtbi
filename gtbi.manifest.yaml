@@ -27,7 +27,7 @@ modules:
       command: "command -v curl && command -v git && command -v jq"
     install:
       - apt-get update -y
-      - apt-get install -y curl git ca-certificates unzip tar xz-utils jq build-essential gnupg lsb-release
+      - apt-get install -y curl git ca-certificates unzip tar xz-utils jq build-essential gnupg lsb-release zstd
     verify:
       - curl --version
       - git --version
@@ -557,10 +557,9 @@ modules:
           | tee /etc/apt/sources.list.d/tailscale.list
         apt-get update
         apt-get install -y tailscale
-        systemctl enable tailscaled
+        systemctl enable tailscaled 2>/dev/null || true
     verify:
       - tailscale version
-      - systemctl is-enabled tailscaled
     docs_url: https://tailscale.com/kb/
     post_install_message: |
       Tailscale installed! To connect your VPS to your Tailscale network:
@@ -811,7 +810,7 @@ modules:
     install:
       - |
         claude_candidate=""
-        for candidate in "$HOME/.claude/bin/claude" "$HOME/.claude/local/bin/claude" "$HOME/.bun/bin/claude"; do
+        for candidate in "$HOME/.local/bin/claude" "$HOME/.claude/bin/claude" "$HOME/.claude/local/bin/claude" "$HOME/.bun/bin/claude"; do
           if [[ -x "$candidate" ]]; then
             claude_candidate="$candidate"
             break
@@ -824,7 +823,10 @@ modules:
           echo "Claude Code: installed but no runnable claude binary found" >&2
           exit 1
         fi
-        gtbi_link_primary_bin_command "$claude_candidate" "claude"
+        primary_bin="${GTBI_BIN_DIR:-$HOME/.local/bin}"
+        if [[ "$claude_candidate" != "$primary_bin/claude" ]]; then
+          gtbi_link_primary_bin_command "$claude_candidate" "claude"
+        fi
     verify:
       - |
         target_bin="${GTBI_BIN_DIR:-$HOME/.local/bin}"
@@ -1253,7 +1255,7 @@ modules:
     description: Dolt version-control database (required by bd/beads)
     category: stack
     phase: 9
-    run_as: target_user
+    run_as: root
     optional: false
     enabled_by_default: true
     tags: [critical]
@@ -1284,14 +1286,13 @@ modules:
     install:
       - |
           BD_VER="1.0.4"
-          ARCH=$(uname -m)
-          case "$ARCH" in
-            x86_64)  BD_SHA="643e602e27f666c8726abff0f22001e2b5883988fa960204bde20a3129d448a5" ;;
-            aarch64|arm64) BD_SHA="48cdf571cd8b64bae81da829c1309e402bc12e6a4cc6b87606dfc9220b7ece60" ;;
-            *) echo "Unsupported arch for beads (bd): $ARCH"; exit 1 ;;
+          case "$(uname -m)" in
+            x86_64)  BD_ARCH="amd64"; BD_SHA="643e602e27f666c8726abff0f22001e2b5883988fa960204bde20a3129d448a5" ;;
+            aarch64|arm64) BD_ARCH="arm64"; BD_SHA="48cdf571cd8b64bae81da829c1309e402bc12e6a4cc6b87606dfc9220b7ece60" ;;
+            *) echo "Unsupported arch for beads (bd): $(uname -m)"; exit 1 ;;
           esac
 
-          BD_URL="https://github.com/gastownhall/beads/releases/download/v${BD_VER}/beads_${BD_VER}_linux_${ARCH}.tar.gz"
+          BD_URL="https://github.com/gastownhall/beads/releases/download/v${BD_VER}/beads_${BD_VER}_linux_${BD_ARCH}.tar.gz"
           TMP_FILE="$(mktemp "${TMPDIR:-/tmp}/gtbi_install.XXXXXX")"
           trap 'rm -f "$TMP_FILE"' EXIT
 

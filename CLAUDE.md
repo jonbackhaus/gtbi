@@ -51,20 +51,54 @@ bd close <id>         # Complete work
 <!-- END BEADS INTEGRATION -->
 
 
-## Build & Test
+## Git Workflow
 
-_Add your build and test commands here_
+**MANDATORY:** Never commit directly to `main`. All work goes on a feature branch.
+
+- **Feature branches**: `git checkout -b fix/<topic>` or `feat/<topic>` before any code changes
+- **Worktrees for sub-agents**: Use `git worktree add` to give each sub-agent an isolated copy of the repo — prevents concurrent edits from colliding on the same working tree
+- **Commit often**: Small, atomic commits are easier to bisect and revert; don't batch unrelated changes
+- **Push when complete**: Work is not done until `git push` succeeds (see Session Completion above)
 
 ```bash
-# Example:
-# npm install
-# npm test
+# Start work
+git checkout -b fix/<topic>
+
+# Isolated sub-agent worktree
+git worktree add /tmp/gtbi-<topic> -b fix/<topic>-agent
+
+# Commit often, push at end
+git add <files> && git commit -m "..."
+git push -u origin fix/<topic>
+```
+
+## Build & Test
+
+```bash
+# Generate scripts after any manifest or lib change
+export PATH="$HOME/.bun/bin:$PATH"
+bun run --cwd packages/manifest generate
+
+# Run Docker integration test (Ubuntu 25.10 greenfield install)
+./tests/docker/run.sh install
+
+# Test artifacts written to:
+# tests/artifacts/install.log
 ```
 
 ## Architecture Overview
 
-_Add a brief overview of your project architecture_
+- `gtbi.manifest.yaml` — single source of truth: all install modules, phases, checksums
+- `packages/manifest/` — TypeScript generator; `bun run generate` compiles manifest → shell scripts
+- `scripts/generated/` — **do not edit directly**; always edit manifest and regenerate
+- `scripts/lib/` — shared shell helpers (`install_helpers.sh`, `state.sh`, `security.sh`, etc.)
+- `install.sh` — top-level orchestrator; calls generated phase scripts
+- `checksums.yaml` — SHA256 of every external installer (uv, dolt, claude, bun, …)
+- `tests/docker/` — hermetic Docker integration tests
 
 ## Conventions & Patterns
 
-_Add your project-specific conventions here_
+- **Manifest → generate → scripts**: Any change to `gtbi.manifest.yaml` or `scripts/lib/*.sh` requires `bun run generate` before committing. Generated files live in `scripts/generated/` and `apps/web/lib/generated/`.
+- **Checksums must stay fresh**: If an external installer URL serves new content, update `checksums.yaml` and rerun generate to update `internal_checksums.sh`.
+- **`run_as` in manifest**: `target_user` runs as the ubuntu user; `root` runs as root. Installers that require root (e.g. dolt) must use `run_as: root`.
+- **Docker-safe installs**: Avoid bare `systemctl enable/start` — use `|| true`; no systemd in Docker.

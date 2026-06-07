@@ -349,10 +349,9 @@ install_all() {
     install_cloud_supabase
     install_cloud_vercel
     log_section "Category: stack"
-    log_section "Category: tools"
-    log_section "Category: gtbi"
     install_stack_dolt
     install_stack_bd
+    log_section "Category: gtbi"
     install_gtbi_workspace
     install_gtbi_onboard
     install_gtbi_update

@@ -423,10 +423,11 @@ fetch_commit_sha() {
         else
             # Fallback: Extract SHA from JSON using grep/sed (works without jq/python)
             # Use grep -o to handle minified JSON (puts matches on new lines)
-            sha=$(echo "$response" | grep -o '"sha":[[:space:]]*"[^"]*"' | head -n 1 | sed 's/.*"\([a-f0-9]*\)".*/\1/')
+            # || true: head -n 1 causes SIGPIPE on grep when response has many sha fields; result is still valid
+            sha=$(echo "$response" | grep -o '"sha":[[:space:]]*"[^"]*"' | head -n 1 | sed 's/.*"\([a-f0-9]*\)".*/\1/') || true
 
             # Extract commit date (format: "2025-12-21T10:30:00Z")
-            commit_date=$(echo "$response" | grep -o '"date":[[:space:]]*"[^"]*"' | head -n 1 | sed 's/.*"\([^"]*\)".*/\1/')
+            commit_date=$(echo "$response" | grep -o '"date":[[:space:]]*"[^"]*"' | head -n 1 | sed 's/.*"\([^"]*\)".*/\1/') || true
         fi
 
         if [[ -n "$sha" && ${#sha} -ge 7 ]]; then
@@ -4617,7 +4618,7 @@ ensure_base_deps() {
     try_step "Updating apt package index" "${sudo_cmd[@]}" "$apt_get_bin" update -y || return 1
 
     log_detail "Installing base packages"
-    try_step "Installing base packages" "${sudo_cmd[@]}" "$apt_get_bin" install -y curl git ca-certificates unzip tar xz-utils jq build-essential sudo gnupg libssl-dev pkg-config || return 1
+    try_step "Installing base packages" "${sudo_cmd[@]}" "$apt_get_bin" install -y curl git ca-certificates unzip tar xz-utils jq build-essential sudo gnupg libssl-dev pkg-config zstd || return 1
 }
 
 # ============================================================

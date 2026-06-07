@@ -56,7 +56,21 @@ fi
 
 # Default categories array. Set via GTBI_GENERATED_DEFAULT_CATEGORIES in code,
 # or override at runtime with GTBI_GENERATED_MIGRATED_CATEGORIES env var (comma-separated).
-GTBI_GENERATED_DEFAULT_CATEGORIES=() # Empty until categories are explicitly migrated.
+GTBI_GENERATED_DEFAULT_CATEGORIES=(
+    "base"
+    "filesystem"
+    "shell"
+    "cli"
+    "tools"
+    "network"
+    "lang"
+    "agents"
+    "db"
+    "cloud"
+    "stack"
+    "gtbi"
+)
+# Note: "users" is intentionally excluded — it is orchestration-only (handled by install.sh).
 
 _gtbi_upper() {
     local s="${1:-}"

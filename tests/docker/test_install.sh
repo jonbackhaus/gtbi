@@ -88,18 +88,20 @@ check "dig"      "zsh -ic 'command -v dig >/dev/null'"
 check "nc"       "zsh -ic 'command -v nc >/dev/null'"
 
 # GTBI tools
-check "ntm"     "zsh -ic 'ntm --help >/dev/null'"
-check "ubs"     "zsh -ic 'ubs --help >/dev/null'"
-check "bv"      "zsh -ic 'bv --help >/dev/null'"
-check "cass"    "zsh -ic 'cass --help >/dev/null'"
-check "cm"      "zsh -ic 'cm --help >/dev/null'"
-check "caam"    "zsh -ic 'caam --help >/dev/null'"
-check "slb"     "zsh -ic 'slb --help >/dev/null'"
-check "dcg"     "zsh -ic 'dcg --version >/dev/null'"
-check "dcg_doctor" "zsh -ic 'dcg doctor >/dev/null 2>&1'"
-check "ru"      "zsh -ic 'ru --version >/dev/null'"
 check "onboard" "zsh -ic 'onboard --help >/dev/null'"
-check "br"      "zsh -ic 'br --version >/dev/null'"
+
+# Dicklesworthstone stack (optional — not installed by default in GTBI)
+check "ntm"        "zsh -ic 'ntm --help >/dev/null'"                               optional
+check "ubs"        "zsh -ic 'ubs --help >/dev/null'"                               optional
+check "bv"         "zsh -ic 'bv --help >/dev/null'"                                optional
+check "cass"       "zsh -ic 'cass --help >/dev/null'"                              optional
+check "cm"         "zsh -ic 'cm --help >/dev/null'"                                optional
+check "caam"       "zsh -ic 'caam --help >/dev/null'"                              optional
+check "slb"        "zsh -ic 'slb --help >/dev/null'"                               optional
+check "dcg"        "zsh -ic 'dcg --version >/dev/null'"                            optional
+check "dcg_doctor" "zsh -ic 'dcg doctor >/dev/null 2>&1'"                          optional
+check "ru"         "zsh -ic 'ru --version >/dev/null'"                             optional
+check "br"         "zsh -ic 'br --version >/dev/null'"                             optional
 
 # Stack tools (optional — may not be installed in all configurations)
 check "ms"      "zsh -ic 'ms --version >/dev/null'"                           optional

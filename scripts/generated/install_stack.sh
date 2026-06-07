@@ -301,16 +301,19 @@ install_stack_dolt() {
         log_info "dry-run: verified installer: stack.dolt"
     else
         if ! {
+            # Try security-verified install (no unverified fallback; fail closed)
             local install_success=false
 
             if gtbi_security_init; then
                 local known_installers_decl=""
+                # Check if KNOWN_INSTALLERS is available as an associative array (declare -A)
                 known_installers_decl="$(declare -p KNOWN_INSTALLERS 2>/dev/null || true)"
                 if [[ "$known_installers_decl" == declare\ -A* ]]; then
                     local tool="dolt"
                     local url=""
                     local expected_sha256=""
 
+                    # Safe access with explicit empty default
                     url="${KNOWN_INSTALLERS[$tool]:-}"
                     if ! expected_sha256="$(get_checksum "$tool")"; then
                         log_error "stack.dolt: get_checksum failed for tool '$tool'"
@@ -318,14 +321,18 @@ install_stack_dolt() {
                     fi
 
                     if [[ -n "$url" ]] && [[ -n "$expected_sha256" ]]; then
-                        if verify_checksum "$url" "$expected_sha256" "$tool" | bash -s; then
+                        if verify_checksum "$url" "$expected_sha256" "$tool" | bash; then
                             install_success=true
                         else
                             log_error "stack.dolt: verify_checksum or installer execution failed"
                         fi
                     else
-                        [[ -z "$url" ]] && log_error "stack.dolt: KNOWN_INSTALLERS[$tool] not found"
-                        [[ -z "$expected_sha256" ]] && log_error "stack.dolt: checksum for '$tool' not found"
+                        if [[ -z "$url" ]]; then
+                            log_error "stack.dolt: KNOWN_INSTALLERS[$tool] not found"
+                        fi
+                        if [[ -z "$expected_sha256" ]]; then
+                            log_error "stack.dolt: checksum for '$tool' not found"
+                        fi
                     fi
                 else
                     log_error "stack.dolt: KNOWN_INSTALLERS array not available"
@@ -334,6 +341,7 @@ install_stack_dolt() {
                 log_error "stack.dolt: gtbi_security_init failed - check security.sh and checksums.yaml"
             fi
 
+            # Verified install is required - no fallback
             if [[ "$install_success" = "true" ]]; then
                 true
             else
@@ -346,10 +354,11 @@ install_stack_dolt() {
         fi
     fi
 
+    # Verify
     if [[ "${DRY_RUN:-false}" = "true" ]]; then
-        log_info "dry-run: verify: dolt version (target_user)"
+        log_info "dry-run: verify: dolt version (root)"
     else
-        if ! run_as_target_shell <<'INSTALL_STACK_DOLT'
+        if ! run_as_root_shell <<'INSTALL_STACK_DOLT'
 dolt version
 INSTALL_STACK_DOLT
         then
@@ -361,30 +370,29 @@ INSTALL_STACK_DOLT
     log_success "stack.dolt installed"
 }
 
-# gastownhall beads (bd) - Dolt-backed local-first issue tracker
+# gastownhall beads (bd) - Dolt-backed local-first issue tracker for AI agents
 install_stack_bd() {
     local module_id="stack.bd"
     gtbi_require_contract "module:${module_id}" || return 1
     log_step "Installing stack.bd"
 
     if [[ "${DRY_RUN:-false}" = "true" ]]; then
-        log_info "dry-run: install: bd binary download (target_user)"
+        log_info "dry-run: install: case \"\$(uname -m)\" in (target_user)"
     else
         if ! run_as_target_shell <<'INSTALL_STACK_BD'
 BD_VER="1.0.4"
-ARCH=$(uname -m)
-case "$ARCH" in
-  x86_64)        BD_SHA="643e602e27f666c8726abff0f22001e2b5883988fa960204bde20a3129d448a5" ;;
-  aarch64|arm64) BD_SHA="48cdf571cd8b64bae81da829c1309e402bc12e6a4cc6b87606dfc9220b7ece60" ;;
-  *) echo "Unsupported arch for beads (bd): $ARCH"; exit 1 ;;
+case "$(uname -m)" in
+  x86_64)  BD_ARCH="amd64"; BD_SHA="643e602e27f666c8726abff0f22001e2b5883988fa960204bde20a3129d448a5" ;;
+  aarch64|arm64) BD_ARCH="arm64"; BD_SHA="48cdf571cd8b64bae81da829c1309e402bc12e6a4cc6b87606dfc9220b7ece60" ;;
+  *) echo "Unsupported arch for beads (bd): $(uname -m)"; exit 1 ;;
 esac
 
-BD_URL="https://github.com/gastownhall/beads/releases/download/v${BD_VER}/beads_${BD_VER}_linux_${ARCH}.tar.gz"
+BD_URL="https://github.com/gastownhall/beads/releases/download/v${BD_VER}/beads_${BD_VER}_linux_${BD_ARCH}.tar.gz"
 TMP_FILE="$(mktemp "${TMPDIR:-/tmp}/gtbi_install.XXXXXX")"
 trap 'rm -f "$TMP_FILE"' EXIT
 
 curl -fsSL "$BD_URL" -o "$TMP_FILE"
-echo "$BD_SHA  $TMP_FILE" | sha256sum -c - || { echo "Checksum failed for bd"; exit 1; }
+echo "$BD_SHA  $TMP_FILE" | sha256sum -c - || { echo "Checksum failed for bd"; rm "$TMP_FILE"; exit 1; }
 
 TMP_DIR="$(mktemp -d "${TMPDIR:-/tmp}/gtbi_bd.XXXXXX")"
 trap 'rm -rf "$TMP_DIR" "$TMP_FILE"' EXIT
@@ -392,17 +400,18 @@ tar -xzf "$TMP_FILE" -C "$TMP_DIR"
 install -Dm755 "$TMP_DIR/bd" "$HOME/.local/bin/bd"
 INSTALL_STACK_BD
         then
-            log_error "stack.bd: install failed"
+            log_error "stack.bd: install command failed: case \"\$(uname -m)\" in"
             return 1
         fi
     fi
 
+    # Verify
     if [[ "${DRY_RUN:-false}" = "true" ]]; then
         log_info "dry-run: verify: bd --version (target_user)"
     else
-        if ! run_as_target_shell <<'INSTALL_STACK_BD_VERIFY'
+        if ! run_as_target_shell <<'INSTALL_STACK_BD'
 bd --version
-INSTALL_STACK_BD_VERIFY
+INSTALL_STACK_BD
         then
             log_error "stack.bd: verify failed: bd --version"
             return 1
@@ -411,9 +420,9 @@ INSTALL_STACK_BD_VERIFY
     if [[ "${DRY_RUN:-false}" = "true" ]]; then
         log_info "dry-run: verify (optional): bd stats 2>/dev/null (target_user)"
     else
-        if ! run_as_target_shell <<'INSTALL_STACK_BD_VERIFY2'
-bd stats 2>/dev/null || true
-INSTALL_STACK_BD_VERIFY2
+        if ! run_as_target_shell <<'INSTALL_STACK_BD'
+bd stats 2>/dev/null
+INSTALL_STACK_BD
         then
             log_warn "Optional verify failed: stack.bd"
         fi
@@ -422,7 +431,9 @@ INSTALL_STACK_BD_VERIFY2
     log_success "stack.bd installed"
 }
 
+# Install all stack modules
 install_stack() {
+    log_section "Installing stack modules"
     install_stack_dolt
     install_stack_bd
 }
