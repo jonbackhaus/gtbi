@@ -75,6 +75,9 @@ const VerifiedInstallerSchema = z
     args: z.array(z.string()).default([]),
     // Run installer in detached tmux session (prevents blocking for long-running services)
     run_in_tmux: z.boolean().default(false),
+    // Shell condition: if this command exits 0, skip the verified installer (treat as already done).
+    // Useful for idempotent installers that fail when the target already exists (e.g. oh-my-zsh).
+    skip_if: z.string().optional(),
   })
   .refine((installer) => installer.fallback_url === undefined, {
     path: ['fallback_url'],

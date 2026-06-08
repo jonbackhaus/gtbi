@@ -215,6 +215,7 @@ modules:
       tool: ohmyzsh
       runner: sh
       args: ["--", "--unattended", "--keep-zshrc"]
+      skip_if: "test -d ~/.oh-my-zsh"
     install:
       - |
         # Install Powerlevel10k
