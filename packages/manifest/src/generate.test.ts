@@ -300,6 +300,20 @@ describe('Generated verified installer args', () => {
     expect(stackContent).not.toContain('tmux new-session -d -s "$tmux_session"');
   });
 
+  test('stack.dolt verified installer pipes through run_as_root_shell (not bare bash)', () => {
+    const stackPath = resolve(GENERATED_DIR, 'install_stack.sh');
+    expect(existsSync(stackPath)).toBe(true);
+    const stackContent = readFileSync(stackPath, 'utf-8');
+
+    // Must use run_as_root_shell for sudo elevation, not bare bash
+    expect(stackContent).toContain(
+      'verify_checksum "$url" "$expected_sha256" "$tool" | run_as_root_shell'
+    );
+    expect(stackContent).not.toContain(
+      'verify_checksum "$url" "$expected_sha256" "$tool" | bash'
+    );
+  });
+
   test('stack.ru passes RU_NON_INTERACTIVE via env in generated installer', () => {
     const stackPath = resolve(GENERATED_DIR, 'install_stack.sh');
     expect(existsSync(stackPath)).toBe(true);

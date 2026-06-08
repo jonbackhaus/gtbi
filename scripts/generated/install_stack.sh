@@ -321,7 +321,7 @@ install_stack_dolt() {
                     fi
 
                     if [[ -n "$url" ]] && [[ -n "$expected_sha256" ]]; then
-                        if verify_checksum "$url" "$expected_sha256" "$tool" | bash; then
+                        if verify_checksum "$url" "$expected_sha256" "$tool" | run_as_root_shell; then
                             install_success=true
                         else
                             log_error "stack.dolt: verify_checksum or installer execution failed"
