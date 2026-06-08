@@ -32,7 +32,7 @@ export interface ManifestProvenanceMetadata {
 
 export const manifestProvenance = {
   gtbiVersion: "0.7.0",
-  manifestSha256: "72ba74c0d3e86e570f3a58f10613194f361fb3efe7d882e1510a2b53d0752b6d",
+  manifestSha256: "fa12542e016ea56a5419f3cea251c1e4dfcff8f79cc457325811ad60d34dcc18",
   checksumsYamlSha256: "50fb6d4a4683cbe82c55a05c48a91afd820d42b73d6cc00214d916eca522ab45",
 } as const satisfies ManifestProvenanceMetadata;
 
@@ -361,82 +361,6 @@ export const manifestModules: ManifestModuleMetadata[] = [
     tags: [
       "optional",
       "agent",
-    ],
-    enabledByDefault: false,
-    optional: true,
-  },
-  {
-    id: "tools.vault",
-    description: "HashiCorp Vault CLI",
-    category: "tools",
-    phase: 8,
-    dependencies: [
-      "base.system",
-    ],
-    tags: [
-      "optional",
-      "cloud",
-    ],
-    enabledByDefault: false,
-    optional: true,
-  },
-  {
-    id: "db.postgres18",
-    description: "PostgreSQL 18",
-    category: "db",
-    phase: 8,
-    dependencies: [
-      "base.system",
-    ],
-    tags: [
-      "optional",
-      "database",
-    ],
-    enabledByDefault: false,
-    optional: true,
-  },
-  {
-    id: "cloud.wrangler",
-    description: "Cloudflare Wrangler CLI",
-    category: "cloud",
-    phase: 8,
-    dependencies: [
-      "lang.bun",
-    ],
-    tags: [
-      "optional",
-      "cloud",
-    ],
-    enabledByDefault: false,
-    optional: true,
-  },
-  {
-    id: "cloud.supabase",
-    description: "Supabase CLI",
-    category: "cloud",
-    phase: 8,
-    dependencies: [
-      "base.system",
-      "base.filesystem",
-    ],
-    tags: [
-      "optional",
-      "cloud",
-    ],
-    enabledByDefault: false,
-    optional: true,
-  },
-  {
-    id: "cloud.vercel",
-    description: "Vercel CLI",
-    category: "cloud",
-    phase: 8,
-    dependencies: [
-      "lang.bun",
-    ],
-    tags: [
-      "optional",
-      "cloud",
     ],
     enabledByDefault: false,
     optional: true,

@@ -299,8 +299,6 @@ source "$GTBI_GENERATED_SCRIPT_DIR/install_tools.sh"
 source "$GTBI_GENERATED_SCRIPT_DIR/install_network.sh"
 source "$GTBI_GENERATED_SCRIPT_DIR/install_lang.sh"
 source "$GTBI_GENERATED_SCRIPT_DIR/install_agents.sh"
-source "$GTBI_GENERATED_SCRIPT_DIR/install_db.sh"
-source "$GTBI_GENERATED_SCRIPT_DIR/install_cloud.sh"
 source "$GTBI_GENERATED_SCRIPT_DIR/install_stack.sh"
 source "$GTBI_GENERATED_SCRIPT_DIR/install_gtbi.sh"
 
@@ -340,14 +338,6 @@ install_all() {
     install_agents_codex
     install_agents_gemini
     install_agents_opencode
-    log_section "Category: tools"
-    install_tools_vault
-    log_section "Category: db"
-    install_db_postgres18
-    log_section "Category: cloud"
-    install_cloud_wrangler
-    install_cloud_supabase
-    install_cloud_vercel
     log_section "Category: stack"
     install_stack_dolt
     install_stack_bd
