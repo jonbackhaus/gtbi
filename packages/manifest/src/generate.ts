@@ -1412,6 +1412,18 @@ function generateVerifiedInstallerSnippet(module: Module): string[] {
     );
   } else if (tool === 'fsfs') {
     lines.push(...fsfsVerifiedInstallAttemptLines);
+  } else if (vi.skip_if) {
+    // skip_if: if the condition exits 0, treat the tool as already installed and skip the
+    // verified installer entirely. Needed for idempotent installers (e.g. oh-my-zsh) that
+    // fail when their target directory already exists.
+    lines.push(
+      `# skip_if: already present — skip verified installer`,
+      `if ${vi.skip_if} 2>/dev/null; then`,
+      '    install_success=true',
+      'else',
+      ...indentLines(verifiedInstallAttemptLines, 4),
+      'fi',
+    );
   } else {
     lines.push(...verifiedInstallAttemptLines);
   }

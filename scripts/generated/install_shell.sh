@@ -338,41 +338,46 @@ install_shell_omz() {
             # Try security-verified install (no unverified fallback; fail closed)
             local install_success=false
 
-            if gtbi_security_init; then
-                local known_installers_decl=""
-                # Check if KNOWN_INSTALLERS is available as an associative array (declare -A)
-                known_installers_decl="$(declare -p KNOWN_INSTALLERS 2>/dev/null || true)"
-                if [[ "$known_installers_decl" == declare\ -A* ]]; then
-                    local tool="ohmyzsh"
-                    local url=""
-                    local expected_sha256=""
+            # skip_if: already present — skip verified installer
+            if test -d ~/.oh-my-zsh 2>/dev/null; then
+                install_success=true
+            else
+                if gtbi_security_init; then
+                    local known_installers_decl=""
+                    # Check if KNOWN_INSTALLERS is available as an associative array (declare -A)
+                    known_installers_decl="$(declare -p KNOWN_INSTALLERS 2>/dev/null || true)"
+                    if [[ "$known_installers_decl" == declare\ -A* ]]; then
+                        local tool="ohmyzsh"
+                        local url=""
+                        local expected_sha256=""
 
-                    # Safe access with explicit empty default
-                    url="${KNOWN_INSTALLERS[$tool]:-}"
-                    if ! expected_sha256="$(get_checksum "$tool")"; then
-                        log_error "shell.omz: get_checksum failed for tool '$tool'"
-                        expected_sha256=""
-                    fi
+                        # Safe access with explicit empty default
+                        url="${KNOWN_INSTALLERS[$tool]:-}"
+                        if ! expected_sha256="$(get_checksum "$tool")"; then
+                            log_error "shell.omz: get_checksum failed for tool '$tool'"
+                            expected_sha256=""
+                        fi
 
-                    if [[ -n "$url" ]] && [[ -n "$expected_sha256" ]]; then
-                        if verify_checksum "$url" "$expected_sha256" "$tool" | run_as_target_runner 'sh' '-s' '--' '--unattended' '--keep-zshrc'; then
-                            install_success=true
+                        if [[ -n "$url" ]] && [[ -n "$expected_sha256" ]]; then
+                            if verify_checksum "$url" "$expected_sha256" "$tool" | run_as_target_runner 'sh' '-s' '--' '--unattended' '--keep-zshrc'; then
+                                install_success=true
+                            else
+                                log_error "shell.omz: verify_checksum or installer execution failed"
+                            fi
                         else
-                            log_error "shell.omz: verify_checksum or installer execution failed"
+                            if [[ -z "$url" ]]; then
+                                log_error "shell.omz: KNOWN_INSTALLERS[$tool] not found"
+                            fi
+                            if [[ -z "$expected_sha256" ]]; then
+                                log_error "shell.omz: checksum for '$tool' not found"
+                            fi
                         fi
                     else
-                        if [[ -z "$url" ]]; then
-                            log_error "shell.omz: KNOWN_INSTALLERS[$tool] not found"
-                        fi
-                        if [[ -z "$expected_sha256" ]]; then
-                            log_error "shell.omz: checksum for '$tool' not found"
-                        fi
+                        log_error "shell.omz: KNOWN_INSTALLERS array not available"
                     fi
                 else
-                    log_error "shell.omz: KNOWN_INSTALLERS array not available"
+                    log_error "shell.omz: gtbi_security_init failed - check security.sh and checksums.yaml"
                 fi
-            else
-                log_error "shell.omz: gtbi_security_init failed - check security.sh and checksums.yaml"
             fi
 
             # Verified install is required - no fallback
