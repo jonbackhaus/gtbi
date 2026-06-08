@@ -364,13 +364,22 @@ INSTALL_CLI_MODERN
         fi
     fi
     if [[ "${DRY_RUN:-false}" = "true" ]]; then
-        log_info "dry-run: install: apt-get install -y dust || true (root)"
+        log_info "dry-run: install: trap 'rm -rf \"\$TMP_FILE\" \"\$TMP_DIR\"' EXIT (root)"
     else
         if ! run_as_root_shell <<'INSTALL_CLI_MODERN'
-apt-get install -y dust || true
+# dust (du-dust) — not in Ubuntu repos; install via GitHub binary release
+DUST_VER="1.1.2"
+DUST_ARCH="x86_64-unknown-linux-musl"
+DUST_URL="https://github.com/bootandy/dust/releases/download/v${DUST_VER}/dust-v${DUST_VER}-${DUST_ARCH}.tar.gz"
+TMP_FILE="$(mktemp "${TMPDIR:-/tmp}/gtbi_dust.XXXXXX")"
+TMP_DIR="$(mktemp -d "${TMPDIR:-/tmp}/gtbi_dust_dir.XXXXXX")"
+trap 'rm -rf "$TMP_FILE" "$TMP_DIR"' EXIT
+curl -fsSL "$DUST_URL" -o "$TMP_FILE" && \
+  tar -xzf "$TMP_FILE" -C "$TMP_DIR" && \
+  install -Dm755 "$TMP_DIR/dust-v${DUST_VER}-${DUST_ARCH}/dust" "$HOME/.local/bin/dust" || true
 INSTALL_CLI_MODERN
         then
-            log_error "cli.modern: install command failed: apt-get install -y dust || true"
+            log_error "cli.modern: install command failed: trap 'rm -rf \"\$TMP_FILE\" \"\$TMP_DIR\"' EXIT"
             return 1
         fi
     fi
@@ -386,13 +395,24 @@ INSTALL_CLI_MODERN
         fi
     fi
     if [[ "${DRY_RUN:-false}" = "true" ]]; then
-        log_info "dry-run: install: apt-get install -y docker.io docker-compose-plugin || true (root)"
+        log_info "dry-run: install: apt-get install -y docker.io || true (root)"
     else
         if ! run_as_root_shell <<'INSTALL_CLI_MODERN'
-apt-get install -y docker.io docker-compose-plugin || true
+apt-get install -y docker.io || true
 INSTALL_CLI_MODERN
         then
-            log_error "cli.modern: install command failed: apt-get install -y docker.io docker-compose-plugin || true"
+            log_error "cli.modern: install command failed: apt-get install -y docker.io || true"
+            return 1
+        fi
+    fi
+    if [[ "${DRY_RUN:-false}" = "true" ]]; then
+        log_info "dry-run: install: apt-get install -y docker-compose-plugin 2>/dev/null || true (root)"
+    else
+        if ! run_as_root_shell <<'INSTALL_CLI_MODERN'
+apt-get install -y docker-compose-plugin 2>/dev/null || true
+INSTALL_CLI_MODERN
+        then
+            log_error "cli.modern: install command failed: apt-get install -y docker-compose-plugin 2>/dev/null || true"
             return 1
         fi
     fi
