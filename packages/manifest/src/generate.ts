@@ -1180,8 +1180,11 @@ function generateVerifiedInstallerSnippet(module: Module): string[] {
     }
     
     execCmd = parts.join(' ');
+  } else if (module.run_as === 'root') {
+    // Root: pipe through run_as_root_shell for sudo elevation
+    execCmd = 'run_as_root_shell';
   } else {
-    // Default/root: run directly
+    // Current user: run directly
     execCmd = buildVerifiedInstallerPipe(module);
   }
 
