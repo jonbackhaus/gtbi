@@ -417,16 +417,6 @@ INSTALL_STACK_BD
             return 1
         fi
     fi
-    if [[ "${DRY_RUN:-false}" = "true" ]]; then
-        log_info "dry-run: verify (optional): bd stats 2>/dev/null (target_user)"
-    else
-        if ! run_as_target_shell <<'INSTALL_STACK_BD'
-bd stats 2>/dev/null
-INSTALL_STACK_BD
-        then
-            log_warn "Optional verify failed: stack.bd"
-        fi
-    fi
 
     log_success "stack.bd installed"
 }

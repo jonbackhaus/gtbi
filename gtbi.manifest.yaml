@@ -1305,7 +1305,6 @@ modules:
           install -Dm755 "$TMP_DIR/bd" "$HOME/.local/bin/bd"
     verify:
       - bd --version
-      - bd stats 2>/dev/null || true
 
   # ============================================================
   # PHASE 10: Finalization (onboard, doctor, verification)
