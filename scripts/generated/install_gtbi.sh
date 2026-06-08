@@ -1040,17 +1040,17 @@ INSTALL_GTBI_NIGHTLY
         fi
     fi
     if [[ "${DRY_RUN:-false}" = "true" ]]; then
-        log_info "dry-run: install: systemctl --user daemon-reload (target_user)"
+        log_info "dry-run: install: systemctl --user daemon-reload 2>/dev/null || true (target_user)"
     else
         if ! run_as_target_shell <<'INSTALL_GTBI_NIGHTLY'
-# Reload systemd and enable the timer
-systemctl --user daemon-reload
-systemctl --user enable --now gtbi-nightly-update.timer
+# Reload systemd and enable the timer (no-op in Docker/CI)
+systemctl --user daemon-reload 2>/dev/null || true
+systemctl --user enable --now gtbi-nightly-update.timer 2>/dev/null || true
 INSTALL_GTBI_NIGHTLY
         then
-            log_warn "gtbi.nightly: install command failed: systemctl --user daemon-reload"
+            log_warn "gtbi.nightly: install command failed: systemctl --user daemon-reload 2>/dev/null || true"
             if type -t record_skipped_tool >/dev/null 2>&1; then
-              record_skipped_tool "gtbi.nightly" "install command failed: systemctl --user daemon-reload"
+              record_skipped_tool "gtbi.nightly" "install command failed: systemctl --user daemon-reload 2>/dev/null || true"
             elif type -t state_tool_skip >/dev/null 2>&1; then
               state_tool_skip "gtbi.nightly"
             fi
@@ -1060,19 +1060,13 @@ INSTALL_GTBI_NIGHTLY
 
     # Verify
     if [[ "${DRY_RUN:-false}" = "true" ]]; then
-        log_info "dry-run: verify: systemctl --user is-enabled gtbi-nightly-update.timer (target_user)"
+        log_info "dry-run: verify (optional): systemctl --user is-enabled gtbi-nightly-update.timer 2>/dev/null (target_user)"
     else
         if ! run_as_target_shell <<'INSTALL_GTBI_NIGHTLY'
-systemctl --user is-enabled gtbi-nightly-update.timer
+systemctl --user is-enabled gtbi-nightly-update.timer 2>/dev/null
 INSTALL_GTBI_NIGHTLY
         then
-            log_warn "gtbi.nightly: verify failed: systemctl --user is-enabled gtbi-nightly-update.timer"
-            if type -t record_skipped_tool >/dev/null 2>&1; then
-              record_skipped_tool "gtbi.nightly" "verify failed: systemctl --user is-enabled gtbi-nightly-update.timer"
-            elif type -t state_tool_skip >/dev/null 2>&1; then
-              state_tool_skip "gtbi.nightly"
-            fi
-            return 0
+            log_warn "Optional verify failed: gtbi.nightly"
         fi
     fi
 

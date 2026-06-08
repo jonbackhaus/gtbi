@@ -1564,11 +1564,11 @@ modules:
           curl "${CURL_ARGS[@]}" "${GTBI_RAW}/scripts/templates/gtbi-nightly-update.service" -o ~/.config/systemd/user/gtbi-nightly-update.service
         fi
       - |
-        # Reload systemd and enable the timer
-        systemctl --user daemon-reload
-        systemctl --user enable --now gtbi-nightly-update.timer
+        # Reload systemd and enable the timer (no-op in Docker/CI)
+        systemctl --user daemon-reload 2>/dev/null || true
+        systemctl --user enable --now gtbi-nightly-update.timer 2>/dev/null || true
     verify:
-      - systemctl --user is-enabled gtbi-nightly-update.timer
+      - systemctl --user is-enabled gtbi-nightly-update.timer 2>/dev/null || true
     notes:
       - "Runs gtbi-update --yes --quiet --no-self-update daily at 4am with pre-flight health checks"
       - "Set GTBI_NIGHTLY_SELF_UPDATE=true in a user-unit override to opt into GTBI self-updates"

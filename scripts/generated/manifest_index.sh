@@ -6,7 +6,7 @@
 # ============================================================
 # Data-only manifest index. Safe to source.
 
-GTBI_MANIFEST_SHA256="19bae49fee6f76efabb6d483d4ca33b23ce80d11fe1cdebb5ed95b2a4ab5951e"
+GTBI_MANIFEST_SHA256="120892e30ff0b60426c55267f9d4584101c2a7142937a4900f8393c6ffbb481f"
 
 GTBI_MODULES_IN_ORDER=(
   "base.system"
