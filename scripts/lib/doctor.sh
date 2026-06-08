@@ -2040,8 +2040,6 @@ check_core_tools() {
     check_command "tool.strace" "strace" "strace" "sudo apt-get install -y strace"
     check_command "tool.lsof" "lsof" "lsof" "sudo apt-get install -y lsof"
     check_optional_command "tool.zstd" "zstd" "zstd" "sudo apt-get install -y zstd"
-    check_optional_command "tool.cosign" "cosign" "cosign" \
-        "COSIGN_VERSION=v2.4.1 && curl -fsSL https://github.com/sigstore/cosign/releases/download/\${COSIGN_VERSION}/cosign-linux-amd64 -o /tmp/cosign && sudo install /tmp/cosign /usr/local/bin/cosign"
     check_command "tool.dig" "dig (dnsutils)" "dig" "sudo apt-get install -y dnsutils"
     check_command "tool.nc" "nc (netcat-openbsd)" "nc" "sudo apt-get install -y netcat-openbsd"
     check_command "tool.sg" "ast-grep" "sg" "cargo install ast-grep --locked"
