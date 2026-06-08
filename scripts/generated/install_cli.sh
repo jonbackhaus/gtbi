@@ -364,22 +364,26 @@ INSTALL_CLI_MODERN
         fi
     fi
     if [[ "${DRY_RUN:-false}" = "true" ]]; then
-        log_info "dry-run: install: trap 'rm -f \"\$TMP_FILE\"' EXIT (root)"
+        log_info "dry-run: install: case \"\$(uname -m)\" in (root)"
     else
         if ! run_as_root_shell <<'INSTALL_CLI_MODERN'
 # dust (du-dust) — not in Ubuntu repos; install via GitHub binary release
 DUST_VER="1.1.2"
-DUST_SHA="88c1cbcd7629b42462b424f3cc248e4be226adfdbf613597235a01f663291b7d"
-DUST_URL="https://github.com/bootandy/dust/releases/download/v${DUST_VER}/dust-v${DUST_VER}-x86_64-unknown-linux-musl.tar.gz"
+case "$(uname -m)" in
+  x86_64)       DUST_ARCH="x86_64-unknown-linux-musl";   DUST_SHA="88c1cbcd7629b42462b424f3cc248e4be226adfdbf613597235a01f663291b7d" ;;
+  aarch64|arm64) DUST_ARCH="aarch64-unknown-linux-musl"; DUST_SHA="c9a5c9271edb836c5d035f7970de67ae3369c19fb0ff7222f44cd71fb2e4caf2" ;;
+  *) echo "Unsupported arch for dust: $(uname -m)"; exit 0 ;;
+esac
+DUST_URL="https://github.com/bootandy/dust/releases/download/v${DUST_VER}/dust-v${DUST_VER}-${DUST_ARCH}.tar.gz"
 TMP_FILE="$(mktemp "${TMPDIR:-/tmp}/gtbi_dust.XXXXXX")"
 trap 'rm -f "$TMP_FILE"' EXIT
 curl -fsSL "$DUST_URL" -o "$TMP_FILE"
 echo "$DUST_SHA $TMP_FILE" | sha256sum -c - || { echo "Checksum failed for dust"; rm "$TMP_FILE"; exit 1; }
-tar -xzf "$TMP_FILE" -C /usr/local/bin dust-v${DUST_VER}-x86_64-unknown-linux-musl/dust --strip-components=1
+tar -xzf "$TMP_FILE" -C /usr/local/bin dust-v${DUST_VER}-${DUST_ARCH}/dust --strip-components=1
 chmod +x /usr/local/bin/dust
 INSTALL_CLI_MODERN
         then
-            log_error "cli.modern: install command failed: trap 'rm -f \"\$TMP_FILE\"' EXIT"
+            log_error "cli.modern: install command failed: case \"\$(uname -m)\" in"
             return 1
         fi
     fi
