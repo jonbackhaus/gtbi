@@ -289,7 +289,7 @@ gtbi_security_init() {
 }
 
 # Category: tools
-# Modules: 6
+# Modules: 5
 
 # Lazygit (apt or binary fallback)
 install_tools_lazygit() {
@@ -589,69 +589,6 @@ INSTALL_TOOLS_AST_GREP
     log_success "tools.ast_grep installed"
 }
 
-# HashiCorp Vault CLI
-install_tools_vault() {
-    local module_id="tools.vault"
-    gtbi_require_contract "module:${module_id}" || return 1
-    log_step "Installing tools.vault"
-
-    if [[ "${DRY_RUN:-false}" = "true" ]]; then
-        log_info "dry-run: install: if curl --help all 2>/dev/null | grep -q -- '--proto'; then (root)"
-    else
-        if ! run_as_root_shell <<'INSTALL_TOOLS_VAULT'
-# HashiCorp doesn't always publish packages for newest Ubuntu versions.
-# Fall back to noble (24.04 LTS) if the current codename isn't supported.
-CODENAME=$(lsb_release -cs 2>/dev/null || echo "noble")
-
-CURL_ARGS=(-fsSL)
-CURL_CHECK_ARGS=(-fsSI)
-if curl --help all 2>/dev/null | grep -q -- '--proto'; then
-  CURL_ARGS=(--proto '=https' --proto-redir '=https' -fsSL)
-  CURL_CHECK_ARGS=(--proto '=https' --proto-redir '=https' -fsSI)
-fi
-
-if ! curl "${CURL_CHECK_ARGS[@]}" "https://apt.releases.hashicorp.com/dists/${CODENAME}/main/binary-amd64/Packages" >/dev/null 2>&1; then
-  CODENAME="noble"
-fi
-
-curl "${CURL_ARGS[@]}" https://apt.releases.hashicorp.com/gpg \
-  | gpg --batch --yes --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
-echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com ${CODENAME} main" \
-  > /etc/apt/sources.list.d/hashicorp.list
-apt-get update && apt-get install -y vault
-INSTALL_TOOLS_VAULT
-        then
-            log_warn "tools.vault: install command failed: if curl --help all 2>/dev/null | grep -q -- '--proto'; then"
-            if type -t record_skipped_tool >/dev/null 2>&1; then
-              record_skipped_tool "tools.vault" "install command failed: if curl --help all 2>/dev/null | grep -q -- '--proto'; then"
-            elif type -t state_tool_skip >/dev/null 2>&1; then
-              state_tool_skip "tools.vault"
-            fi
-            return 0
-        fi
-    fi
-
-    # Verify
-    if [[ "${DRY_RUN:-false}" = "true" ]]; then
-        log_info "dry-run: verify: vault --version (root)"
-    else
-        if ! run_as_root_shell <<'INSTALL_TOOLS_VAULT'
-vault --version
-INSTALL_TOOLS_VAULT
-        then
-            log_warn "tools.vault: verify failed: vault --version"
-            if type -t record_skipped_tool >/dev/null 2>&1; then
-              record_skipped_tool "tools.vault" "verify failed: vault --version"
-            elif type -t state_tool_skip >/dev/null 2>&1; then
-              state_tool_skip "tools.vault"
-            fi
-            return 0
-        fi
-    fi
-
-    log_success "tools.vault installed"
-}
-
 # Install all tools modules
 install_tools() {
     log_section "Installing tools modules"
@@ -660,7 +597,6 @@ install_tools() {
     install_tools_atuin
     install_tools_zoxide
     install_tools_ast_grep
-    install_tools_vault
 }
 
 # Run if executed directly

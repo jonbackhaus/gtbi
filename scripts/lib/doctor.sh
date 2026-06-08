@@ -2168,12 +2168,6 @@ check_cloud() {
 
     local doctor_ci="${GTBI_DOCTOR_CI:-false}"
 
-    check_optional_command "cloud.vault" "Vault" "vault"
-    check_optional_command "cloud.postgres" "PostgreSQL" "psql"
-    check_optional_command "cloud.wrangler" "Wrangler" "wrangler" "bun install -g --trust wrangler@latest"
-    check_optional_command "cloud.supabase" "Supabase CLI" "supabase" "gtbi update --cloud-only --force"
-    check_optional_command "cloud.vercel" "Vercel CLI" "vercel" "bun install -g --trust vercel@latest"
-
     # Tailscale VPN (bt5)
     local tailscale_bin=""
     tailscale_bin="$(doctor_binary_path tailscale 2>/dev/null || true)"
@@ -2744,11 +2738,10 @@ _is_bespoke_covered() {
         # check_core_tools  (languages)
         lang.bun|lang.uv|lang.rust|lang.rust.*|lang.go) return 0 ;;
         # check_shell / check_core_tools  (individual tools)
-        tools.atuin|tools.zoxide|tools.ast_grep|tools.vault) return 0 ;;
+        tools.atuin|tools.zoxide|tools.ast_grep) return 0 ;;
         # check_agents
         agents|agents.*) return 0 ;;
-        # check_cloud / check_ssh
-        cloud.wrangler|cloud.supabase|cloud.vercel) return 0 ;;
+        # check_cloud (network)
         network.tailscale|network.tailscale.*|network.ssh_keepalive|network.ssh_keepalive.*) return 0 ;;
         # check_stack  (individual stack entries)
         stack.ntm|stack.slb|stack.mcp_agent_mail|stack.mcp_agent_mail.*) return 0 ;;
