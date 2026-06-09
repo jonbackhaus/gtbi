@@ -202,7 +202,7 @@ jobs:
         if: steps.config.outputs.enabled == 'true' && steps.config.outputs.backend == 'qemu'
         run: |
           if [[ ! -e /dev/kvm ]]; then
-            echo "::error::QEMU backend requires /dev/kvm. Set repository variable GTBI_FACTORY_RUNNER, workflow input runner, or client_payload.runner to a KVM-capable larger/self-hosted runner; otherwise use backend=real-host."
+            echo "::error::QEMU backend requires /dev/kvm. Set GTBI_FACTORY_RUNNER, workflow input runner, or client_payload.runner to a KVM-capable runner; otherwise use backend=real-host."
             exit 1
           fi
           if [[ ! -r /dev/kvm || ! -w /dev/kvm ]]; then

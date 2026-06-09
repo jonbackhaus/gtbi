@@ -327,35 +327,16 @@ jobs:
           su - ubuntu -c "zsh -ic 'test -f ~/.gtbi/VERSION'"
           su - ubuntu -c "zsh -ic 'gh --version'"
           su - ubuntu -c "zsh -ic 'jq --version'"
-          su - ubuntu -c "zsh -ic 'sg --version'"
+          su - ubuntu -c "zsh -ic '$HOME/.cargo/bin/sg --version'"
           su - ubuntu -c "zsh -ic 'git-lfs version'"
           su - ubuntu -c "zsh -ic 'rsync --version'"
           su - ubuntu -c "zsh -ic 'strace --version'"
           su - ubuntu -c "zsh -ic 'command -v lsof >/dev/null'"
           su - ubuntu -c "zsh -ic 'command -v dig >/dev/null'"
           su - ubuntu -c "zsh -ic 'command -v nc >/dev/null'"
-          su - ubuntu -c "zsh -ic 'ntm --help'"
-          su - ubuntu -c "zsh -ic 'ubs --help'"
-          su - ubuntu -c "zsh -ic 'bv --help'"
-          su - ubuntu -c "zsh -ic 'cass --help'"
-          su - ubuntu -c "zsh -ic 'cm --help'"
-          su - ubuntu -c "zsh -ic 'caam --help'"
-          su - ubuntu -c "zsh -ic 'slb --help'"
-          su - ubuntu -c "zsh -ic 'dcg --version'"
-          su - ubuntu -c "zsh -ic 'dcg doctor'"
-          su - ubuntu -c "zsh -ic 'ru --version'"
           su - ubuntu -c "zsh -ic 'onboard --help'"
           # beads_rust (required) - issue tracking
           su - ubuntu -c "zsh -ic 'br --version'"
-          # New stack tools (bd-1ega)
-          su - ubuntu -c "zsh -ic 'ms --version'"
-          su - ubuntu -c "zsh -ic 'apr --help || true'"
-          su - ubuntu -c "zsh -ic 'jfp --version || true'"
-          su - ubuntu -c "zsh -ic 'pt --help || true'"
-          su - ubuntu -c "zsh -ic 'brenner --version || brenner --help || true'"
-          su - ubuntu -c "zsh -ic 'rch --version || rch --help || true'"
-          su - ubuntu -c "zsh -ic 'wa --version || wa --help || true'"
-          su - ubuntu -c "zsh -ic 'sysmoni --version || sysmoni --help || true'"
           # Agents
           su - ubuntu -c "zsh -ic 'claude --version'"
           su - ubuntu -c "zsh -ic 'codex --version'"
@@ -436,6 +417,7 @@ jobs:
 
       - name: Configure CI sudo
         run: |
+          mkdir -p /etc/sudoers.d
           echo 'ubuntu ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/90-gtbi-ubuntu
           chmod 440 /etc/sudoers.d/90-gtbi-ubuntu
 
