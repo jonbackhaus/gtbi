@@ -118,6 +118,12 @@ bd close <id>         # Complete work
 - **Worktree cleanup**: Remove worktrees after merging — `git worktree remove <path> && git branch -d <branch>`; or `git worktree prune` to clean up stale entries
 - **Commit often**: Small, atomic commits are easier to bisect and revert; don't batch unrelated changes
 - **Push when complete**: Work is not done until `git push` succeeds (see Session Completion above)
+- **PRs for non-trivial changes**: Any code or script change → open a PR. Docs/CLAUDE.md-only edits may go direct to `main`.
+- **Auto-merge**: After opening a PR, enable auto-merge so it merges when CI passes:
+  ```bash
+  gh pr create --title "..." --body "..."
+  gh pr merge --auto --squash   # auto-merges when all CI checks pass
+  ```
 
 ```bash
 # Start work
@@ -129,6 +135,10 @@ git worktree add /tmp/gtbi-<topic> -b fix/<topic>-agent
 # Commit often, push at end
 git add <files> && git commit -m "..."
 git push -u origin fix/<topic>
+
+# Open PR and auto-merge when CI passes
+gh pr create --title "..." --body "..."
+gh pr merge --auto --squash
 ```
 
 ## Build & Test
