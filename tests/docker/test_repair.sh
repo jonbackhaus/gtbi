@@ -105,30 +105,6 @@ else
     echo "  [skip] GTBI sourcing not present in .zshrc"
 fi
 
-# D: Remove the am symlink (mcp_agent_mail)
-# Fixes: symlink.am via fix_symlink_create()
-log "  Corruption D: removing am symlink"
-if [[ -x /home/ubuntu/mcp_agent_mail/am ]]; then
-    rm -f /home/ubuntu/.local/bin/am
-    CORRUPTED_CHECK_IDS+=("symlink.am")
-    echo "  [ok] am symlink removed"
-else
-    echo "  [skip] mcp_agent_mail/am not installed"
-fi
-
-# E: Remove DCG hook from Claude settings.json
-# Fixes: stack.dcg via fix_dcg_hook()
-log "  Corruption E: removing DCG hook from claude settings.json"
-CLAUDE_SETTINGS="/home/ubuntu/.claude/settings.json"
-if [[ -f "$CLAUDE_SETTINGS" ]] && jq -e '.hooks' "$CLAUDE_SETTINGS" >/dev/null 2>&1; then
-    jq 'del(.hooks)' "$CLAUDE_SETTINGS" > "${CLAUDE_SETTINGS}.tmp"
-    mv "${CLAUDE_SETTINGS}.tmp" "$CLAUDE_SETTINGS"
-    chown ubuntu:ubuntu "$CLAUDE_SETTINGS"
-    CORRUPTED_CHECK_IDS+=("stack.dcg")
-    echo "  [ok] DCG hooks removed from settings.json"
-else
-    echo "  [skip] Claude settings.json not present or no hooks key"
-fi
 
 if [[ ${#CORRUPTED_CHECK_IDS[@]} -eq 0 ]]; then
     fail "No corruptions were applied — cannot validate repair"

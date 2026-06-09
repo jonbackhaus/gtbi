@@ -1130,19 +1130,6 @@ _check_agents() {
     fi
 }
 
-# Check 7: NTM command works
-_check_ntm() {
-    local ntm_bin=""
-    ntm_bin="$(_smoke_binary_path "ntm" 2>/dev/null || true)"
-    if [[ -n "$ntm_bin" ]] && "$ntm_bin" --help >/dev/null 2>&1; then
-        _smoke_pass "NTM: installed"
-        return 0
-    else
-        _smoke_fail "NTM: not found" "Re-run: curl -fsSL https://agent-flywheel.com/install | bash -s -- --yes --force-reinstall --only stack.ntm"
-        return 1
-    fi
-}
-
 # Check 8: Onboard command exists
 _check_onboard() {
     if _smoke_binary_exists "onboard"; then
@@ -1159,35 +1146,7 @@ _check_onboard() {
 # ============================================================
 
 # Check: Agent Mail can respond
-_check_agent_mail() {
-    if _smoke_system_curl -fsS --max-time 5 http://127.0.0.1:8765/health/liveness &>/dev/null; then
-        _smoke_info "Agent Mail: running"
-    else
-        _smoke_warn "Agent Mail: not running" "re-run GTBI update/install to rewrite agent-mail.service, then run 'systemctl --user enable --now agent-mail.service'"
-    fi
-}
-
 # Check: Stack tools respond to --help
-_check_stack_tools() {
-    local stack_tools=("slb" "ubs" "bv" "cass" "cm" "caam")
-    local found=()
-    local missing=()
-
-    for tool in "${stack_tools[@]}"; do
-        if _smoke_binary_exists "$tool"; then
-            found+=("$tool")
-        else
-            missing+=("$tool")
-        fi
-    done
-
-    if [[ ${#missing[@]} -eq 0 ]]; then
-        _smoke_info "Stack tools: all installed"
-    else
-        _smoke_warn "Stack tools missing: ${missing[*]}" "Some tools may need manual install"
-    fi
-}
-
 # Check: PostgreSQL running
 _check_postgres() {
     if systemctl is-active --quiet postgresql 2>/dev/null; then
@@ -1231,15 +1190,12 @@ run_smoke_test() {
     _check_workspace
     _check_languages
     _check_agents
-    _check_ntm
     _check_onboard
 
     echo ""
     echo "Non-Critical Checks:"
 
     # Run non-critical checks
-    _check_agent_mail
-    _check_stack_tools
     _check_postgres
 
     # Calculate duration

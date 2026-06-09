@@ -78,7 +78,7 @@ write_fixture_source() {
     local name="$1"
     local mode="${2:-valid}"
     local source_root="$ARTIFACT_DIR/$name/source"
-    local artifact_file="$ARTIFACT_DIR/$name/rch-install.sh"
+    local artifact_file="$ARTIFACT_DIR/$name/dolt-install.sh"
     local artifact_sha=""
     local artifact_url=""
 
@@ -87,9 +87,9 @@ write_fixture_source() {
     printf '# fixture lib\n' > "$source_root/scripts/lib/fixture.sh"
     printf '# fixture generated\n' > "$source_root/scripts/generated/manifest_index.sh"
     printf '# fixture gtbi config\n' > "$source_root/gtbi/zsh/gtbi.zshrc"
-    printf '#!/usr/bin/env bash\nprintf "rch fixture installer\\n"\n' > "$artifact_file"
+    printf '#!/usr/bin/env bash\nprintf "dolt fixture installer\\n"\n' > "$artifact_file"
     artifact_sha="$(sha256sum "$artifact_file" | awk '{print $1}')"
-    artifact_url="https://fixture.test/$name/rch-install.sh"
+    artifact_url="https://fixture.test/$name/dolt-install.sh"
 
     case "$mode" in
         file-url)
@@ -118,24 +118,24 @@ modules:
     install: []
     verify: []
 
-  - id: stack.rch
-    description: Remote compilation helper
+  - id: stack.dolt
+    description: Dolt distributed database
     category: stack
     phase: 9
     run_as: target_user
     optional: false
     enabled_by_default: true
     verified_installer:
-      tool: rch
+      tool: dolt
       runner: bash
-      args: ["--easy-mode"]
+      args: ["--version"]
     install: []
     verify: []
 YAML
 
     cat > "$source_root/checksums.yaml" <<YAML
 installers:
-  rch:
+  dolt:
     url: "$artifact_url"
     sha256: "$artifact_sha"
 YAML
@@ -163,7 +163,7 @@ test_dry_run_json_uses_manifest_and_checksums() {
     local source_root output status
     source_root="$(write_fixture_source dry-run valid)"
 
-    output="$(run_pack dry-run build --dry-run --json --source-root "$source_root" --module stack.rch)"
+    output="$(run_pack dry-run build --dry-run --json --source-root "$source_root" --module stack.dolt)"
     status="$(cat "$ARTIFACT_DIR/dry-run.exit")"
 
     [[ "$status" -eq 0 ]] || return 1
@@ -173,8 +173,8 @@ test_dry_run_json_uses_manifest_and_checksums() {
       .mode == "dry-run" and
       .pack.schema == "gtbi.offline-artifact-pack.v1" and
       .pack.downloadTimeoutSeconds == 60 and
-      .pack.modules[0].moduleId == "stack.rch" and
-      .pack.modules[0].verifiedInstallerKey == "rch" and
+      .pack.modules[0].moduleId == "stack.dolt" and
+      .pack.modules[0].verifiedInstallerKey == "dolt" and
       (.pack.modules[0].sourceUrl | startswith("https://"))
     ' <<<"$output" >/dev/null || return 1
 
@@ -185,7 +185,7 @@ test_non_https_source_is_refused() {
     local source_root output status
     source_root="$(write_fixture_source non-https file-url)"
 
-    output="$(run_pack non-https build --dry-run --json --source-root "$source_root" --module stack.rch)"
+    output="$(run_pack non-https build --dry-run --json --source-root "$source_root" --module stack.dolt)"
     status="$(cat "$ARTIFACT_DIR/non-https.exit")"
 
     [[ "$status" -eq 1 ]] || return 1
@@ -202,10 +202,10 @@ test_build_writes_manifest_and_verified_artifact() {
     source_root="$(write_fixture_source build valid)"
     output_dir="$ARTIFACT_DIR/build/output"
 
-    output="$(run_pack build build --json --source-root "$source_root" --output "$output_dir" --module stack.rch --expires-days 7)"
+    output="$(run_pack build build --json --source-root "$source_root" --output "$output_dir" --module stack.dolt --expires-days 7)"
     status="$(cat "$ARTIFACT_DIR/build.exit")"
     manifest="$output_dir/gtbi-offline-pack/manifest.json"
-    artifact_path="$output_dir/gtbi-offline-pack/artifacts/stack.rch/rch-install.sh"
+    artifact_path="$output_dir/gtbi-offline-pack/artifacts/stack.dolt/dolt-install.sh"
     expected_sha="$(sha256sum "$artifact_path" | awk '{print $1}')"
 
     [[ "$status" -eq 0 ]] || return 1
@@ -218,10 +218,10 @@ test_build_writes_manifest_and_verified_artifact() {
       .schema == "gtbi.offline-artifact-pack.v1" and
       .packMode == "complete" and
       .policy.verifiedInstallerPolicy == "must_match_checksums_yaml" and
-      .modules[0].id == "stack.rch" and
-      .modules[0].verifiedInstallerKey == "rch" and
+      .modules[0].id == "stack.dolt" and
+      .modules[0].verifiedInstallerKey == "dolt" and
       .artifacts[0].sha256 == $expectedSha and
-      .artifacts[0].path == "artifacts/stack.rch/rch-install.sh" and
+      .artifacts[0].path == "artifacts/stack.dolt/dolt-install.sh" and
       .failures == []
     ' "$manifest" >/dev/null || return 1
     jq -e '.status == "pass" and .output.packMode == "complete"' <<<"$output" >/dev/null || return 1
@@ -247,14 +247,14 @@ EOF
         chmod +x "$ARTIFACT_DIR/bin/$tool"
     done
 
-    output="$(run_pack trusted-tools build --json --source-root "$source_root" --output "$output_dir" --module stack.rch)"
+    output="$(run_pack trusted-tools build --json --source-root "$source_root" --output "$output_dir" --module stack.dolt)"
     status="$(cat "$ARTIFACT_DIR/trusted-tools.exit")"
 
     [[ "$status" -eq 0 ]] || return 1
     for marker in "${poison_markers[@]}"; do
         [[ ! -e "$marker" ]] || return 1
     done
-    jq -e '.status == "pass" and .pack.artifacts[0].verifiedInstallerKey == "rch"' <<<"$output" >/dev/null || return 1
+    jq -e '.status == "pass" and .pack.artifacts[0].verifiedInstallerKey == "dolt"' <<<"$output" >/dev/null || return 1
 
     pass "build_ignores_path_poisoned_pack_tools"
 }
@@ -264,7 +264,7 @@ test_checksum_mismatch_fails_closed() {
     source_root="$(write_fixture_source mismatch mismatch)"
     output_dir="$ARTIFACT_DIR/mismatch/output"
 
-    output="$(run_pack mismatch build --json --source-root "$source_root" --output "$output_dir" --module stack.rch)"
+    output="$(run_pack mismatch build --json --source-root "$source_root" --output "$output_dir" --module stack.dolt)"
     status="$(cat "$ARTIFACT_DIR/mismatch.exit")"
 
     [[ "$status" -eq 1 ]] || return 1
@@ -314,7 +314,7 @@ test_best_effort_records_download_failure() {
     source_root="$(write_fixture_source best-effort missing)"
     output_dir="$ARTIFACT_DIR/best-effort/output"
 
-    output="$(run_pack best-effort build --json --best-effort --source-root "$source_root" --output "$output_dir" --module stack.rch)"
+    output="$(run_pack best-effort build --json --best-effort --source-root "$source_root" --output "$output_dir" --module stack.dolt)"
     status="$(cat "$ARTIFACT_DIR/best-effort.exit")"
     manifest="$output_dir/gtbi-offline-pack/manifest.json"
 
@@ -338,12 +338,12 @@ test_timeout_option_is_validated_and_recorded() {
     local source_root output status
     source_root="$(write_fixture_source timeout valid)"
 
-    output="$(run_pack timeout-plan build --dry-run --json --source-root "$source_root" --module stack.rch --timeout 1)"
+    output="$(run_pack timeout-plan build --dry-run --json --source-root "$source_root" --module stack.dolt --timeout 1)"
     status="$(cat "$ARTIFACT_DIR/timeout-plan.exit")"
     [[ "$status" -eq 0 ]] || return 1
     jq -e '.pack.downloadTimeoutSeconds == 1' <<<"$output" >/dev/null || return 1
 
-    output="$(run_pack timeout-invalid build --dry-run --json --source-root "$source_root" --module stack.rch --timeout 0)"
+    output="$(run_pack timeout-invalid build --dry-run --json --source-root "$source_root" --module stack.dolt --timeout 0)"
     status="$(cat "$ARTIFACT_DIR/timeout-invalid.exit")"
     [[ "$status" -eq 2 ]] || return 1
     [[ "$output" == *"--timeout must be a positive integer"* ]] || return 1

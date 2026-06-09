@@ -203,7 +203,7 @@ EOF
     GTBI_MANIFEST_INDEX_LOADED=true
     source_lib "install_helpers"
 
-    ONLY_MODULES=("stack.ntm")
+    ONLY_MODULES=("stack.dolt")
     ONLY_PHASES=()
     SKIP_MODULES=()
     NO_DEPS=false
@@ -220,8 +220,8 @@ EOF
         echo "cli.modern missing from effective plan"
         return 1
     }
-    [[ " ${GTBI_EFFECTIVE_PLAN[*]} " == *" stack.ntm "* ]] || {
-        echo "stack.ntm missing from effective plan"
+    [[ " ${GTBI_EFFECTIVE_PLAN[*]} " == * stack.dolt * ]] || {
+        echo "stack.dolt missing from effective plan"
         return 1
     }
 
@@ -255,8 +255,8 @@ EOF
         echo "gtbi_resolve_selection failed"
         return 1
     }
-    [[ " ${GTBI_EFFECTIVE_PLAN[*]} " == *" stack.ntm "* ]] || {
-        echo "stack.ntm missing from effective plan"
+    [[ " ${GTBI_EFFECTIVE_PLAN[*]} " == * stack.dolt * ]] || {
+        echo "stack.dolt missing from effective plan"
         return 1
     }
     [[ " ${GTBI_EFFECTIVE_PLAN[*]} " == *" lang.bun "* ]] || {
@@ -290,7 +290,7 @@ EOF
     GTBI_MANIFEST_INDEX_LOADED=true
     source_lib "install_helpers"
 
-    ONLY_MODULES=("stack.ntm")
+    ONLY_MODULES=("stack.dolt")
     ONLY_PHASES=()
     SKIP_MODULES=()
     NO_DEPS=false

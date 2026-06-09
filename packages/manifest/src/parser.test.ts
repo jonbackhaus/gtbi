@@ -708,23 +708,23 @@ defaults:
   workspace_root: /data
   mode: vibe
 modules:
-  - id: stack.rch
+  - id: stack.dolt
     description: Remote Compilation Helper
     install: []
     verified_installer:
-      tool: rch
+      tool: dolt
       url: https://example.com/custom-install.sh
       runner: bash
     verify:
-      - rch --version
+      - dolt --version
 `;
     const parseResult = parseManifestString(yaml);
     expect(parseResult.success).toBe(true);
     if (!parseResult.success || !parseResult.data) return;
 
     const validationErrors = validateVerifiedInstallerChecksums(parseResult.data, {
-      rch: {
-        url: 'https://raw.githubusercontent.com/Dicklesworthstone/remote_compilation_helper/main/install.sh',
+      dolt: {
+        url: 'https://github.com/dolthub/dolt/releases/latest/download/install.sh',
         sha256: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
       },
     });
@@ -743,23 +743,23 @@ defaults:
   workspace_root: /data
   mode: vibe
 modules:
-  - id: stack.rch
+  - id: stack.dolt
     description: Remote Compilation Helper
     install: []
     verified_installer:
-      tool: rch
-      url: https://raw.githubusercontent.com/Dicklesworthstone/remote_compilation_helper/main/install.sh
+      tool: dolt
+      url: https://github.com/dolthub/dolt/releases/latest/download/install.sh
       runner: bash
     verify:
-      - rch --version
+      - dolt --version
 `;
     const parseResult = parseManifestString(yaml);
     expect(parseResult.success).toBe(true);
     if (!parseResult.success || !parseResult.data) return;
 
     const validationErrors = validateVerifiedInstallerChecksums(parseResult.data, {
-      rch: {
-        url: 'https://raw.githubusercontent.com/Dicklesworthstone/remote_compilation_helper/main/install.sh',
+      dolt: {
+        url: 'https://github.com/dolthub/dolt/releases/latest/download/install.sh',
         sha256: 'not-a-real-sha',
       },
     });

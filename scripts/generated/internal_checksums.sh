@@ -8,11 +8,11 @@
 # Used by check-manifest-drift.sh to detect unauthorized changes.
 
 declare -gA GTBI_INTERNAL_CHECKSUMS=(
-  [scripts/lib/security.sh]="fe94da91b28a0f612ec3a7153905bb6e37cad86efbef53848f9018697b447070"
+  [scripts/lib/security.sh]="1b4fe173e7a8e476b6c82335c1878b44659a6c96029e79f2c9028f982cab0925"
   [scripts/lib/agents.sh]="95fe25d4f5a668e34a335a27785099ccec7388b2af7de36bb042d34498ce9e56"
-  [scripts/lib/update.sh]="0ca465e1b54a4ad76f9212a88f1027320f26b0c4025ac0fffab83a79d9dc747f"
-  [scripts/lib/doctor.sh]="80b9952dbe33b179521c10f6048da3e96f900d87723ebb66ab8bd6050d0f47c6"
-  [scripts/lib/doctor_fix.sh]="7688087748965c1200b7c6e7ee5015d60b1613ba717952cef38a50ad7633680d"
+  [scripts/lib/update.sh]="56aabf8e971bd19a76381404f4dc83aeec68f7b7ff858b614536f2376df9590f"
+  [scripts/lib/doctor.sh]="85e20c3c3ac306ea151a0979731f1ee09ce54936304e30a8e0bd7b504c3ec730"
+  [scripts/lib/doctor_fix.sh]="b76a2b4537164a89de9a0e618f14cfaaa795e04c3d8df566d204371a5aecf29f"
   [scripts/lib/offline_artifact_pack.sh]="2bf6919d38ea9e9f558abb5d01b82b3d032bace4d16a08f1824d678f53ebd505"
   [scripts/lib/autofix.sh]="0e31484327393b76a2938cf400001c1411275652b4673500f3d026ec1230399f"
   [scripts/lib/install_helpers.sh]="29acfa048d7f97de34b684839e92bbad487d02e5147fb229a657164ece9937af"

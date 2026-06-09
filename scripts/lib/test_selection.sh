@@ -200,26 +200,23 @@ test_unknown_skip_error() {
 test_plan_order() {
     local name="Plan follows manifest order (deps before dependents)"
     reset_selection
-    ONLY_MODULES=("stack.ultimate_bug_scanner")  # deps: lang.bun, lang.uv, tools.ast_grep, lang.rust, base.system
+    ONLY_MODULES=("agents.codex")  # deps: lang.bun -> base.system
 
     if gtbi_resolve_selection; then
         # Find positions in plan
-        local base_pos=-1 bun_pos=-1 rust_pos=-1 ast_pos=-1 ubs_pos=-1
+        local base_pos=-1 bun_pos=-1 codex_pos=-1
         local i=0
         for module_id in "${GTBI_EFFECTIVE_PLAN[@]}"; do
             case "$module_id" in
                 "base.system") base_pos=$i ;;
                 "lang.bun") bun_pos=$i ;;
-                "lang.rust") rust_pos=$i ;;
-                "tools.ast_grep") ast_pos=$i ;;
-                "stack.ultimate_bug_scanner") ubs_pos=$i ;;
+                "agents.codex") codex_pos=$i ;;
             esac
             ((++i))  # Use ++i to avoid exit on zero under set -e
         done
 
-        # Verify order: base < bun < rust < ast_grep < ubs
-        if [[ $base_pos -lt $bun_pos && $bun_pos -lt $ubs_pos &&
-              $base_pos -lt $rust_pos && $rust_pos -lt $ast_pos && $ast_pos -lt $ubs_pos ]]; then
+        # Verify order: base < bun < codex
+        if [[ $base_pos -lt $bun_pos && $bun_pos -lt $codex_pos ]]; then
             test_pass "$name"
             return
         fi
@@ -382,7 +379,7 @@ test_feature_flag_default_unmigrated() {
     # shellcheck disable=SC1090
     source "$SCRIPT_DIR/install_helpers.sh"
 
-    if ! gtbi_use_generated_for_category "lang"; then
+    if ! gtbi_use_generated_for_category "legacy_only"; then
         test_pass "$name"
     else
         test_fail "$name" "Expected legacy for unmigrated category"
