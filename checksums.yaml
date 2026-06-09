@@ -1,4 +1,4 @@
-# checksums.yaml - Updated for gtbi (Gastown Batteries Included)
+# checksums.yaml - Auto-generated 2026-06-09T16:45:16+00:00
 # Run: ./scripts/lib/security.sh --update-checksums
 
 installers:
@@ -13,10 +13,6 @@ installers:
   claude:
     url: "https://claude.ai/install.sh"
     sha256: "005ec1a937f32dfbb74f9e810287bcb12cba2d5cae4c9277aa8c6364adbf1787"
-
-  dolt:
-    url: "https://github.com/dolthub/dolt/releases/latest/download/install.sh"
-    sha256: "1141362353ea2248061bda8a569b97001b82279d5a7cb9075d3799c2890b0108"
 
   gemini_patch:
     url: "https://raw.githubusercontent.com/Dicklesworthstone/misc_coding_agent_tips_and_scripts/main/fix-gemini-cli-ebadf-crash.sh"
