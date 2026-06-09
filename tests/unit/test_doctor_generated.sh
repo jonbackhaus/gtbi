@@ -715,39 +715,6 @@ test_generated_target_home_fallbacks_are_dynamic() {
     fi
 }
 
-test_meta_skill_arm64_linux_guidance() {
-    harness_section "Test: meta_skill ARM64 Linux guidance is specific"
-
-    local doctor_file arm64_branch
-    doctor_file="$REPO_ROOT/scripts/lib/doctor.sh"
-    arm64_branch="$(sed -n '/aarch64-Linux|arm64-Linux)/,/;;/p' "$doctor_file")"
-
-    if [[ -z "$arm64_branch" ]]; then
-        harness_fail "meta_skill ARM64 Linux branch is missing from doctor.sh"
-        return 1
-    fi
-
-    if echo "$arm64_branch" | grep -q 'ARM64 Linux binary not yet available (see https://github.com/Dicklesworthstone/meta_skill/issues/1)'; then
-        harness_pass "meta_skill ARM64 Linux warning includes the upstream issue link"
-    else
-        harness_fail "meta_skill ARM64 Linux warning is missing the specific upstream guidance"
-        harness_capture_output "meta_skill_arm64_branch" "$arm64_branch"
-    fi
-
-    if echo "$arm64_branch" | grep -q 'Build from source: cargo install --git https://github.com/Dicklesworthstone/meta_skill --force'; then
-        harness_pass "meta_skill ARM64 Linux fix uses the source-build fallback"
-    else
-        harness_fail "meta_skill ARM64 Linux fix hint is incorrect"
-        harness_capture_output "meta_skill_arm64_branch" "$arm64_branch"
-    fi
-
-    if echo "$arm64_branch" | grep -q 'curl -fsSL'; then
-        harness_fail "meta_skill ARM64 Linux branch still suggests the raw installer path"
-        harness_capture_output "meta_skill_arm64_branch" "$arm64_branch"
-    else
-        harness_pass "meta_skill ARM64 Linux branch avoids the raw installer path"
-    fi
-}
 
 test_manifest_supplemental_coverage_is_precise() {
     harness_section "Test: Manifest supplemental coverage keeps intended checks"
@@ -756,32 +723,15 @@ test_manifest_supplemental_coverage_is_precise() {
     ensure_doctor_json_output
     output="$DOCTOR_JSON_OUTPUT"
 
-    local postgres_service_count
-    postgres_service_count=$(echo "$output" | jq '[.checks[] | select(.id == "db.postgres18.2")] | length' 2>/dev/null || echo "0")
-    if [[ "$postgres_service_count" -eq 1 ]]; then
-        harness_pass "PostgreSQL service health check remains in doctor output"
+    local nightly_count
+    nightly_count=$(echo "$output" | jq '[.checks[] | select(.id == "gtbi.nightly")] | length' 2>/dev/null || echo "0")
+    if [[ "$nightly_count" -eq 1 ]]; then
+        harness_pass "gtbi.nightly supplemental check appears in doctor output"
     else
-        harness_fail "PostgreSQL service health check is missing from doctor output"
+        harness_fail "gtbi.nightly supplemental check is missing from doctor output"
         harness_capture_output "doctor_json_output" "$output"
     fi
 
-    local agent_mail_supplemental_count
-    agent_mail_supplemental_count=$(echo "$output" | jq '[.checks[] | select(.id == "stack.mcp_agent_mail.2")] | length' 2>/dev/null || echo "0")
-    if [[ "$agent_mail_supplemental_count" -eq 0 ]]; then
-        harness_pass "Agent Mail supplemental duplicate remains suppressed"
-    else
-        harness_fail "Agent Mail supplemental duplicate leaked into doctor output"
-        harness_capture_output "doctor_json_output" "$output"
-    fi
-
-    local agent_mail_bespoke_count
-    agent_mail_bespoke_count=$(echo "$output" | jq '[.checks[] | select(.id == "stack.mcp_agent_mail")] | length' 2>/dev/null || echo "0")
-    if [[ "$agent_mail_bespoke_count" -eq 1 ]]; then
-        harness_pass "Agent Mail bespoke check is still present"
-    else
-        harness_fail "Agent Mail bespoke check is missing from doctor output"
-        harness_capture_output "doctor_json_output" "$output"
-    fi
 }
 
 test_manifest_guard_scripts_cover_all_generated_outputs() {
@@ -879,7 +829,6 @@ main() {
     test_base_filesystem_3_verify_runs_with_injected_helpers
     test_workspace_checks_are_not_required_health_failures
     test_generated_target_home_fallbacks_are_dynamic
-    test_meta_skill_arm64_linux_guidance
     test_manifest_supplemental_coverage_is_precise
     test_manifest_guard_scripts_cover_all_generated_outputs
 

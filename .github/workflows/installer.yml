@@ -88,12 +88,6 @@ jobs:
       - name: Run TTY safety linter
         run: bash scripts/tests/lint_tty_safety.sh
 
-      - name: Run RCH offload policy linter
-        run: bash scripts/tests/lint_rch_offload_policy.sh
-
-      - name: Run RCH offload policy fixture tests
-        run: bash tests/unit/test_rch_offload_policy.sh
-
       - name: Run library globals integration test
         run: bash tests/unit/test_lib_globals.sh
 
@@ -275,11 +269,6 @@ jobs:
 
       - name: Run zsh library tests
         run: bash scripts/lib/test_zsh.sh
-
-      - name: Run RU integration tests
-        run: |
-          bash scripts/tests/test_ru_update.sh
-          bash scripts/tests/test_ru_doctor.sh
 
   test-installer:
     name: Test installer (Ubuntu ${{ matrix.ubuntu }}, mode ${{ matrix.mode }})

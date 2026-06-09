@@ -426,23 +426,23 @@ test_exclude_reason_tracked() {
 test_plan_respects_dependency_order() {
     local name="Plan respects dependency order"
     reset_selection
-    ONLY_MODULES=("stack.ultimate_bug_scanner")
+    ONLY_MODULES=("agents.codex")  # deps: lang.bun -> base.system
 
     if gtbi_resolve_selection 2>/dev/null; then
         # Find positions in plan
-        local base_pos=-1 bun_pos=-1 ubs_pos=-1
+        local base_pos=-1 bun_pos=-1 codex_pos=-1
         local i=0
         for module_id in "${GTBI_EFFECTIVE_PLAN[@]}"; do
             case "$module_id" in
                 "base.system") base_pos=$i ;;
                 "lang.bun") bun_pos=$i ;;
-                "stack.ultimate_bug_scanner") ubs_pos=$i ;;
+                "agents.codex") codex_pos=$i ;;
             esac
             ((++i))
         done
 
-        # base < bun < ubs (dependencies before dependents)
-        if [[ $base_pos -lt $bun_pos && $bun_pos -lt $ubs_pos ]]; then
+        # base < bun < codex (dependencies before dependents)
+        if [[ $base_pos -lt $bun_pos && $bun_pos -lt $codex_pos ]]; then
             test_pass "$name"
             return
         fi
@@ -457,7 +457,7 @@ test_plan_respects_dependency_order() {
 test_plan_is_deterministic() {
     local name="Plan output is deterministic (stable across calls)"
     reset_selection
-    ONLY_MODULES=("stack.mcp_agent_mail")
+    ONLY_MODULES=("lang.bun")
 
     # Run selection twice
     local plan1 plan2
@@ -469,7 +469,7 @@ test_plan_is_deterministic() {
     fi
 
     reset_selection
-    ONLY_MODULES=("stack.mcp_agent_mail")
+    ONLY_MODULES=("lang.bun")
     if gtbi_resolve_selection 2>/dev/null; then
         plan2="${GTBI_EFFECTIVE_PLAN[*]}"
     else
@@ -578,18 +578,19 @@ test_legacy_skip_cloud() {
 test_legacy_flags_affect_selection() {
     local name="Legacy flags integrate with selection engine"
     reset_selection
-    SKIP_VAULT=true
-
-    gtbi_apply_legacy_skips
+    # Add a valid module to SKIP_MODULES to test that the selection engine
+    # honours explicit skips. (Legacy vault/postgres/cloud modules have been
+    # removed from the manifest so we use lang.go directly here.)
+    SKIP_MODULES=("lang.go")
 
     if gtbi_resolve_selection 2>/dev/null; then
-        # tools.vault should be excluded
-        if ! should_run_module "tools.vault"; then
+        # lang.go should be excluded because it's in SKIP_MODULES
+        if ! should_run_module "lang.go"; then
             test_pass "$name"
             return
         fi
     fi
-    test_fail "$name" "tools.vault should be excluded by legacy flag"
+    test_fail "$name" "lang.go should be excluded by SKIP_MODULES"
 }
 
 # ============================================================

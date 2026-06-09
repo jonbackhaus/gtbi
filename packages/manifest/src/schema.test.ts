@@ -321,32 +321,32 @@ describe('ModuleSchema', () => {
 
   test('accepts https verified_installer url metadata', () => {
     const result = ModuleSchema.safeParse({
-      id: 'stack.rch',
+      id: 'stack.dolt',
       description: 'Remote Compilation Helper',
       install: [],
-      verify: ['rch --version'],
+      verify: ['dolt --version'],
       verified_installer: {
-        tool: 'rch',
-        url: 'https://raw.githubusercontent.com/Dicklesworthstone/remote_compilation_helper/main/install.sh',
+        tool: 'dolt',
+        url: 'https://github.com/dolthub/dolt/releases/latest/download/install.sh',
         runner: 'bash',
       },
     });
     expect(result.success).toBe(true);
     if (result.success) {
       expect(result.data.verified_installer?.url).toBe(
-        'https://raw.githubusercontent.com/Dicklesworthstone/remote_compilation_helper/main/install.sh'
+        'https://github.com/dolthub/dolt/releases/latest/download/install.sh'
       );
     }
   });
 
   test('rejects non-https verified_installer url metadata', () => {
     const result = ModuleSchema.safeParse({
-      id: 'stack.rch',
+      id: 'stack.dolt',
       description: 'Remote Compilation Helper',
       install: [],
-      verify: ['rch --version'],
+      verify: ['dolt --version'],
       verified_installer: {
-        tool: 'rch',
+        tool: 'dolt',
         url: 'http://example.com/install.sh',
         runner: 'bash',
       },
