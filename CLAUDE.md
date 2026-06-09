@@ -97,7 +97,7 @@ bd close <id>         # Complete work
    git push
    git status  # MUST show "up to date with origin"
    ```
-5. **Clean up** - Clear stashes, prune remote branches
+5. **Clean up** - Clear stashes, prune remote branches, remove worktrees (`git worktree prune`)
 6. **Verify** - All changes committed AND pushed
 7. **Hand off** - Provide context for next session
 
@@ -115,6 +115,7 @@ bd close <id>         # Complete work
 
 - **Feature branches**: `git checkout -b fix/<topic>` or `feat/<topic>` before any code changes
 - **Worktrees for sub-agents**: Use `git worktree add` to give each sub-agent an isolated copy of the repo — prevents concurrent edits from colliding on the same working tree
+- **Worktree cleanup**: Remove worktrees after merging — `git worktree remove <path> && git branch -d <branch>`; or `git worktree prune` to clean up stale entries
 - **Commit often**: Small, atomic commits are easier to bisect and revert; don't batch unrelated changes
 - **Push when complete**: Work is not done until `git push` succeeds (see Session Completion above)
 
