@@ -335,6 +335,7 @@ fi
 declare -gA KNOWN_INSTALLERS=(
     [bun]="https://bun.sh/install"
     [claude]="https://claude.ai/install.sh"
+    [dolt]="https://github.com/dolthub/dolt/releases/latest/download/install.sh"
     [uv]="https://astral.sh/uv/install.sh"
     [rust]="https://sh.rustup.rs"
     [nvm]="https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh"
