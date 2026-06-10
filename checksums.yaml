@@ -1,4 +1,4 @@
-# checksums.yaml - Auto-generated 2026-06-09T16:45:16+00:00
+# checksums.yaml - Auto-generated 2026-06-10T12:13:29+00:00
 # Run: ./scripts/lib/security.sh --update-checksums
 
 installers:
@@ -13,6 +13,10 @@ installers:
   claude:
     url: "https://claude.ai/install.sh"
     sha256: "005ec1a937f32dfbb74f9e810287bcb12cba2d5cae4c9277aa8c6364adbf1787"
+
+  dolt:
+    url: "https://github.com/dolthub/dolt/releases/latest/download/install.sh"
+    sha256: "aae0bba1e1c36a55fd36307c25b48cf8671e254befeae750d194066be37025e8"
 
   gemini_patch:
     url: "https://raw.githubusercontent.com/Dicklesworthstone/misc_coding_agent_tips_and_scripts/main/fix-gemini-cli-ebadf-crash.sh"

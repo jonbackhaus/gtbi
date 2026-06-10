@@ -19,7 +19,10 @@
 
 set -euo pipefail
 
-ARTIFACTS_DIR="/repo/tests/artifacts"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="${REPO_ROOT:-$(cd "$SCRIPT_DIR/../.." && pwd)}"
+
+ARTIFACTS_DIR="$REPO_ROOT/tests/artifacts"
 mkdir -p "$ARTIFACTS_DIR"
 
 log()  { echo "[GTBI-REPAIR] $1"; }
@@ -41,7 +44,7 @@ fi
 # ── Phase 1: Fresh Install ─────────────────────────────────────────────────────
 
 log "Phase 1: Fresh Install"
-if GTBI_CI=true bash /repo/install.sh \
+if GTBI_CI=true bash "$REPO_ROOT/install.sh" \
         --yes --skip-preflight --skip-ubuntu-upgrade --mode vibe \
         > "${ARTIFACTS_DIR}/repair_install.log" 2>&1; then
     log "Install successful"

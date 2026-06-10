@@ -325,8 +325,8 @@ fi
 
 harness_section "Test: Plan ordering"
 
-output=$(run_install --print-plan --only stack.ultimate_bug_scanner) || {
-    harness_fail "--only stack.ultimate_bug_scanner execution failed"
+output=$(run_install --print-plan --only agents.codex) || {
+    harness_fail "--only agents.codex execution failed"
 }
 
 # Extract execution order numbers from the plan
@@ -334,16 +334,16 @@ output=$(run_install --print-plan --only stack.ultimate_bug_scanner) || {
 # Use more specific pattern to match module name after phase bracket
 base_order=$(echo "$output" | grep -E "^\s+[0-9]+\.\s+\[Phase [0-9]+\] base\.system " | head -1 | awk '{print $1}' | tr -d '.')
 bun_order=$(echo "$output" | grep -E "^\s+[0-9]+\.\s+\[Phase [0-9]+\] lang\.bun " | head -1 | awk '{print $1}' | tr -d '.')
-ubs_order=$(echo "$output" | grep -E "^\s+[0-9]+\.\s+\[Phase [0-9]+\] stack\.ultimate_bug_scanner " | head -1 | awk '{print $1}' | tr -d '.')
+codex_order=$(echo "$output" | grep -E "^\s+[0-9]+\.\s+\[Phase [0-9]+\] agents\.codex " | head -1 | awk '{print $1}' | tr -d '.')
 
-if [[ -n "$base_order" && -n "$bun_order" && -n "$ubs_order" ]]; then
-    if [[ $base_order -lt $bun_order && $bun_order -lt $ubs_order ]]; then
-        harness_pass "Plan respects dependency order (base #$base_order < bun #$bun_order < ubs #$ubs_order)"
+if [[ -n "$base_order" && -n "$bun_order" && -n "$codex_order" ]]; then
+    if [[ $base_order -lt $bun_order && $bun_order -lt $codex_order ]]; then
+        harness_pass "Plan respects dependency order (base #$base_order < bun #$bun_order < codex #$codex_order)"
     else
-        harness_fail "Plan order incorrect" "Expected base < bun < ubs, got #$base_order < #$bun_order < #$ubs_order"
+        harness_fail "Plan order incorrect" "Expected base < bun < codex, got #$base_order < #$bun_order < #$codex_order"
     fi
 else
-    harness_warn "Could not verify plan order" "Missing modules: base=$base_order bun=$bun_order ubs=$ubs_order"
+    harness_warn "Could not verify plan order" "Missing modules: base=$base_order bun=$bun_order codex=$codex_order"
 fi
 
 # ============================================================

@@ -4682,7 +4682,20 @@ normalize_user() {
         log_success "User normalization complete"
         return 0
     fi
-    log_warn "Generated user installers not found; skipping"
+    # Legacy path: users category is orchestration-only; call ensure_user directly.
+    if type -t ensure_user >/dev/null 2>&1; then
+        ensure_user || return 1
+        local mode="${MODE:-${GTBI_MODE:-vibe}}"
+        if [[ "$mode" == "vibe" ]] && type -t enable_passwordless_sudo >/dev/null 2>&1; then
+            enable_passwordless_sudo || true
+        fi
+        if type -t migrate_ssh_keys >/dev/null 2>&1; then
+            migrate_ssh_keys || true
+        fi
+        log_success "User normalization complete"
+        return 0
+    fi
+    log_warn "User normalization skipped (ensure_user not available)"
     return 0
 }
 
