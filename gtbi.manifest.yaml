@@ -769,19 +769,36 @@ modules:
     description: Zoxide (better cd)
     category: tools
     phase: 6
-    run_as: target_user
+    run_as: root
     optional: false
     enabled_by_default: true
     tags: [recommended, shell-ux]
     dependencies:
       - base.system
     installed_check:
-      run_as: target_user
+      run_as: current
       command: "command -v zoxide"
-    verified_installer:
-      tool: zoxide
-      runner: sh
-    install: []
+    install:
+      - |
+        if apt-get install -y zoxide; then
+          exit 0
+        fi
+        # Fallback to pinned binary release. The upstream install.sh queries the
+        # GitHub JSON API (api.github.com), which is unauthenticated-rate-limited
+        # on CI runners; this redirect download is not.
+        ZOX_VER="0.9.9"
+        case "$(uname -m)" in
+          x86_64)        ZOX_ARCH="x86_64-unknown-linux-musl";  ZOX_SHA="4ff057d3c4d957946937274c2b8be7af2a9bbae7f90a1b5e9baaa7cb65a20caa" ;;
+          aarch64|arm64) ZOX_ARCH="aarch64-unknown-linux-musl"; ZOX_SHA="96e6ea2e47a71db42cb7ad5a36e9209c8cb3708f8ae00f6945573d0d93315cb0" ;;
+          *) echo "Unsupported arch for zoxide: $(uname -m)"; exit 0 ;;
+        esac
+        ZOX_URL="https://github.com/ajeetdsouza/zoxide/releases/download/v${ZOX_VER}/zoxide-${ZOX_VER}-${ZOX_ARCH}.tar.gz"
+        TMP_FILE="$(mktemp "${TMPDIR:-/tmp}/gtbi_zoxide.XXXXXX")"
+        trap 'rm -f "$TMP_FILE"' EXIT
+        curl -fsSL "$ZOX_URL" -o "$TMP_FILE"
+        echo "$ZOX_SHA $TMP_FILE" | sha256sum -c - || { echo "Checksum failed for zoxide"; rm "$TMP_FILE"; exit 1; }
+        tar -xzf "$TMP_FILE" -C /usr/local/bin zoxide
+        chmod +x /usr/local/bin/zoxide
     verify:
       - command -v zoxide
 

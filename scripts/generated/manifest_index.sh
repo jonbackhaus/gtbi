@@ -6,7 +6,7 @@
 # ============================================================
 # Data-only manifest index. Safe to source.
 
-GTBI_MANIFEST_SHA256="987811463dbf8d49113ec3d94182cbf7850fe6fff7dfd35e3d028bc67f736088"
+GTBI_MANIFEST_SHA256="0d70e998d144ee1f625b9226d969378712b39950369331e3b147617348bbb33e"
 
 GTBI_MODULES_IN_ORDER=(
   "base.system"
@@ -308,7 +308,7 @@ declare -gA GTBI_MODULE_INSTALLED_CHECK_RUN_AS=(
   ['lang.go']="current"
   ['lang.nvm']="target_user"
   ['tools.atuin']="target_user"
-  ['tools.zoxide']="target_user"
+  ['tools.zoxide']="current"
   ['tools.ast_grep']="target_user"
   ['agents.claude']="target_user"
   ['agents.codex']="target_user"

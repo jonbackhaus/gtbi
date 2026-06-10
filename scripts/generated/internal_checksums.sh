@@ -8,7 +8,7 @@
 # Used by check-manifest-drift.sh to detect unauthorized changes.
 
 declare -gA GTBI_INTERNAL_CHECKSUMS=(
-  [scripts/lib/security.sh]="46f143e04943dd60a55dca6da542a8e8769522cc62196157f408b50cf527c5fa"
+  [scripts/lib/security.sh]="eb0e4c1f9336844a515cc7970aeabb618556ded3a46f2fa2ec04f28a78fb386c"
   [scripts/lib/agents.sh]="95fe25d4f5a668e34a335a27785099ccec7388b2af7de36bb042d34498ce9e56"
   [scripts/lib/update.sh]="56aabf8e971bd19a76381404f4dc83aeec68f7b7ff858b614536f2376df9590f"
   [scripts/lib/doctor.sh]="85e20c3c3ac306ea151a0979731f1ee09ce54936304e30a8e0bd7b504c3ec730"

@@ -240,9 +240,11 @@ jobs:
           }
 
           git push origin HEAD:main
-          git push origin main:master
+          # Legacy master mirror is best-effort: main was already pushed and is
+          # the source of truth. A mirror failure must not fail the job.
+          git push origin main:master || echo "⚠️ main->master mirror failed (non-fatal; main is authoritative)"
           echo "committed=true" >> $GITHUB_OUTPUT
-          echo "✅ Successfully pushed checksum updates and mirrored main->master"
+          echo "✅ Successfully pushed checksum updates (mirrored main->master if possible)"
 
       - name: Create issue for external changes (security visibility)
         if: steps.verify.outputs.external_changed != '' && steps.commit.outputs.committed == 'true'
