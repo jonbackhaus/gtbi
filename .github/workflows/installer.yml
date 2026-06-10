@@ -327,7 +327,7 @@ jobs:
           su - ubuntu -c "zsh -ic 'test -f ~/.gtbi/VERSION'"
           su - ubuntu -c "zsh -ic 'gh --version'"
           su - ubuntu -c "zsh -ic 'jq --version'"
-          su - ubuntu -c "zsh -ic '$HOME/.cargo/bin/sg --version'"
+          su - ubuntu -c "zsh -ic '~/.cargo/bin/sg --version'"
           su - ubuntu -c "zsh -ic 'git-lfs version'"
           su - ubuntu -c "zsh -ic 'rsync --version'"
           su - ubuntu -c "zsh -ic 'strace --version'"

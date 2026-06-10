@@ -16,7 +16,10 @@
 
 set -euo pipefail
 
-ARTIFACTS_DIR="/repo/tests/artifacts"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="${REPO_ROOT:-$(cd "$SCRIPT_DIR/../.." && pwd)}"
+
+ARTIFACTS_DIR="$REPO_ROOT/tests/artifacts"
 mkdir -p "$ARTIFACTS_DIR"
 
 log()  { echo "[GTBI-UPGRADE] $1"; }
@@ -35,12 +38,12 @@ if [[ ! -f /etc/sudoers.d/90-gtbi-ubuntu ]]; then
     chmod 440 /etc/sudoers.d/90-gtbi-ubuntu
 fi
 
-CURRENT_VERSION="$(cat /repo/VERSION)"
+CURRENT_VERSION="$(cat "$REPO_ROOT/VERSION")"
 
 # ── Find previous tag ──────────────────────────────────────────────────────────
 
 log "Resolving previous release tag (current: ${CURRENT_VERSION})"
-PREV_TAG="$(git -C /repo tag --sort=-version:refname | grep -v "^v\?${CURRENT_VERSION}$" | head -1 || true)"
+PREV_TAG="$(git -C "$REPO_ROOT" tag --sort=-version:refname | grep -v "^v\?${CURRENT_VERSION}$" | head -1 || true)"
 
 if [[ -z "$PREV_TAG" ]]; then
     log "[SKIP] No previous tag found — skipping upgrade test"
@@ -52,7 +55,7 @@ log "Previous tag: ${PREV_TAG}"
 # ── Phase 1: Install previous release ─────────────────────────────────────────
 
 log "Phase 1: Install previous release (${PREV_TAG})"
-git -C /repo show "${PREV_TAG}:install.sh" > /tmp/install_old.sh
+git -C "$REPO_ROOT" show "${PREV_TAG}:install.sh" > /tmp/install_old.sh
 chmod +x /tmp/install_old.sh
 
 if GTBI_CI=true bash /tmp/install_old.sh \
@@ -83,7 +86,7 @@ fi
 # ── Phase 2: Upgrade to current release ───────────────────────────────────────
 
 log "Phase 2: Upgrade to current release (${CURRENT_VERSION}) via --force-reinstall"
-if GTBI_CI=true bash /repo/install.sh \
+if GTBI_CI=true bash "$REPO_ROOT/install.sh" \
         --yes --skip-preflight --skip-ubuntu-upgrade --force-reinstall --mode vibe \
         > "${ARTIFACTS_DIR}/upgrade_new_install.log" 2>&1; then
     log "Current release installed successfully"
