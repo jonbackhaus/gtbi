@@ -78,7 +78,9 @@ test.describe.serial("DCG Website Pages", () => {
       await page.goto("/learn/dcg");
       await page.waitForLoadState("networkidle");
 
-      const title = page.getByText(/dcg/i).first();
+      // The lesson sidebar (hidden on mobile/webkit narrow layouts) also contains
+      // matching text, so scope to the first *visible* match.
+      const title = page.getByText(/dcg/i).locator("visible=true").first();
       await expect(title).toBeVisible();
     });
   });
