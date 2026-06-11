@@ -33,7 +33,7 @@ export interface ManifestProvenanceMetadata {
 export const manifestProvenance = {
   gtbiVersion: "0.7.0",
   manifestSha256: "10db3d7f3702d0ad5152d27b34181cbfe677770916ecf1f78291a7f8740afa62",
-  checksumsYamlSha256: "6542b6790b3b30bef079447771c61d33b5639583f44ab1770b83bd63d5d11b58",
+  checksumsYamlSha256: "8bf21a7ddf2486ac2312a19f7b6d5d5505c83e1432d8fbb6a25af888cfcae0d3",
 } as const satisfies ManifestProvenanceMetadata;
 
 export const manifestModules: ManifestModuleMetadata[] = [
