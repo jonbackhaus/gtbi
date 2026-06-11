@@ -130,7 +130,6 @@ interface StackToolSource {
 
 const SCRIPT_FILE = fileURLToPath(import.meta.url);
 const DEFAULT_ROOT = resolve(dirname(SCRIPT_FILE), '../../..');
-const GITHUB_OWNER = 'Dicklesworthstone';
 const SHA256_PATTERN = /^[a-f0-9]{64}$/i;
 const STATUS_RANK: Record<ReportStatus, number> = {
   pass: 0,
@@ -217,7 +216,6 @@ function githubRepoFromHref(href: string | undefined): { repo: string; repoName:
 
   const owner = match[1];
   const repoName = match[2];
-  if (owner !== GITHUB_OWNER) return undefined;
 
   return {
     repo: `${owner}/${repoName}`,
@@ -231,7 +229,7 @@ function inferToolKey(module: Module, repoName: string, checksums: ChecksumsFile
   }
 
   for (const [tool, entry] of Object.entries(checksums.installers)) {
-    if (entry.url.includes(`/${GITHUB_OWNER}/${repoName}/`)) {
+    if (entry.url.includes(`/${repoName}/`)) {
       return tool;
     }
   }
@@ -742,7 +740,7 @@ function parseArgs(args: string[]): CliOptions {
 function printUsage(): void {
   console.log(`Usage: scripts/stack-provenance-report.sh [--json] [--quiet] [--network=skip|check]
 
-Reports local and upstream provenance for GTBI Dicklesworthstone stack tools.
+Reports local and upstream provenance for GTBI stack tools.
 
 Options:
   --network=skip             Offline mode. Report local manifest/checksum consistency.

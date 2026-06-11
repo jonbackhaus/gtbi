@@ -1,10 +1,10 @@
 #!/usr/bin/env bun
 /**
- * Safe local readiness audit for agent CLIs and CAAM account state.
+ * Safe local readiness audit for agent CLIs.
  */
 
 import { accessSync, constants, readFileSync, readdirSync, statSync } from 'node:fs';
-import { basename, dirname, join, resolve } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 
@@ -65,18 +65,8 @@ export interface ComponentResult {
   paths: string[];
 }
 
-export interface CaamProviderState {
-  provider: 'claude' | 'codex' | 'gemini';
-  defaultProfile?: string;
-  profileCount: number;
-  vaultProfileCount: number;
-  isolatedProfileCount: number;
-  status: ReadinessStatus;
-  detail: string;
-}
-
 export interface AgentToolReport {
-  id: 'claude' | 'codex' | 'gemini' | 'caam';
+  id: 'claude' | 'codex' | 'gemini';
   displayName: string;
   status: ReadinessStatus;
   docsUrl: string;
@@ -85,11 +75,6 @@ export interface AgentToolReport {
   cli: CliCheckResult;
   auth?: ComponentResult;
   config?: ComponentResult;
-  caam?: {
-    config: ComponentResult;
-    profiles: ComponentResult;
-    providers: CaamProviderState[];
-  };
   nextActions: string[];
 }
 
@@ -144,13 +129,6 @@ interface JsonProbe {
   path: string;
   detail: string;
   exists: boolean;
-}
-
-interface ProfileInventory {
-  profiles: Set<string>;
-  status: ReadinessStatus;
-  detail: string;
-  roots: string[];
 }
 
 interface CliOptions {
@@ -625,254 +603,6 @@ function evaluateProvider(
   };
 }
 
-function caamConfigPath(context: PathContext): string {
-  return join(xdgConfigHome(context), 'caam', 'config.json');
-}
-
-function caamProfileStorePath(context: PathContext): string {
-  if (context.env.CAAM_HOME) return join(resolve(context.env.CAAM_HOME), 'data', 'profiles');
-  return join(xdgDataHome(context), 'caam', 'profiles');
-}
-
-function caamVaultPath(context: PathContext): string {
-  if (context.env.CAAM_HOME) return join(resolve(context.env.CAAM_HOME), 'data', 'vault');
-  return join(xdgDataHome(context), 'caam', 'vault');
-}
-
-function listProfiles(
-  root: string,
-  provider: string,
-  metadataFile: string,
-  fs: AgentReadinessFileSystem,
-  home: string
-): ProfileInventory {
-  const providerDir = join(root, provider);
-  const dir = fs.readDir(providerDir);
-  if (dir.kind === 'missing') {
-    return {
-      profiles: new Set<string>(),
-      status: 'pass',
-      detail: `${redactPath(providerDir, home)} has no profiles`,
-      roots: [providerDir],
-    };
-  }
-  if (dir.kind === 'unreadable') {
-    return {
-      profiles: new Set<string>(),
-      status: 'unknown',
-      detail: `could not list ${redactPath(providerDir, home)}: ${dir.detail ?? 'permission denied'}`,
-      roots: [providerDir],
-    };
-  }
-
-  const profiles = new Set<string>();
-  const failures: string[] = [];
-  const unknowns: string[] = [];
-  for (const entry of dir.entries ?? []) {
-    if (entry.kind !== 'directory') continue;
-    const profileName = entry.name;
-    if (!isSafeCaamSegment(profileName)) {
-      failures.push(`${profileName}: unsafe profile directory name`);
-      continue;
-    }
-    profiles.add(profileName);
-    const metaPath = caamProfileMetadataPath(providerDir, profileName, metadataFile);
-    const meta = fs.stat(metaPath);
-    if (meta.kind === 'missing') continue;
-    const read = fs.readFile(metaPath);
-    if (read.kind === 'unreadable') {
-      unknowns.push(`${profileName}: ${read.detail ?? 'unreadable metadata'}`);
-      continue;
-    }
-    if (read.kind === 'ok') {
-      try {
-        JSON.parse(read.content ?? '');
-      } catch (error) {
-        failures.push(`${profileName}: ${errorMessage(error)}`);
-      }
-    }
-  }
-
-  if (failures.length > 0) {
-    return {
-      profiles,
-      status: 'fail',
-      detail: `malformed ${metadataFile} in ${redactPath(providerDir, home)} (${failures.join('; ')})`,
-      roots: [providerDir],
-    };
-  }
-  if (unknowns.length > 0) {
-    return {
-      profiles,
-      status: 'unknown',
-      detail: `metadata unreadable in ${redactPath(providerDir, home)} (${unknowns.join('; ')})`,
-      roots: [providerDir],
-    };
-  }
-
-  return {
-    profiles,
-    status: 'pass',
-    detail: `${profiles.size} profile(s) listed under ${redactPath(providerDir, home)}`,
-    roots: [providerDir],
-  };
-}
-
-function parseDefaultProfiles(config: ComponentResult, configPath: string, fs: AgentReadinessFileSystem): Record<string, string> {
-  if (!isStatus(config.status, 'pass')) return {};
-  const read = fs.readFile(configPath);
-  if (read.kind !== 'ok') return {};
-  let parsed: { default_profiles?: unknown };
-  try {
-    parsed = JSON.parse(read.content ?? '{}') as { default_profiles?: unknown };
-  } catch {
-    return {};
-  }
-  const defaults = parsed.default_profiles;
-  if (defaults === null || typeof defaults !== 'object' || Array.isArray(defaults)) return {};
-
-  const result: Record<string, string> = {};
-  for (const [provider, value] of Object.entries(defaults)) {
-    if (typeof value === 'string' && value.trim()) {
-      result[provider] = value.trim();
-    }
-  }
-  return result;
-}
-
-function evaluateCaamConfig(context: PathContext, fs: AgentReadinessFileSystem): ComponentResult {
-  const configPath = caamConfigPath(context);
-  const probe = parseJsonProbe({ label: 'CAAM config', path: configPath, json: true }, fs, context.home);
-  if (isStatus(probe.status, 'pass')) {
-    return {
-      status: 'pass',
-      detail: `CAAM config is parseable at ${redactPath(configPath, context.home)}`,
-      paths: [configPath],
-    };
-  }
-  if (isStatus(probe.status, 'warn')) {
-    return {
-      status: 'warn',
-      detail: `CAAM config is missing at ${redactPath(configPath, context.home)}; defaults are not configured`,
-      paths: [configPath],
-    };
-  }
-  return {
-    status: probe.status,
-    detail: probe.detail,
-    paths: [configPath],
-  };
-}
-
-function unionProfiles(a: Set<string>, b: Set<string>): Set<string> {
-  return new Set([...a, ...b]);
-}
-
-function isSafeCaamSegment(name: string): boolean {
-  return name.trim() !== '' && name !== '.' && name !== '..' && !name.includes('/') && !name.includes('\\') && !name.includes('\0');
-}
-
-function caamProfileMetadataPath(providerDir: string, profileName: string, metadataFile: string): string {
-  return join(providerDir, basename(profileName), metadataFile);
-}
-
-function evaluateCaamProviders(
-  context: PathContext,
-  fs: AgentReadinessFileSystem,
-  config: ComponentResult
-): { profiles: ComponentResult; providers: CaamProviderState[] } {
-  const defaults = parseDefaultProfiles(config, caamConfigPath(context), fs);
-  const storeRoot = caamProfileStorePath(context);
-  const vaultRoot = caamVaultPath(context);
-  const providers: CaamProviderState[] = [];
-  const componentStatuses: ReadinessStatus[] = [];
-  const details: string[] = [];
-  const paths = [storeRoot, vaultRoot];
-
-  for (const provider of AGENT_PROVIDERS) {
-    const isolated = listProfiles(storeRoot, provider, 'profile.json', fs, context.home);
-    const vault = listProfiles(vaultRoot, provider, 'meta.json', fs, context.home);
-    const profiles = unionProfiles(isolated.profiles, vault.profiles);
-    const defaultProfile = defaults[provider];
-    let status = statusMax([isolated.status, vault.status]);
-    let detail = `${profiles.size} total profile(s)`;
-
-    if (defaultProfile && !profiles.has(defaultProfile)) {
-      status = 'fail';
-      detail = `default profile '${defaultProfile}' is stale for ${provider}; no matching profile exists in CAAM profile store or vault`;
-    } else if (defaultProfile) {
-      detail = `default profile '${defaultProfile}' exists for ${provider}`;
-    } else if (profiles.size === 0) {
-      status = statusMax([status, 'warn']);
-      detail = `no CAAM profile is stored for ${provider}`;
-    } else {
-      status = statusMax([status, 'warn']);
-      detail = `${profiles.size} profile(s) exist for ${provider}, but no default is configured`;
-    }
-
-    providers.push({
-      provider,
-      defaultProfile,
-      profileCount: profiles.size,
-      vaultProfileCount: vault.profiles.size,
-      isolatedProfileCount: isolated.profiles.size,
-      status,
-      detail,
-    });
-    componentStatuses.push(status, isolated.status, vault.status);
-    details.push(`${provider}: ${detail}`);
-    if (!isStatus(isolated.status, 'pass')) details.push(`${provider} isolated profiles: ${isolated.detail}`);
-    if (!isStatus(vault.status, 'pass')) details.push(`${provider} vault profiles: ${vault.detail}`);
-  }
-
-  return {
-    providers,
-    profiles: {
-      status: statusMax(componentStatuses),
-      detail: details.join('; '),
-      paths,
-    },
-  };
-}
-
-function evaluateCaam(
-  context: PathContext,
-  options: BuildAgentReadinessOptions,
-  fs: AgentReadinessFileSystem,
-  runner: AgentReadinessCommandRunner
-): AgentToolReport {
-  const cli = attachVersion(
-    findExecutable('caam', [], options, fs),
-    runner,
-    options.collectVersions ?? true
-  );
-  const config = evaluateCaamConfig(context, fs);
-  const { profiles, providers } = evaluateCaamProviders(context, fs, config);
-  const status = statusMax([cli.status, config.status, profiles.status]);
-  const nextActions = isStatus(status, 'pass')
-    ? []
-    : [
-        'Run `caam profile ls <provider>` and `caam ls <provider>` to inspect stored profiles.',
-        'Run `caam use <provider> <profile>` to repair stale or missing defaults.',
-      ];
-
-  return {
-    id: 'caam',
-    displayName: 'Coding Agent Account Manager',
-    status,
-    docsUrl: 'https://github.com/Dicklesworthstone/coding_agent_account_manager',
-    command: 'caam',
-    aliases: [],
-    cli,
-    caam: {
-      config,
-      profiles,
-      providers,
-    },
-    nextActions,
-  };
-}
-
 function summarize(tools: AgentToolReport[]): Record<ReadinessStatus, number> {
   const summary: Record<ReadinessStatus, number> = {
     pass: 0,
@@ -895,8 +625,7 @@ export function buildAgentReadinessReport(options: BuildAgentReadinessOptions): 
   const providerReports = providerDefinitions().map((definition) =>
     evaluateProvider(definition, context, { ...options, home }, fs, runner)
   );
-  const caam = evaluateCaam(context, { ...options, home }, fs, runner);
-  const tools = [...providerReports, caam];
+  const tools = [...providerReports];
   const summary = summarize(tools);
 
   return {
@@ -956,7 +685,7 @@ function parseArgs(args: string[]): CliOptions {
 function printUsage(): void {
   console.log(`Usage: scripts/agent-readiness-audit.sh [--json] [--quiet] [--no-version] [--home PATH] [--path PATH]
 
-Audits Claude Code, Codex CLI, Gemini CLI, and CAAM account readiness without
+Audits Claude Code, Codex CLI, and Gemini CLI readiness without
 printing token values or auth file contents.
 
 Options:
@@ -983,10 +712,6 @@ function printHumanReport(report: AgentReadinessReport, quiet: boolean): void {
     }
     if (tool.config) {
       console.log(`  config: [${tool.config.status}] ${tool.config.detail}`);
-    }
-    if (tool.caam) {
-      console.log(`  config: [${tool.caam.config.status}] ${tool.caam.config.detail}`);
-      console.log(`  profiles: [${tool.caam.profiles.status}] ${tool.caam.profiles.detail}`);
     }
     for (const action of tool.nextActions) {
       console.log(`  next: ${action}`);
