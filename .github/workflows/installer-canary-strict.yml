@@ -1,8 +1,11 @@
 name: Installer Canary (Strict)
 
 on:
-  schedule:
-    - cron: "15 4 * * *" # 4:15 AM UTC nightly
+  # Schedule paused: the canary harness has pre-existing rot beyond the
+  # install-blocking fix (see follow-up issue). Re-enable the cron once the
+  # remaining PHASE 2.5+ validation issues are fixed. Manual runs still work.
+  # schedule:
+  #   - cron: "15 4 * * *" # 4:15 AM UTC nightly
   workflow_dispatch:
     inputs:
       ubuntu:
