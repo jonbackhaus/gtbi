@@ -6,7 +6,7 @@
 # ============================================================
 # Data-only manifest index. Safe to source.
 
-GTBI_MANIFEST_SHA256="374aa3b628981ec93c35b8d7c9252903cf4f06d4bb0282bfc0724a4e49dc5720"
+GTBI_MANIFEST_SHA256="67b343f7b94ebf601e8b9f190bb9a1b7deb15ad48e961cc12afaf75e742c74c2"
 
 GTBI_MODULES_IN_ORDER=(
   "base.system"
@@ -250,7 +250,7 @@ declare -gA GTBI_MODULE_DESC=(
   ['lang.nvm']="nvm + latest Node.js"
   ['tools.atuin']="Atuin shell history (Ctrl-R superpowers)"
   ['tools.zoxide']="Zoxide (better cd)"
-  ['tools.ast_grep']="ast-grep (used by UBS for syntax-aware scanning)"
+  ['tools.ast_grep']="ast-grep (syntax-aware code search/rewrite)"
   ['agents.claude']="Claude Code"
   ['agents.codex']="OpenAI Codex CLI"
   ['agents.gemini']="Google Gemini CLI"

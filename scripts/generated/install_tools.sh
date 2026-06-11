@@ -528,20 +528,39 @@ INSTALL_TOOLS_ZOXIDE
     log_success "tools.zoxide installed"
 }
 
-# ast-grep (used by UBS for syntax-aware scanning)
+# ast-grep (syntax-aware code search/rewrite)
 install_tools_ast_grep() {
     local module_id="tools.ast_grep"
     gtbi_require_contract "module:${module_id}" || return 1
     log_step "Installing tools.ast_grep"
 
     if [[ "${DRY_RUN:-false}" = "true" ]]; then
-        log_info "dry-run: install: ~/.cargo/bin/cargo install ast-grep --locked (target_user)"
+        log_info "dry-run: install: case \"\$(uname -m)\" in (target_user)"
     else
         if ! run_as_target_shell <<'INSTALL_TOOLS_AST_GREP'
-~/.cargo/bin/cargo install ast-grep --locked
+# Install the prebuilt release binary. `cargo install ast-grep` builds
+# from source and fails to link on some Ubuntu releases (e.g. 25.10:
+# rust-lld can't find crt*.o / -lc). The prebuilt binary is portable
+# and reproducible (checksum-pinned).
+AG_VER="0.43.0"
+case "$(uname -m)" in
+  x86_64)        AG_ARCH="x86_64-unknown-linux-gnu";  AG_SHA="a26253a9c821d935f7e383e40f0de7c2ca62a4121de1f73a6d81ec32eae631e0" ;;
+  aarch64|arm64) AG_ARCH="aarch64-unknown-linux-gnu"; AG_SHA="e706846148493967f3ab8011334817edd86ce5acbec10718b2a7b40799c640ff" ;;
+  *) echo "Unsupported arch for ast-grep: $(uname -m)"; exit 1 ;;
+esac
+AG_URL="https://github.com/ast-grep/ast-grep/releases/download/${AG_VER}/app-${AG_ARCH}.zip"
+TMP_FILE="$(mktemp "${TMPDIR:-/tmp}/gtbi_astgrep.XXXXXX")"
+TMP_DIR="$(mktemp -d "${TMPDIR:-/tmp}/gtbi_astgrep_d.XXXXXX")"
+trap 'rm -rf "$TMP_FILE" "$TMP_DIR"' EXIT
+curl -fsSL "$AG_URL" -o "$TMP_FILE"
+echo "$AG_SHA  $TMP_FILE" | sha256sum -c - || { echo "Checksum failed for ast-grep"; exit 1; }
+unzip -o -q "$TMP_FILE" -d "$TMP_DIR"
+mkdir -p "$HOME/.cargo/bin"
+install -Dm755 "$TMP_DIR/sg" "$HOME/.cargo/bin/sg"
+install -Dm755 "$TMP_DIR/ast-grep" "$HOME/.cargo/bin/ast-grep"
 INSTALL_TOOLS_AST_GREP
         then
-            log_error "tools.ast_grep: install command failed: ~/.cargo/bin/cargo install ast-grep --locked"
+            log_error "tools.ast_grep: install command failed: case \"\$(uname -m)\" in"
             return 1
         fi
     fi

@@ -331,7 +331,7 @@ declare -a MANIFEST_CHECKS=(
     "lang.nvm	nvm + latest Node.js	export NVM_DIR=\"\$HOME/.nvm\"\\n[ -s \"\$NVM_DIR/nvm.sh\" ] && . \"\$NVM_DIR/nvm.sh\"\\nnode --version	required	target_user"
     "tools.atuin	Atuin shell history (Ctrl-R superpowers)	~/.atuin/bin/atuin --version	required	target_user"
     "tools.zoxide	Zoxide (better cd)	command -v zoxide	required	root"
-    "tools.ast_grep	ast-grep (used by UBS for syntax-aware scanning)	~/.cargo/bin/sg --version	required	target_user"
+    "tools.ast_grep	ast-grep (syntax-aware code search/rewrite)	~/.cargo/bin/sg --version	required	target_user"
     "agents.claude	Claude Code	target_bin=\"\${GTBI_BIN_DIR:-\$HOME/.local/bin}\"\\n\"\$target_bin/claude\" --version || \"\$target_bin/claude\" --help	required	target_user"
     "agents.codex	OpenAI Codex CLI	target_bin=\"\${GTBI_BIN_DIR:-\$HOME/.local/bin}\"\\n\"\$target_bin/codex\" --version || \"\$target_bin/codex\" --help	required	target_user"
     "agents.gemini	Google Gemini CLI	target_bin=\"\${GTBI_BIN_DIR:-\$HOME/.local/bin}\"\\n\"\$target_bin/gemini\" --version || \"\$target_bin/gemini\" --help	required	target_user"
