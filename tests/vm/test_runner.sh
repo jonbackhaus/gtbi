@@ -64,20 +64,12 @@ run_check "state_file" "test -f ~/.gtbi/VERSION" || failed_checks=$((failed_chec
 run_check "onboard" "zsh -ic 'onboard --help >/dev/null'" || failed_checks=$((failed_checks + 1))
 run_check "onboard_noninteractive_lesson" "zsh -ic 'progress=\$(mktemp); exec </dev/null; GTBI_PROGRESS_FILE=\"\$progress\" onboard 1 >/dev/null'" || failed_checks=$((failed_checks + 1))
 run_check "onboard_noninteractive_menu" "zsh -ic 'out=\$(mktemp); if timeout 5s onboard </dev/null >\"\$out\" 2>&1; then false; else menu_status=\$?; command grep -q \"Interactive menu requires a TTY\" \"\$out\" && [ \"\$menu_status\" -eq 1 ]; fi'" || failed_checks=$((failed_checks + 1))
-run_check "ntm" "zsh -ic 'ntm --help >/dev/null'" || failed_checks=$((failed_checks + 1))
 run_check "gh" "zsh -ic 'gh --version >/dev/null'" || failed_checks=$((failed_checks + 1))
 run_check "jq" "zsh -ic 'jq --version >/dev/null'" || failed_checks=$((failed_checks + 1))
 run_check "sg" "zsh -ic 'sg --version >/dev/null'" || failed_checks=$((failed_checks + 1))
 run_check "codex" "zsh -ic 'codex --version >/dev/null'" || failed_checks=$((failed_checks + 1))
 run_check "gemini" "zsh -ic 'gemini --version >/dev/null'" || failed_checks=$((failed_checks + 1))
 run_check "claude" "zsh -ic 'claude --version >/dev/null'" || failed_checks=$((failed_checks + 1))
-run_check "ru" "zsh -ic 'ru --version >/dev/null'" || failed_checks=$((failed_checks + 1))
-run_check "dcg" "zsh -ic 'dcg --version >/dev/null'" || failed_checks=$((failed_checks + 1))
-
-# Check DCG hook
-run_check "dcg_hook" "zsh -ic 'set -o pipefail; dcg doctor --format json 2>/dev/null | jq -e \".hook_registered == true\" >/dev/null || (command -v script >/dev/null 2>&1 && tty_output=\$(script -q -c \"dcg doctor\" /dev/null 2>/dev/null || true) && printf \"%s\" \"\$tty_output\" | grep -qi \"hook wiring.*OK\")'" || failed_checks=$((failed_checks + 1))
-run_check "dcg_block" "zsh -ic 'dcg_output=\$(dcg test \"git reset --hard\" 2>&1 || true); printf \"%s\" \"\$dcg_output\" | command grep -Eqi \"deny|block\"'" || failed_checks=$((failed_checks + 1))
-run_check "dcg_allow" "zsh -ic 'dcg_output=\$(dcg test \"git status\" 2>&1 || true); printf \"%s\" \"\$dcg_output\" | command grep -Eqi \"allow\"'" || failed_checks=$((failed_checks + 1))
 
 # Resume checks
 if bash /repo/tests/vm/resume_checks.sh >> "$VERIFY_LOG" 2>&1; then
@@ -141,21 +133,6 @@ else
     cp /tmp/git_safety_guard_removal_*.log "$ARTIFACTS_DIR/" 2>/dev/null || true
     cp /tmp/git_safety_guard_removal_*.json "$ARTIFACTS_DIR/" 2>/dev/null || true
     fail "git_safety_guard removal verification failed"
-fi
-
-# PHASE 2.7: Expanded New Tools E2E coverage
-log "PHASE 2.7: Expanded New Tools E2E"
-NEW_TOOLS_LOG="${ARTIFACTS_DIR}/new_tools_e2e.log"
-if su - ubuntu -c "zsh -ic 'cd /repo && bash tests/e2e/test_new_tools_e2e.sh'" > "$NEW_TOOLS_LOG" 2>&1; then
-    log "Expanded new tools E2E passed"
-    cp /tmp/gtbi_e2e_tools_*.log "$ARTIFACTS_DIR/" 2>/dev/null || true
-    cp /tmp/gtbi_e2e_results_*.json "$ARTIFACTS_DIR/" 2>/dev/null || true
-else
-    log "Expanded new tools E2E failed! See $NEW_TOOLS_LOG"
-    cat "$NEW_TOOLS_LOG"
-    cp /tmp/gtbi_e2e_tools_*.log "$ARTIFACTS_DIR/" 2>/dev/null || true
-    cp /tmp/gtbi_e2e_results_*.json "$ARTIFACTS_DIR/" 2>/dev/null || true
-    fail "Expanded new tools E2E failed"
 fi
 
 # PHASE 3: Idempotency

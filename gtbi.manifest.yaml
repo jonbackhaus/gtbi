@@ -134,6 +134,19 @@ modules:
 
           mkdir -p "$target_home/.gtbi"
           chown -hR "${TARGET_USER:-ubuntu}:${TARGET_USER:-ubuntu}" "$target_home/.gtbi"
+
+          # Ensure the user-local bin dir exists and is owned by the target user
+          # BEFORE any user-level installer runs. Earlier phases (e.g. auto-fix)
+          # can pre-create ~/.local/bin as root; the languages phase then skips
+          # creating it (it already exists), so user installs like uv fail with
+          # "mktemp: Permission denied" in ~/.local/bin. Creating + chowning here
+          # (root, phase 3) guarantees correct ownership before phase 6.
+          if [[ -e "$target_home/.local" && -L "$target_home/.local" ]]; then
+            echo "ERROR: Refusing to use symlinked dir: $target_home/.local" >&2
+            exit 1
+          fi
+          mkdir -p "$target_home/.local/bin"
+          chown -hR "${TARGET_USER:-ubuntu}:${TARGET_USER:-ubuntu}" "$target_home/.local"
     verify:
       - test -d /data/projects
       - test -f /data/projects/AGENTS.md
