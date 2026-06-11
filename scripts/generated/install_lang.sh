@@ -295,7 +295,6 @@ gtbi_security_init() {
 install_lang_bun() {
     local module_id="lang.bun"
     gtbi_require_contract "module:${module_id}" || return 1
-    log_step "Installing lang.bun"
 
     if [[ "${DRY_RUN:-false}" = "true" ]]; then
         log_info "dry-run: verified installer: lang.bun"
@@ -374,7 +373,6 @@ INSTALL_LANG_BUN
 install_lang_uv() {
     local module_id="lang.uv"
     gtbi_require_contract "module:${module_id}" || return 1
-    log_step "Installing lang.uv"
 
     if [[ "${DRY_RUN:-false}" = "true" ]]; then
         log_info "dry-run: verified installer: lang.uv"
@@ -453,7 +451,6 @@ INSTALL_LANG_UV
 install_lang_rust() {
     local module_id="lang.rust"
     gtbi_require_contract "module:${module_id}" || return 1
-    log_step "Installing lang.rust"
 
     if [[ "${DRY_RUN:-false}" = "true" ]]; then
         log_info "dry-run: verified installer: lang.rust"
@@ -543,16 +540,15 @@ INSTALL_LANG_RUST
 install_lang_go() {
     local module_id="lang.go"
     gtbi_require_contract "module:${module_id}" || return 1
-    log_step "Installing lang.go"
 
     if [[ "${DRY_RUN:-false}" = "true" ]]; then
-        log_info "dry-run: install: apt-get install -y golang-go (root)"
+        log_info "dry-run: install: apt-get install -yq golang-go (root)"
     else
         if ! run_as_root_shell <<'INSTALL_LANG_GO'
-apt-get install -y golang-go
+apt-get install -yq golang-go
 INSTALL_LANG_GO
         then
-            log_error "lang.go: install command failed: apt-get install -y golang-go"
+            log_error "lang.go: install command failed: apt-get install -yq golang-go"
             return 1
         fi
     fi
@@ -577,7 +573,6 @@ INSTALL_LANG_GO
 install_lang_nvm() {
     local module_id="lang.nvm"
     gtbi_require_contract "module:${module_id}" || return 1
-    log_step "Installing lang.nvm"
 
     if [[ "${DRY_RUN:-false}" = "true" ]]; then
         log_info "dry-run: verified installer: lang.nvm"

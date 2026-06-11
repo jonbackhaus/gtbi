@@ -295,7 +295,6 @@ gtbi_security_init() {
 install_agents_claude() {
     local module_id="agents.claude"
     gtbi_require_contract "module:${module_id}" || return 1
-    log_step "Installing agents.claude"
 
     if [[ "${DRY_RUN:-false}" = "true" ]]; then
         log_info "dry-run: verified installer: agents.claude"
@@ -563,7 +562,6 @@ INSTALL_AGENTS_CLAUDE
 install_agents_codex() {
     local module_id="agents.codex"
     gtbi_require_contract "module:${module_id}" || return 1
-    log_step "Installing agents.codex"
 
     if [[ "${DRY_RUN:-false}" = "true" ]]; then
         log_info "dry-run: install: if ! ~/.bun/bin/bun install -g --trust @openai/codex@latest; then (target_user)"
@@ -779,7 +777,6 @@ INSTALL_AGENTS_CODEX
 install_agents_gemini() {
     local module_id="agents.gemini"
     gtbi_require_contract "module:${module_id}" || return 1
-    log_step "Installing agents.gemini"
 
     if [[ "${DRY_RUN:-false}" = "true" ]]; then
         log_info "dry-run: install: ~/.bun/bin/bun install -g --trust @google/gemini-cli@latest (target_user)"
@@ -1068,7 +1065,6 @@ INSTALL_AGENTS_GEMINI
 install_agents_opencode() {
     local module_id="agents.opencode"
     gtbi_require_contract "module:${module_id}" || return 1
-    log_step "Installing agents.opencode"
 
     if [[ "${DRY_RUN:-false}" = "true" ]]; then
         log_info "dry-run: verified installer: agents.opencode"

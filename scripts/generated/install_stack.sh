@@ -295,7 +295,6 @@ gtbi_security_init() {
 install_stack_dolt() {
     local module_id="stack.dolt"
     gtbi_require_contract "module:${module_id}" || return 1
-    log_step "Installing stack.dolt"
 
     if [[ "${DRY_RUN:-false}" = "true" ]]; then
         log_info "dry-run: verified installer: stack.dolt"
@@ -374,7 +373,6 @@ INSTALL_STACK_DOLT
 install_stack_bd() {
     local module_id="stack.bd"
     gtbi_require_contract "module:${module_id}" || return 1
-    log_step "Installing stack.bd"
 
     if [[ "${DRY_RUN:-false}" = "true" ]]; then
         log_info "dry-run: install: case \"\$(uname -m)\" in (target_user)"

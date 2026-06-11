@@ -295,16 +295,15 @@ gtbi_security_init() {
 install_shell_zsh() {
     local module_id="shell.zsh"
     gtbi_require_contract "module:${module_id}" || return 1
-    log_step "Installing shell.zsh"
 
     if [[ "${DRY_RUN:-false}" = "true" ]]; then
-        log_info "dry-run: install: apt-get install -y zsh (root)"
+        log_info "dry-run: install: apt-get install -yq zsh (root)"
     else
         if ! run_as_root_shell <<'INSTALL_SHELL_ZSH'
-apt-get install -y zsh
+apt-get install -yq zsh
 INSTALL_SHELL_ZSH
         then
-            log_error "shell.zsh: install command failed: apt-get install -y zsh"
+            log_error "shell.zsh: install command failed: apt-get install -yq zsh"
             return 1
         fi
     fi
@@ -329,7 +328,6 @@ INSTALL_SHELL_ZSH
 install_shell_omz() {
     local module_id="shell.omz"
     gtbi_require_contract "module:${module_id}" || return 1
-    log_step "Installing shell.omz"
 
     if [[ "${DRY_RUN:-false}" = "true" ]]; then
         log_info "dry-run: verified installer: shell.omz"
