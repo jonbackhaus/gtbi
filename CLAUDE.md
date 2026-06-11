@@ -90,7 +90,7 @@ bd close <id>         # Complete work
 
 1. **File issues for remaining work** - Create issues for anything that needs follow-up
 2. **Run quality gates** (if code changed) - Tests, linters, builds
-3. **Update issue status** - Close finished work, update in-progress items
+3. **Update issue status** - Close issues only after the PR merges (`gh pr view --json state` = `MERGED`), not when the PR is created. Leave in-progress while a PR is pending.
 4. **PUSH TO REMOTE** - This is MANDATORY:
    ```bash
    git pull --rebase
@@ -147,6 +147,9 @@ gh pr merge --auto --squash
 # Generate scripts after any manifest or lib change
 export PATH="$HOME/.bun/bin:$PATH"
 bun run --cwd packages/manifest generate
+
+# Manifest test baseline: 272 pass / 11 fail (pre-existing — category name assertions
+# expecting 'db'/'cloud' that no longer match the manifest). Not regressions.
 
 # Run Docker integration test (Ubuntu 25.10 greenfield install)
 ./tests/docker/run.sh install
