@@ -295,7 +295,6 @@ gtbi_security_init() {
 install_base_filesystem() {
     local module_id="base.filesystem"
     gtbi_require_contract "module:${module_id}" || return 1
-    log_step "Installing base.filesystem"
 
     if [[ "${DRY_RUN:-false}" = "true" ]]; then
         log_info "dry-run: install: for p in /data /data/projects /data/cache; do (root)"

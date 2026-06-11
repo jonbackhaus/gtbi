@@ -1702,7 +1702,6 @@ function generateCategoryScript(manifest: Manifest, category: ModuleCategory): s
     lines.push(`${funcName}() {`);
     lines.push(`    local module_id="${module.id}"`);
     lines.push('    gtbi_require_contract "module:${module_id}" || return 1');
-    lines.push(`    log_step "Installing ${module.id}"`);
     lines.push('');
 
     // Install commands

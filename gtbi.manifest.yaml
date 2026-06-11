@@ -26,8 +26,8 @@ modules:
       run_as: current
       command: "command -v curl && command -v git && command -v jq"
     install:
-      - apt-get update -y
-      - apt-get install -y curl git ca-certificates unzip tar xz-utils jq build-essential gnupg lsb-release zstd
+      - apt-get update -yq
+      - apt-get install -yq curl git ca-certificates unzip tar xz-utils jq build-essential gnupg lsb-release zstd
     verify:
       - curl --version
       - git --version
@@ -207,7 +207,7 @@ modules:
       run_as: current
       command: "command -v zsh"
     install:
-      - apt-get install -y zsh
+      - apt-get install -yq zsh
     verify:
       - zsh --version
 
@@ -441,12 +441,12 @@ modules:
       run_as: current
       command: "command -v rg && command -v tmux && command -v fzf"
     install:
-      - apt-get install -y ripgrep tmux fzf direnv jq gh git-lfs lsof dnsutils netcat-openbsd strace rsync
-      - apt-get install -y lsd || true
-      - apt-get install -y eza || true
-      - apt-get install -y bat || apt-get install -y batcat || true
-      - apt-get install -y fd-find || true
-      - apt-get install -y btop || true
+      - apt-get install -yq ripgrep tmux fzf direnv jq gh git-lfs lsof dnsutils netcat-openbsd strace rsync
+      - apt-get install -yq lsd || true
+      - apt-get install -yq eza || true
+      - apt-get install -yq bat || apt-get install -yq batcat || true
+      - apt-get install -yq fd-find || true
+      - apt-get install -yq btop || true
       - |
         # dust (du-dust) — not in Ubuntu repos; install via GitHub binary release
         DUST_VER="1.1.2"
@@ -462,9 +462,9 @@ modules:
         echo "$DUST_SHA $TMP_FILE" | sha256sum -c - || { echo "Checksum failed for dust"; rm "$TMP_FILE"; exit 1; }
         tar -xzf "$TMP_FILE" -C /usr/local/bin dust-v${DUST_VER}-${DUST_ARCH}/dust --strip-components=1
         chmod +x /usr/local/bin/dust
-      - apt-get install -y neovim || true
-      - apt-get install -y docker.io || true
-      - apt-get install -y docker-compose-plugin 2>/dev/null || true
+      - apt-get install -yq neovim || true
+      - apt-get install -yq docker.io || true
+      - apt-get install -yq docker-compose-plugin 2>/dev/null || true
     verify:
       - rg --version
       - tmux -V
@@ -493,7 +493,7 @@ modules:
       command: "command -v lazygit"
     install:
       - |
-        if apt-get install -y lazygit; then
+        if apt-get install -yq lazygit; then
           exit 0
         fi
         # Fallback to binary install
@@ -584,8 +584,8 @@ modules:
           | tee /usr/share/keyrings/tailscale-archive-keyring.gpg >/dev/null
         echo "deb [signed-by=/usr/share/keyrings/tailscale-archive-keyring.gpg] https://pkgs.tailscale.com/stable/ubuntu ${DISTRO_CODENAME} main" \
           | tee /etc/apt/sources.list.d/tailscale.list
-        apt-get update
-        apt-get install -y tailscale
+        apt-get update -q
+        apt-get install -yq tailscale
         systemctl enable tailscaled 2>/dev/null || true
     verify:
       - tailscale version
@@ -722,7 +722,7 @@ modules:
       run_as: current
       command: "command -v go"
     install:
-      - apt-get install -y golang-go
+      - apt-get install -yq golang-go
     verify:
       - go version
 
@@ -793,7 +793,7 @@ modules:
       command: "command -v zoxide"
     install:
       - |
-        if apt-get install -y zoxide; then
+        if apt-get install -yq zoxide; then
           exit 0
         fi
         # Fallback to pinned binary release. The upstream install.sh queries the

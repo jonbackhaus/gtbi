@@ -295,7 +295,6 @@ gtbi_security_init() {
 install_users_ubuntu() {
     local module_id="users.ubuntu"
     gtbi_require_contract "module:${module_id}" || return 1
-    log_step "Installing users.ubuntu"
 
 
     # Verify

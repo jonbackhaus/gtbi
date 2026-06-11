@@ -295,27 +295,26 @@ gtbi_security_init() {
 install_base_system() {
     local module_id="base.system"
     gtbi_require_contract "module:${module_id}" || return 1
-    log_step "Installing base.system"
 
     if [[ "${DRY_RUN:-false}" = "true" ]]; then
-        log_info "dry-run: install: apt-get update -y (root)"
+        log_info "dry-run: install: apt-get update -yq (root)"
     else
         if ! run_as_root_shell <<'INSTALL_BASE_SYSTEM'
-apt-get update -y
+apt-get update -yq
 INSTALL_BASE_SYSTEM
         then
-            log_error "base.system: install command failed: apt-get update -y"
+            log_error "base.system: install command failed: apt-get update -yq"
             return 1
         fi
     fi
     if [[ "${DRY_RUN:-false}" = "true" ]]; then
-        log_info "dry-run: install: apt-get install -y curl git ca-certificates unzip tar xz-utils jq build-essential gnupg lsb-release zstd (root)"
+        log_info "dry-run: install: apt-get install -yq curl git ca-certificates unzip tar xz-utils jq build-essential gnupg lsb-release zstd (root)"
     else
         if ! run_as_root_shell <<'INSTALL_BASE_SYSTEM'
-apt-get install -y curl git ca-certificates unzip tar xz-utils jq build-essential gnupg lsb-release zstd
+apt-get install -yq curl git ca-certificates unzip tar xz-utils jq build-essential gnupg lsb-release zstd
 INSTALL_BASE_SYSTEM
         then
-            log_error "base.system: install command failed: apt-get install -y curl git ca-certificates unzip tar xz-utils jq build-essential gnupg lsb-release zstd"
+            log_error "base.system: install command failed: apt-get install -yq curl git ca-certificates unzip tar xz-utils jq build-essential gnupg lsb-release zstd"
             return 1
         fi
     fi

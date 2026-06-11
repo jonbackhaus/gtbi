@@ -295,71 +295,70 @@ gtbi_security_init() {
 install_cli_modern() {
     local module_id="cli.modern"
     gtbi_require_contract "module:${module_id}" || return 1
-    log_step "Installing cli.modern"
 
     if [[ "${DRY_RUN:-false}" = "true" ]]; then
-        log_info "dry-run: install: apt-get install -y ripgrep tmux fzf direnv jq gh git-lfs lsof dnsutils netcat-openbsd strace rsync (root)"
+        log_info "dry-run: install: apt-get install -yq ripgrep tmux fzf direnv jq gh git-lfs lsof dnsutils netcat-openbsd strace rsync (root)"
     else
         if ! run_as_root_shell <<'INSTALL_CLI_MODERN'
-apt-get install -y ripgrep tmux fzf direnv jq gh git-lfs lsof dnsutils netcat-openbsd strace rsync
+apt-get install -yq ripgrep tmux fzf direnv jq gh git-lfs lsof dnsutils netcat-openbsd strace rsync
 INSTALL_CLI_MODERN
         then
-            log_error "cli.modern: install command failed: apt-get install -y ripgrep tmux fzf direnv jq gh git-lfs lsof dnsutils netcat-openbsd strace rsync"
+            log_error "cli.modern: install command failed: apt-get install -yq ripgrep tmux fzf direnv jq gh git-lfs lsof dnsutils netcat-openbsd strace rsync"
             return 1
         fi
     fi
     if [[ "${DRY_RUN:-false}" = "true" ]]; then
-        log_info "dry-run: install: apt-get install -y lsd || true (root)"
+        log_info "dry-run: install: apt-get install -yq lsd || true (root)"
     else
         if ! run_as_root_shell <<'INSTALL_CLI_MODERN'
-apt-get install -y lsd || true
+apt-get install -yq lsd || true
 INSTALL_CLI_MODERN
         then
-            log_error "cli.modern: install command failed: apt-get install -y lsd || true"
+            log_error "cli.modern: install command failed: apt-get install -yq lsd || true"
             return 1
         fi
     fi
     if [[ "${DRY_RUN:-false}" = "true" ]]; then
-        log_info "dry-run: install: apt-get install -y eza || true (root)"
+        log_info "dry-run: install: apt-get install -yq eza || true (root)"
     else
         if ! run_as_root_shell <<'INSTALL_CLI_MODERN'
-apt-get install -y eza || true
+apt-get install -yq eza || true
 INSTALL_CLI_MODERN
         then
-            log_error "cli.modern: install command failed: apt-get install -y eza || true"
+            log_error "cli.modern: install command failed: apt-get install -yq eza || true"
             return 1
         fi
     fi
     if [[ "${DRY_RUN:-false}" = "true" ]]; then
-        log_info "dry-run: install: apt-get install -y bat || apt-get install -y batcat || true (root)"
+        log_info "dry-run: install: apt-get install -yq bat || apt-get install -yq batcat || true (root)"
     else
         if ! run_as_root_shell <<'INSTALL_CLI_MODERN'
-apt-get install -y bat || apt-get install -y batcat || true
+apt-get install -yq bat || apt-get install -yq batcat || true
 INSTALL_CLI_MODERN
         then
-            log_error "cli.modern: install command failed: apt-get install -y bat || apt-get install -y batcat || true"
+            log_error "cli.modern: install command failed: apt-get install -yq bat || apt-get install -yq batcat || true"
             return 1
         fi
     fi
     if [[ "${DRY_RUN:-false}" = "true" ]]; then
-        log_info "dry-run: install: apt-get install -y fd-find || true (root)"
+        log_info "dry-run: install: apt-get install -yq fd-find || true (root)"
     else
         if ! run_as_root_shell <<'INSTALL_CLI_MODERN'
-apt-get install -y fd-find || true
+apt-get install -yq fd-find || true
 INSTALL_CLI_MODERN
         then
-            log_error "cli.modern: install command failed: apt-get install -y fd-find || true"
+            log_error "cli.modern: install command failed: apt-get install -yq fd-find || true"
             return 1
         fi
     fi
     if [[ "${DRY_RUN:-false}" = "true" ]]; then
-        log_info "dry-run: install: apt-get install -y btop || true (root)"
+        log_info "dry-run: install: apt-get install -yq btop || true (root)"
     else
         if ! run_as_root_shell <<'INSTALL_CLI_MODERN'
-apt-get install -y btop || true
+apt-get install -yq btop || true
 INSTALL_CLI_MODERN
         then
-            log_error "cli.modern: install command failed: apt-get install -y btop || true"
+            log_error "cli.modern: install command failed: apt-get install -yq btop || true"
             return 1
         fi
     fi
@@ -388,35 +387,35 @@ INSTALL_CLI_MODERN
         fi
     fi
     if [[ "${DRY_RUN:-false}" = "true" ]]; then
-        log_info "dry-run: install: apt-get install -y neovim || true (root)"
+        log_info "dry-run: install: apt-get install -yq neovim || true (root)"
     else
         if ! run_as_root_shell <<'INSTALL_CLI_MODERN'
-apt-get install -y neovim || true
+apt-get install -yq neovim || true
 INSTALL_CLI_MODERN
         then
-            log_error "cli.modern: install command failed: apt-get install -y neovim || true"
+            log_error "cli.modern: install command failed: apt-get install -yq neovim || true"
             return 1
         fi
     fi
     if [[ "${DRY_RUN:-false}" = "true" ]]; then
-        log_info "dry-run: install: apt-get install -y docker.io || true (root)"
+        log_info "dry-run: install: apt-get install -yq docker.io || true (root)"
     else
         if ! run_as_root_shell <<'INSTALL_CLI_MODERN'
-apt-get install -y docker.io || true
+apt-get install -yq docker.io || true
 INSTALL_CLI_MODERN
         then
-            log_error "cli.modern: install command failed: apt-get install -y docker.io || true"
+            log_error "cli.modern: install command failed: apt-get install -yq docker.io || true"
             return 1
         fi
     fi
     if [[ "${DRY_RUN:-false}" = "true" ]]; then
-        log_info "dry-run: install: apt-get install -y docker-compose-plugin 2>/dev/null || true (root)"
+        log_info "dry-run: install: apt-get install -yq docker-compose-plugin 2>/dev/null || true (root)"
     else
         if ! run_as_root_shell <<'INSTALL_CLI_MODERN'
-apt-get install -y docker-compose-plugin 2>/dev/null || true
+apt-get install -yq docker-compose-plugin 2>/dev/null || true
 INSTALL_CLI_MODERN
         then
-            log_error "cli.modern: install command failed: apt-get install -y docker-compose-plugin 2>/dev/null || true"
+            log_error "cli.modern: install command failed: apt-get install -yq docker-compose-plugin 2>/dev/null || true"
             return 1
         fi
     fi

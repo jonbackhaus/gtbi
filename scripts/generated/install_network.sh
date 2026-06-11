@@ -295,7 +295,6 @@ gtbi_security_init() {
 install_network_tailscale() {
     local module_id="network.tailscale"
     gtbi_require_contract "module:${module_id}" || return 1
-    log_step "Installing network.tailscale"
 
     if [[ "${DRY_RUN:-false}" = "true" ]]; then
         log_info "dry-run: install: case \"\$DISTRO_CODENAME\" in (root)"
@@ -315,8 +314,8 @@ curl "${CURL_ARGS[@]}" "https://pkgs.tailscale.com/stable/ubuntu/${DISTRO_CODENA
   | tee /usr/share/keyrings/tailscale-archive-keyring.gpg >/dev/null
 echo "deb [signed-by=/usr/share/keyrings/tailscale-archive-keyring.gpg] https://pkgs.tailscale.com/stable/ubuntu ${DISTRO_CODENAME} main" \
   | tee /etc/apt/sources.list.d/tailscale.list
-apt-get update
-apt-get install -y tailscale
+apt-get update -q
+apt-get install -yq tailscale
 systemctl enable tailscaled 2>/dev/null || true
 INSTALL_NETWORK_TAILSCALE
         then
@@ -351,7 +350,6 @@ INSTALL_NETWORK_TAILSCALE
 install_network_ssh_keepalive() {
     local module_id="network.ssh_keepalive"
     gtbi_require_contract "module:${module_id}" || return 1
-    log_step "Installing network.ssh_keepalive"
 
     if [[ "${DRY_RUN:-false}" = "true" ]]; then
         log_info "dry-run: install: if [[ ! -f /etc/ssh/sshd_config.gtbi.bak ]]; then (root)"

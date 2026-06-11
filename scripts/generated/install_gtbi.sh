@@ -295,7 +295,6 @@ gtbi_security_init() {
 install_gtbi_workspace() {
     local module_id="gtbi.workspace"
     gtbi_require_contract "module:${module_id}" || return 1
-    log_step "Installing gtbi.workspace"
 
     if [[ "${DRY_RUN:-false}" = "true" ]]; then
         log_info "dry-run: install: mkdir -p /data/projects/my_first_project (target_user)"
@@ -478,7 +477,6 @@ INSTALL_GTBI_WORKSPACE
 install_gtbi_onboard() {
     local module_id="gtbi.onboard"
     gtbi_require_contract "module:${module_id}" || return 1
-    log_step "Installing gtbi.onboard"
 
     if [[ "${DRY_RUN:-false}" = "true" ]]; then
         log_info "dry-run: install: trap 'rm -f \"\$onboard_tmp\"' EXIT (target_user)"
@@ -690,7 +688,6 @@ INSTALL_GTBI_ONBOARD
 install_gtbi_update() {
     local module_id="gtbi.update"
     gtbi_require_contract "module:${module_id}" || return 1
-    log_step "Installing gtbi.update"
 
     if [[ "${DRY_RUN:-false}" = "true" ]]; then
         log_info "dry-run: install: mkdir -p ~/.gtbi/scripts (target_user)"
@@ -936,7 +933,6 @@ INSTALL_GTBI_UPDATE
 install_gtbi_nightly() {
     local module_id="gtbi.nightly"
     gtbi_require_contract "module:${module_id}" || return 1
-    log_step "Installing gtbi.nightly"
 
     if [[ "${DRY_RUN:-false}" = "true" ]]; then
         log_info "dry-run: install: mkdir -p ~/.gtbi/scripts ~/.config/systemd/user (target_user)"
@@ -1077,7 +1073,6 @@ INSTALL_GTBI_NIGHTLY
 install_gtbi_doctor() {
     local module_id="gtbi.doctor"
     gtbi_require_contract "module:${module_id}" || return 1
-    log_step "Installing gtbi.doctor"
 
     if [[ "${DRY_RUN:-false}" = "true" ]]; then
         log_info "dry-run: install: trap 'rm -f \"\$doctor_tmp\"' EXIT (target_user)"

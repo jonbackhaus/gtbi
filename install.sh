@@ -590,7 +590,7 @@ EOF
     # terminal cursor position issues when apt-get fails or times out
     echo -e "\033[0;90m      ↳ Installing gum package...\033[0m" >&2
     local apt_output
-    if apt_output=$(DEBIAN_FRONTEND=noninteractive "$timeout_bin" 60 "${sudo_cmd[@]}" "$apt_get_bin" install -y \
+    if apt_output=$(DEBIAN_FRONTEND=noninteractive "$timeout_bin" 60 "${sudo_cmd[@]}" "$apt_get_bin" install -yq \
         -o Dpkg::Progress-Fancy="0" -o APT::Color="0" gum 2>&1); then
         HAS_GUM=true
         # Reset terminal line position and show success
@@ -4618,7 +4618,7 @@ ensure_base_deps() {
     try_step "Updating apt package index" "${sudo_cmd[@]}" "$apt_get_bin" update -y || return 1
 
     log_detail "Installing base packages"
-    try_step "Installing base packages" "${sudo_cmd[@]}" "$apt_get_bin" install -y curl git ca-certificates unzip tar xz-utils jq build-essential sudo gnupg libssl-dev pkg-config zstd || return 1
+    try_step "Installing base packages" "${sudo_cmd[@]}" "$apt_get_bin" install -yq curl git ca-certificates unzip tar xz-utils jq build-essential sudo gnupg libssl-dev pkg-config zstd || return 1
 }
 
 # ============================================================

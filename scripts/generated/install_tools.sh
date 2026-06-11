@@ -295,13 +295,12 @@ gtbi_security_init() {
 install_tools_lazygit() {
     local module_id="tools.lazygit"
     gtbi_require_contract "module:${module_id}" || return 1
-    log_step "Installing tools.lazygit"
 
     if [[ "${DRY_RUN:-false}" = "true" ]]; then
-        log_info "dry-run: install: if apt-get install -y lazygit; then (root)"
+        log_info "dry-run: install: if apt-get install -yq lazygit; then (root)"
     else
         if ! run_as_root_shell <<'INSTALL_TOOLS_LAZYGIT'
-if apt-get install -y lazygit; then
+if apt-get install -yq lazygit; then
   exit 0
 fi
 # Fallback to binary install
@@ -325,7 +324,7 @@ chmod +x /usr/local/bin/lazygit
 rm "$TMP_FILE"
 INSTALL_TOOLS_LAZYGIT
         then
-            log_error "tools.lazygit: install command failed: if apt-get install -y lazygit; then"
+            log_error "tools.lazygit: install command failed: if apt-get install -yq lazygit; then"
             return 1
         fi
     fi
@@ -350,7 +349,6 @@ INSTALL_TOOLS_LAZYGIT
 install_tools_lazydocker() {
     local module_id="tools.lazydocker"
     gtbi_require_contract "module:${module_id}" || return 1
-    log_step "Installing tools.lazydocker"
 
     if [[ "${DRY_RUN:-false}" = "true" ]]; then
         log_info "dry-run: install: case \"\$ARCH\" in (root)"
@@ -401,7 +399,6 @@ INSTALL_TOOLS_LAZYDOCKER
 install_tools_atuin() {
     local module_id="tools.atuin"
     gtbi_require_contract "module:${module_id}" || return 1
-    log_step "Installing tools.atuin"
 
     if [[ "${DRY_RUN:-false}" = "true" ]]; then
         log_info "dry-run: verified installer: tools.atuin"
@@ -480,13 +477,12 @@ INSTALL_TOOLS_ATUIN
 install_tools_zoxide() {
     local module_id="tools.zoxide"
     gtbi_require_contract "module:${module_id}" || return 1
-    log_step "Installing tools.zoxide"
 
     if [[ "${DRY_RUN:-false}" = "true" ]]; then
-        log_info "dry-run: install: if apt-get install -y zoxide; then (root)"
+        log_info "dry-run: install: if apt-get install -yq zoxide; then (root)"
     else
         if ! run_as_root_shell <<'INSTALL_TOOLS_ZOXIDE'
-if apt-get install -y zoxide; then
+if apt-get install -yq zoxide; then
   exit 0
 fi
 # Fallback to pinned binary release. The upstream install.sh queries the
@@ -507,7 +503,7 @@ tar -xzf "$TMP_FILE" -C /usr/local/bin zoxide
 chmod +x /usr/local/bin/zoxide
 INSTALL_TOOLS_ZOXIDE
         then
-            log_error "tools.zoxide: install command failed: if apt-get install -y zoxide; then"
+            log_error "tools.zoxide: install command failed: if apt-get install -yq zoxide; then"
             return 1
         fi
     fi
@@ -532,7 +528,6 @@ INSTALL_TOOLS_ZOXIDE
 install_tools_ast_grep() {
     local module_id="tools.ast_grep"
     gtbi_require_contract "module:${module_id}" || return 1
-    log_step "Installing tools.ast_grep"
 
     if [[ "${DRY_RUN:-false}" = "true" ]]; then
         log_info "dry-run: install: case \"\$(uname -m)\" in (target_user)"
