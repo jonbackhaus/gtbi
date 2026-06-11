@@ -147,7 +147,6 @@ const STATUS_RANK: Record<ReadinessStatus, number> = {
   unknown: 2,
   fail: 3,
 };
-const AGENT_PROVIDERS = ['claude', 'codex', 'gemini'] as const;
 
 class NodeReadinessFileSystem implements AgentReadinessFileSystem {
   stat(path: string): PathStatResult {
@@ -267,9 +266,6 @@ function xdgConfigHome(context: PathContext): string {
   return context.env.XDG_CONFIG_HOME ? resolve(context.env.XDG_CONFIG_HOME) : join(context.home, '.config');
 }
 
-function xdgDataHome(context: PathContext): string {
-  return context.env.XDG_DATA_HOME ? resolve(context.env.XDG_DATA_HOME) : join(context.home, '.local', 'share');
-}
 
 function credentialEnvPresent(env: Record<string, string | undefined>, names: string[]): string[] {
   return names.filter((name) => Boolean(env[name]?.trim()));

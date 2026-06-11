@@ -126,36 +126,15 @@ function jsonFile(value: unknown): FixtureEntry {
   return { kind: 'file', content: JSON.stringify(value) };
 }
 
-function profile(provider: string, name: string): Record<string, FixtureEntry> {
-  return {
-    [`${HOME}/.local/share/caam/profiles/${provider}/${name}/profile.json`]: jsonFile({
-      name,
-      provider,
-      auth_mode: 'oauth',
-    }),
-  };
-}
-
 function baseEntries(): Record<string, FixtureEntry> {
   return {
     '/bin/claude': executable('/bin/claude'),
     '/bin/codex': executable('/bin/codex'),
     '/bin/gemini': executable('/bin/gemini'),
-    '/bin/caam': executable('/bin/caam'),
     [`${HOME}/.claude/.credentials.json`]: jsonFile({ claudeAiOauth: { accessToken: REDACTION_SAMPLE } }),
     [`${HOME}/.codex/auth.json`]: jsonFile({ tokens: { access_token: REDACTION_SAMPLE } }),
     [`${HOME}/.gemini/settings.json`]: jsonFile({ selectedAuthType: 'oauth-personal' }),
     [`${HOME}/.gemini/oauth_creds.json`]: jsonFile({ access_token: REDACTION_SAMPLE }),
-    [`${HOME}/.config/caam/config.json`]: jsonFile({
-      default_profiles: {
-        claude: 'work',
-        codex: 'work',
-        gemini: 'work',
-      },
-    }),
-    ...profile('claude', 'work'),
-    ...profile('codex', 'work'),
-    ...profile('gemini', 'work'),
   };
 }
 
@@ -189,7 +168,7 @@ function createCliFixture() {
 
   mkdirSync(home, { recursive: true });
   mkdirSync(bin, { recursive: true });
-  for (const command of ['claude', 'codex', 'gemini', 'caam']) {
+  for (const command of ['claude', 'codex', 'gemini']) {
     writeRealFile(join(bin, command), `#!/usr/bin/env bash\nprintf '%s 1.2.3\\n' '${command}'\n`, true);
   }
 
@@ -205,20 +184,6 @@ function createCliFixture() {
   writeRealFile(join(home, '.gemini', 'oauth_creds.json'), JSON.stringify({
     access_token: secret,
   }));
-  writeRealFile(join(home, '.config', 'caam', 'config.json'), JSON.stringify({
-    default_profiles: {
-      claude: 'work',
-      codex: 'work',
-      gemini: 'work',
-    },
-  }));
-  for (const provider of PROVIDERS) {
-    writeRealFile(
-      join(home, '.local', 'share', 'caam', 'profiles', provider, 'work', 'profile.json'),
-      JSON.stringify({ name: 'work', provider, auth_mode: 'oauth', token: secret })
-    );
-  }
-
   return { root, home, bin, secret };
 }
 
@@ -265,7 +230,6 @@ describe('agent readiness audit', () => {
       expect(tool?.status).toBe('pass');
       expect(tool?.auth?.status).toBe('pass');
     }
-    expect(report.tools.find((item) => item.id === 'caam')?.status).toBe('pass');
     expect(JSON.stringify(report)).not.toContain(REDACTION_SAMPLE);
   });
 
@@ -280,12 +244,11 @@ describe('agent readiness audit', () => {
     expect(jsonRun.status).toBe(0);
     const report = parseCliJsonReport(jsonRun.stdout);
     expect(report.ok).toBe(true);
-    expect(report.summary).toEqual({ pass: 4, warn: 0, fail: 0, unknown: 0 });
+    expect(report.summary).toEqual({ pass: 3, warn: 0, fail: 0, unknown: 0 });
     expect(report.tools.map((tool) => [tool.id, tool.status])).toEqual([
       ['claude', 'pass'],
       ['codex', 'pass'],
       ['gemini', 'pass'],
-      ['caam', 'pass'],
     ]);
     expect(jsonRun.stdout).not.toContain(fixture.secret);
     expect(jsonRun.stdout).not.toContain(envSecret);
@@ -296,11 +259,10 @@ describe('agent readiness audit', () => {
 
     expect(humanRun.status).toBe(0);
     expect(humanRun.stdout).toContain('GTBI agent readiness audit');
-    expect(humanRun.stdout).toContain('Summary: pass=4 warn=0 unknown=0 fail=0');
+    expect(humanRun.stdout).toContain('Summary: pass=3 warn=0 unknown=0 fail=0');
     expect(humanRun.stdout).toContain('[PASS] Claude Code (claude)');
     expect(humanRun.stdout).toContain('[PASS] Codex CLI (codex)');
     expect(humanRun.stdout).toContain('[PASS] Gemini CLI (gemini)');
-    expect(humanRun.stdout).toContain('[PASS] Coding Agent Account Manager (caam)');
     expect(humanRun.stdout).not.toContain(fixture.secret);
     expect(humanRun.stdout).not.toContain(envSecret);
     expect(fixture.root).toContain('gtbi-agent-readiness-');
@@ -363,25 +325,6 @@ describe('agent readiness audit', () => {
 
     expect(claude?.cli.status).toBe('pass');
     expect(claude?.cli.aliases.cc).toBeUndefined();
-  });
-
-  test('fails stale CAAM defaults that point to absent profiles', () => {
-    const entries = baseEntries();
-    entries[`${HOME}/.config/caam/config.json`] = jsonFile({
-      default_profiles: {
-        claude: 'work',
-        codex: 'missing-profile',
-        gemini: 'work',
-      },
-    });
-
-    const report = reportFor(entries);
-    const caam = report.tools.find((item) => item.id === 'caam');
-    const codexState = caam?.caam?.providers.find((provider) => provider.provider === 'codex');
-
-    expect(report.ok).toBe(false);
-    expect(caam?.status).toBe('fail');
-    expect(codexState?.detail).toContain('stale');
   });
 
   test('reports unreadable config as unknown without exposing contents', () => {
