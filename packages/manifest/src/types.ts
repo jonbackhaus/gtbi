@@ -44,6 +44,8 @@ export interface VerifiedInstaller {
   args?: string[];
   /** If true, run installer in detached tmux session (prevents blocking) */
   run_in_tmux?: boolean;
+  /** If this shell condition exits 0, skip the installer (treat as already done) */
+  skip_if?: string;
 }
 
 /**
