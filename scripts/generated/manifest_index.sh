@@ -6,7 +6,7 @@
 # ============================================================
 # Data-only manifest index. Safe to source.
 
-GTBI_MANIFEST_SHA256="987811463dbf8d49113ec3d94182cbf7850fe6fff7dfd35e3d028bc67f736088"
+GTBI_MANIFEST_SHA256="67b343f7b94ebf601e8b9f190bb9a1b7deb15ad48e961cc12afaf75e742c74c2"
 
 GTBI_MODULES_IN_ORDER=(
   "base.system"
@@ -250,7 +250,7 @@ declare -gA GTBI_MODULE_DESC=(
   ['lang.nvm']="nvm + latest Node.js"
   ['tools.atuin']="Atuin shell history (Ctrl-R superpowers)"
   ['tools.zoxide']="Zoxide (better cd)"
-  ['tools.ast_grep']="ast-grep (used by UBS for syntax-aware scanning)"
+  ['tools.ast_grep']="ast-grep (syntax-aware code search/rewrite)"
   ['agents.claude']="Claude Code"
   ['agents.codex']="OpenAI Codex CLI"
   ['agents.gemini']="Google Gemini CLI"
@@ -281,7 +281,7 @@ declare -gA GTBI_MODULE_INSTALLED_CHECK=(
   ['lang.nvm']="test -d ~/.nvm && ls ~/.nvm/versions/node/ 2>/dev/null | grep -q ."
   ['tools.atuin']="test -x ~/.atuin/bin/atuin"
   ['tools.zoxide']="command -v zoxide"
-  ['tools.ast_grep']="command -v sg"
+  ['tools.ast_grep']="test -x \"\$HOME/.cargo/bin/sg\""
   ['agents.claude']="test -x \"\${GTBI_BIN_DIR:-\$HOME/.local/bin}/claude\" || test -x \"\$HOME/.local/bin/claude\""
   ['agents.codex']="test -x \"\${GTBI_BIN_DIR:-\$HOME/.local/bin}/codex\" || test -x \"\$HOME/.local/bin/codex\""
   ['agents.gemini']="test -x \"\${GTBI_BIN_DIR:-\$HOME/.local/bin}/gemini\" || test -x \"\$HOME/.local/bin/gemini\""
@@ -308,7 +308,7 @@ declare -gA GTBI_MODULE_INSTALLED_CHECK_RUN_AS=(
   ['lang.go']="current"
   ['lang.nvm']="target_user"
   ['tools.atuin']="target_user"
-  ['tools.zoxide']="target_user"
+  ['tools.zoxide']="current"
   ['tools.ast_grep']="target_user"
   ['agents.claude']="target_user"
   ['agents.codex']="target_user"

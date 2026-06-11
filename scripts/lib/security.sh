@@ -341,7 +341,6 @@ declare -gA KNOWN_INSTALLERS=(
     [nvm]="https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh"
     [ohmyzsh]="https://install.ohmyz.sh/"
     [opencode]="https://opencode.ai/install"
-    [zoxide]="https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh"
     [atuin]="https://setup.atuin.sh"
     [gemini_patch]="https://raw.githubusercontent.com/Dicklesworthstone/misc_coding_agent_tips_and_scripts/main/fix-gemini-cli-ebadf-crash.sh"
 )

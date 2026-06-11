@@ -41,7 +41,3 @@ installers:
   uv:
     url: "https://astral.sh/uv/install.sh"
     sha256: "c8677f5b3cca8a2a89eaf4f4450c25ccaaff9ba211d33d2c147eaddad1e18bda"
-
-  zoxide:
-    url: "https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh"
-    sha256: "0c25aed6cce9d56ee0596c9a5df8cbe99ffd0f7a7054de0262234dd268b61404"

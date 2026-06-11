@@ -2,12 +2,20 @@
 # ============================================================
 # GTBI Installer - Repair Test (Docker)
 #
-# Runs a fresh install, deliberately corrupts the installation
-# in 5 realistic ways, then verifies that `gtbi doctor --fix`
-# restores everything to a healthy state.
+# Runs a fresh install, deliberately corrupts the installation,
+# then verifies that `gtbi doctor --fix` restores everything to a
+# healthy state.
 #
-# All corruptions target checks that have non-manual auto-fix
-# functions in doctor_fix.sh (no FIXES_MANUAL items).
+# Every corruption targets a doctor check that:
+#   - is actually emitted by doctor (and not suppressed to "pass"
+#     under GTBI_DOCTOR_CI=true), and
+#   - has a non-manual auto-fix function in doctor_fix.sh whose
+#     restore path matches the corruption (no FIXES_MANUAL items).
+#
+# Detection (Phase 2/4) runs doctor with `--format json` so the
+# machine-readable check `id` fields are present in the output; the
+# default human-readable renderer only prints labels, not IDs, so
+# grepping for a check ID against text output never matches.
 #
 # Runs INSIDE a Docker container. Mount the repo at /repo:
 #
@@ -57,7 +65,7 @@ fi
 # ── Phase 2: Baseline Doctor (must pass before we corrupt) ────────────────────
 
 log "Phase 2: Baseline Doctor"
-if su - ubuntu -c "GTBI_DOCTOR_CI=true zsh -ic 'gtbi doctor'" \
+if su - ubuntu -c "GTBI_DOCTOR_CI=true zsh -ic 'gtbi doctor --format json'" \
         > "${ARTIFACTS_DIR}/repair_baseline_doctor.log" 2>&1; then
     log "Baseline doctor passed"
 else
@@ -96,18 +104,13 @@ else
     echo "  [skip] zsh-syntax-highlighting not present"
 fi
 
-# C: Strip GTBI sourcing line from .zshrc
-# Fixes: shell.gtbi_sourced via fix_gtbi_sourcing()
-log "  Corruption C: stripping GTBI sourcing from .zshrc"
-if grep -q 'gtbi\.zshrc' /home/ubuntu/.zshrc 2>/dev/null; then
-    sed -i '/gtbi\.zshrc/d' /home/ubuntu/.zshrc
-    sed -i '/GTBI configuration/d' /home/ubuntu/.zshrc
-    CORRUPTED_CHECK_IDS+=("shell.gtbi_sourced")
-    echo "  [ok] GTBI sourcing stripped from .zshrc"
-else
-    echo "  [skip] GTBI sourcing not present in .zshrc"
-fi
-
+# NOTE: We intentionally only corrupt the two zsh plugins above. Under
+# GTBI_DOCTOR_CI=true, those are the only checks that are both (a) emitted
+# with a non-"pass" status when the component is missing and (b) repaired
+# by an auto-fix whose restore path matches the corruption. Other CI checks
+# (ssh_server, ssh_keepalive) are forced to "pass" in CI and the
+# shell.gtbi_sourced check id is never emitted by doctor, so corrupting
+# those produces no detectable failure to validate the repair against.
 
 if [[ ${#CORRUPTED_CHECK_IDS[@]} -eq 0 ]]; then
     fail "No corruptions were applied — cannot validate repair"
@@ -120,7 +123,7 @@ log "Corrupted check IDs: ${CORRUPTED_CHECK_IDS[*]}"
 # check IDs appear as failures, the corruption silently had no effect.
 
 log "Phase 4: Pre-Fix Doctor (expect failures)"
-su - ubuntu -c "GTBI_DOCTOR_CI=true zsh -ic 'gtbi doctor'" \
+su - ubuntu -c "GTBI_DOCTOR_CI=true zsh -ic 'gtbi doctor --format json'" \
     > "${ARTIFACTS_DIR}/repair_pre_fix_doctor.log" 2>&1 || true
 
 detected=0

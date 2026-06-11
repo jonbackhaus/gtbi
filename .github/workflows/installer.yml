@@ -335,8 +335,8 @@ jobs:
           su - ubuntu -c "zsh -ic 'command -v dig >/dev/null'"
           su - ubuntu -c "zsh -ic 'command -v nc >/dev/null'"
           su - ubuntu -c "zsh -ic 'onboard --help'"
-          # beads_rust (required) - issue tracking
-          su - ubuntu -c "zsh -ic 'br --version'"
+          # beads (bd, stack.bd) - issue tracking
+          su - ubuntu -c "zsh -ic 'bd --version'"
           # Agents
           su - ubuntu -c "zsh -ic 'claude --version'"
           su - ubuntu -c "zsh -ic 'codex --version'"

@@ -714,9 +714,11 @@ if ! git push origin HEAD:main; then
     log_error "Push to main failed; fix committed locally but not pushed"
     exit 2
 fi
+# Legacy master mirror is best-effort: main is the source of truth and was
+# already pushed above. A mirror hiccup (e.g. race with a concurrent run) must
+# not fail the drift fix, which has already succeeded on main.
 if ! git push origin main:master; then
-    log_error "Push to master mirror failed after pushing main"
-    exit 2
+    log "Push to master mirror failed (non-fatal; main is authoritative and already pushed)"
 fi
 
 log "Fix committed and pushed successfully."

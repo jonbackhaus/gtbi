@@ -483,67 +483,40 @@ install_tools_zoxide() {
     log_step "Installing tools.zoxide"
 
     if [[ "${DRY_RUN:-false}" = "true" ]]; then
-        log_info "dry-run: verified installer: tools.zoxide"
+        log_info "dry-run: install: if apt-get install -y zoxide; then (root)"
     else
-        if ! {
-            # Try security-verified install (no unverified fallback; fail closed)
-            local install_success=false
-
-            if gtbi_security_init; then
-                local known_installers_decl=""
-                # Check if KNOWN_INSTALLERS is available as an associative array (declare -A)
-                known_installers_decl="$(declare -p KNOWN_INSTALLERS 2>/dev/null || true)"
-                if [[ "$known_installers_decl" == declare\ -A* ]]; then
-                    local tool="zoxide"
-                    local url=""
-                    local expected_sha256=""
-
-                    # Safe access with explicit empty default
-                    url="${KNOWN_INSTALLERS[$tool]:-}"
-                    if ! expected_sha256="$(get_checksum "$tool")"; then
-                        log_error "tools.zoxide: get_checksum failed for tool '$tool'"
-                        expected_sha256=""
-                    fi
-
-                    if [[ -n "$url" ]] && [[ -n "$expected_sha256" ]]; then
-                        if verify_checksum "$url" "$expected_sha256" "$tool" | run_as_target_runner 'sh' '-s'; then
-                            install_success=true
-                        else
-                            log_error "tools.zoxide: verify_checksum or installer execution failed"
-                        fi
-                    else
-                        if [[ -z "$url" ]]; then
-                            log_error "tools.zoxide: KNOWN_INSTALLERS[$tool] not found"
-                        fi
-                        if [[ -z "$expected_sha256" ]]; then
-                            log_error "tools.zoxide: checksum for '$tool' not found"
-                        fi
-                    fi
-                else
-                    log_error "tools.zoxide: KNOWN_INSTALLERS array not available"
-                fi
-            else
-                log_error "tools.zoxide: gtbi_security_init failed - check security.sh and checksums.yaml"
-            fi
-
-            # Verified install is required - no fallback
-            if [[ "$install_success" = "true" ]]; then
-                true
-            else
-                log_error "Verified install failed for tools.zoxide"
-                false
-            fi
-        }; then
-            log_error "tools.zoxide: verified installer failed"
+        if ! run_as_root_shell <<'INSTALL_TOOLS_ZOXIDE'
+if apt-get install -y zoxide; then
+  exit 0
+fi
+# Fallback to pinned binary release. The upstream install.sh queries the
+# GitHub JSON API (api.github.com), which is unauthenticated-rate-limited
+# on CI runners; this redirect download is not.
+ZOX_VER="0.9.9"
+case "$(uname -m)" in
+  x86_64)        ZOX_ARCH="x86_64-unknown-linux-musl";  ZOX_SHA="4ff057d3c4d957946937274c2b8be7af2a9bbae7f90a1b5e9baaa7cb65a20caa" ;;
+  aarch64|arm64) ZOX_ARCH="aarch64-unknown-linux-musl"; ZOX_SHA="96e6ea2e47a71db42cb7ad5a36e9209c8cb3708f8ae00f6945573d0d93315cb0" ;;
+  *) echo "Unsupported arch for zoxide: $(uname -m)"; exit 0 ;;
+esac
+ZOX_URL="https://github.com/ajeetdsouza/zoxide/releases/download/v${ZOX_VER}/zoxide-${ZOX_VER}-${ZOX_ARCH}.tar.gz"
+TMP_FILE="$(mktemp "${TMPDIR:-/tmp}/gtbi_zoxide.XXXXXX")"
+trap 'rm -f "$TMP_FILE"' EXIT
+curl -fsSL "$ZOX_URL" -o "$TMP_FILE"
+echo "$ZOX_SHA $TMP_FILE" | sha256sum -c - || { echo "Checksum failed for zoxide"; rm "$TMP_FILE"; exit 1; }
+tar -xzf "$TMP_FILE" -C /usr/local/bin zoxide
+chmod +x /usr/local/bin/zoxide
+INSTALL_TOOLS_ZOXIDE
+        then
+            log_error "tools.zoxide: install command failed: if apt-get install -y zoxide; then"
             return 1
         fi
     fi
 
     # Verify
     if [[ "${DRY_RUN:-false}" = "true" ]]; then
-        log_info "dry-run: verify: command -v zoxide (target_user)"
+        log_info "dry-run: verify: command -v zoxide (root)"
     else
-        if ! run_as_target_shell <<'INSTALL_TOOLS_ZOXIDE'
+        if ! run_as_root_shell <<'INSTALL_TOOLS_ZOXIDE'
 command -v zoxide
 INSTALL_TOOLS_ZOXIDE
         then
@@ -555,33 +528,52 @@ INSTALL_TOOLS_ZOXIDE
     log_success "tools.zoxide installed"
 }
 
-# ast-grep (used by UBS for syntax-aware scanning)
+# ast-grep (syntax-aware code search/rewrite)
 install_tools_ast_grep() {
     local module_id="tools.ast_grep"
     gtbi_require_contract "module:${module_id}" || return 1
     log_step "Installing tools.ast_grep"
 
     if [[ "${DRY_RUN:-false}" = "true" ]]; then
-        log_info "dry-run: install: ~/.cargo/bin/cargo install ast-grep --locked (target_user)"
+        log_info "dry-run: install: case \"\$(uname -m)\" in (target_user)"
     else
         if ! run_as_target_shell <<'INSTALL_TOOLS_AST_GREP'
-~/.cargo/bin/cargo install ast-grep --locked
+# Install the prebuilt release binary. `cargo install ast-grep` builds
+# from source and fails to link on some Ubuntu releases (e.g. 25.10:
+# rust-lld can't find crt*.o / -lc). The prebuilt binary is portable
+# and reproducible (checksum-pinned).
+AG_VER="0.43.0"
+case "$(uname -m)" in
+  x86_64)        AG_ARCH="x86_64-unknown-linux-gnu";  AG_SHA="a26253a9c821d935f7e383e40f0de7c2ca62a4121de1f73a6d81ec32eae631e0" ;;
+  aarch64|arm64) AG_ARCH="aarch64-unknown-linux-gnu"; AG_SHA="e706846148493967f3ab8011334817edd86ce5acbec10718b2a7b40799c640ff" ;;
+  *) echo "Unsupported arch for ast-grep: $(uname -m)"; exit 1 ;;
+esac
+AG_URL="https://github.com/ast-grep/ast-grep/releases/download/${AG_VER}/app-${AG_ARCH}.zip"
+TMP_FILE="$(mktemp "${TMPDIR:-/tmp}/gtbi_astgrep.XXXXXX")"
+TMP_DIR="$(mktemp -d "${TMPDIR:-/tmp}/gtbi_astgrep_d.XXXXXX")"
+trap 'rm -rf "$TMP_FILE" "$TMP_DIR"' EXIT
+curl -fsSL "$AG_URL" -o "$TMP_FILE"
+echo "$AG_SHA  $TMP_FILE" | sha256sum -c - || { echo "Checksum failed for ast-grep"; exit 1; }
+unzip -o -q "$TMP_FILE" -d "$TMP_DIR"
+mkdir -p "$HOME/.cargo/bin"
+install -Dm755 "$TMP_DIR/sg" "$HOME/.cargo/bin/sg"
+install -Dm755 "$TMP_DIR/ast-grep" "$HOME/.cargo/bin/ast-grep"
 INSTALL_TOOLS_AST_GREP
         then
-            log_error "tools.ast_grep: install command failed: ~/.cargo/bin/cargo install ast-grep --locked"
+            log_error "tools.ast_grep: install command failed: case \"\$(uname -m)\" in"
             return 1
         fi
     fi
 
     # Verify
     if [[ "${DRY_RUN:-false}" = "true" ]]; then
-        log_info "dry-run: verify: sg --version (target_user)"
+        log_info "dry-run: verify: ~/.cargo/bin/sg --version (target_user)"
     else
         if ! run_as_target_shell <<'INSTALL_TOOLS_AST_GREP'
-sg --version
+~/.cargo/bin/sg --version
 INSTALL_TOOLS_AST_GREP
         then
-            log_error "tools.ast_grep: verify failed: sg --version"
+            log_error "tools.ast_grep: verify failed: ~/.cargo/bin/sg --version"
             return 1
         fi
     fi
