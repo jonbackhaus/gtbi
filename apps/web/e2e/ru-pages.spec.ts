@@ -216,16 +216,12 @@ test.describe.serial("RU Website Pages", () => {
       await page.goto("/flywheel");
       await page.waitForLoadState("networkidle");
 
-      // Find RU in the flywheel visualization - it should exist. The desktop and
-      // mobile layouts are both in the DOM (one hidden via CSS), so scope to the
-      // first *visible* match for the current viewport.
-      const ruElement = page.getByText(/\bRU\b|Repo Updater/i).locator("visible=true").first();
+      // Find RU in the flywheel visualization - it should exist
+      const ruElement = page.getByText(/\bRU\b|Repo Updater/i).first();
       await expect(ruElement).toBeVisible({ timeout: 5000 });
       await ruElement.click();
-      // After clicking, some detail should appear (in the visible layout's panel/sheet).
-      await expect(
-        page.getByText(/sync|multi.*repo/i).locator("visible=true").first()
-      ).toBeVisible();
+      // After clicking, some detail should appear
+      await expect(page.getByText(/sync|multi.*repo/i).first()).toBeVisible();
     });
   });
 

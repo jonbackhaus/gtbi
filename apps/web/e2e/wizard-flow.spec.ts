@@ -264,19 +264,6 @@ test.describe("Wizard Flow", () => {
     const readiness = page.getByTestId("provider-readiness-check");
     const providerSelect = readiness.getByLabel("Provider");
     const ubuntuSelect = readiness.getByLabel("Ubuntu image");
-
-    // The controlled <select> reverts to its React state value, so a change event
-    // dispatched before hydration is silently dropped (observed on WebKit). Re-apply
-    // the selection until the controlled value sticks before asserting downstream copy.
-    const selectAndConfirm = async (
-      select: ReturnType<typeof readiness.getByLabel>,
-      value: string
-    ) => {
-      await expect(async () => {
-        await select.selectOption(value);
-        await expect(select).toHaveValue(value);
-      }).toPass();
-    };
     const artifactPath = testInfo.outputPath("provider-readiness-matrix.json");
     const matrixLog: Array<{
       readinessCategory: string;
@@ -308,7 +295,7 @@ test.describe("Wizard Flow", () => {
       "Ready for the selected target."
     );
 
-    await selectAndConfirm(providerSelect, "other");
+    await providerSelect.selectOption("other");
     await recordState(
       "unknown",
       "manual spec comparison",
@@ -316,9 +303,9 @@ test.describe("Wizard Flow", () => {
       "Not in the GTBI provider table; compare the specs manually."
     );
 
-    await selectAndConfirm(providerSelect, "ovh");
+    await providerSelect.selectOption("ovh");
     await expect(readiness.getByLabel("Plan")).toHaveValue("VPS-5");
-    await selectAndConfirm(ubuntuSelect, "20.04");
+    await ubuntuSelect.selectOption("20.04");
     await recordState(
       "unsafe",
       "choose Ubuntu 24.04+ before checkout",
