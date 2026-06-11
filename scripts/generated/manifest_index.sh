@@ -6,7 +6,7 @@
 # ============================================================
 # Data-only manifest index. Safe to source.
 
-GTBI_MANIFEST_SHA256="0d70e998d144ee1f625b9226d969378712b39950369331e3b147617348bbb33e"
+GTBI_MANIFEST_SHA256="374aa3b628981ec93c35b8d7c9252903cf4f06d4bb0282bfc0724a4e49dc5720"
 
 GTBI_MODULES_IN_ORDER=(
   "base.system"
@@ -281,7 +281,7 @@ declare -gA GTBI_MODULE_INSTALLED_CHECK=(
   ['lang.nvm']="test -d ~/.nvm && ls ~/.nvm/versions/node/ 2>/dev/null | grep -q ."
   ['tools.atuin']="test -x ~/.atuin/bin/atuin"
   ['tools.zoxide']="command -v zoxide"
-  ['tools.ast_grep']="command -v sg"
+  ['tools.ast_grep']="test -x \"\$HOME/.cargo/bin/sg\""
   ['agents.claude']="test -x \"\${GTBI_BIN_DIR:-\$HOME/.local/bin}/claude\" || test -x \"\$HOME/.local/bin/claude\""
   ['agents.codex']="test -x \"\${GTBI_BIN_DIR:-\$HOME/.local/bin}/codex\" || test -x \"\$HOME/.local/bin/codex\""
   ['agents.gemini']="test -x \"\${GTBI_BIN_DIR:-\$HOME/.local/bin}/gemini\" || test -x \"\$HOME/.local/bin/gemini\""

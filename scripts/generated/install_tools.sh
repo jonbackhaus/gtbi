@@ -548,13 +548,13 @@ INSTALL_TOOLS_AST_GREP
 
     # Verify
     if [[ "${DRY_RUN:-false}" = "true" ]]; then
-        log_info "dry-run: verify: sg --version (target_user)"
+        log_info "dry-run: verify: ~/.cargo/bin/sg --version (target_user)"
     else
         if ! run_as_target_shell <<'INSTALL_TOOLS_AST_GREP'
-sg --version
+~/.cargo/bin/sg --version
 INSTALL_TOOLS_AST_GREP
         then
-            log_error "tools.ast_grep: verify failed: sg --version"
+            log_error "tools.ast_grep: verify failed: ~/.cargo/bin/sg --version"
             return 1
         fi
     fi

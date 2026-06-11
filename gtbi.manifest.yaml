@@ -814,11 +814,14 @@ modules:
       - lang.rust
     installed_check:
       run_as: target_user
-      command: "command -v sg"
+      # Check the cargo-installed binary explicitly: a bare `command -v sg`
+      # matches shadow-utils' /usr/bin/sg, which made the installer skip
+      # ast-grep entirely and left ~/.cargo/bin/sg (what verify checks) absent.
+      command: "test -x \"$HOME/.cargo/bin/sg\""
     install:
       - ~/.cargo/bin/cargo install ast-grep --locked
     verify:
-      - sg --version
+      - ~/.cargo/bin/sg --version
 
   # ============================================================
   # PHASE 7: Coding agents
