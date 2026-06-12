@@ -19,7 +19,6 @@ LANDING_COMMIT_MESSAGE="${GTBI_LAND_COMMIT_MESSAGE:-close out session work}"
 LANDING_CHANGED_FILES=()
 LANDING_SHELL_FILES=()
 LANDING_ZSH_FILES=()
-LANDING_WEB_FILES=()
 LANDING_RUST_FILES=()
 LANDING_BEADS_DB_DIRTY=false
 LANDING_BEADS_JSONL_DIRTY=false
@@ -240,16 +239,6 @@ landing_classify_changed_file() {
     esac
 
     case "$path" in
-        apps/web/*)
-            case "$path" in
-                *.ts|*.tsx|*.js|*.jsx|*.json|*.css|*.md|*.mdx|apps/web/bun.lock)
-                    LANDING_WEB_FILES+=("$path")
-                    ;;
-            esac
-            ;;
-    esac
-
-    case "$path" in
         *.rs|Cargo.toml|Cargo.lock|*/Cargo.toml|*/Cargo.lock)
             LANDING_RUST_FILES+=("$path")
             ;;
@@ -411,11 +400,6 @@ landing_set_statuses_and_commands() {
         landing_add_command "zsh -n $quoted"
     fi
 
-    if [[ ${#LANDING_WEB_FILES[@]} -gt 0 ]]; then
-        landing_add_command "cd apps/web && bun run type-check && bun run lint"
-        landing_add_command "cd apps/web && bun run build"
-    fi
-
     if [[ ${#LANDING_RUST_FILES[@]} -gt 0 ]]; then
         landing_add_command "rch exec -- cargo test"
     fi
@@ -491,7 +475,6 @@ landing_build_report() {
     changed_json="$(landing_json_array "$jq_bin" "${LANDING_CHANGED_FILES[@]}")"
     shell_json="$(landing_json_array "$jq_bin" "${LANDING_SHELL_FILES[@]}")"
     zsh_json="$(landing_json_array "$jq_bin" "${LANDING_ZSH_FILES[@]}")"
-    web_json="$(landing_json_array "$jq_bin" "${LANDING_WEB_FILES[@]}")"
     rust_json="$(landing_json_array "$jq_bin" "${LANDING_RUST_FILES[@]}")"
     in_progress_json="$(landing_json_array "$jq_bin" "${LANDING_BEADS_IN_PROGRESS_IDS[@]}")"
     reservations_json="$(landing_json_array "$jq_bin" "${LANDING_RESERVATION_PATHS[@]}")"
@@ -511,7 +494,6 @@ landing_build_report() {
         --argjson changed_files "$changed_json" \
         --argjson shell_files "$shell_json" \
         --argjson zsh_files "$zsh_json" \
-        --argjson web_files "$web_json" \
         --argjson rust_files "$rust_json" \
         --argjson in_progress_ids "$in_progress_json" \
         --argjson reservation_paths "$reservations_json" \
@@ -526,7 +508,6 @@ landing_build_report() {
                 status: $gates_status,
                 shell_files: $shell_files,
                 zsh_files: $zsh_files,
-                web_files: $web_files,
                 rust_files: $rust_files
             },
             beads: {

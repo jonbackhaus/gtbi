@@ -137,16 +137,8 @@ GTBI is built around a **single source of truth**: the manifest file. Everything
 
 ```mermaid
 flowchart TB
-  %% User and website
   subgraph U["User (local machine)"]
-    Browser["Browser"]
     Terminal["Terminal / SSH client"]
-  end
-
-  subgraph W["Wizard Website (Next.js 16) — apps/web (ACFS-era, not deployed)"]
-    Wizard["Wizard UI (/wizard/*)"]
-    InstallRoute["GET /install (302 redirect to raw install.sh)"]
-    WebState["State: URL params + localStorage"]
   end
 
   %% Repo sources
@@ -171,12 +163,6 @@ flowchart TB
     Agents["Agent CLIs<br/>claude / codex / gemini"]
     Stack["Stack tools<br/>ntm / mcp_agent_mail / ubs / bv / cass / cm / caam / slb / dcg / ru"]
   end
-
-  %% Website guidance flow
-  Browser --> Wizard
-  Wizard --> WebState
-  Wizard --> InstallRoute
-  InstallRoute -->|redirects to| Installer
 
   %% How users fetch/run the installer
   Terminal -->|curl / bash| Installer
@@ -210,15 +196,14 @@ flowchart TB
 │  └─────────────────────────────────────────────────────────────────────┘    │
 └─────────────────────────────────────────────────────────────────────────────┘
                                       │
-                    ┌─────────────────┴─────────────────┐
-                    ▼                                   ▼
-┌───────────────────────────────────┐   ┌───────────────────────────────────┐
-│        CODE GENERATION            │   │        WIZARD WEBSITE             │
-│  ┌─────────────────────────────┐  │   │  ┌─────────────────────────────┐  │
-│  │ TypeScript Parser (Zod)     │  │   │  │ apps/web/ (Next.js 16)      │  │
-│  │ generate.ts                 │  │   │  │ (ACFS-era, not deployed)    │  │
-│  └─────────────────────────────┘  │   │  └─────────────────────────────┘  │
-└───────────────────────────────────┘   └───────────────────────────────────┘
+                                      ▼
+┌───────────────────────────────────┐
+│        CODE GENERATION            │
+│  ┌─────────────────────────────┐  │
+│  │ TypeScript Parser (Zod)     │  │
+│  │ generate.ts                 │  │
+│  └─────────────────────────────┘  │
+└───────────────────────────────────┘
                     │
                     ▼
 ┌───────────────────────────────────────────────────────────────────────────┐
@@ -263,7 +248,6 @@ flowchart TB
 |-----------|------|------------|---------|
 | **Manifest** | `gtbi.manifest.yaml` | YAML | Single source of truth for all tools |
 | **Generator** | `packages/manifest/src/generate.ts` | TypeScript/Bun | Produces installer scripts from manifest |
-| **Website** | `apps/web/` | Next.js 16 + Tailwind 4 | Step-by-step wizard for beginners |
 | **Installer** | `install.sh` | Bash | One-liner bootstrap script |
 | **Lib Scripts** | `scripts/lib/` | Bash | Modular installer functions |
 | **Generated Scripts** | `scripts/generated/` | Bash | Auto-generated category installers (sourced by `install.sh`; execution is feature-flagged) |
@@ -2023,9 +2007,7 @@ The release doctor composes the maintainer checks that are easy to forget:
 - `shellcheck install.sh scripts/**/*.sh`
 - manifest/generated/checksum drift via `scripts/check-manifest-drift.sh --json --quiet`
 - verified-installer checksum candidate review with `--network=check`
-- website `type-check`, `lint`, and production build when `apps/web` changed or `--full` is set
-
-The checksum candidate check uses the canonical updater output. If the generated body differs from `checksums.yaml`, review the diff before release; if only the timestamp header differs, leave `checksums.yaml` unchanged. The default `--network=skip` keeps routine runs offline, and `--web=auto` runs website checks only when web files changed unless `--full` or `--web=always` is provided.
+The checksum candidate check uses the canonical updater output. If the generated body differs from `checksums.yaml`, review the diff before release; if only the timestamp header differs, leave `checksums.yaml` unchanged. The default `--network=skip` keeps routine runs offline.
 
 ### Stack Provenance Report (`scripts/stack-provenance-report.sh`)
 
@@ -2077,7 +2059,7 @@ triggers:
    - `GTBI_MANIFEST_SHA256` mismatches
    - internal script checksum drift (`scripts/generated/internal_checksums.sh`)
    - generated installer and web metadata drift via `bun run generate:diff`
-   - semantic manifest contract drift across `scripts/generated/doctor_checks.sh`, `apps/web/lib/generated`, `gtbi/onboard/lessons`, README snippets, and `checksums.yaml`
+   - semantic manifest contract drift across `scripts/generated/doctor_checks.sh`, `gtbi/onboard/lessons`, README snippets, and `checksums.yaml`
 2. **Auto-Repair Drift**: If drift is detected, runs `--fix` (regenerate + commit + push)
 3. **Verify Current Upstream Checksums**: Downloads all upstream installers, calculates SHA256
 4. **Detect Upstream Changes**: Compares against `checksums.yaml`
@@ -2284,15 +2266,6 @@ gtbi/
 ├── gtbi.manifest.yaml            # Canonical tool manifest (510 lines)
 ├── checksums.yaml                # SHA256 hashes for upstream scripts
 ├── package.json                  # Root monorepo config
-│
-├── apps/
-│   └── web/                      # Next.js 16 wizard website
-│       ├── app/                  # App Router pages
-│       │   ├── layout.tsx        # Root layout
-│       │   ├── page.tsx          # Landing page
-│       │   └── wizard/           # Wizard step pages
-│       ├── components/           # UI components
-│       └── lib/                  # Utilities
 │
 ├── packages/
 │   ├── manifest/                 # Manifest parser + generator
