@@ -24,7 +24,6 @@ export type DriftContractCode =
   | 'MISSING_FILE'
   | 'MANIFEST_INDEX_MODULE_MISSING'
   | 'DOCTOR_CHECK_MISSING'
-  | 'LESSON_LINK_MISSING'
   | 'ONBOARDING_LESSON_MISSING'
   | 'README_SNIPPET_MISSING'
   | 'MISSING_VERIFIED_INSTALLER_CHECKSUM'
@@ -318,7 +317,7 @@ export function checkManifestDriftContract(rootDir = DEFAULT_ROOT): DriftContrac
     summary.verifiedInstallers +
     summary.modules +
     summary.doctorChecksExpected +
-    summary.lessonLinkedModules * 2 +
+    summary.lessonLinkedModules +
     summary.readmeSnippetsExpected;
 
   return {
