@@ -465,7 +465,6 @@ landing_build_report() {
     local changed_json=""
     local shell_json=""
     local zsh_json=""
-    local web_json=""
     local rust_json=""
     local in_progress_json=""
     local reservations_json=""
