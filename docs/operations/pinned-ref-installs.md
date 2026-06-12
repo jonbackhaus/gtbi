@@ -97,13 +97,13 @@ To update a pinned installation:
 
 ```bash
 # Option 1: Re-run with new pin
-curl -fsSL "https://raw.githubusercontent.com/jonbackhaus/gtbi/v0.7.0/install.sh" | bash -s -- --yes --mode vibe --ref v0.7.0
+curl -fsSL "https://raw.githubusercontent.com/jonbackhaus/gtbi/v0.2.0/install.sh" | bash -s -- --yes --mode vibe --ref v0.2.0
 
 # Option 2: Use gtbi update (updates to main)
 gtbi update
 
 # Option 3: Force GTBI to reinstall managed tools from the pinned ref
-curl -fsSL "https://raw.githubusercontent.com/jonbackhaus/gtbi/v0.7.0/install.sh" | bash -s -- --yes --mode vibe --ref v0.7.0 --force-reinstall
+curl -fsSL "https://raw.githubusercontent.com/jonbackhaus/gtbi/v0.2.0/install.sh" | bash -s -- --yes --mode vibe --ref v0.2.0 --force-reinstall
 ```
 
 ## Best Practices

@@ -2263,7 +2263,7 @@ test_handle_existing_installation_manages_session_for_upgrade() {
                 echo "precondition-fail: session already active"
                 exit 2
             fi
-            if ! handle_existing_installation "0.7.0" "upgrade" >/dev/null 2>&1; then
+            if ! handle_existing_installation "0.2.0" "upgrade" >/dev/null 2>&1; then
                 echo "upgrade-failed"
                 exit 3
             fi
@@ -2312,7 +2312,7 @@ test_handle_existing_installation_preserves_outer_session() {
                 exit 2
             fi
             outer_sid="$GTBI_SESSION_ID"
-            handle_existing_installation "0.7.0" "upgrade" >/dev/null 2>&1 || true
+            handle_existing_installation "0.2.0" "upgrade" >/dev/null 2>&1 || true
             if ! autofix_session_active; then
                 echo "outer-session-lost"
                 exit 3
