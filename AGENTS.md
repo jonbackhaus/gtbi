@@ -56,31 +56,6 @@ The installer and scripting layer uses **Bash** (POSIX-compatible where possible
 - **Idempotent:** Installer is safe to re-run; phases resume on failure
 - **One-liner:** `curl -fsSL ... | bash -s -- --yes --mode vibe`
 
-### Website: Bun & Next.js
-
-Use **bun** for everything JS/TS. Never use `npm`, `yarn`, or `pnpm`.
-
-- **Framework:** Next.js 16 App Router
-- **Runtime:** Bun
-- **Hosting:** Vercel + Cloudflare for cost optimization
-- **Lockfiles:** Only `bun.lock`. Do not introduce any other lockfile.
-- **Target:** Latest Node.js. No need to support old Node versions.
-- **Note:** `bun install -g <pkg>` is valid syntax (alias for `bun add -g`). Do not "fix" it.
-
-### Key Dependencies
-
-| Component | Purpose |
-|-----------|---------|
-| `next` (16.x) | App Router framework for wizard website |
-| `react` / `react-dom` (19.x) | UI rendering |
-| `tailwindcss` (4.x) | Utility-first CSS |
-| `@tanstack/react-form` | Form state management |
-| `@tanstack/react-query` | Async state management |
-| `framer-motion` | Animations |
-| `@playwright/test` | E2E testing |
-| `eslint` / `eslint-config-next` | Linting |
-| `typescript` (5.x) | Type checking |
-
 ---
 
 ## Code Editing Discipline
