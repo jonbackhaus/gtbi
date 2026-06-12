@@ -60,6 +60,15 @@ For multi-step tasks, state a brief plan:
 
 Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
 
+## Definition of Done
+
+Before closing any task:
+1. All changes committed and pushed to remote
+2. Unit tests pass
+3. PR open with auto-merge + squash (`gh pr create` → `gh pr merge --auto --squash`)
+4. GitHub CI passes
+5. Beads issue closed only after PR merges to main
+
 <!-- BEGIN BEADS INTEGRATION v:1 profile:minimal hash:7510c1e2 -->
 ## Beads Issue Tracker
 
@@ -81,31 +90,6 @@ bd close <id>         # Complete work
 - Use `bd remember` for persistent knowledge — do NOT use MEMORY.md files
 
 **Architecture in one line:** issues live in a local Dolt DB; sync uses `refs/dolt/data` on your git remote; `.beads/issues.jsonl` is a passive export. See https://github.com/gastownhall/beads/blob/main/docs/SYNC_CONCEPTS.md for details and anti-patterns.
-
-## Session Completion
-
-**When ending a work session**, you MUST complete ALL steps below. Work is NOT complete until `git push` succeeds.
-
-**MANDATORY WORKFLOW:**
-
-1. **File issues for remaining work** - Create issues for anything that needs follow-up
-2. **Run quality gates** (if code changed) - Tests, linters, builds
-3. **Update issue status** - Close issues only after the PR merges (`gh pr view --json state` = `MERGED`), not when the PR is created. Leave in-progress while a PR is pending.
-4. **PUSH TO REMOTE** - This is MANDATORY:
-   ```bash
-   git pull --rebase
-   git push
-   git status  # MUST show "up to date with origin"
-   ```
-5. **Clean up** - Clear stashes, prune remote branches, remove worktrees (`git worktree prune`)
-6. **Verify** - All changes committed AND pushed
-7. **Hand off** - Provide context for next session
-
-**CRITICAL RULES:**
-- Work is NOT complete until `git push` succeeds
-- NEVER stop before pushing - that leaves work stranded locally
-- NEVER say "ready to push when you are" - YOU must push
-- If push fails, resolve and retry until it succeeds
 <!-- END BEADS INTEGRATION -->
 
 
@@ -117,29 +101,13 @@ bd close <id>         # Complete work
 - **Worktrees for sub-agents**: Use `git worktree add` to give each sub-agent an isolated copy of the repo — prevents concurrent edits from colliding on the same working tree
 - **Worktree cleanup**: Remove worktrees after merging — `git worktree remove <path> && git branch -d <branch>`; or `git worktree prune` to clean up stale entries
 - **Commit often**: Small, atomic commits are easier to bisect and revert; don't batch unrelated changes
-- **Push when complete**: Work is not done until `git push` succeeds (see Session Completion above)
+- **Push when complete**: Work is not done until `git push` succeeds (see Definition of Done above)
 - **PRs for non-trivial changes**: Any code or script change → open a PR. Docs/CLAUDE.md-only edits may go direct to `main`.
 - **Auto-merge**: After opening a PR, enable auto-merge so it merges when CI passes:
   ```bash
   gh pr create --title "..." --body "..."
   gh pr merge --auto --squash   # auto-merges when all CI checks pass
   ```
-
-```bash
-# Start work
-git checkout -b fix/<topic>
-
-# Isolated sub-agent worktree
-git worktree add /tmp/gtbi-<topic> -b fix/<topic>-agent
-
-# Commit often, push at end
-git add <files> && git commit -m "..."
-git push -u origin fix/<topic>
-
-# Open PR and auto-merge when CI passes
-gh pr create --title "..." --body "..."
-gh pr merge --auto --squash
-```
 
 ## Build & Test
 
