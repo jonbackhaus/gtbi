@@ -10,7 +10,7 @@
   Gastown Batteries Included
 ```
 
-![Version](https://img.shields.io/badge/Version-0.7.0-bd93f9?style=for-the-badge)
+![Version](https://img.shields.io/badge/Version-0.2.0-bd93f9?style=for-the-badge)
 ![Platform](https://img.shields.io/badge/Platform-Ubuntu%2025.10-6272a4?style=for-the-badge)
 ![License](https://img.shields.io/badge/License-MIT%2BOpenAI%2FAnthropic%20Rider-blue?style=for-the-badge)
 ![Shell](https://img.shields.io/badge/Shell-Bash-ff79c6?style=for-the-badge)
@@ -2279,7 +2279,7 @@ Each guide includes:
 gtbi/
 ├── README.md                     # This file
 ├── AGENTS.md                     # Development guidelines
-├── VERSION                       # Current version (0.7.0)
+├── VERSION                       # Current version (0.2.0)
 ├── install.sh                    # Main installer entry point
 ├── gtbi.manifest.yaml            # Canonical tool manifest (510 lines)
 ├── checksums.yaml                # SHA256 hashes for upstream scripts

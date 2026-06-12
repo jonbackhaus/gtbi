@@ -136,6 +136,18 @@ bun run --cwd packages/manifest generate
 - `checksums.yaml` — SHA256 of every external installer (uv, dolt, claude, bun, …)
 - `tests/docker/` — hermetic Docker integration tests
 
+## Version Bumps
+
+`VERSION` is the single source of truth. When bumping the version, update all of these together:
+
+1. `VERSION` — read by the generator
+2. `install.sh` — `GTBI_VERSION=` hardcoded (can't read from file when curl-piped)
+3. `package.json`, `packages/manifest/package.json`, `apps/web/package.json` — npm workspace versions
+4. Run `bun run generate` — regenerates `apps/web/lib/generated/manifest-modules.ts`
+5. Comment in `scripts/lib/update.sh` (line ~224) — example in comment only
+
+After merging to main: `git tag v<version> && git push --tags`, then `gh release create`.
+
 ## Conventions & Patterns
 
 - **Manifest → generate → scripts**: Any change to `gtbi.manifest.yaml` or `scripts/lib/*.sh` requires `bun run generate` before committing. Generated files live in `scripts/generated/` and `apps/web/lib/generated/`.
