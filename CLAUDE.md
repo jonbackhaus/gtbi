@@ -142,15 +142,15 @@ bun run --cwd packages/manifest generate
 
 1. `VERSION` — read by the generator
 2. `install.sh` — `GTBI_VERSION=` hardcoded (can't read from file when curl-piped)
-3. `package.json`, `packages/manifest/package.json`, `apps/web/package.json` — npm workspace versions
-4. Run `bun run generate` — regenerates `apps/web/lib/generated/manifest-modules.ts`
+3. `package.json`, `packages/manifest/package.json` — npm workspace versions
+4. Run `bun run generate` — regenerates scripts in `scripts/generated/`
 5. Comment in `scripts/lib/update.sh` (line ~224) — example in comment only
 
 After merging to main: `git tag v<version> && git push --tags`, then `gh release create`.
 
 ## Conventions & Patterns
 
-- **Manifest → generate → scripts**: Any change to `gtbi.manifest.yaml` or `scripts/lib/*.sh` requires `bun run generate` before committing. Generated files live in `scripts/generated/` and `apps/web/lib/generated/`.
+- **Manifest → generate → scripts**: Any change to `gtbi.manifest.yaml` or `scripts/lib/*.sh` requires `bun run generate` before committing. Generated files live in `scripts/generated/`.
 - **Checksums must stay fresh**: If an external installer URL serves new content, update `checksums.yaml` and rerun generate to update `internal_checksums.sh`.
 - **`run_as` in manifest**: `target_user` runs as the ubuntu user; `root` runs as root. Installers that require root (e.g. dolt) must use `run_as: root`.
 - **Docker-safe installs**: Avoid bare `systemctl enable/start` — use `|| true`; no systemd in Docker.

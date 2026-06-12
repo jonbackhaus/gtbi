@@ -119,26 +119,6 @@ modules:
 `
   );
 
-  writeFixtureFile(
-    root,
-    'apps/web/lib/generated/manifest-tools.ts',
-    'export const manifestTools = [{ moduleId: "stack.example" }];\n'
-  );
-  writeFixtureFile(
-    root,
-    'apps/web/lib/generated/manifest-commands.ts',
-    'export const manifestCommands = [{ moduleId: "stack.example" }];\n'
-  );
-  writeFixtureFile(
-    root,
-    'apps/web/lib/generated/manifest-tldr.ts',
-    'export const manifestTldrTools = [{ moduleId: "stack.example" }];\n'
-  );
-  writeFixtureFile(
-    root,
-    'apps/web/lib/generated/manifest-lessons-index.ts',
-    'export const manifestLessonLinks = [{ moduleId: "stack.example", lessonSlug: "example" }];\n'
-  );
   writeFixtureFile(root, 'gtbi/onboard/lessons/01_example.md', '# Example\n');
   writeFixtureFile(
     root,
@@ -147,7 +127,6 @@ modules:
       'scripts/check-manifest-drift.sh --json',
       'bun run generate:diff',
       'scripts/generated/doctor_checks.sh',
-      'apps/web/lib/generated',
       'gtbi/onboard/lessons',
       'checksums.yaml',
     ].join('\n')
@@ -167,7 +146,6 @@ describe('manifest drift contract', () => {
     expect(result.ok).toBe(true);
     expect(result.mismatches).toEqual([]);
     expect(result.summary.verifiedInstallers).toBe(1);
-    expect(result.summary.webVisibleModules).toBe(1);
     expect(result.summary.lessonLinkedModules).toBe(1);
   });
 
@@ -184,25 +162,6 @@ describe('manifest drift contract', () => {
     );
 
     expect(codes(root)).toContain('MANIFEST_INDEX_MODULE_MISSING');
-  });
-
-  test('detects missing generated website content', () => {
-    const root = cleanFixture();
-    writeFixtureFile(root, 'apps/web/lib/generated/manifest-tools.ts', 'export const manifestTools = [];\n');
-
-    expect(codes(root)).toContain('WEB_TOOL_MISSING');
-  });
-
-  test('detects stale generated website command tldr and lesson indexes', () => {
-    const root = cleanFixture();
-    writeFixtureFile(root, 'apps/web/lib/generated/manifest-commands.ts', 'export const manifestCommands = [];\n');
-    writeFixtureFile(root, 'apps/web/lib/generated/manifest-tldr.ts', 'export const manifestTldrTools = [];\n');
-    writeFixtureFile(root, 'apps/web/lib/generated/manifest-lessons-index.ts', 'export const manifestLessonLinks = [];\n');
-
-    const mismatchCodes = codes(root);
-    expect(mismatchCodes).toContain('WEB_COMMAND_MISSING');
-    expect(mismatchCodes).toContain('WEB_TLDR_MISSING');
-    expect(mismatchCodes).toContain('LESSON_LINK_MISSING');
   });
 
   test('detects missing generated doctor checks', () => {
@@ -300,12 +259,6 @@ modules:
       - local --version
 `
     );
-    writeFixtureFile(
-      root,
-      'apps/web/lib/generated/manifest-lessons-index.ts',
-      'export const manifestLessonLinks = [{ moduleId: "stack.example", lessonSlug: "missing" }];\n'
-    );
-
     expect(codes(root)).toContain('ONBOARDING_LESSON_MISSING');
   });
 });

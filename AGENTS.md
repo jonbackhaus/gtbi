@@ -56,31 +56,6 @@ The installer and scripting layer uses **Bash** (POSIX-compatible where possible
 - **Idempotent:** Installer is safe to re-run; phases resume on failure
 - **One-liner:** `curl -fsSL ... | bash -s -- --yes --mode vibe`
 
-### Website: Bun & Next.js
-
-Use **bun** for everything JS/TS. Never use `npm`, `yarn`, or `pnpm`.
-
-- **Framework:** Next.js 16 App Router
-- **Runtime:** Bun
-- **Hosting:** Vercel + Cloudflare for cost optimization
-- **Lockfiles:** Only `bun.lock`. Do not introduce any other lockfile.
-- **Target:** Latest Node.js. No need to support old Node versions.
-- **Note:** `bun install -g <pkg>` is valid syntax (alias for `bun add -g`). Do not "fix" it.
-
-### Key Dependencies
-
-| Component | Purpose |
-|-----------|---------|
-| `next` (16.x) | App Router framework for wizard website |
-| `react` / `react-dom` (19.x) | UI rendering |
-| `tailwindcss` (4.x) | Utility-first CSS |
-| `@tanstack/react-form` | Form state management |
-| `@tanstack/react-query` | Async state management |
-| `framer-motion` | Animations |
-| `@playwright/test` | E2E testing |
-| `eslint` / `eslint-config-next` | Linting |
-| `typescript` (5.x) | Type checking |
-
 ---
 
 ## Code Editing Discipline
@@ -123,12 +98,6 @@ We do not care about backwards compatibility—we're in early development with n
 ```bash
 # Bash scripts: lint with shellcheck
 shellcheck install.sh scripts/**/*.sh
-
-# Website: type-check and lint
-cd apps/web && bun run type-check && bun run lint
-
-# Website: build verification
-cd apps/web && bun run build
 ```
 
 If you see errors, **carefully understand and resolve each issue**. Read sufficient context to fix them the RIGHT way.
@@ -175,18 +144,6 @@ shellcheck install.sh scripts/lib/*.sh
 ./tests/vm/test_install_ubuntu.sh
 ```
 
-### Website Tests
-
-```bash
-cd apps/web
-bun install                    # Install dependencies
-bun run dev                    # Dev server
-bun run build                  # Production build
-bun run lint                   # ESLint check
-bun run type-check             # TypeScript check
-bun run test                   # Playwright E2E tests
-```
-
 ### Test Structure
 
 | Directory | Focus Areas |
@@ -196,7 +153,6 @@ bun run test                   # Playwright E2E tests
 | `tests/unit/` | Unit tests for library functions |
 | `tests/smoke/` | Quick smoke tests |
 | `scripts/tests/` | Script-level tests (security, manifest drift, etc.) |
-| `apps/web/e2e/` | Playwright production smoke tests |
 
 ---
 
@@ -212,13 +168,12 @@ If you aren't 100% sure how to use a third-party library, **SEARCH ONLINE** to f
 
 ### What It Does
 
-Provides a step-by-step wizard website, a one-liner installer, and an onboarding TUI to configure Ubuntu VPS instances with a complete agentic coding environment: shell setup, languages, dev tools, coding agents, and the Dicklesworthstone coordination stack.
+Provides a one-liner installer and an onboarding TUI to configure Ubuntu VPS instances with a complete agentic coding environment: shell setup, languages, dev tools, coding agents, and the Dicklesworthstone coordination stack.
 
 ### Components
 
 | Component | Location | Purpose |
 |-----------|----------|---------|
-| Website Wizard | `apps/web/` | Next.js 16 App Router wizard guiding beginners |
 | Installer | `install.sh` + `scripts/` | Bash installer, idempotent, checkpointed |
 | Onboarding TUI | `packages/onboard/` | Interactive tutorial for Linux basics + agent workflow |
 | Module Manifest | `gtbi.manifest.yaml` | Single source of truth for all tools installed |
@@ -233,13 +188,6 @@ gastown_batteries_included/
 ├── install.sh                    # One-liner entrypoint
 ├── VERSION
 ├── gtbi.manifest.yaml            # Canonical tool manifest
-│
-├── apps/
-│   └── web/                      # Next.js 16 wizard website
-│       ├── app/                  # App Router pages
-│       ├── components/           # Shared UI components
-│       ├── lib/                  # Utilities + manifest types
-│       └── package.json
 │
 ├── packages/
 │   ├── manifest/                 # Manifest YAML parser + generators
@@ -366,23 +314,6 @@ These are installed on target VPS (not development machine).
 **Utilities:**
 - **giil** — Download cloud images (iCloud, Dropbox, Google Photos) for visual debugging
 - **csctf** — Convert AI chat share links to Markdown/HTML archives
-
-### Website Development (apps/web)
-
-```bash
-cd apps/web
-bun install           # Install dependencies
-bun run dev           # Dev server
-bun run build         # Production build
-bun run lint          # Lint check
-bun run type-check    # TypeScript check
-```
-
-Key patterns:
-- App Router: all pages in `app/` directory
-- UI components: shadcn/ui + Tailwind CSS
-- State: URL query params + localStorage (no backend)
-- Wizard step content: defined in `lib/wizardSteps.ts` or MDX
 
 ---
 
