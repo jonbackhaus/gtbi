@@ -2587,7 +2587,7 @@ show_completion_certificate() {
             "$(gum style --foreground "$GTBI_SUCCESS" --bold '🏆 GTBI Onboarding Complete! 🏆')" \
             "" \
             "$(gum style --foreground "$GTBI_PINK" "You have successfully completed all $NUM_LESSONS lessons")" \
-            "$(gum style --foreground "$GTBI_PINK" "of the Agentic Coding Flywheel Setup tutorial.")" \
+            "$(gum style --foreground "$GTBI_PINK" "of the Gastown Batteries Included tutorial.")" \
             "" \
             "$(gum style --foreground "$GTBI_TEAL" "Curriculum Highlights:")" \
             "$(gum style --foreground "$GTBI_MUTED" "  • Linux, SSH, tmux, and shell workflow")" \
@@ -2610,7 +2610,7 @@ show_completion_certificate() {
         echo -e "${GREEN}${BOLD}         🏆 GTBI Onboarding Complete! 🏆${NC}"
         echo ""
         echo -e "  You have successfully completed all $NUM_LESSONS lessons"
-        echo -e "  of the Agentic Coding Flywheel Setup tutorial."
+        echo -e "  of the Gastown Batteries Included tutorial."
         echo ""
         echo -e "${CYAN}${BOLD}  Curriculum Highlights:${NC}"
         echo -e "    • Linux, SSH, tmux, and shell workflow"

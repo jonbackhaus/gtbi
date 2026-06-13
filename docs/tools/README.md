@@ -1,6 +1,6 @@
 # GTBI Flywheel Tools Documentation
 
-This directory contains documentation for the tools installed by GTBI (Agentic Coding Flywheel Setup).
+This directory contains documentation for the tools installed by GTBI (Gastown Batteries Included).
 
 ## Core Tools
 

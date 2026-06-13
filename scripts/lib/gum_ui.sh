@@ -49,14 +49,14 @@ print_banner() {
     local banner='
     ╔═══════════════════════════════════════════════════════════════╗
     ║                                                               ║
-    ║     █████╗  ██████╗███████╗███████╗                          ║
-    ║    ██╔══██╗██╔════╝██╔════╝██╔════╝                          ║
-    ║    ███████║██║     █████╗  ███████╗                          ║
-    ║    ██╔══██║██║     ██╔══╝  ╚════██║                          ║
-    ║    ██║  ██║╚██████╗██║     ███████║                          ║
-    ║    ╚═╝  ╚═╝ ╚═════╝╚═╝     ╚══════╝                          ║
+    ║     ██████╗  ████████╗ ██████╗  ██╗                          ║
+    ║    ██╔════╝  ╚══██╔══╝ ██╔══██╗ ██║                          ║
+    ║    ██║  ███╗    ██║    ██████╔╝ ██║                          ║
+    ║    ██║   ██║    ██║    ██╔══██╗ ██║                          ║
+    ║    ╚██████╔╝    ██║    ██████╔╝ ██║                          ║
+    ║     ╚═════╝     ╚═╝    ╚═════╝  ╚═╝                          ║
     ║                                                               ║
-    ║    Agentic Coding Flywheel Setup                             ║
+    ║    Gastown Batteries Included                                ║
     ║    github.com/jonbackhaus/gtbi║
     ║                                                               ║
     ╚═══════════════════════════════════════════════════════════════╝
@@ -81,12 +81,12 @@ print_compact_banner() {
             --align center \
             --width 50 \
             "$(gum style --foreground "$GTBI_ACCENT" --bold 'GTBI')
-$(gum style --foreground "$GTBI_MUTED" 'Agentic Coding Flywheel Setup')"
+$(gum style --foreground "$GTBI_MUTED" 'Gastown Batteries Included')"
     else
         echo ""
         echo "╔════════════════════════════════════════════╗"
         echo "║           GTBI v${GTBI_VERSION:-0.1.0}                       ║"
-        echo "║   Agentic Coding Flywheel Setup            ║"
+        echo "║   Gastown Batteries Included               ║"
         echo "╚════════════════════════════════════════════╝"
         echo ""
     fi

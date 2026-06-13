@@ -1,8 +1,8 @@
-# AGENTS.md — Agentic Coding Flywheel Setup
+# AGENTS.md — Gastown Batteries Included
 
 > Guidelines for AI coding agents working in projects on this VPS.
 
-This VPS is configured with the [Agentic Coding Flywheel Setup (GTBI)](https://github.com/jonbackhaus/gtbi) - a complete environment for multi-agent AI-assisted software development.
+This VPS is configured with the [Gastown Batteries Included (GTBI)](https://github.com/jonbackhaus/gtbi) - a complete environment for multi-agent AI-assisted software development.
 
 ---
 

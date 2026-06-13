@@ -1,5 +1,5 @@
 #compdef gtbi
-# Zsh completion for GTBI (Agentic Coding Flywheel Setup)
+# Zsh completion for GTBI (Gastown Batteries Included)
 # Install: Copy to a directory in $fpath (e.g., ~/.zsh/completions/)
 #          Then run: autoload -Uz compinit && compinit
 #

@@ -8,7 +8,7 @@ Internal maintainer reference for the manifest-driven installer system.
 
 ## Overview
 
-The GTBI manifest (`gtbi.manifest.yaml`) is the single source of truth for all tools installed by the Agentic Coding Flywheel Setup. This document describes the schema vNext fields, validation rules, and maintainer workflows.
+The GTBI manifest (`gtbi.manifest.yaml`) is the single source of truth for all tools installed by Gastown Batteries Included. This document describes the schema vNext fields, validation rules, and maintainer workflows.
 
 ## Manifest Structure
 

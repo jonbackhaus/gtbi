@@ -156,4 +156,4 @@ onboard 22
 
 ---
 
-*The Agentic Coding Flywheel Setup - https://github.com/jonbackhaus/gtbi*
+*Gastown Batteries Included - https://github.com/jonbackhaus/gtbi*

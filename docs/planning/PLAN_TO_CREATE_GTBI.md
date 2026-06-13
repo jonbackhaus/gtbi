@@ -1,12 +1,12 @@
 # PLAN TO CREATE GTBI
 
-## Agentic Coding Flywheel Setup - Comprehensive Implementation Plan
+## Gastown Batteries Included - Comprehensive Implementation Plan
 
 ---
 
 ## Executive Summary
 
-**GTBI** (Agentic Coding Flywheel Setup) is a "Rails installer" for agentic engineering - an end-to-end bootstrapper that transforms motivated beginners with zero Linux knowledge into fully-armed agentic engineers in approximately 10 minutes.
+**GTBI** (Gastown Batteries Included) is a "Rails installer" for agentic engineering - an end-to-end bootstrapper that transforms motivated beginners with zero Linux knowledge into fully-armed agentic engineers in approximately 10 minutes.
 
 ### Core Value Proposition
 
