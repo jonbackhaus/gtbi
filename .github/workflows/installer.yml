@@ -371,6 +371,9 @@ jobs:
           su - ubuntu -c "zsh -ic 'onboard --help'"
           # beads (bd, stack.bd) - issue tracking
           su - ubuntu -c "zsh -ic 'bd --version'"
+          # Gastown (gt, stack.gastown) - multi-agent orchestrator
+          su - ubuntu -c "zsh -ic 'gt version'"
+          su - ubuntu -c "zsh -ic 'sqlite3 --version'"
           # Agents
           su - ubuntu -c "zsh -ic 'claude --version'"
           su - ubuntu -c "zsh -ic 'codex --version'"
