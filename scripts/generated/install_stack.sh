@@ -289,7 +289,7 @@ gtbi_security_init() {
 }
 
 # Category: stack
-# Modules: 2
+# Modules: 3
 
 # Dolt version-control database (required by bd/beads)
 install_stack_dolt() {
@@ -419,11 +419,62 @@ INSTALL_STACK_BD
     log_success "stack.bd installed"
 }
 
+# gastownhall Gastown (gt) - Go multi-agent orchestrator
+install_stack_gastown() {
+    local module_id="stack.gastown"
+    gtbi_require_contract "module:${module_id}" || return 1
+
+    if [[ "${DRY_RUN:-false}" = "true" ]]; then
+        log_info "dry-run: install: case \"\$(uname -m)\" in (target_user)"
+    else
+        if ! run_as_target_shell <<'INSTALL_STACK_GASTOWN'
+GT_VER="1.2.1"
+case "$(uname -m)" in
+  x86_64)  GT_ARCH="amd64"; GT_SHA="cc81f0a55c1f30986759ec8a924e232316c1532900d61af241965ebc0127eb05" ;;
+  aarch64|arm64) GT_ARCH="arm64"; GT_SHA="955066db97c1782935bf6413fd5ad9dc3c699a76a5b38eb34c0f192484a240d4" ;;
+  *) echo "Unsupported arch for Gastown (gt): $(uname -m)"; exit 1 ;;
+esac
+
+GT_URL="https://github.com/gastownhall/gastown/releases/download/v${GT_VER}/gastown_${GT_VER}_linux_${GT_ARCH}.tar.gz"
+TMP_FILE="$(mktemp "${TMPDIR:-/tmp}/gtbi_install.XXXXXX")"
+trap 'rm -f "$TMP_FILE"' EXIT
+
+curl -fsSL "$GT_URL" -o "$TMP_FILE"
+echo "$GT_SHA  $TMP_FILE" | sha256sum -c - || { echo "Checksum failed for gastown (gt)"; rm "$TMP_FILE"; exit 1; }
+
+TMP_DIR="$(mktemp -d "${TMPDIR:-/tmp}/gtbi_gt.XXXXXX")"
+trap 'rm -rf "$TMP_DIR" "$TMP_FILE"' EXIT
+tar -xzf "$TMP_FILE" -C "$TMP_DIR"
+install -Dm755 "$TMP_DIR/gt" "$HOME/.local/bin/gt"
+INSTALL_STACK_GASTOWN
+        then
+            log_error "stack.gastown: install command failed: case \"\$(uname -m)\" in"
+            return 1
+        fi
+    fi
+
+    # Verify
+    if [[ "${DRY_RUN:-false}" = "true" ]]; then
+        log_info "dry-run: verify: gt version (target_user)"
+    else
+        if ! run_as_target_shell <<'INSTALL_STACK_GASTOWN'
+gt version
+INSTALL_STACK_GASTOWN
+        then
+            log_error "stack.gastown: verify failed: gt version"
+            return 1
+        fi
+    fi
+
+    log_success "stack.gastown installed"
+}
+
 # Install all stack modules
 install_stack() {
     log_section "Installing stack modules"
     install_stack_dolt
     install_stack_bd
+    install_stack_gastown
 }
 
 # Run if executed directly

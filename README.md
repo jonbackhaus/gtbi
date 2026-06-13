@@ -1067,6 +1067,16 @@ Vault is installed by default (skip with `--skip-vault`). GTBI installs the Vaul
 
 Supabase networking note: some Supabase projects expose the **direct Postgres host over IPv6-only** (often on free tiers). If your VPS/network is **IPv4-only**, use the Supabase **pooler** connection string instead (or upgrade/configure networking for direct IPv4).
 
+### Agent Stack
+
+Local-first issue tracking and multi-agent orchestration:
+
+| Tool | Command | Description |
+|------|---------|-------------|
+| **Dolt** | `dolt` | Version-control database (backs beads) |
+| **beads** | `bd` | Dolt-backed local-first issue tracker for AI agents |
+| **Gastown** | `gt` | Go multi-agent orchestrator |
+
 ### Dicklesworthstone Stack (10 Tools)
 
 The complete suite of tools for professional agentic workflows:

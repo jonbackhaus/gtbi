@@ -6,7 +6,7 @@
 # ============================================================
 # Data-only manifest index. Safe to source.
 
-GTBI_MANIFEST_SHA256="40377defa50ec8e5dd21b0b51e5a7c3164bfb63533da3d2b0ca5a2ea5cf8125a"
+GTBI_MANIFEST_SHA256="5e6ee0df4e2035f7b80c0de6d2ef20446ef3880b4312437ba763c7da28c69ea4"
 
 GTBI_MODULES_IN_ORDER=(
   "base.system"
@@ -33,6 +33,7 @@ GTBI_MODULES_IN_ORDER=(
   "agents.opencode"
   "stack.dolt"
   "stack.bd"
+  "stack.gastown"
   "gtbi.workspace"
   "gtbi.onboard"
   "gtbi.update"
@@ -65,6 +66,7 @@ declare -gA GTBI_MODULE_PHASE=(
   ['agents.opencode']="7"
   ['stack.dolt']="9"
   ['stack.bd']="9"
+  ['stack.gastown']="9"
   ['gtbi.workspace']="10"
   ['gtbi.onboard']="10"
   ['gtbi.update']="10"
@@ -97,6 +99,7 @@ declare -gA GTBI_MODULE_DEPS=(
   ['agents.opencode']="base.system"
   ['stack.dolt']=""
   ['stack.bd']="stack.dolt"
+  ['stack.gastown']="stack.bd,stack.dolt"
   ['gtbi.workspace']="agents.claude,agents.codex,agents.gemini,cli.modern"
   ['gtbi.onboard']=""
   ['gtbi.update']=""
@@ -129,6 +132,7 @@ declare -gA GTBI_MODULE_FUNC=(
   ['agents.opencode']="install_agents_opencode"
   ['stack.dolt']="install_stack_dolt"
   ['stack.bd']="install_stack_bd"
+  ['stack.gastown']="install_stack_gastown"
   ['gtbi.workspace']="install_gtbi_workspace"
   ['gtbi.onboard']="install_gtbi_onboard"
   ['gtbi.update']="install_gtbi_update"
@@ -161,6 +165,7 @@ declare -gA GTBI_MODULE_CATEGORY=(
   ['agents.opencode']="agents"
   ['stack.dolt']="stack"
   ['stack.bd']="stack"
+  ['stack.gastown']="stack"
   ['gtbi.workspace']="gtbi"
   ['gtbi.onboard']="gtbi"
   ['gtbi.update']="gtbi"
@@ -193,6 +198,7 @@ declare -gA GTBI_MODULE_TAGS=(
   ['agents.opencode']="optional,agent"
   ['stack.dolt']="critical"
   ['stack.bd']="critical"
+  ['stack.gastown']="critical"
   ['gtbi.workspace']="workspace,agents"
   ['gtbi.onboard']="orchestration"
   ['gtbi.update']="orchestration"
@@ -225,6 +231,7 @@ declare -gA GTBI_MODULE_DEFAULT=(
   ['agents.opencode']="0"
   ['stack.dolt']="1"
   ['stack.bd']="1"
+  ['stack.gastown']="1"
   ['gtbi.workspace']="1"
   ['gtbi.onboard']="1"
   ['gtbi.update']="1"
@@ -257,6 +264,7 @@ declare -gA GTBI_MODULE_DESC=(
   ['agents.opencode']="OpenCode (multi-provider agent harness)"
   ['stack.dolt']="Dolt version-control database (required by bd/beads)"
   ['stack.bd']="gastownhall beads (bd) - Dolt-backed local-first issue tracker for AI agents"
+  ['stack.gastown']="gastownhall Gastown (gt) - Go multi-agent orchestrator"
   ['gtbi.workspace']="Agent workspace with tmux session and project folder"
   ['gtbi.onboard']="Onboarding TUI tutorial"
   ['gtbi.update']="GTBI update command wrapper"
@@ -288,6 +296,7 @@ declare -gA GTBI_MODULE_INSTALLED_CHECK=(
   ['agents.opencode']="command -v opencode"
   ['stack.dolt']="command -v dolt"
   ['stack.bd']="command -v bd"
+  ['stack.gastown']="command -v gt"
   ['gtbi.workspace']="test -d /data/projects/my_first_project"
   ['gtbi.nightly']="systemctl --user is-enabled gtbi-nightly-update.timer 2>/dev/null"
 )
@@ -316,6 +325,7 @@ declare -gA GTBI_MODULE_INSTALLED_CHECK_RUN_AS=(
   ['agents.opencode']="target_user"
   ['stack.dolt']="target_user"
   ['stack.bd']="target_user"
+  ['stack.gastown']="target_user"
   ['gtbi.workspace']="target_user"
   ['gtbi.nightly']="target_user"
 )

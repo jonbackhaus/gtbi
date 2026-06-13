@@ -59,6 +59,29 @@ stack_bd_verify() {
 }
 
 # ============================================================
+# Gastown (gt) helpers
+# ============================================================
+
+stack_gastown_is_installed() {
+    command -v gt >/dev/null 2>&1
+}
+
+stack_gastown_version() {
+    gt version 2>/dev/null | head -1
+}
+
+stack_gastown_verify() {
+    if ! stack_gastown_is_installed; then
+        log_error "Gastown (gt) not found in PATH"
+        return 1
+    fi
+    local ver
+    ver="$(stack_gastown_version)" || return 1
+    log_success "Gastown: $ver"
+    return 0
+}
+
+# ============================================================
 # Stack health check (called by gtbi doctor)
 # ============================================================
 
@@ -75,6 +98,12 @@ stack_doctor() {
 
     if stack_bd_verify; then
         : # logged in stack_bd_verify
+    else
+        ((failed += 1))
+    fi
+
+    if stack_gastown_verify; then
+        : # logged in stack_gastown_verify
     else
         ((failed += 1))
     fi
