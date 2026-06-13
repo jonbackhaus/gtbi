@@ -484,16 +484,20 @@ printf 'sudo-called=%s\n' "$*"
 EOF
     chmod +x "$fake_bin/sudo"
 
-    local root_output=""
-    root_output=$(HOME="$fake_home" PATH="$fake_bin:/usr/bin:/bin" TARGET_USER=customuser bash -c '
-        source "'"$checks_file"'"
-        run_manifest_check_command root "printf \"%s\\n\" root-check-ran"
-    ' 2>&1 || true)
+    if [[ $EUID -eq 0 ]] || sudo -n true 2>/dev/null; then
+        local root_output=""
+        root_output=$(HOME="$fake_home" PATH="$fake_bin:/usr/bin:/bin" TARGET_USER=customuser bash -c '
+            source "'"$checks_file"'"
+            run_manifest_check_command root "printf \"%s\\n\" root-check-ran"
+        ' 2>&1 || true)
 
-    if [[ "$root_output" == *"root-check-ran"* ]] && [[ "$root_output" != *"Unable to resolve TARGET_HOME"* ]]; then
-        harness_pass "root checks still dispatch when TARGET_HOME is unresolved"
+        if [[ "$root_output" == *"root-check-ran"* ]] && [[ "$root_output" != *"Unable to resolve TARGET_HOME"* ]]; then
+            harness_pass "root checks still dispatch when TARGET_HOME is unresolved"
+        else
+            harness_fail "root checks still dispatch when TARGET_HOME is unresolved" "$root_output"
+        fi
     else
-        harness_fail "root checks still dispatch when TARGET_HOME is unresolved" "$root_output"
+        harness_skip "root checks still dispatch when TARGET_HOME is unresolved" "passwordless sudo unavailable"
     fi
 
     local target_user_output=""
