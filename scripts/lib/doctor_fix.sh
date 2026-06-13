@@ -1489,6 +1489,11 @@ dispatch_fix() {
             fix_gtbi_sourcing "$check_id"
             ;;
 
+        # Identity fixes
+        identity.passwordless_sudo)
+            fix_passwordless_sudo "$check_id"
+            ;;
+
         # Manual fixes (log suggestion only)
         shell.ohmyzsh|shell.p10k|*.apt_install|*.sudo_required)
             if [[ -n "$fix_hint" ]]; then
@@ -1715,6 +1720,103 @@ fix_verified_install() {
 # ============================================================
 
 # Install and enable SSH server
+# ============================================================
+# Fixer: Passwordless sudo (identity.passwordless_sudo)
+# ============================================================
+
+fix_passwordless_sudo() {
+    local check_id="$1"
+    local sudoers_file="${DOCTOR_FIX_SUDOERS_FILE:-/etc/sudoers.d/90-ubuntu-gtbi}"
+    local target_user=""
+    local root_display=""
+    local tee_bin=""
+    local chmod_bin=""
+    local visudo_bin=""
+    local -a root_cmd=()
+
+    target_user="$(doctor_fix_runtime_user 2>/dev/null || true)"
+    if [[ -z "$target_user" ]]; then
+        doctor_fix_log ERROR "Cannot determine target user for passwordless sudo"
+        FIX_FAILED=$((FIX_FAILED + 1))
+        return 1
+    fi
+
+    root_display="$(doctor_fix_root_display_prefix)"
+    tee_bin="$(doctor_fix_system_binary_path tee 2>/dev/null || true)"
+    chmod_bin="$(doctor_fix_system_binary_path chmod 2>/dev/null || true)"
+    visudo_bin="$(doctor_fix_system_binary_path visudo 2>/dev/null || true)"
+
+    # Guard: already configured (sudo -n true succeeds)
+    local sudo_bin=""
+    sudo_bin="$(doctor_fix_system_binary_path sudo 2>/dev/null || true)"
+    if [[ -n "$sudo_bin" ]] && "$sudo_bin" -n true 2>/dev/null; then
+        doctor_fix_log INFO "Passwordless sudo already configured"
+        return 0
+    fi
+
+    if [[ "$DOCTOR_FIX_DRY_RUN" == "true" ]]; then
+        FIXES_DRY_RUN+=("$check_id|Write passwordless sudoers entry for $target_user|$sudoers_file|${root_display}tee $sudoers_file")
+        doctor_fix_log DRY "Write $sudoers_file with NOPASSWD for $target_user"
+        return 0
+    fi
+
+    if [[ -z "$tee_bin" ]]; then
+        doctor_fix_log ERROR "tee not found; cannot write sudoers file"
+        FIX_FAILED=$((FIX_FAILED + 1))
+        return 1
+    fi
+    if [[ -z "$chmod_bin" ]]; then
+        doctor_fix_log ERROR "chmod not found; cannot set sudoers file permissions"
+        FIX_FAILED=$((FIX_FAILED + 1))
+        return 1
+    fi
+    if ! doctor_fix_root_prefix root_cmd; then
+        doctor_fix_log ERROR "Cannot write sudoers file without root or passwordless sudo"
+        FIX_FAILED=$((FIX_FAILED + 1))
+        return 1
+    fi
+
+    # Write the sudoers entry
+    if ! printf '%s ALL=(ALL) NOPASSWD:ALL\n' "$target_user" | "${root_cmd[@]}" "$tee_bin" "$sudoers_file" > /dev/null; then
+        doctor_fix_log ERROR "Failed to write $sudoers_file"
+        FIX_FAILED=$((FIX_FAILED + 1))
+        return 1
+    fi
+
+    if ! "${root_cmd[@]}" "$chmod_bin" 440 "$sudoers_file"; then
+        doctor_fix_log ERROR "Failed to set permissions on $sudoers_file"
+        "${root_cmd[@]}" rm -f "$sudoers_file" 2>/dev/null || true
+        FIX_FAILED=$((FIX_FAILED + 1))
+        return 1
+    fi
+
+    # Validate the sudoers file (remove it if invalid)
+    if [[ -n "$visudo_bin" ]] && ! "${root_cmd[@]}" "$visudo_bin" -c -f "$sudoers_file" &>/dev/null; then
+        doctor_fix_log ERROR "Generated sudoers file failed visudo validation; removing"
+        "${root_cmd[@]}" rm -f "$sudoers_file" 2>/dev/null || true
+        FIX_FAILED=$((FIX_FAILED + 1))
+        return 1
+    fi
+
+    local rollback_command
+    printf -v rollback_command 'rm -f %q' "$sudoers_file"
+
+    if ! doctor_fix_record_change_or_rollback \
+        "$rollback_command" \
+        true \
+        "config" "Enabled passwordless sudo for $target_user" \
+        "$rollback_command" \
+        true "info" "$(doctor_fix_files_json "$sudoers_file")" "[]" "[]"; then
+        FIX_FAILED=$((FIX_FAILED + 1))
+        return 1
+    fi
+
+    doctor_fix_log INFO "Enabled passwordless sudo for $target_user in $sudoers_file"
+    FIXES_APPLIED+=("$check_id|Enabled passwordless sudo for $target_user")
+    FIX_APPLIED=$((FIX_APPLIED + 1))
+    return 0
+}
+
 fix_ssh_server() {
     local check_id="$1"
     local apt_get_bin=""
