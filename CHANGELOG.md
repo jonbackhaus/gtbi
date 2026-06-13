@@ -8,6 +8,33 @@ Each version links to its GitHub Release (where one exists) or to the tag compar
 
 ---
 
+## [v0.3.0](https://github.com/jonbackhaus/gtbi/releases/tag/v0.3.0) -- 2026-06-13
+
+> Adds Gastown to the agent stack, completes the rename to GTBI, hardens CI with a required gate, and removes the unused web app. [Compare with v0.2.0](https://github.com/jonbackhaus/gtbi/compare/v0.2.0...v0.3.0).
+
+### Added
+
+- **Gastown (`gt`)** -- gastownhall's Go multi-agent orchestrator added to the agent stack as a checksum-pinned binary install (v1.2.1), wired into the installer, `gtbi doctor`, CI, and docs ([`5f8a5fe1`](https://github.com/jonbackhaus/gtbi/commit/5f8a5fe1), [#25](https://github.com/jonbackhaus/gtbi/pull/25))
+- **`sqlite3`** added to the base toolchain (Gastown runtime dependency) ([#25](https://github.com/jonbackhaus/gtbi/pull/25))
+
+### Changed
+
+- **Renamed legacy ACFS branding to GTBI** -- "Agentic Coding Flywheel Setup" -> "Gastown Batteries Included" across code, scripts, and docs; upstream attribution preserved ([`00be9d51`](https://github.com/jonbackhaus/gtbi/commit/00be9d51), [#24](https://github.com/jonbackhaus/gtbi/pull/24))
+- **Removed the `apps/web` Next.js application** and all web artifact generation; it was no longer deployed ([`80515ff7`](https://github.com/jonbackhaus/gtbi/commit/80515ff7), [#17](https://github.com/jonbackhaus/gtbi/pull/17))
+
+### CI & Infrastructure
+
+- **Required "CI Gate" check** -- a single always-reporting aggregate status now gates PR auto-merge; path-skipped PRs still pass cleanly ([`1cb0cf48`](https://github.com/jonbackhaus/gtbi/commit/1cb0cf48), [#22](https://github.com/jonbackhaus/gtbi/pull/22))
+- **Rehabilitated the Installer Canary harness** -- green end-to-end across the Ubuntu matrix; cron schedules re-enabled ([`0c2dabc3`](https://github.com/jonbackhaus/gtbi/commit/0c2dabc3), [#20](https://github.com/jonbackhaus/gtbi/pull/20))
+
+### Fixed
+
+- **`gtbi doctor --fix`** now handles `identity.passwordless_sudo` ([`f1900af1`](https://github.com/jonbackhaus/gtbi/commit/f1900af1), [#18](https://github.com/jonbackhaus/gtbi/pull/18))
+- Removed stale web-check assertions from the release-doctor test suite ([`a9d86523`](https://github.com/jonbackhaus/gtbi/commit/a9d86523), [#21](https://github.com/jonbackhaus/gtbi/pull/21))
+- `test_doctor_generated` now skips the root-dispatch sub-test when passwordless sudo is unavailable ([`e24e2014`](https://github.com/jonbackhaus/gtbi/commit/e24e2014), [#19](https://github.com/jonbackhaus/gtbi/pull/19))
+
+---
+
 ## [v0.2.0](https://github.com/jonbackhaus/gtbi/releases/tag/v0.2.0) -- 2026-06-12
 
 > Major expansion of the flywheel tool ecosystem, installer reliability, web application, and testing infrastructure since v0.1.0. [Compare with v0.1.0](https://github.com/jonbackhaus/gtbi/compare/v0.1.0...v0.2.0).
