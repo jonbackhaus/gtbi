@@ -297,13 +297,13 @@ install_cli_modern() {
     gtbi_require_contract "module:${module_id}" || return 1
 
     if [[ "${DRY_RUN:-false}" = "true" ]]; then
-        log_info "dry-run: install: apt-get install -yq ripgrep tmux fzf direnv jq gh git-lfs lsof dnsutils netcat-openbsd strace rsync (root)"
+        log_info "dry-run: install: apt-get install -yq ripgrep tmux fzf direnv jq gh git-lfs lsof dnsutils netcat-openbsd strace rsync sqlite3 (root)"
     else
         if ! run_as_root_shell <<'INSTALL_CLI_MODERN'
-apt-get install -yq ripgrep tmux fzf direnv jq gh git-lfs lsof dnsutils netcat-openbsd strace rsync
+apt-get install -yq ripgrep tmux fzf direnv jq gh git-lfs lsof dnsutils netcat-openbsd strace rsync sqlite3
 INSTALL_CLI_MODERN
         then
-            log_error "cli.modern: install command failed: apt-get install -yq ripgrep tmux fzf direnv jq gh git-lfs lsof dnsutils netcat-openbsd strace rsync"
+            log_error "cli.modern: install command failed: apt-get install -yq ripgrep tmux fzf direnv jq gh git-lfs lsof dnsutils netcat-openbsd strace rsync sqlite3"
             return 1
         fi
     fi
@@ -495,6 +495,17 @@ strace --version
 INSTALL_CLI_MODERN
         then
             log_error "cli.modern: verify failed: strace --version"
+            return 1
+        fi
+    fi
+    if [[ "${DRY_RUN:-false}" = "true" ]]; then
+        log_info "dry-run: verify: sqlite3 --version (root)"
+    else
+        if ! run_as_root_shell <<'INSTALL_CLI_MODERN'
+sqlite3 --version
+INSTALL_CLI_MODERN
+        then
+            log_error "cli.modern: verify failed: sqlite3 --version"
             return 1
         fi
     fi

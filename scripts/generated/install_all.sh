@@ -341,6 +341,7 @@ install_all() {
     log_section "Category: stack"
     install_stack_dolt
     install_stack_bd
+    install_stack_gastown
     log_section "Category: gtbi"
     install_gtbi_workspace
     install_gtbi_onboard

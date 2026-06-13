@@ -441,7 +441,7 @@ modules:
       run_as: current
       command: "command -v rg && command -v tmux && command -v fzf"
     install:
-      - apt-get install -yq ripgrep tmux fzf direnv jq gh git-lfs lsof dnsutils netcat-openbsd strace rsync
+      - apt-get install -yq ripgrep tmux fzf direnv jq gh git-lfs lsof dnsutils netcat-openbsd strace rsync sqlite3
       - apt-get install -yq lsd || true
       - apt-get install -yq eza || true
       - apt-get install -yq bat || apt-get install -yq batcat || true
@@ -473,6 +473,7 @@ modules:
       - git-lfs version
       - rsync --version
       - strace --version
+      - sqlite3 --version
       - command -v lsof
       - command -v dig
       - command -v nc
@@ -1119,6 +1120,43 @@ modules:
           install -Dm755 "$TMP_DIR/bd" "$HOME/.local/bin/bd"
     verify:
       - bd --version
+
+  - id: stack.gastown
+    description: gastownhall Gastown (gt) - Go multi-agent orchestrator
+    category: stack
+    phase: 9
+    run_as: target_user
+    optional: false
+    enabled_by_default: true
+    tags: [critical]
+    dependencies:
+      - stack.bd
+      - stack.dolt
+    installed_check:
+      run_as: target_user
+      command: "command -v gt"
+    install:
+      - |
+          GT_VER="1.2.1"
+          case "$(uname -m)" in
+            x86_64)  GT_ARCH="amd64"; GT_SHA="cc81f0a55c1f30986759ec8a924e232316c1532900d61af241965ebc0127eb05" ;;
+            aarch64|arm64) GT_ARCH="arm64"; GT_SHA="955066db97c1782935bf6413fd5ad9dc3c699a76a5b38eb34c0f192484a240d4" ;;
+            *) echo "Unsupported arch for Gastown (gt): $(uname -m)"; exit 1 ;;
+          esac
+
+          GT_URL="https://github.com/gastownhall/gastown/releases/download/v${GT_VER}/gastown_${GT_VER}_linux_${GT_ARCH}.tar.gz"
+          TMP_FILE="$(mktemp "${TMPDIR:-/tmp}/gtbi_install.XXXXXX")"
+          trap 'rm -f "$TMP_FILE"' EXIT
+
+          curl -fsSL "$GT_URL" -o "$TMP_FILE"
+          echo "$GT_SHA  $TMP_FILE" | sha256sum -c - || { echo "Checksum failed for gastown (gt)"; rm "$TMP_FILE"; exit 1; }
+
+          TMP_DIR="$(mktemp -d "${TMPDIR:-/tmp}/gtbi_gt.XXXXXX")"
+          trap 'rm -rf "$TMP_DIR" "$TMP_FILE"' EXIT
+          tar -xzf "$TMP_FILE" -C "$TMP_DIR"
+          install -Dm755 "$TMP_DIR/gt" "$HOME/.local/bin/gt"
+    verify:
+      - gt version
 
   # ============================================================
   # PHASE 10: Finalization (onboard, doctor, verification)
