@@ -2498,6 +2498,119 @@ test_dispatch_fix_unknown_skipped() {
 }
 
 # ============================================================
+# Test: fix_passwordless_sudo
+# ============================================================
+
+test_fix_passwordless_sudo_dry_run() {
+    setup_test_env
+
+    DOCTOR_FIX_DRY_RUN=true
+    export DOCTOR_FIX_SUDOERS_FILE="$GTBI_STATE_DIR/90-ubuntu-gtbi"
+    export TARGET_USER="ubuntu"
+
+    fix_passwordless_sudo "identity.passwordless_sudo" >/dev/null 2>&1
+
+    if [[ ${#FIXES_DRY_RUN[@]} -ne 1 ]]; then
+        echo "  Expected 1 dry-run entry, got ${#FIXES_DRY_RUN[@]}"
+        cleanup_test_env
+        return 1
+    fi
+
+    if [[ "${FIXES_DRY_RUN[0]}" != *"ubuntu"* ]]; then
+        echo "  Dry-run entry should mention target user: ${FIXES_DRY_RUN[0]}"
+        cleanup_test_env
+        return 1
+    fi
+
+    if [[ -f "$DOCTOR_FIX_SUDOERS_FILE" ]]; then
+        echo "  Dry-run must not write sudoers file"
+        cleanup_test_env
+        return 1
+    fi
+
+    cleanup_test_env
+    return 0
+}
+
+test_fix_passwordless_sudo_writes_sudoers_and_records_change() {
+    setup_test_env
+    local original_resolver=""
+    local temp_bin=""
+
+    export DOCTOR_FIX_SUDOERS_FILE="$GTBI_STATE_DIR/90-ubuntu-gtbi"
+    export TARGET_USER="ubuntu"
+
+    start_autofix_session >/dev/null || {
+        echo "  Failed to start autofix session"
+        cleanup_test_env
+        return 1
+    }
+
+    original_resolver="$(declare -f doctor_fix_system_binary_path)"
+    temp_bin="$GTBI_STATE_DIR/bin"
+    mkdir -p "$temp_bin"
+
+    # sudo: fail for "sudo -n true" (guard check), succeed for other commands
+    cat > "$temp_bin/sudo" <<'EOF'
+#!/usr/bin/env bash
+[[ "${1:-}" == "-n" ]] || exit 42
+shift
+[[ "${1:-}" == "true" ]] && exit 1
+exec "$@"
+EOF
+    # visudo: always passes validation
+    cat > "$temp_bin/visudo" <<'EOF'
+#!/usr/bin/env bash
+exit 0
+EOF
+    chmod +x "$temp_bin/sudo" "$temp_bin/visudo"
+
+    doctor_fix_system_binary_path() {
+        case "${1:-}" in
+            sudo|visudo) printf '%s\n' "$temp_bin/${1:-}" ;;
+            *) command -v -- "${1:-}" 2>/dev/null || return 1 ;;
+        esac
+    }
+
+    if ! fix_passwordless_sudo "identity.passwordless_sudo" >/dev/null 2>&1; then
+        eval "$original_resolver"
+        echo "  fix_passwordless_sudo should succeed with mocked root"
+        end_autofix_session >/dev/null 2>&1 || true
+        cleanup_test_env
+        return 1
+    fi
+
+    if [[ ! -f "$DOCTOR_FIX_SUDOERS_FILE" ]]; then
+        eval "$original_resolver"
+        echo "  Sudoers file was not written"
+        end_autofix_session >/dev/null 2>&1 || true
+        cleanup_test_env
+        return 1
+    fi
+
+    if ! grep -q "ubuntu ALL=(ALL) NOPASSWD:ALL" "$DOCTOR_FIX_SUDOERS_FILE"; then
+        eval "$original_resolver"
+        echo "  Sudoers file missing expected NOPASSWD entry"
+        end_autofix_session >/dev/null 2>&1 || true
+        cleanup_test_env
+        return 1
+    fi
+
+    if ! jq -e 'select(.description | startswith("Enabled passwordless sudo"))' "$GTBI_CHANGES_FILE" >/dev/null 2>&1; then
+        eval "$original_resolver"
+        echo "  fix_passwordless_sudo did not record a change"
+        end_autofix_session >/dev/null 2>&1 || true
+        cleanup_test_env
+        return 1
+    fi
+
+    eval "$original_resolver"
+    end_autofix_session >/dev/null 2>&1 || true
+    cleanup_test_env
+    return 0
+}
+
+# ============================================================
 # Test: print_fix_summary
 # ============================================================
 
@@ -2674,6 +2787,9 @@ main() {
     run_test test_fix_ssh_server_fails_when_service_enable_fails
     run_test test_fix_ssh_keepalive_applies_and_records_change
     run_test test_fix_ssh_keepalive_restores_file_when_backup_and_record_change_fail
+
+    run_test test_fix_passwordless_sudo_dry_run
+    run_test test_fix_passwordless_sudo_writes_sudoers_and_records_change
 
     # dispatch_fix tests
     run_test test_dispatch_fix_skips_pass
