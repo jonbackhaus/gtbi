@@ -13,22 +13,42 @@ on:
       - '.shellcheckrc'
       - 'tests/**/*.sh'
       - 'tests/docker/**'
+  # No paths filter on pull_request: the workflow must always run so the
+  # required "CI Gate" status check always reports. The "changes" job below
+  # decides whether the installer-relevant jobs actually need to run.
   pull_request:
     branches: [main]
-    paths:
-      - 'install.sh'
-      - 'scripts/**'
-      - 'gtbi.manifest.yaml'
-      - 'checksums.yaml'
-      - 'packages/manifest/**'
-      - '.github/workflows/*.yml'
-      - '.shellcheckrc'
-      - 'tests/**/*.sh'
-      - 'tests/docker/**'
 
 jobs:
+  changes:
+    name: Detect relevant changes
+    runs-on: ubuntu-latest
+    outputs:
+      relevant: ${{ steps.filter.outputs.relevant }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Filter installer-relevant paths
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            relevant:
+              - 'install.sh'
+              - 'scripts/**'
+              - 'gtbi.manifest.yaml'
+              - 'checksums.yaml'
+              - 'packages/manifest/**'
+              - '.github/workflows/*.yml'
+              - '.shellcheckrc'
+              - 'tests/**/*.sh'
+              - 'tests/docker/**'
+
   yaml-lint:
     name: Workflow YAML Lint
+    needs: changes
+    if: ${{ needs.changes.outputs.relevant == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -63,6 +83,8 @@ jobs:
 
   shellcheck:
     name: ShellCheck
+    needs: changes
+    if: ${{ needs.changes.outputs.relevant == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -102,6 +124,8 @@ jobs:
 
   manifest-drift:
     name: Manifest Drift Check
+    needs: changes
+    if: ${{ needs.changes.outputs.relevant == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -157,6 +181,8 @@ jobs:
 
   checksum-verification:
     name: Verify Upstream Checksums
+    needs: changes
+    if: ${{ needs.changes.outputs.relevant == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -200,6 +226,8 @@ jobs:
 
   pinned-ref-smoke:
     name: Pinned Ref Smoke (checksums from main)
+    needs: changes
+    if: ${{ needs.changes.outputs.relevant == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     container:
@@ -229,6 +257,8 @@ jobs:
 
   fresh-root-bootstrap-regression:
     name: Fresh Root Bootstrap Regression
+    needs: changes
+    if: ${{ needs.changes.outputs.relevant == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     container:
@@ -250,6 +280,8 @@ jobs:
 
   selection-tests:
     name: Selection & Contract Tests
+    needs: changes
+    if: ${{ needs.changes.outputs.relevant == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -272,6 +304,8 @@ jobs:
 
   test-installer:
     name: Test installer (Ubuntu ${{ matrix.ubuntu }}, mode ${{ matrix.mode }})
+    needs: changes
+    if: ${{ needs.changes.outputs.relevant == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 60
     strategy:
@@ -344,6 +378,8 @@ jobs:
 
   e2e-curlbash-bootstrap:
     name: E2E curl|bash Bootstrap
+    needs: changes
+    if: ${{ needs.changes.outputs.relevant == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     container:
@@ -370,6 +406,8 @@ jobs:
 
   e2e-resume-after-failure:
     name: E2E Resume After Failure
+    needs: changes
+    if: ${{ needs.changes.outputs.relevant == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     container:
@@ -396,6 +434,8 @@ jobs:
 
   e2e-upgrade-and-repair:
     name: E2E Upgrade and Repair
+    needs: changes
+    if: ${{ needs.changes.outputs.relevant == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 90
     container:
@@ -442,3 +482,39 @@ jobs:
         with:
           name: repair-artifacts
           path: tests/artifacts/repair_*.log
+
+  # Single always-reporting aggregate status. This is the only check that
+  # branch protection requires, so it must run on every PR (if: always())
+  # regardless of whether the installer jobs ran or were path-skipped.
+  ci-gate:
+    name: CI Gate
+    if: ${{ always() }}
+    needs:
+      - changes
+      - yaml-lint
+      - shellcheck
+      - manifest-drift
+      - checksum-verification
+      - pinned-ref-smoke
+      - fresh-root-bootstrap-regression
+      - selection-tests
+      - test-installer
+      - e2e-curlbash-bootstrap
+      - e2e-resume-after-failure
+      - e2e-upgrade-and-repair
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify all required jobs passed or were skipped
+        run: |
+          results="${{ join(needs.*.result, ' ') }}"
+          echo "Needed job results: $results"
+          for r in $results; do
+            case "$r" in
+              success|skipped) ;;
+              *)
+                echo "::error::A required CI job did not pass (result: $r)"
+                exit 1
+                ;;
+            esac
+          done
+          echo "✅ CI Gate: all required jobs passed (or were correctly skipped)."
