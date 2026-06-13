@@ -1,4 +1,4 @@
-# AGENTS.md — Agentic Coding Flywheel Setup (GTBI)
+# AGENTS.md — Gastown Batteries Included (GTBI)
 
 > Guidelines for AI coding agents working in this multi-component Bash/TypeScript codebase.
 
@@ -164,7 +164,7 @@ If you aren't 100% sure how to use a third-party library, **SEARCH ONLINE** to f
 
 ## GTBI — This Project
 
-**This is the project you're working on.** GTBI (Agentic Coding Flywheel Setup) is a multi-component project that takes a beginner from "I have a laptop" to a fully configured VPS with coding agents, dev tools, and coordination infrastructure.
+**This is the project you're working on.** GTBI (Gastown Batteries Included) is a multi-component project that takes a beginner from "I have a laptop" to a fully configured VPS with coding agents, dev tools, and coordination infrastructure.
 
 ### What It Does
 

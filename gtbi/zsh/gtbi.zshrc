@@ -486,7 +486,7 @@ gtbi() {
       fi
       ;;
     help|-h|--help)
-      echo "GTBI - Agentic Coding Flywheel Setup"
+      echo "GTBI - Gastown Batteries Included"
       echo ""
       echo "Usage: gtbi <command>"
       echo ""

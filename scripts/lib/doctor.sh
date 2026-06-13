@@ -984,7 +984,7 @@ DOCTOR_VERSION_TIMEOUT="${DOCTOR_VERSION_TIMEOUT:-2}"
 
 # Print `gtbi` CLI help (only used when this script is installed as the `gtbi` entrypoint).
 print_gtbi_help() {
-    echo "GTBI - Agentic Coding Flywheel Setup"
+    echo "GTBI - Gastown Batteries Included"
     echo ""
     echo "Usage: gtbi <command> [options]"
     echo ""

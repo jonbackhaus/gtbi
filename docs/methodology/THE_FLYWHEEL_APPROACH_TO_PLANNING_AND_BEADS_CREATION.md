@@ -1,6 +1,6 @@
 # The Flywheel Approach to Planning and Beads Creation
 
-> A comprehensive guide to Jeffrey Emanuel's methodology for creating software with frontier AI models, exhaustive markdown planning, beads-based task management, and coordinated agent swarms. This revision is synthesized from the prior Claude Code session that originally created this document, the [Agentic Coding Flywheel Setup](https://github.com/jonbackhaus/gtbi) documentation, planning- and beads-related skill/background docs, [CASS](https://github.com/Dicklesworthstone/coding_agent_session_search)-mined session rituals, and X posts/threads about planning, [`br`](https://github.com/Dicklesworthstone/beads_rust), [`bv`](https://github.com/Dicklesworthstone/beads_viewer), and [Agent Mail](https://github.com/Dicklesworthstone/mcp_agent_mail).
+> A comprehensive guide to Jeffrey Emanuel's methodology for creating software with frontier AI models, exhaustive markdown planning, beads-based task management, and coordinated agent swarms. This revision is synthesized from the prior Claude Code session that originally created this document, the [Gastown Batteries Included](https://github.com/jonbackhaus/gtbi) documentation, planning- and beads-related skill/background docs, [CASS](https://github.com/Dicklesworthstone/coding_agent_session_search)-mined session rituals, and X posts/threads about planning, [`br`](https://github.com/Dicklesworthstone/beads_rust), [`bv`](https://github.com/Dicklesworthstone/beads_viewer), and [Agent Mail](https://github.com/Dicklesworthstone/mcp_agent_mail).
 
 ---
 
@@ -294,7 +294,7 @@ That is the posture of the workflow. Implementation can still surface surprises,
 
 ### GTBI: The One-Liner Bootstrapper
 
-The [Agentic Coding Flywheel Setup (GTBI)](https://github.com/jonbackhaus/gtbi) is a "Rails installer" for agentic engineering. A beginner with a credit card and a laptop can:
+The [Gastown Batteries Included (GTBI)](https://github.com/jonbackhaus/gtbi) is a "Rails installer" for agentic engineering. A beginner with a credit card and a laptop can:
 
 1. Visit the wizard website at [agent-flywheel.com](https://agent-flywheel.com/)
 2. Follow step-by-step instructions to rent a VPS (~$40-56/month)
@@ -2891,7 +2891,7 @@ even better for you in the future!
 
 ---
 
-*Synthesized from ~75+ substantive X posts by [@doodlestein](https://x.com/doodlestein) (Jeffrey Emanuel) mined via [xf](https://github.com/Dicklesworthstone/xf) archive search, the [Agentic Coding Flywheel Setup](https://github.com/jonbackhaus/gtbi) documentation, and real-world usage patterns from coding agent session history via CASS. Source posts compiled in [COMPLETE_X_POSTS_ABOUT_PLANNING_AND_BEADS.md](./COMPLETE_X_POSTS_ABOUT_PLANNING_AND_BEADS.md).*
+*Synthesized from ~75+ substantive X posts by [@doodlestein](https://x.com/doodlestein) (Jeffrey Emanuel) mined via [xf](https://github.com/Dicklesworthstone/xf) archive search, the [Gastown Batteries Included](https://github.com/jonbackhaus/gtbi) documentation, and real-world usage patterns from coding agent session history via CASS. Source posts compiled in [COMPLETE_X_POSTS_ABOUT_PLANNING_AND_BEADS.md](./COMPLETE_X_POSTS_ABOUT_PLANNING_AND_BEADS.md).*
 
 
 • Two things are done.

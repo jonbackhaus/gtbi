@@ -1,5 +1,5 @@
 #!/bin/bash
-# Bash completion for GTBI (Agentic Coding Flywheel Setup)
+# Bash completion for GTBI (Gastown Batteries Included)
 # Install: source this file in ~/.bashrc or copy to /etc/bash_completion.d/
 #
 # Related: bead bd-zhdi

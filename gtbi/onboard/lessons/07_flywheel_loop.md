@@ -222,4 +222,4 @@ Also recommended: learn how git works with multiple agents in `onboard 21`.
 
 ---
 
-*The Agentic Coding Flywheel Setup - https://github.com/jonbackhaus/gtbi*
+*Gastown Batteries Included - https://github.com/jonbackhaus/gtbi*
