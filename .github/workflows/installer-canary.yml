@@ -1,11 +1,8 @@
 name: Installer Canary (Docker)
 
 on:
-  # Schedule paused: the canary harness has pre-existing rot beyond the
-  # install-blocking fix (see follow-up issue). Re-enable the cron once the
-  # remaining PHASE 2.5+ validation issues are fixed. Manual runs still work.
-  # schedule:
-  #   - cron: "30 7 * * *" # 7:30 AM UTC daily
+  schedule:
+    - cron: "30 7 * * *" # 7:30 AM UTC daily
   workflow_dispatch:
     inputs:
       ubuntu:

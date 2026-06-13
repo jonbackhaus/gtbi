@@ -2083,7 +2083,40 @@ check_agents() {
     # Claude Code native install should be in ~/.local/bin, not bun/npm
     check_agent_path_conflicts
 
+    # Destructive Command Guard (DCG) — the current command-safety hook
+    check_dcg
+
     blank_line
+}
+
+# Check Destructive Command Guard (DCG) presence (bd-33vh.8)
+# DCG is GTBI's command-safety hook for Claude Code.
+# Considered healthy if the dcg binary is installed or its Claude hook is registered.
+check_dcg() {
+    local runtime_home dcg_path
+    runtime_home="$(doctor_runtime_home)"
+    dcg_path="$(doctor_binary_path dcg 2>/dev/null || true)"
+
+    local dcg_pattern='(^|[[:space:]/])dcg([[:space:]]|$)'
+    local hook_registered=false
+    local loc
+    for loc in "${runtime_home}/.claude/settings.json" "${runtime_home}/.config/claude/settings.json"; do
+        if _gtbi_doctor_claude_settings_has_command_hook "$loc" "$dcg_pattern"; then
+            hook_registered=true
+            break
+        fi
+    done
+
+    if [[ -n "$dcg_path" && "$hook_registered" == "true" ]]; then
+        check "agent.dcg" "DCG (Destructive Command Guard)" "pass" "binary + hook registered"
+    elif [[ -n "$dcg_path" ]]; then
+        check "agent.dcg" "DCG (Destructive Command Guard)" "pass" "binary installed ($dcg_path)"
+    elif [[ "$hook_registered" == "true" ]]; then
+        check "agent.dcg" "DCG (Destructive Command Guard)" "pass" "hook registered"
+    else
+        check "agent.dcg" "DCG (Destructive Command Guard)" "warn" "not installed (optional)" \
+            "Install via: gtbi services-setup"
+    fi
 }
 
 # Check for agent PATH conflicts (bead hi7)
